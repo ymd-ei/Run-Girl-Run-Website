@@ -284,7 +284,7 @@ function renderBlock(b){
       return`<div class="bl-video empty">Video embed</div>`;
     case 'stats':
       const cols=b.items.length;
-      return`<div class="bl-stats" style="grid-template-columns:repeat(${cols},1fr)">${b.items.map(s=>`<div class="sc"><div class="sn">${s.num}</div><div class="sl">${s.label}</div></div>`).join('')}</div>`;
+      return`<div class="bl-stats" style="grid-template-columns:repeat(${cols},1fr)">${b.items.map(s=>`<div class="sc"><div class="sn" data-target="${s.num}">${s.num}</div><div class="sl">${s.label}</div></div>`).join('')}</div>`;
     case 'skills':
       return`<div class="bl-skills" id="skl">${b.items.map(s=>`<div class="skr"><div class="skn"><span>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${s.pct/100}"></div></div></div>`).join('')}</div>`;
     case 'divider':
@@ -323,6 +323,42 @@ window.addEventListener('message', e=>{
   }
 });
 
+
+function countUp(el){
+  const raw = el.dataset.target;
+  // parse number and suffix e.g. "148k" -> 148, "k"
+  const match = raw.match(/^([\d.]+)([^\d.]*)$/);
+  if(!match){ el.textContent=raw; return; }
+  const end = parseFloat(match[1]);
+  const suffix = match[2]||'';
+  const duration = 1800;
+  const steps = 60;
+  const interval = duration / steps;
+  let step = 0;
+  el.textContent = '0' + suffix;
+  const timer = setInterval(()=>{
+    step++;
+    const progress = step/steps;
+    // ease out cubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(end * ease * 10) / 10;
+    el.textContent = (Number.isInteger(current) ? current : current.toFixed(1)) + suffix;
+    if(step >= steps){ el.textContent = raw; clearInterval(timer); }
+  }, interval);
+}
+
+function initCountUps(){
+  // use IntersectionObserver so they fire when panel scrolls into view
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.querySelectorAll('.sn[data-target]').forEach(el => countUp(el));
+        obs.unobserve(e.target);
+      }
+    });
+  }, {threshold: 0.5});
+  document.querySelectorAll('.bl-stats').forEach(el => obs.observe(el));
+}
 
 function phosphorIcon(url){
   if(url.startsWith('mailto:')) return 'ph ph-envelope';
@@ -491,6 +527,7 @@ function render(){
     </div>`).join('');
 
   document.getElementById('about-body').innerHTML=renderBlocks(C.about||[]);
+  setTimeout(initCountUps, 100);
 
   document.getElementById('contact-body').innerHTML=`
     ${C.contact.resume ? `<div style="display:flex;justify-content:center;margin-bottom:1.75rem"><a href="${C.contact.resume}" target="_blank" rel="noopener" class="resume-btn">View Resume</a></div>` : ""}

@@ -81,11 +81,11 @@
       "type": "stats",
       "items": [
         {
-          "num": "148k",
+          "num": "148,000",
           "label": "Combined Views"
         },
         {
-          "num": "11k",
+          "num": "11,000",
           "label": "Downloads"
         }
       ]
