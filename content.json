@@ -10,7 +10,26 @@
     "email": "contact@rogel.ca",
     "vimeo": "-",
     "linkedin": "https://www.linkedin.com/feed/",
-    "instagram": "@me_are_jei"
+    "instagram": "@me_are_jei",
+    "links": [
+      {
+        "label": "",
+        "url": "contact@rogel.ca"
+      },
+      {
+        "label": "",
+        "url": "https://x.com/ymd_ei"
+      },
+      {
+        "label": "",
+        "url": "https://www.instagram.com/me_are_jei"
+      },
+      {
+        "label": "",
+        "url": "https://www.linkedin.com/in/rj-rogel-7a162b320/"
+      }
+    ],
+    "resume": "resume/RJ_Rogel_anim-02_W25.pdf"
   },
   "projects": [
     "orbital-loop",

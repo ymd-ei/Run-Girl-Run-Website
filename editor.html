@@ -270,18 +270,50 @@ function renderAbout(){
 
 // ── CONTACT
 function renderContact(){
+  if(!C.contact.links) C.contact.links=[];
   document.getElementById('page-contact').innerHTML=`
     <div class="page-title">Contact</div>
-    <div class="page-sub">Your links.</div>
+    <div class="page-sub">Your links and resume.</div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Resume</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="field"><label>PDF Path</label><input value="${C.contact.resume||''}" placeholder="resume/yourfile.pdf" oninput="C.contact.resume=this.value;markDirty()"><p class="hint">Path to your PDF relative to site root</p></div>
+      </div>
+    </div>
     <div class="section">
       <div class="sh" onclick="toggleSection(this)"><h3>Links</h3><span class="chev">&#x25BE;</span></div>
-      <div class="sb contact-fields">
-        <div class="field"><label>Email</label><input value="${C.contact.email}" oninput="C.contact.email=this.value;markDirty()"></div>
-        <div class="field"><label>Vimeo</label><input value="${C.contact.vimeo}" oninput="C.contact.vimeo=this.value;markDirty()"></div>
-        <div class="field"><label>LinkedIn</label><input value="${C.contact.linkedin}" oninput="C.contact.linkedin=this.value;markDirty()"></div>
-        <div class="field"><label>Instagram</label><input value="${C.contact.instagram}" oninput="C.contact.instagram=this.value;markDirty()"></div>
+      <div class="sb">
+        <div class="block-list" id="links-list">
+          ${C.contact.links.map((l,i)=>`
+            <div class="bk">
+              <div class="bk-head">
+                <span class="bk-type">Link</span>
+                <span class="bk-preview">${l.label} — ${l.url}</span>
+                <div class="bk-actions">
+                  <button class="bk-btn del" onclick="removeLink(${i})">&#x2715;</button>
+                </div>
+              </div>
+              <div class="bk-body">
+                <div class="field"><label>Label</label><input value="${l.label}" oninput="C.contact.links[${i}].label=this.value;markDirty();rebuildLinkPreviews()"></div>
+                <div class="field"><label>URL</label><input value="${l.url}" placeholder="https:// or mailto:" oninput="C.contact.links[${i}].url=this.value;markDirty();rebuildLinkPreviews()"></div>
+              </div>
+            </div>`).join('')}
+        </div>
+        <button class="add-btn" onclick="addLink()" style="margin-top:.5rem">+ Add Link</button>
       </div>
     </div>`;
+}
+function addLink(){
+  if(!C.contact.links) C.contact.links=[];
+  C.contact.links.push({label:'',url:''});
+  markDirty(); renderContact(); showPage('contact');
+}
+function removeLink(i){
+  C.contact.links.splice(i,1);
+  markDirty(); renderContact(); showPage('contact');
+}
+function rebuildLinkPreviews(){
+  // previews update on next renderContact, fine for now
 }
 
 // ── PROJECT PAGE

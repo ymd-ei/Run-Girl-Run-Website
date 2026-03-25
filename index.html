@@ -159,11 +159,17 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .fta{resize:vertical;min-height:88px}
 .bs{align-self:flex-start;margin-top:.5rem;font-family:var(--font-b);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);border:none;color:var(--paper);padding:.82rem 2rem;transition:opacity .2s,transform .15s}
 .bs:hover{opacity:.75;transform:translateY(-1px)}
+.resume-btn{display:inline-flex;align-items:center;font-family:var(--font-b);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--border);color:var(--ink);padding:.7rem 1.5rem;text-decoration:none;margin-bottom:1.75rem;transition:border-color .2s,color .2s}
+.resume-btn:hover{border-color:var(--accent);color:var(--accent)}
+.social-icons{display:flex;gap:.75rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem}
+.si{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--border);color:rgba(26,23,20,0.45);text-decoration:none;transition:border-color .2s,color .2s;font-size:1.1rem}
+.si:hover{border-color:var(--accent);color:var(--accent)}
 
 @keyframes fup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fdn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
 </style>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
 <div id="cur"></div>
@@ -317,6 +323,20 @@ window.addEventListener('message', e=>{
   }
 });
 
+
+function phosphorIcon(url){
+  if(url.startsWith('mailto:')) return 'ph ph-envelope';
+  if(url.includes('linkedin.com')) return 'ph ph-linkedin-logo';
+  if(url.includes('instagram.com')) return 'ph ph-instagram-logo';
+  if(url.includes('vimeo.com')) return 'ph ph-vimeo-logo';
+  if(url.includes('youtube.com')||url.includes('youtu.be')) return 'ph ph-youtube-logo';
+  if(url.includes('twitter.com')||url.includes('x.com')) return 'ph ph-x-logo';
+  if(url.includes('github.com')) return 'ph ph-github-logo';
+  if(url.includes('behance.net')) return 'ph ph-behance-logo';
+  if(url.includes('dribbble.com')) return 'ph ph-dribbble-logo';
+  if(url.includes('tiktok.com')) return 'ph ph-tiktok-logo';
+  return 'ph ph-link';
+}
 
 function scrambleHero(role, line1, line2){
   const nearby = {
@@ -473,18 +493,14 @@ function render(){
   document.getElementById('about-body').innerHTML=renderBlocks(C.about||[]);
 
   document.getElementById('contact-body').innerHTML=`
-    <div class="cls">
-      <a href="mailto:${C.contact.email}" class="cl"><span class="clt">Email</span>${C.contact.email}</a>
-      <a href="https://${C.contact.vimeo}" class="cl"><span class="clt">Vimeo</span>${C.contact.vimeo}</a>
-      <a href="https://${C.contact.linkedin}" class="cl"><span class="clt">LinkedIn</span>${C.contact.linkedin}</a>
-      <a href="https://instagram.com/${C.contact.instagram.replace('@','')}" class="cl"><span class="clt">Instagram</span>${C.contact.instagram}</a>
-    </div>
+    ${C.contact.resume ? `<div style="display:flex;justify-content:center;margin-bottom:1.75rem"><a href="${C.contact.resume}" target="_blank" rel="noopener" class="resume-btn">View Resume</a></div>` : ""}
+    <div class="social-icons">${(C.contact.links||[]).map(l=>`<a href="${l.url}" target="${l.url.startsWith("mailto")?"_self":"_blank"}" rel="noopener" class="si" title="${l.label}"><i class="${phosphorIcon(l.url)}"></i></a>`).join("")}</div>
     <p class="fd">&#8212; or send a message</p>
     <form class="form" onsubmit="handleSubmit(event)">
-      <div class="fg"><label class="fl">Name</label><input type="text" class="fi" placeholder="Jane Smith" required></div>
-      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" placeholder="jane@studio.com" required></div>
-      <div class="fg"><label class="fl">Project type</label><input type="text" class="fi" placeholder="2D animation, motion graphics&#8230;"></div>
-      <div class="fg"><label class="fl">Message</label><textarea class="fta" placeholder="Tell me about your project&#8230;"></textarea></div>
+      <div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="fc-name" placeholder="Jane Smith" required></div>
+      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="fc-email" placeholder="jane@studio.com" required></div>
+      <div class="fg"><label class="fl">Project type</label><input type="text" class="fi" id="fc-type" placeholder="2D animation, motion graphics&#8230;"></div>
+      <div class="fg"><label class="fl">Message</label><textarea class="fta" id="fc-msg" placeholder="Tell me about your project&#8230;"></textarea></div>
       <button type="submit" class="bs">Send Message</button>
     </form>`;
 }
@@ -535,9 +551,14 @@ function filterWork(btn,type){
   document.querySelectorAll('#wg .wc').forEach(c=>{const show=type==='all'||c.dataset.type===type;c.style.opacity=show?'1':'0.15';c.style.pointerEvents=show?'':'none'});
 }
 function handleSubmit(e){
-  e.preventDefault();const btn=e.target.querySelector('.bs');
-  btn.textContent='Sent \u2713';btn.style.background='#2a7a4f';btn.style.pointerEvents='none';
-  setTimeout(()=>{btn.textContent='Send Message';btn.style.background='';btn.style.pointerEvents='';e.target.reset()},3000);
+  e.preventDefault();
+  const name=document.getElementById('fc-name').value;
+  const email=document.getElementById('fc-email').value;
+  const type=document.getElementById('fc-type').value;
+  const msg=document.getElementById('fc-msg').value;
+  const subject=encodeURIComponent((type?type+' inquiry':'Project inquiry'));
+  const body=encodeURIComponent('Hi,\n\nMy name is '+name+' ('+email+').\n\n'+(type?'Project type: '+type+'\n\n':'')+msg);
+  window.location.href='mailto:'+C.contact.email+'?subject='+subject+'&body='+body;
 }
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
