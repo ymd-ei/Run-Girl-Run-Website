@@ -6,18 +6,85 @@
   "year": "2023",
   "client": "TechConf 2023",
   "duration": "2:30",
-  "tags": ["Motion Graphics","After Effects","Data Viz"],
+  "tags": [
+    "Motion Graphics",
+    "After Effects",
+    "Data Viz"
+  ],
   "thumbnail": "",
   "videoUrl": "",
   "blocks": [
-    {"id":"b1","type":"text-lg","content":"Data in Motion","align":"left"},
-    {"id":"b2","type":"text-sm","content":"Motion Graphics · After Effects · 2023","align":"left"},
-    {"id":"b3","type":"image","src":"","alt":"Data in Motion hero"},
-    {"id":"b4","type":"text-md","content":"A data visualisation animation created for TechConf 2023's opening keynote. The brief was to transform dry statistics into compelling visual narrative — making numbers feel immediate and human.","align":"left"},
-    {"id":"b5","type":"stats","items":[{"num":"TechConf","label":"Client"},{"num":"2023","label":"Year"},{"num":"2:30","label":"Duration"}]},
-    {"id":"b6","type":"divider"},
-    {"id":"b7","type":"text-sm","content":"PROCESS","align":"left"},
-    {"id":"b8","type":"twocol","left":{"type":"image","src":"","alt":"Frame 1"},"right":{"type":"image","src":"","alt":"Frame 2"}},
-    {"id":"b9","type":"text-md","content":"Built a modular system in After Effects where data values could be updated without redesigning animations — critical for last-minute changes.","align":"left"}
+    {
+      "id": "b1",
+      "type": "text-lg",
+      "content": "Data in Motion",
+      "align": "left"
+    },
+    {
+      "id": "b2",
+      "type": "text-sm",
+      "content": "Motion Graphics · After Effects · 2023",
+      "align": "left"
+    },
+    {
+      "id": "b3",
+      "type": "image",
+      "src": "",
+      "alt": "Data in Motion hero"
+    },
+    {
+      "id": "b4",
+      "type": "text-md",
+      "content": "A data visualisation animation created for TechConf 2023's opening keynote. The brief was to transform dry statistics into compelling visual narrative — making numbers feel immediate and human.",
+      "align": "left"
+    },
+    {
+      "id": "b5",
+      "type": "stats",
+      "items": [
+        {
+          "num": "TechConf",
+          "label": "Client"
+        },
+        {
+          "num": "2023",
+          "label": "Year"
+        },
+        {
+          "num": "2:30",
+          "label": "Duration"
+        }
+      ]
+    },
+    {
+      "id": "b6",
+      "type": "divider"
+    },
+    {
+      "id": "b7",
+      "type": "text-sm",
+      "content": "PROCESS",
+      "align": "left"
+    },
+    {
+      "id": "b8",
+      "type": "twocol",
+      "left": {
+        "type": "image",
+        "src": "",
+        "alt": "Frame 1"
+      },
+      "right": {
+        "type": "image",
+        "src": "",
+        "alt": "Frame 2"
+      }
+    },
+    {
+      "id": "b9",
+      "type": "text-md",
+      "content": "Built a modular system in After Effects where data values could be updated without redesigning animations — critical for last-minute changes.",
+      "align": "left"
+    }
   ]
 }
