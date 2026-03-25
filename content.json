@@ -22,9 +22,15 @@
   ],
   "about": [
     {
+      "id": "b1774463111099",
+      "type": "image",
+      "src": "images/DEMO REEL CUT SHORT.324.Still001.bmp",
+      "alt": ""
+    },
+    {
       "id": "b1",
       "type": "text-lg",
-      "content": "I'm an animator with a passion for bringing ideas to life through movement.",
+      "content": "I like to move stuff",
       "align": "left"
     },
     {
