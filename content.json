@@ -22,16 +22,16 @@
   ],
   "about": [
     {
-      "id": "b1774463111099",
-      "type": "image",
-      "src": "images/DEMO REEL CUT SHORT.324.Still001.bmp",
-      "alt": "about me header image "
-    },
-    {
       "id": "b1",
       "type": "text-lg",
       "content": "We move stuff around.",
       "align": "left"
+    },
+    {
+      "id": "b1774463111099",
+      "type": "image",
+      "src": "images/DEMO REEL CUT SHORT.324.Still001.bmp",
+      "alt": "about me header image "
     },
     {
       "id": "b1774467865431",
