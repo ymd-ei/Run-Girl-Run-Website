@@ -1,0 +1,91 @@
+{
+  "name": "Run Girl Run",
+  "role": "Animator & Motion Designer",
+  "location": "Toronto, Canada",
+  "reel": {
+    "type": "youtube",
+    "url": "https://www.youtube.com/embed/--eDgV1DMzk?si=jryunnqIYJEO5hfm&autoplay=1&mute=1&loop=1&playlist=--eDgV1DMzk&controls=0&rel=0"
+  },
+  "contact": {
+    "email": "hello@yourname.com",
+    "vimeo": "vimeo.com/yourname",
+    "linkedin": "linkedin.com/in/yourname",
+    "instagram": "@yourname"
+  },
+  "projects": [
+    "orbital-loop",
+    "brand-reveal",
+    "architecture-study",
+    "the-runner",
+    "data-in-motion",
+    "cosmic-drift"
+  ],
+  "about": [
+    {
+      "id": "b1",
+      "type": "text-lg",
+      "content": "I'm an animator with a passion for bringing ideas to life through movement.",
+      "align": "left"
+    },
+    {
+      "id": "b2",
+      "type": "text-md",
+      "content": "Whether it's a looping 2D character, a sweeping 3D environment, or a kinetic title treatment — every frame is crafted with intention. Based in Toronto, open to freelance & full-time opportunities worldwide.",
+      "align": "left"
+    },
+    {
+      "id": "b3",
+      "type": "stats",
+      "items": [
+        {
+          "num": "6+",
+          "label": "Years exp."
+        },
+        {
+          "num": "40+",
+          "label": "Projects"
+        },
+        {
+          "num": "12",
+          "label": "Clients"
+        }
+      ]
+    },
+    {
+      "id": "b4",
+      "type": "divider"
+    },
+    {
+      "id": "b5",
+      "type": "text-sm",
+      "content": "TOOLS & SKILLS",
+      "align": "left"
+    },
+    {
+      "id": "b6",
+      "type": "skills",
+      "items": [
+        {
+          "name": "After Effects",
+          "pct": 95
+        },
+        {
+          "name": "Toon Boom Harmony",
+          "pct": 90
+        },
+        {
+          "name": "Cinema 4D",
+          "pct": 85
+        },
+        {
+          "name": "Blender",
+          "pct": 80
+        },
+        {
+          "name": "Premiere Pro",
+          "pct": 85
+        }
+      ]
+    }
+  ]
+}

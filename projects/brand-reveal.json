@@ -1,0 +1,24 @@
+{
+  "id": "brand-reveal",
+  "title": "Brand Reveal",
+  "type": "motion",
+  "typeLabel": "Motion",
+  "year": "2024",
+  "client": "Studio Volta",
+  "duration": "0:15",
+  "tags": ["Motion Graphics","After Effects","Branding"],
+  "thumbnail": "",
+  "videoUrl": "",
+  "blocks": [
+    {"id":"b1","type":"text-lg","content":"Brand Reveal","align":"left"},
+    {"id":"b2","type":"text-sm","content":"Motion Graphics · After Effects · 2024","align":"left"},
+    {"id":"b3","type":"image","src":"","alt":"Brand Reveal hero"},
+    {"id":"b4","type":"text-md","content":"A kinetic brand reveal sequence developed for Studio Volta's rebrand. The brief called for a reveal that felt confident and modern — using sharp typographic animation and precise timing to introduce their new logotype.","align":"left"},
+    {"id":"b5","type":"stats","items":[{"num":"Studio Volta","label":"Client"},{"num":"2024","label":"Year"},{"num":"0:15","label":"Duration"}]},
+    {"id":"b6","type":"divider"},
+    {"id":"b7","type":"text-sm","content":"PROCESS","align":"left"},
+    {"id":"b8","type":"text-md","content":"Brand audit and moodboarding. The client wanted tension and release — a reveal that builds anticipation before the logo lands.","align":"left"},
+    {"id":"b9","type":"twocol","left":{"type":"image","src":"","alt":"Frame 1"},"right":{"type":"image","src":"","alt":"Frame 2"}},
+    {"id":"b10","type":"quote","content":"Timing is everything.","align":"left"}
+  ]
+}

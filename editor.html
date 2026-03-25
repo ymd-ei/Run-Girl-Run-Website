@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#181818;--surface2:#212121;--border:#2c2c2c;
+  --text:#e8e5df;--muted:#666;--accent:#c8402a;--green:#3a9e6e;
+  --font:'DM Sans',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;font-weight:300;min-height:100vh;overflow:hidden}
+#app{display:grid;grid-template-columns:200px 1fr 1fr;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.sb-logo{padding:1.25rem 1rem;border-bottom:1px solid var(--border);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.sb-logo span{color:var(--accent);display:block;font-size:.95rem;letter-spacing:.04em;margin-bottom:.15rem;font-weight:400}
+.sb-section{padding:.65rem 1rem .2rem;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.ni{display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;color:var(--muted);font-size:.78rem;border:none;background:none;width:100%;text-align:left;transition:color .15s,background .15s;border-left:2px solid transparent}
+.ni:hover{color:var(--text);background:var(--surface2)}
+.ni.active{color:var(--text);background:var(--surface2);border-left-color:var(--accent)}
+.ni .dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.ni.active .dot{background:var(--accent)}
+.ni .badge{margin-left:auto;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;padding:.12rem .35rem;border:1px solid var(--border);color:var(--muted)}
+.add-proj{margin:.75rem 1rem;padding:.5rem;border:1px dashed var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:.72rem;letter-spacing:.04em;width:calc(100% - 2rem);transition:color .15s,border-color .15s}
+.add-proj:hover{color:var(--accent);border-color:var(--accent)}
+.sb-footer{margin-top:auto;padding:.75rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.4rem}
+.preview-btn{padding:.55rem;background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--font);font-size:.7rem;letter-spacing:.04em;transition:all .15s}
+.preview-btn:hover{border-color:var(--text);color:var(--text)}
+.save-btn{padding:.55rem;background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:.7rem;letter-spacing:.04em;transition:opacity .15s}
+.save-btn:hover{opacity:.85}
+.save-btn:disabled{opacity:.35}
+
+/* MAIN */
+#main{padding:2rem;max-width:680px;height:100vh;overflow-y:auto}
+.page-title{font-size:1.3rem;font-weight:500;margin-bottom:.25rem}
+.page-sub{font-size:.78rem;color:var(--muted);margin-bottom:1.75rem}
+
+/* PREVIEW PANE */
+#preview-pane{border-left:1px solid var(--border);display:flex;flex-direction:column;height:100vh;background:#111}
+#preview-bar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+#preview-bar span{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+#preview-bar .pb-actions{display:flex;gap:.5rem;align-items:center}
+.pb-indicator{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s}
+.pb-indicator.live{background:var(--green)}
+#preview-refresh{padding:.3rem .7rem;background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--font);font-size:.65rem;letter-spacing:.06em;transition:all .15s}
+#preview-refresh:hover{border-color:var(--text);color:var(--text)}
+#preview-frame{flex:1;border:none;width:100%}
+
+/* SECTION CARDS */
+.section{background:var(--surface);border:1px solid var(--border);margin-bottom:1rem;overflow:hidden}
+.sh{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.sh h3{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--muted)}
+.sh .chev{font-size:.65rem;color:var(--muted);transition:transform .2s}
+.sh.collapsed .chev{transform:rotate(-90deg)}
+.sb{padding:1.1rem;display:flex;flex-direction:column;gap:.9rem}
+.sb.hidden{display:none}
+
+/* FIELDS */
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.field input,.field textarea,.field select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.85rem;font-weight:300;padding:.5rem .65rem;outline:none;width:100%;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.6}
+.hint{font-size:.65rem;color:var(--muted);margin-top:.1rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+
+/* BLOCK EDITOR */
+.block-list{display:flex;flex-direction:column;gap:.5rem}
+.bk{background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+.bk-head{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.bk-type{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);flex-shrink:0}
+.bk-preview{font-size:.75rem;color:var(--muted);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bk-actions{display:flex;gap:.25rem;margin-left:auto;flex-shrink:0}
+.bk-btn{background:none;border:none;color:var(--muted);font-size:.85rem;padding:.2rem .3rem;transition:color .15s;line-height:1}
+.bk-btn:hover{color:var(--text)}
+.bk-btn.del:hover{color:var(--accent)}
+.bk-body{padding:.8rem;display:flex;flex-direction:column;gap:.65rem}
+.bk-body.hidden{display:none}
+
+/* ALIGN TOGGLE */
+.align-row{display:flex;gap:.3rem}
+.al-btn{padding:.3rem .65rem;border:1px solid var(--border);background:none;color:var(--muted);font-size:.7rem;font-family:var(--font);transition:all .15s}
+.al-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* SIZE TOGGLE */
+.size-row{display:flex;gap:.3rem}
+.sz-btn{padding:.3rem .65rem;border:1px solid var(--border);background:none;color:var(--muted);font-size:.7rem;font-family:var(--font);transition:all .15s}
+.sz-btn.active{background:var(--surface);border-color:var(--text);color:var(--text)}
+
+/* TWOCOL EDITOR */
+.twocol-editor{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.col-editor{border:1px solid var(--border);padding:.65rem}
+.col-label{font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+
+/* ADD BLOCK MENU */
+.add-block-btn{width:100%;padding:.55rem;border:1px dashed var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:.72rem;letter-spacing:.04em;margin-top:.25rem;transition:all .15s}
+.add-block-btn:hover{border-color:var(--accent);color:var(--accent)}
+.block-menu{background:var(--surface);border:1px solid var(--border);padding:.4rem;display:grid;grid-template-columns:1fr 1fr;gap:.3rem;margin-top:.3rem}
+.block-menu.hidden{display:none}
+.bm-item{display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;border:1px solid var(--border);font-size:.72rem;color:var(--muted);background:none;font-family:var(--font);transition:all .15s;text-align:left}
+.bm-item:hover{background:var(--surface2);color:var(--text)}
+.bm-icon{width:20px;height:20px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.6rem;color:var(--muted)}
+
+/* IMG FIELD */
+.img-row{display:flex;gap:.4rem}
+.img-path{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .55rem;outline:none;transition:border-color .15s}
+.img-path:focus{border-color:var(--accent)}
+
+/* SKILLS */
+.skill-item{display:grid;grid-template-columns:1fr 80px auto;gap:.5rem;align-items:center}
+.skill-pct{font-size:.78rem;color:var(--accent);text-align:right;font-weight:500}
+.del-btn{background:none;border:none;color:var(--muted);font-size:.9rem;padding:.2rem;transition:color .15s}
+.del-btn:hover{color:var(--accent)}
+.add-btn{background:none;border:1px dashed var(--border);color:var(--muted);font-family:var(--font);font-size:.7rem;padding:.45rem .8rem;transition:all .15s;align-self:flex-start}
+.add-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* STAT ITEMS */
+.stat-item{display:grid;grid-template-columns:80px 1fr auto;gap:.5rem;align-items:center}
+
+/* CONTACT */
+.contact-fields{display:flex;flex-direction:column;gap:.65rem}
+
+/* REEL */
+.reel-row{display:grid;grid-template-columns:110px 1fr;gap:.75rem}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#fff;padding:.65rem 1.1rem;font-size:.78rem;letter-spacing:.04em;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:999}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.error{background:#8b2020}
+
+/* DANGER */
+.danger-zone{border-top:1px solid var(--border);padding:.9rem 1.1rem;margin-top:.25rem}
+.danger-btn{background:none;border:1px solid #5a2020;color:#c06060;font-family:var(--font);font-size:.7rem;padding:.45rem .9rem;transition:all .15s}
+.danger-btn:hover{background:#5a2020;color:var(--text)}
+
+@media(max-width:900px){#app{grid-template-columns:200px 1fr}#preview-pane{display:none}}
+@media(max-width:680px){#app{grid-template-columns:1fr}#sidebar{position:relative;height:auto}.row2,.row3,.twocol-editor{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>
+    <div class="sb-section">Global</div>
+    <button class="ni active" onclick="showPage('global')" id="nav-global"><div class="dot"></div>Settings</button>
+    <button class="ni" onclick="showPage('about')" id="nav-about"><div class="dot"></div>About</button>
+    <button class="ni" onclick="showPage('contact')" id="nav-contact"><div class="dot"></div>Contact</button>
+    <div class="sb-section">Projects</div>
+    <div id="project-nav"></div>
+    <button class="add-proj" onclick="addProject()">+ New Project</button>
+    <div class="sb-footer">
+      <button class="preview-btn" onclick="window.open('index.html','_blank')">Preview Site &#x2197;</button>
+      <button class="save-btn" id="save-btn" onclick="saveAll()">Save All Changes</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="page-global"></div>
+    <div id="page-about" style="display:none"></div>
+    <div id="page-contact" style="display:none"></div>
+    <div id="page-project" style="display:none"></div>
+  </div>
+  <div id="preview-pane">
+    <div id="preview-bar">
+      <span>Live Preview</span>
+      <div class="pb-actions">
+        <div class="pb-indicator" id="pb-dot"></div>
+        <button id="preview-refresh" onclick="refreshPreview()">Refresh</button>
+      </div>
+    </div>
+    <iframe id="preview-frame" src="index.html"></iframe>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
+
+async function loadAll(){
+  try{
+    C=await fetch('content.json?v='+Date.now()).then(r=>r.json());
+    projects=await Promise.all(C.projects.map(id=>fetch('projects/'+id+'.json?v='+Date.now()).then(r=>r.json())));
+    buildNav(); renderGlobal(); renderAbout(); renderContact();
+    initPreview();
+  }catch(e){ toast('Error loading files: '+e.message,true); }
+}
+
+function buildNav(){
+  document.getElementById('sb-name').textContent=C.name;
+  document.getElementById('project-nav').innerHTML=projects.map(p=>`
+    <button class="ni" onclick="showProject('${p.id}')" id="nav-proj-${p.id}">
+      <div class="dot"></div>${p.title}
+      <span class="badge">${p.type}</span>
+    </button>`).join('');
+}
+
+function showPage(name){
+  ['global','about','contact','project'].forEach(n=>{
+    document.getElementById('page-'+n).style.display='none';
+    const el=document.getElementById('nav-'+n); if(el)el.classList.remove('active');
+  });
+  projects.forEach(p=>{ const el=document.getElementById('nav-proj-'+p.id); if(el)el.classList.remove('active'); });
+  document.getElementById('page-'+name).style.display='';
+  const navEl=document.getElementById('nav-'+name); if(navEl)navEl.classList.add('active');
+  currentPage=name;
+  if(name!=='project') currentProjectId=null;
+  sendPreviewNav();
+}
+
+function showProject(id){
+  showPage('project');
+  currentProjectId=id;
+  const el=document.getElementById('nav-proj-'+id); if(el)el.classList.add('active');
+  renderProject(id);
+  sendPreviewNav();
+}
+
+// ── GLOBAL
+function renderGlobal(){
+  document.getElementById('page-global').innerHTML=`
+    <div class="page-title">Site Settings</div>
+    <div class="page-sub">Name, role, and demo reel.</div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Identity</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="row2">
+          <div class="field"><label>Name</label><input value="${C.name}" oninput="C.name=this.value;document.getElementById('sb-name').textContent=this.value;markDirty()"></div>
+          <div class="field"><label>Role</label><input value="${C.role}" oninput="C.role=this.value;markDirty()"></div>
+        </div>
+        <div class="field"><label>Location</label><input value="${C.location||''}" oninput="C.location=this.value;markDirty()"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Demo Reel</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="field">
+          <label>Paste YouTube / Vimeo embed code or URL</label>
+          <textarea placeholder="Paste anything — full iframe code, share URL, or embed URL" oninput="parseReelInput(this.value)" style="min-height:60px">${C.reel.url||''}</textarea>
+          <span class="hint" id="reel-hint">${reelHint()}</span>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Project Order</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <p style="font-size:.75rem;color:var(--muted)">Current order — drag to reorder coming soon.</p>
+        <div style="display:flex;flex-direction:column;gap:.3rem">
+          ${C.projects.map((id,i)=>{const p=projects.find(x=>x.id===id);return`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem .7rem;background:var(--surface2);border:1px solid var(--border);font-size:.8rem"><span style="color:var(--muted);width:1rem">${i+1}</span>${p?p.title:id}</div>`}).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── ABOUT (block editor)
+function renderAbout(){
+  document.getElementById('page-about').innerHTML=`
+    <div class="page-title">About</div>
+    <div class="page-sub">Build your about page with blocks.</div>
+    <div class="block-list" id="about-blocks"></div>
+    <button class="add-block-btn" onclick="toggleBlockMenu('about-menu')">+ Add Block</button>
+    <div class="block-menu hidden" id="about-menu">${blockMenuHTML('about')}</div>`;
+  renderBlockList('about', C.about);
+}
+
+// ── CONTACT
+function renderContact(){
+  document.getElementById('page-contact').innerHTML=`
+    <div class="page-title">Contact</div>
+    <div class="page-sub">Your links.</div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Links</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb contact-fields">
+        <div class="field"><label>Email</label><input value="${C.contact.email}" oninput="C.contact.email=this.value;markDirty()"></div>
+        <div class="field"><label>Vimeo</label><input value="${C.contact.vimeo}" oninput="C.contact.vimeo=this.value;markDirty()"></div>
+        <div class="field"><label>LinkedIn</label><input value="${C.contact.linkedin}" oninput="C.contact.linkedin=this.value;markDirty()"></div>
+        <div class="field"><label>Instagram</label><input value="${C.contact.instagram}" oninput="C.contact.instagram=this.value;markDirty()"></div>
+      </div>
+    </div>`;
+}
+
+// ── PROJECT PAGE
+function renderProject(id){
+  const p=projects.find(x=>x.id===id); if(!p)return;
+  document.getElementById('page-project').innerHTML=`
+    <div class="page-title">${p.title}</div>
+    <div class="page-sub">Project info and content blocks.</div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Info</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="row2">
+          <div class="field"><label>Title</label><input value="${p.title}" oninput="updateP('${id}','title',this.value);document.querySelector('.page-title').textContent=this.value;document.getElementById('nav-proj-${id}').childNodes[2].textContent=this.value"></div>
+          <div class="field"><label>Type</label>
+            <select onchange="updateP('${id}','type',this.value)">
+              <option value="2d" ${p.type==='2d'?'selected':''}>2D</option>
+              <option value="3d" ${p.type==='3d'?'selected':''}>3D</option>
+              <option value="motion" ${p.type==='motion'?'selected':''}>Motion</option>
+            </select>
+          </div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>Year</label><input value="${p.year}" oninput="updateP('${id}','year',this.value)"></div>
+          <div class="field"><label>Client</label><input value="${p.client}" oninput="updateP('${id}','client',this.value)"></div>
+          <div class="field"><label>Duration</label><input value="${p.duration}" oninput="updateP('${id}','duration',this.value)"></div>
+        </div>
+        <div class="field"><label>Thumbnail</label>
+          <div class="img-row"><input class="img-path" value="${p.thumbnail||''}" placeholder="images/${id}/thumbnail.jpg" oninput="updateP('${id}','thumbnail',this.value)"></div>
+        </div>
+        <div class="field"><label>Tags (comma separated)</label>
+          <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
+        </div>
+        <div class="field"><label>Project Video URL</label>
+          <input value="${p.videoUrl||''}" placeholder="Vimeo or YouTube embed URL" oninput="updateP('${id}','videoUrl',this.value)">
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Content Blocks</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="block-list" id="proj-blocks-${id}"></div>
+        <button class="add-block-btn" onclick="toggleBlockMenu('proj-menu-${id}')">+ Add Block</button>
+        <div class="block-menu hidden" id="proj-menu-${id}">${blockMenuHTML('proj-'+id)}</div>
+      </div>
+    </div>
+    <div class="danger-zone">
+      <button class="danger-btn" onclick="deleteProject('${id}')">Delete Project</button>
+    </div>`;
+  renderBlockList('proj-'+id, p.blocks);
+}
+
+// ── BLOCK LIST RENDERER
+function renderBlockList(scope, blocks){
+  const listId = scope==='about' ? 'about-blocks' : 'proj-blocks-'+scope.replace('proj-','');
+  const el=document.getElementById(listId); if(!el)return;
+  if(!blocks||!blocks.length){el.innerHTML='<p style="font-size:.75rem;color:var(--muted);padding:.5rem 0">No blocks yet — add one below.</p>';return;}
+  el.innerHTML=blocks.map((b,i)=>blockEditorHTML(scope,b,i,blocks.length)).join('');
+}
+
+function blockEditorHTML(scope, b, i, total){
+  const preview = blockPreview(b);
+  const canUp = i>0, canDown = i<total-1;
+  let body='';
+
+  if(b.type==='text-sm'||b.type==='text-md'||b.type==='text-lg'){
+    const sizes=[['text-sm','Small'],['text-md','Medium'],['text-lg','Large']];
+    body=`
+      <div class="size-row">${sizes.map(([v,l])=>`<button class="sz-btn ${b.type===v?'active':''}" onclick="changeBlockType('${scope}','${b.id}','${v}')">${l}</button>`).join('')}</div>
+      <div class="field"><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
+      <div class="field"><label>Alignment</label><div class="align-row">
+        ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
+      </div></div>`;
+  } else if(b.type==='image'){
+    body=`
+      <div class="field"><label>Image Path / URL</label>
+        <div class="img-row"><input class="img-path" value="${b.src||''}" placeholder="images/project/image.jpg" oninput="updateBlock('${scope}','${b.id}','src',this.value)"></div>
+      </div>
+      <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
+  } else if(b.type==='twocol'){
+    body=`<div class="twocol-editor">
+      <div><div class="col-label">Left Column</div>${colBlockEditor(scope,b,'left')}</div>
+      <div><div class="col-label">Right Column</div>${colBlockEditor(scope,b,'right')}</div>
+    </div>`;
+  } else if(b.type==='quote'){
+    body=`
+      <div class="field"><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
+      <div class="field"><label>Alignment</label><div class="align-row">
+        ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
+      </div></div>`;
+  } else if(b.type==='video'){
+    body=`<div class="field"><label>Embed URL</label><input value="${b.src||''}" placeholder="Vimeo or YouTube embed URL" oninput="updateBlock('${scope}','${b.id}','src',this.value)"></div>`;
+  } else if(b.type==='stats'){
+    body=`<div style="display:flex;flex-direction:column;gap:.5rem" id="stats-${b.id}">
+      ${(b.items||[]).map((s,si)=>`<div class="stat-item">
+        <input value="${s.num}" placeholder="40+" oninput="updateStatItem('${scope}','${b.id}',${si},'num',this.value)">
+        <input value="${s.label}" placeholder="Projects" oninput="updateStatItem('${scope}','${b.id}',${si},'label',this.value)">
+        <button class="del-btn" onclick="removeStatItem('${scope}','${b.id}',${si})">&#x2715;</button>
+      </div>`).join('')}
+    </div>
+    <button class="add-btn" onclick="addStatItem('${scope}','${b.id}')">+ Add Stat</button>`;
+  } else if(b.type==='skills'){
+    body=`<div style="display:flex;flex-direction:column;gap:.5rem" id="skills-${b.id}">
+      ${(b.items||[]).map((s,si)=>`<div class="skill-item">
+        <input value="${s.name}" placeholder="After Effects" oninput="updateSkillItem('${scope}','${b.id}',${si},'name',this.value)">
+        <input type="range" min="0" max="100" value="${s.pct}" step="1" oninput="updateSkillItem('${scope}','${b.id}',${si},'pct',+this.value);this.nextElementSibling.textContent=this.value+'%'">
+        <span class="skill-pct">${s.pct}%</span>
+        <button class="del-btn" onclick="removeSkillItem('${scope}','${b.id}',${si})">&#x2715;</button>
+      </div>`).join('')}
+    </div>
+    <button class="add-btn" onclick="addSkillItem('${scope}','${b.id}')">+ Add Skill</button>`;
+  } else if(b.type==='divider'){
+    body=`<p style="font-size:.72rem;color:var(--muted)">Horizontal rule divider.</p>`;
+  }
+
+  return`<div class="bk" id="bk-${b.id}">
+    <div class="bk-head" onclick="toggleBk('${b.id}')">
+      <span class="bk-type">${b.type}</span>
+      <span class="bk-preview">${preview}</span>
+      <div class="bk-actions">
+        ${canUp?`<button class="bk-btn" onclick="event.stopPropagation();moveBlock('${scope}','${b.id}',-1)" title="Move up">&#x2191;</button>`:''}
+        ${canDown?`<button class="bk-btn" onclick="event.stopPropagation();moveBlock('${scope}','${b.id}',1)" title="Move down">&#x2193;</button>`:''}
+        <button class="bk-btn del" onclick="event.stopPropagation();removeBlock('${scope}','${b.id}')" title="Delete">&#x2715;</button>
+      </div>
+    </div>
+    <div class="bk-body hidden" id="bkb-${b.id}">${body}</div>
+  </div>`;
+}
+
+function colBlockEditor(scope, b, side){
+  const col = b[side] || {type:'text-md',content:'',align:'left'};
+  const types=[['text-sm','Text S'],['text-md','Text M'],['text-lg','Text L'],['image','Image']];
+  return`<div style="display:flex;flex-direction:column;gap:.5rem">
+    <select style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .5rem;outline:none" onchange="updateColType('${scope}','${b.id}','${side}',this.value);rerenderBlocks('${scope}')">
+      ${types.map(([v,l])=>`<option value="${v}" ${col.type===v?'selected':''}>${l}</option>`).join('')}
+    </select>
+    ${col.type==='image'
+      ? `<input class="img-path" value="${col.src||''}" placeholder="images/..." oninput="updateColField('${scope}','${b.id}','${side}','src',this.value)">`
+      : `<textarea style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.8rem;padding:.45rem .55rem;outline:none;resize:vertical;min-height:60px;width:100%" oninput="updateColField('${scope}','${b.id}','${side}','content',this.value)">${col.content||''}</textarea>`
+    }
+    <div class="align-row">
+      ${['left','center','right'].map(a=>`<button class="al-btn ${(col.align||'left')===a?'active':''}" onclick="updateColField('${scope}','${b.id}','${side}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function blockPreview(b){
+  if(b.type==='divider') return '---';
+  if(b.type==='stats') return (b.items||[]).map(s=>s.num).join(' · ');
+  if(b.type==='skills') return (b.items||[]).map(s=>s.name).join(', ');
+  if(b.type==='image') return b.src||b.alt||'(empty)';
+  if(b.type==='twocol') return 'Two columns';
+  return (b.content||'').slice(0,60);
+}
+
+function blockMenuHTML(scope){
+  const types=[
+    ['text-md','T','Text'],['image','&#x1F5BC;','Image'],['twocol','&#x25A6;','Two Col'],
+    ['quote','"','Quote'],['video','&#x25B6;','Video'],['stats','#','Stats'],
+    ['skills','%','Skills'],['divider','&#x2015;','Divider']
+  ];
+  return types.map(([t,icon,label])=>`<button class="bm-item" onclick="addBlock('${scope}','${t}')"><div class="bm-icon">${icon}</div>${label}</button>`).join('');
+}
+
+// ── BLOCK OPERATIONS
+function getBlocks(scope){
+  if(scope==='about') return C.about;
+  const id=scope.replace('proj-',''); const p=projects.find(x=>x.id===id); return p?p.blocks:[];
+}
+function setBlocks(scope,blocks){
+  if(scope==='about'){C.about=blocks;}
+  else{const id=scope.replace('proj-','');const p=projects.find(x=>x.id===id);if(p)p.blocks=blocks;}
+}
+
+function addBlock(scope, type){
+  const blocks=getBlocks(scope)||[];
+  const id='b'+Date.now();
+  const defaults={
+    'text-sm':{id,type:'text-sm',content:'',align:'left'},
+    'text-md':{id,type:'text-md',content:'',align:'left'},
+    'text-lg':{id,type:'text-lg',content:'',align:'left'},
+    'image':{id,type:'image',src:'',alt:''},
+    'twocol':{id,type:'twocol',left:{type:'image',src:'',alt:''},right:{type:'text-md',content:'',align:'left'}},
+    'quote':{id,type:'quote',content:'',align:'left'},
+    'video':{id,type:'video',src:''},
+    'stats':{id,type:'stats',items:[{num:'',label:''}]},
+    'skills':{id,type:'skills',items:[{name:'',pct:80}]},
+    'divider':{id,type:'divider'}
+  };
+  blocks.push(defaults[type]||{id,type,content:''});
+  setBlocks(scope,blocks);
+  markDirty();
+  rerenderBlocks(scope);
+  const menuId=scope==='about'?'about-menu':'proj-menu-'+scope.replace('proj-','');
+  const menu=document.getElementById(menuId);if(menu)menu.classList.add('hidden');
+}
+
+function removeBlock(scope,blockId){
+  const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
+  setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
+}
+
+function moveBlock(scope,blockId,dir){
+  const blocks=getBlocks(scope)||[];
+  const i=blocks.findIndex(b=>b.id===blockId);if(i<0)return;
+  const ni=i+dir;if(ni<0||ni>=blocks.length)return;
+  [blocks[i],blocks[ni]]=[blocks[ni],blocks[i]];
+  setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
+}
+
+function updateBlock(scope,blockId,key,val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);if(b){b[key]=val;markDirty();}
+}
+
+function changeBlockType(scope,blockId,newType){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);if(b){b.type=newType;markDirty();rerenderBlocks(scope);}
+}
+
+function updateColType(scope,blockId,side,type){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b[side]=b[side]||{};b[side].type=type;markDirty();}
+}
+function updateColField(scope,blockId,side,key,val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b[side]=b[side]||{};b[side][key]=val;markDirty();}
+}
+function updateStatItem(scope,blockId,idx,key,val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
+}
+function addStatItem(scope,blockId){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b.items=b.items||[];b.items.push({num:'',label:''});markDirty();rerenderBlocks(scope);}
+}
+function removeStatItem(scope,blockId,idx){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
+}
+function updateSkillItem(scope,blockId,idx,key,val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
+}
+function addSkillItem(scope,blockId){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b.items=b.items||[];b.items.push({name:'',pct:80});markDirty();rerenderBlocks(scope);}
+}
+function removeSkillItem(scope,blockId,idx){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
+}
+
+function rerenderBlocks(scope){
+  const blocks=getBlocks(scope)||[];
+  const listId=scope==='about'?'about-blocks':'proj-blocks-'+scope.replace('proj-','');
+  const el=document.getElementById(listId);if(!el)return;
+  if(!blocks.length){el.innerHTML='<p style="font-size:.75rem;color:var(--muted);padding:.5rem 0">No blocks yet.</p>';return;}
+  el.innerHTML=blocks.map((b,i)=>blockEditorHTML(scope,b,i,blocks.length)).join('');
+}
+
+function toggleBk(id){
+  document.getElementById('bkb-'+id).classList.toggle('hidden');
+}
+function toggleBlockMenu(menuId){
+  document.getElementById(menuId).classList.toggle('hidden');
+}
+
+// ── PROJECT HELPERS
+function updateP(id,key,val){
+  const p=projects.find(x=>x.id===id);if(p){p[key]=val;markDirty();}
+}
+function addProject(){
+  const title=prompt('Project title:');if(!title)return;
+  const id=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',blocks:[
+    {id:'b1',type:'text-lg',content:title,align:'left'},
+    {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
+  ]};
+  projects.push(p);C.projects.push(id);
+  buildNav();markDirty();showProject(id);
+}
+function deleteProject(id){
+  if(!confirm('Delete this project? This cannot be undone.'))return;
+  projects=projects.filter(p=>p.id!==id);
+  C.projects=C.projects.filter(i=>i!==id);
+  buildNav();markDirty();showPage('global');
+  toast('Project deleted — save to apply');
+}
+
+// ── SECTION TOGGLE
+function toggleSection(head){
+  head.classList.toggle('collapsed');
+  head.nextElementSibling.classList.toggle('hidden');
+}
+
+// ── DIRTY
+let previewTimer=null, previewReady=false;
+
+function initPreview(){
+  const frame=document.getElementById('preview-frame');
+  frame.onload=()=>{
+    previewReady=true;
+    document.getElementById('pb-dot').classList.add('live');
+    pushPreview();
+  };
+  frame.src='index.html?preview=1';
+}
+
+function markDirty(){
+  dirty=true;
+  document.getElementById('save-btn').textContent='Save All Changes *';
+  document.getElementById('pb-dot').classList.remove('live');
+  clearTimeout(previewTimer);
+  previewTimer=setTimeout(pushPreview, 600);
+}
+
+function pushPreview(){
+  if(!previewReady) return;
+  const frame=document.getElementById('preview-frame');
+  try{
+    frame.contentWindow.postMessage({
+      type:'preview-data',
+      content:C,
+      projects:projects
+    },'*');
+    setTimeout(sendPreviewNav, 100);
+  }catch(e){}
+}
+
+function sendPreviewNav(){
+  if(!previewReady) return;
+  const frame=document.getElementById('preview-frame');
+  try{
+    let msg={type:'preview-nav'};
+    if(currentPage==='about') msg.panel='about';
+    else if(currentPage==='contact') msg.panel='contact';
+    else if(currentPage==='project'&&currentProjectId) msg.panel='project', msg.projectId=currentProjectId;
+    else msg.panel='home';
+    frame.contentWindow.postMessage(msg,'*');
+    document.getElementById('pb-dot').classList.add('live');
+  }catch(e){}
+}
+
+function refreshPreview(){
+  previewReady=false;
+  document.getElementById('pb-dot').classList.remove('live');
+  initPreview();
+}
+
+// ── SAVE (downloads JSON files)
+async function saveAll(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const files=[
+      {name:'content.json',data:JSON.stringify(C,null,2)},
+      ...projects.map(p=>({name:p.id+'.json',data:JSON.stringify(p,null,2)}))
+    ];
+    for(const f of files){
+      const blob=new Blob([f.data],{type:'application/json'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=f.name;a.click();
+      await new Promise(r=>setTimeout(r,300));
+    }
+    dirty=false;btn.disabled=false;btn.textContent='Save All Changes';
+    toast('Files downloaded — replace them in your portfolio folder');
+  }catch(e){
+    btn.disabled=false;btn.textContent='Save All Changes';
+    toast('Error: '+e.message,true);
+  }
+}
+
+function toast(msg,isError){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.toggle('error',!!isError);
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+function reelHint(){
+  if(!C.reel||!C.reel.url) return 'Supports YouTube iframes, youtu.be links, Vimeo iframes, and vimeo.com links.';
+  if(C.reel.type==='youtube') return '&#x2713; YouTube detected';
+  if(C.reel.type==='vimeo') return '&#x2713; Vimeo detected';
+  if(C.reel.type==='video') return '&#x2713; Local video';
+  return '';
+}
+
+function parseReelInput(raw){
+  const val=raw.trim();
+  if(!val){ C.reel={type:'placeholder',url:''};markDirty();updateReelHint('No reel set');return; }
+
+  // Extract src from iframe tag if pasted
+  const srcMatch=val.match(/src=["']([^"']+)["']/);
+  const url=srcMatch?srcMatch[1]:val;
+
+  // YouTube — various formats
+  const ytEmbed=url.match(/youtube\.com\/embed\/([\w-]+)/);
+  const ytShort=url.match(/youtu\.be\/([\w-]+)/);
+  const ytWatch=url.match(/youtube\.com\/watch\?v=([\w-]+)/);
+  const ytId=(ytEmbed&&ytEmbed[1])||(ytShort&&ytShort[1])||(ytWatch&&ytWatch[1]);
+  if(ytId){
+    C.reel={type:'youtube',url:`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0`};
+    markDirty();updateReelHint('&#x2713; YouTube detected — parameters added automatically');return;
+  }
+
+  // Vimeo — various formats
+  const vimeoEmbed=url.match(/player\.vimeo\.com\/video\/([\d]+)/);
+  const vimeoWatch=url.match(/vimeo\.com\/([\d]+)/);
+  const vimeoId=(vimeoEmbed&&vimeoEmbed[1])||(vimeoWatch&&vimeoWatch[1]);
+  if(vimeoId){
+    C.reel={type:'vimeo',url:`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&background=1&muted=1`};
+    markDirty();updateReelHint('&#x2713; Vimeo detected — parameters added automatically');return;
+  }
+
+  // Local video file
+  if(url.match(/\.(mp4|webm|ogg)$/i)){
+    C.reel={type:'video',url};
+    markDirty();updateReelHint('&#x2713; Local video file');return;
+  }
+
+  updateReelHint('Could not detect type — paste a YouTube or Vimeo iframe or URL');
+}
+
+function updateReelHint(msg){
+  const el=document.getElementById('reel-hint');
+  if(el) el.innerHTML=msg;
+}
+
+loadAll();
+</script>
+</body>
+</html>

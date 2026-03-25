@@ -1,0 +1,24 @@
+{
+  "id": "cosmic-drift",
+  "title": "Data in Motion",
+  "type": "motion",
+  "typeLabel": "Motion",
+  "year": "2023",
+  "client": "TechConf 2023",
+  "duration": "2:30",
+  "tags": ["Motion Graphics","After Effects","Data Viz"],
+  "thumbnail": "",
+  "videoUrl": "",
+  "blocks": [
+        {"id":"b1","type":"text-lg","content":"Orbital Loop","align":"left"},
+        {"id":"b2","type":"text-sm","content":"2D Animation · After Effects · 2024","align":"left"},
+        {"id":"b3","type":"image","src":"","alt":"Orbital Loop hero"},
+        {"id":"b4","type":"text-md","content":"A meditative looping animation exploring orbital mechanics and the hypnotic quality of circular motion. Built entirely in After Effects using expression-driven circular paths, the piece cycles through several phases of orbit without a visible seam.","align":"left"},
+        {"id":"b5","type":"stats","items":[{"num":"Personal","label":"Client"},{"num":"2024","label":"Year"},{"num":"0:08","label":"Duration"}]},
+        {"id":"b6","type":"divider"},
+        {"id":"b7","type":"text-sm","content":"PROCESS","align":"left"},
+        {"id":"b8","type":"twocol","left":{"type":"image","src":"","alt":"Frame 1"},"right":{"type":"text-md","content":"The piece started as a sketch of concentric rings, exploring how simple geometry could feel alive through timing and easing curves.","align":"left"}},
+        {"id":"b9","type":"twocol","left":{"type":"image","src":"","alt":"Frame 2"},"right":{"type":"text-md","content":"All motion is driven by expressions — no keyframes on the orbiting elements. This made timing changes global and iteration fast.","align":"left"}},
+        {"id":"b10","type":"quote","content":"Every loop is a small universe.","align":"left"}
+      ]
+}
