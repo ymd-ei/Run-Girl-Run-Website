@@ -21,7 +21,7 @@ body{font-family:var(--font-b);font-weight:300;background:var(--ink);color:var(-
 body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 
 #stage{position:fixed;inset:0;z-index:0;background:var(--ink);overflow:hidden}
-#stage::after{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(200,64,42,0.06) 0%,transparent 70%),linear-gradient(to top,rgba(26,23,20,0.78) 0%,rgba(26,23,20,0.05) 50%,rgba(26,23,20,0.52) 100%);pointer-events:none}
+#stage::after{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(113,144,76,0.06) 0%,transparent 70%),linear-gradient(to top,rgba(26,23,20,0.78) 0%,rgba(26,23,20,0.05) 50%,rgba(26,23,20,0.52) 100%);pointer-events:none}
 #reel{position:absolute;inset:0;overflow:hidden}
 #reel iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none}
 #reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none}
@@ -55,10 +55,10 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .avail-text{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.45)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
 
-#watch-reel-wrap{position:fixed;z-index:10;top:50%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0;animation:fop .8s .9s var(--ease) forwards}
+#watch-reel-wrap{position:fixed;z-index:10;top:50%;left:0;right:0;display:flex;justify-content:center;transform:translateY(35vh);opacity:0;animation:fup .8s 1s var(--ease) forwards}
 @keyframes fop{from{opacity:0}to{opacity:1}}
 #watch-reel{display:flex;align-items:center;justify-content:center;gap:.75rem;background:none;border:1px solid rgba(242,237,228,0.3);color:var(--paper);font-family:var(--font-b);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;padding:.7rem 1.5rem;transition:border-color .25s,background .25s}
-#watch-reel:hover{border-color:var(--accent);background:rgba(200,64,42,0.12)}
+#watch-reel:hover{border-color:var(--accent);background:rgba(113,144,76,0.12)}
 .wr-play{width:22px;height:22px;border:1px solid rgba(242,237,228,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .25s}
 #watch-reel:hover .wr-play{border-color:var(--accent)}
 .wr-tri{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:9px solid rgba(242,237,228,0.7);margin-left:2px}
@@ -99,7 +99,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .wci{aspect-ratio:4/3;background:var(--surface);position:relative;overflow:hidden;margin-bottom:.65rem;transition:transform .35s var(--ease)}
 .wc:hover .wci{transform:scale(1.025)}
 .wci img{width:100%;height:100%;object-fit:cover;display:block}
-.wco{position:absolute;inset:0;background:rgba(200,64,42,0.88);display:flex;align-items:center;justify-content:center;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:0;transition:opacity .25s}
+.wco{position:absolute;inset:0;background:rgba(113,144,76,0.88);display:flex;align-items:center;justify-content:center;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:0;transition:opacity .25s}
 .wc:hover .wco{opacity:1}
 .wcm{display:flex;justify-content:space-between;align-items:baseline}
 .wct{font-size:.85rem;font-weight:500;color:var(--ink)}
@@ -253,9 +253,9 @@ document.addEventListener('mouseout',e=>{if(e.target.closest(hs))document.body.c
 let C={},projects=[];
 
 const THUMB={
-  '2d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><circle cx="200" cy="145" r="70" fill="none" stroke="#c8402a" stroke-width="1.5"/><circle cx="200" cy="145" r="38" fill="#c8402a" opacity="0.08"/><line x1="200" y1="75" x2="200" y2="215" stroke="#c8402a" stroke-width="0.8" opacity="0.3"/><line x1="130" y1="145" x2="270" y2="145" stroke="#c8402a" stroke-width="0.8" opacity="0.3"/><circle cx="200" cy="87" r="5" fill="#c8402a"/></svg>',
-  '3d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><polygon points="200,55 305,148 200,178 95,148" fill="none" stroke="#c8402a" stroke-width="1.5"/><polygon points="200,178 305,148 305,222 200,252" fill="#c8402a" opacity="0.06" stroke="#c8402a" stroke-width="0.8"/><polygon points="200,178 95,148 95,222 200,252" fill="#1a1714" opacity="0.03" stroke="#1a1714" stroke-width="0.5"/><circle cx="200" cy="55" r="4" fill="#c8402a"/></svg>',
-  'motion':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><rect x="80" y="115" width="240" height="2.5" fill="#c8402a" rx="1"/><rect x="80" y="128" width="180" height="2" fill="#1a1714" opacity="0.18" rx="1"/><rect x="80" y="141" width="210" height="2" fill="#1a1714" opacity="0.12" rx="1"/><rect x="80" y="75" width="55" height="20" rx="2" fill="#c8402a"/></svg>'
+  '2d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><circle cx="200" cy="145" r="70" fill="none" stroke="#71904c" stroke-width="1.5"/><circle cx="200" cy="145" r="38" fill="#71904c" opacity="0.08"/><line x1="200" y1="75" x2="200" y2="215" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><line x1="130" y1="145" x2="270" y2="145" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><circle cx="200" cy="87" r="5" fill="#71904c"/></svg>',
+  '3d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><polygon points="200,55 305,148 200,178 95,148" fill="none" stroke="#71904c" stroke-width="1.5"/><polygon points="200,178 305,148 305,222 200,252" fill="#71904c" opacity="0.06" stroke="#71904c" stroke-width="0.8"/><polygon points="200,178 95,148 95,222 200,252" fill="#1a1714" opacity="0.03" stroke="#1a1714" stroke-width="0.5"/><circle cx="200" cy="55" r="4" fill="#71904c"/></svg>',
+  'motion':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><rect x="80" y="115" width="240" height="2.5" fill="#71904c" rx="1"/><rect x="80" y="128" width="180" height="2" fill="#1a1714" opacity="0.18" rx="1"/><rect x="80" y="141" width="210" height="2" fill="#1a1714" opacity="0.12" rx="1"/><rect x="80" y="75" width="55" height="20" rx="2" fill="#71904c"/></svg>'
 };
 function thumb(type){return`<div class="tph">${THUMB[type]||THUMB.motion}</div>`}
 
