@@ -52,18 +52,36 @@
       "align": "right"
     },
     {
-      "id": "b1774470081702",
-      "type": "divider"
+      "id": "b1774473102333",
+      "type": "text-md",
+      "content": "Independently developed and released character assets — rigged, textured, and animation-ready — for a AAA game title, shipped publicly and used actively by players.",
+      "align": "left"
+    },
+    {
+      "id": "b1774473131675",
+      "type": "stats",
+      "items": [
+        {
+          "num": "148k",
+          "label": "Combined Views"
+        },
+        {
+          "num": "11k",
+          "label": "Downloads"
+        }
+      ]
+    },
+    {
+      "id": "b1774473179821",
+      "type": "text-sm",
+      "content": "with players actively using the work in-game.",
+      "align": "center"
     },
     {
       "id": "b1774470306468",
       "type": "text-md",
-      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that it comes with.",
+      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
       "align": "left"
-    },
-    {
-      "id": "b1774470346479",
-      "type": "divider"
     }
   ]
 }
