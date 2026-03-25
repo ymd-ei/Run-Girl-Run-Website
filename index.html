@@ -326,11 +326,13 @@ window.addEventListener('message', e=>{
 
 function countUp(el){
   const raw = el.dataset.target;
-  // parse number and suffix e.g. "148k" -> 148, "k"
-  const match = raw.match(/^([\d.]+)([^\d.]*)$/);
+  // strip commas to parse: "148,000" -> 148000, "148k" -> 148 with suffix "k"
+  const stripped = raw.replace(/,/g,'');
+  const match = stripped.match(/^([\d.]+)([^\d.]*)$/);
   if(!match){ el.textContent=raw; return; }
   const end = parseFloat(match[1]);
   const suffix = match[2]||'';
+  const useCommas = /,/.test(raw); // preserve comma formatting
   const duration = 1800;
   const steps = 60;
   const interval = duration / steps;
@@ -339,10 +341,10 @@ function countUp(el){
   const timer = setInterval(()=>{
     step++;
     const progress = step/steps;
-    // ease out cubic
     const ease = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(end * ease * 10) / 10;
-    el.textContent = (Number.isInteger(current) ? current : current.toFixed(1)) + suffix;
+    const current = Math.round(end * ease);
+    const formatted = useCommas ? current.toLocaleString() : current;
+    el.textContent = formatted + suffix;
     if(step >= steps){ el.textContent = raw; clearInterval(timer); }
   }, interval);
 }
