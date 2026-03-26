@@ -542,7 +542,7 @@ async function loadLog(){
     const recent = entries.slice(-8); // oldest to newest
     stack.innerHTML = recent.map((e, i) => {
       // i=0 is oldest (most faded), i=7 is newest (most visible)
-      const opacity = 0.08 + (i / (recent.length - 1 || 1)) * 0.72;
+      const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
       return `<span class="ls-entry" style="opacity:0" data-opacity="${opacity}">${e.text}</span>`;
     }).join('');
 
