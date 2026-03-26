@@ -1,6 +1,6 @@
 {
   "name": "Run Girl Run",
-  "role": "BANANA Enthusiast",
+  "role": "Animator",
   "location": "Toronto, Canada",
   "reel": {
     "type": "vimeo",
@@ -43,7 +43,7 @@
     {
       "id": "b1",
       "type": "text-lg",
-      "content": "I like moving stuff around",
+      "content": "I move stuff around",
       "align": "left"
     },
     {
@@ -73,7 +73,7 @@
     {
       "id": "b1774470306468",
       "type": "text-md",
-      "content": "The studio is led by an animator and generalist with production experience at the <rgr>National Film Board of Canada</rgr> That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
+      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
       "align": "left"
     },
     {
@@ -112,5 +112,6 @@
       "content": "Actively working on many different projects. <br><I> Please, enjoy your stay.</I>",
       "align": "center"
     }
-  ]
+  ],
+  "siteTitle": "Run Girl Run"
 }
