@@ -681,8 +681,6 @@ function blockDrop(e){
   setBlocks(blockDragScope,blocks);
   markDirty(); rerenderBlocks(blockDragScope);
 }
-
-let dragId=null;
 function dragStart(e){ dragId=e.currentTarget.dataset.id; e.currentTarget.style.opacity='.4'; }
 function dragEnd(e){ e.currentTarget.style.opacity='1'; dragId=null; }
 function dragOver(e){ e.preventDefault(); }
