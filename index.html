@@ -639,20 +639,12 @@ async function loadLog(){
           item.style.transform = 'translateY(-18px)';
         });
 
-        // Step 3 — after slide out, remove top and append new entry at bottom
+        // Step 3 — append new entry mid-animation so it overlaps with the shift
         setTimeout(() => {
-          top.remove();
-          // reset transforms on remaining items so flexbox takes over
-          Array.from(stack.querySelectorAll('.ls-entry')).forEach(item => {
-            item.style.transition = 'none';
-            item.style.transform = 'translateY(0)';
-          });
-
           const newText = entries[rotateIdx].text;
           const newEntry = buildSpanEntry(newText, 0, 14);
           stack.appendChild(newEntry);
 
-          // animate in
           requestAnimationFrame(() => requestAnimationFrame(() => {
             newEntry.style.opacity = '1';
             newEntry.style.transform = 'translateY(0)';
@@ -663,7 +655,16 @@ async function loadLog(){
             logSpanGroups.push(spans);
             if(logSpanGroups.length > SHOW) logSpanGroups.shift();
           }));
-        }, 1400);
+        }, 700);
+
+        // Remove top and reset remaining transforms after shift completes
+        setTimeout(() => {
+          top.remove();
+          Array.from(stack.querySelectorAll('.ls-entry')).forEach(item => {
+            item.style.transition = 'none';
+            item.style.transform = 'translateY(0)';
+          });
+        }, 1300);
 
         setTimeout(rotateStack, 12000);
       }
