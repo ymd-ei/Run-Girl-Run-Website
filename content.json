@@ -3,8 +3,8 @@
   "role": "BANANA Enthusiast",
   "location": "Toronto, Canada",
   "reel": {
-    "type": "youtube",
-    "url": "https://www.youtube.com/embed/JCIzI5RTeGM?autoplay=1&mute=1&loop=1&playlist=JCIzI5RTeGM&controls=0&rel=0"
+    "type": "vimeo",
+    "url": "https://player.vimeo.com/video/1177054356?autoplay=1&loop=1&background=1&muted=1"
   },
   "contact": {
     "email": "contact@rogel.ca",
