@@ -52,7 +52,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .sc-char{display:inline;opacity:0;transition:opacity .08s}
 .hname em{color:var(--accent);font-style:italic;display:block}
 #sh{position:fixed;z-index:10;bottom:3rem;right:2.5rem;display:flex;align-items:center;gap:.65rem;pointer-events:none;opacity:0;animation:fup .8s 1.1s var(--ease) forwards}
-#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;pointer-events:none;max-width:300px;overflow:hidden;height:183px}
+#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;pointer-events:none;max-width:300px;overflow:hidden}
 .ls-inner{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;transition:transform 1.2s var(--ease)}
 .ls-entry{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.9);line-height:1.5;text-align:right;opacity:0;transition:opacity 1.2s var(--ease);white-space:normal;word-break:break-word}
 .ls-entry.show{opacity:1}
@@ -529,7 +529,7 @@ async function loadLog(){
     // Hero stack — last 8, newest at bottom, oldest most faded
     const inner = document.getElementById('ls-inner');
     const SHOW = 8;
-    const ITEM_H = 18; // px per entry (line-height 1.5 on .6rem + gap)
+    const ITEM_H = 0; // will be measured dynamically after render
     let rotateIdx = entries.length - 1;
     const recent = entries.slice(-SHOW);
     const logSpanGroups = [];
@@ -583,6 +583,13 @@ async function loadLog(){
       }, delay);
     });
 
+    // Measure actual stack height and set container — accounts for wrapped entries
+    setTimeout(() => {
+      const stack = document.getElementById('log-stack');
+      const innerEl = document.getElementById('ls-inner');
+      stack.style.height = innerEl.offsetHeight + 'px';
+    }, 1400 + recent.length * 120 + 500);
+
     const logIdleStart = 1400 + recent.length * 120 + 2000;
     setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
 
@@ -599,7 +606,10 @@ async function loadLog(){
 
         // 2. Slide whole inner up by one item height — smooth, no reflow
         requestAnimationFrame(() => {
-          inner.style.transform = `translateY(-${ITEM_H}px)`;
+          // measure the actual height of the top entry before sliding
+          const topEntry = inner.querySelector('.ls-entry');
+          const actualH = topEntry ? topEntry.offsetHeight + 5 : 18; // +5 for gap
+          inner.style.transform = `translateY(-${actualH}px)`;
 
           // 3. Mid-slide: fade in new entry and fade out top
           setTimeout(() => {
