@@ -392,22 +392,22 @@ function phosphorIcon(url){
   return 'ph ph-link';
 }
 
-function scrambleHero(role, line1, line2){
-  const nearby = {
-    'a':'sqerz','b':'vdnp','c':'xzvo','d':'efbs','e':'wadr','f':'tgde','g':'tfhy','h':'jgyn',
-    'i':'lkuo','j':'iukh','k':'ljix','l':'kpio','m':'nwkb','n':'mbhv','o':'iplc','p':'oqbl',
-    'q':'wpa','r':'etdf','s':'azxe','t':'ryfg','u':'yhio','v':'bcfx','w':'qase','x':'czv',
-    'y':'uhtg','z':'xsa',
-    'A':'SQERZ','B':'VDNP','C':'XZVO','D':'EFBS','E':'WADR','F':'TGDE','G':'TFHY','H':'JGYN',
-    'I':'LKUO','J':'IUKH','K':'LJIX','L':'KPIO','M':'NWKB','N':'MBHV','O':'IPLC','P':'OQBL',
-    'Q':'WPA','R':'ETDF','S':'AZXE','T':'RYFG','U':'YHIO','V':'BCFX','W':'QASE','X':'CZV',
-    'Y':'UHTG','Z':'XSA',' ':' '
-  };
+const nearby = {
+  'a':'sqerz','b':'vdnp','c':'xzvo','d':'efbs','e':'wadr','f':'tgde','g':'tfhy','h':'jgyn',
+  'i':'lkuo','j':'iukh','k':'ljix','l':'kpio','m':'nwkb','n':'mbhv','o':'iplc','p':'oqbl',
+  'q':'wpa','r':'etdf','s':'azxe','t':'ryfg','u':'yhio','v':'bcfx','w':'qase','x':'czv',
+  'y':'uhtg','z':'xsa',
+  'A':'SQERZ','B':'VDNP','C':'XZVO','D':'EFBS','E':'WADR','F':'TGDE','G':'TFHY','H':'JGYN',
+  'I':'LKUO','J':'IUKH','K':'LJIX','L':'KPIO','M':'NWKB','N':'MBHV','O':'IPLC','P':'OQBL',
+  'Q':'WPA','R':'ETDF','S':'AZXE','T':'RYFG','U':'YHIO','V':'BCFX','W':'QASE','X':'CZV',
+  'Y':'UHTG','Z':'XSA',' ':' '
+};
+function pool(ch){
+  const p = nearby[ch] || nearby[ch.toLowerCase()] || 'abcdefghijklmnopqrstuvwxyz';
+  return (p + ch).split('');
+}
 
-  function pool(ch){
-    const p = nearby[ch] || nearby[ch.toLowerCase()] || 'abcdefghijklmnopqrstuvwxyz';
-    return (p + ch).split('');
-  }
+function scrambleHero(role, line1, line2){
 
   const roleEl = document.getElementById('hero-role');
   const nameEl = document.getElementById('hero-name');
@@ -546,14 +546,59 @@ async function loadLog(){
       return `<span class="ls-entry" style="opacity:0" data-opacity="${opacity}">${e.text}</span>`;
     }).join('');
 
-    // Stagger fade in
-    const items = stack.querySelectorAll('.ls-entry');
+    // Stagger fade in + scramble each entry
+    const items = Array.from(stack.querySelectorAll('.ls-entry'));
+    const logSpanGroups = [];
+
     items.forEach((item, i) => {
+      const finalOpacity = item.dataset.opacity;
+      const text = item.textContent;
+
+      // Build char spans
+      item.innerHTML = text.split('').map(ch =>
+        ch === ' '
+          ? `<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>`
+          : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
+      ).join('');
+
+      const spans = Array.from(item.querySelectorAll('.sc-char'));
+      logSpanGroups.push(spans);
+
+      const entryDelay = 1400 + i * 120;
+
       setTimeout(() => {
-        item.style.opacity = item.dataset.opacity;
+        item.style.opacity = finalOpacity;
         item.classList.add('show');
-      }, 1400 + i * 80);
+        // reveal chars with scramble
+        spans.forEach((span, j) => {
+          const ch = span.dataset.ch;
+          const isSpace = ch === ' ';
+          const p = isSpace ? [' '] : pool(ch);
+          let tick = 0;
+          const cycles = 6;
+          setTimeout(() => {
+            span.style.opacity = '1';
+            if(isSpace){ span.innerHTML = '&nbsp;'; return; }
+            function cycle(){
+              if(tick < cycles){
+                const overshoot = Math.max(0, tick - (cycles - 3));
+                const speed = 90 * (1 + overshoot * 1.4);
+                span.textContent = p[tick % p.length];
+                tick++;
+                setTimeout(cycle, speed);
+              } else {
+                span.textContent = ch;
+              }
+            }
+            cycle();
+          }, j * 55);
+        });
+      }, entryDelay);
     });
+
+    // Idle rescramble for log stack — fires after all entries settled
+    const logIdleStart = 1400 + items.length * 120 + 2000;
+    setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
 
   }catch(e){
     document.getElementById('log-body').innerHTML='<p class="log-empty">Could not load log.</p>';
