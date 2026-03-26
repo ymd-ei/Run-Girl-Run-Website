@@ -227,12 +227,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 <div class="panel wide" id="panel-work">
   <div class="ph"><span class="pt2">Work</span><button class="pc" onclick="closeToRoot()">&#x2715;</button></div>
   <div class="pb">
-    <div class="wf">
-      <button class="fb active" onclick="filterWork(this,'all')">All</button>
-      <button class="fb" onclick="filterWork(this,'2d')">2D</button>
-      <button class="fb" onclick="filterWork(this,'3d')">3D</button>
-      <button class="fb" onclick="filterWork(this,'motion')">Motion</button>
-    </div>
+    <div class="wf" id="work-filters"></div>
     <div class="wg" id="wg"></div>
   </div>
 </div>
@@ -664,6 +659,11 @@ function render(){
   }else{
     reelEl.innerHTML=`<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
   }
+
+  const filters = C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}];
+  document.getElementById('work-filters').innerHTML=
+    `<button class="fb active" onclick="filterWork(this,'all')">All</button>`+
+    filters.map(f=>`<button class="fb" onclick="filterWork(this,'${f.value}')">${f.label}</button>`).join('');
 
   document.getElementById('wg').innerHTML=projects.filter(p=>p.published!==false).map(p=>`
     <div class="wc" data-type="${p.type}" onclick="openProject('${p.id}')">

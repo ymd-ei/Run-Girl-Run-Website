@@ -258,6 +258,31 @@ function renderGlobal(){
       </div>
     </div>
     <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Work Filters</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <p class="hint" style="margin-bottom:.5rem">These appear as filter buttons on the Work panel.</p>
+        <div class="block-list" id="filters-list">
+          ${(C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]).map((f,i)=>`
+            <div class="bk">
+              <div class="bk-head">
+                <span class="bk-type">Filter</span>
+                <span class="bk-preview">${f.label} (${f.value})</span>
+                <div class="bk-actions">
+                  <button class="bk-btn del" onclick="removeFilter(${i})">&#x2715;</button>
+                </div>
+              </div>
+              <div class="bk-body">
+                <div class="row2">
+                  <div class="field"><label>Label</label><input value="${f.label}" oninput="updateFilter(${i},'label',this.value)"></div>
+                  <div class="field"><label>Value (no spaces)</label><input value="${f.value}" oninput="updateFilter(${i},'value',this.value)"></div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+        <button class="add-btn" onclick="addFilter()" style="margin-top:.5rem">+ Add Filter</button>
+      </div>
+    </div>
+    <div class="section">
       <div class="sh" onclick="toggleSection(this)"><h3>Project Order</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
         <p style="font-size:.75rem;color:var(--muted)">Current order — drag to reorder coming soon.</p>
@@ -339,10 +364,8 @@ function renderProject(id){
         <div class="row2">
           <div class="field"><label>Title</label><input value="${p.title}" oninput="updateP('${id}','title',this.value);document.querySelector('.page-title').textContent=this.value;document.getElementById('nav-proj-${id}').childNodes[2].textContent=this.value"></div>
           <div class="field"><label>Type</label>
-            <select onchange="updateP('${id}','type',this.value)">
-              <option value="2d" ${p.type==='2d'?'selected':''}>2D</option>
-              <option value="3d" ${p.type==='3d'?'selected':''}>3D</option>
-              <option value="motion" ${p.type==='motion'?'selected':''}>Motion</option>
+            <select onchange="updateP('${id}','type',this.value);updateP('${id}','typeLabel',(C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]).find(f=>f.value===this.value)?.label||this.value)">
+              ${(C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]).map(f=>`<option value="${f.value}" ${p.type===f.value?'selected':''}>${f.label}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -616,6 +639,19 @@ function addProject(){
   projects.push(p);C.projects.push(id);
   buildNav();markDirty();showProject(id);
 }
+function getFilters(){ return C.filters||(C.filters=[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]); }
+function addFilter(){
+  getFilters().push({value:'new',label:'New'});
+  markDirty(); renderGlobal(); showPage('global');
+}
+function removeFilter(i){
+  getFilters().splice(i,1);
+  markDirty(); renderGlobal(); showPage('global');
+}
+function updateFilter(i,key,val){
+  getFilters()[i][key]=val; markDirty();
+}
+
 function togglePublished(id){
   const p = projects.find(x=>x.id===id);
   if(!p) return;
