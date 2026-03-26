@@ -407,6 +407,42 @@ function pool(ch){
   return (p + ch).split('');
 }
 
+// Re-scramble a single span
+function rescrambleSpan(span){
+  const ch = span.dataset.ch;
+  if(ch === ' ') return;
+  const p = pool(ch);
+  const cycles = 6;
+  let tick = 0;
+  function cycle(){
+    if(tick < cycles){
+      const overshoot = Math.max(0, tick - (cycles - 3));
+      const speed = 110 * (1 + overshoot * 1.6);
+      span.textContent = p[tick % p.length];
+      tick++;
+      setTimeout(cycle, speed);
+    } else {
+      span.textContent = ch;
+    }
+  }
+  cycle();
+}
+
+function scheduleIdle(allSpanGroups){
+  function runIdle(){
+    const group = allSpanGroups[Math.floor(Math.random() * allSpanGroups.length)];
+    const nonSpace = group.filter(s => s.dataset.ch !== ' ');
+    if(!nonSpace.length){ setTimeout(runIdle, 4000); return; }
+    const runLen = Math.min(nonSpace.length, 2 + Math.floor(Math.random() * 4));
+    const startIdx = Math.floor(Math.random() * (nonSpace.length - runLen + 1));
+    const run = nonSpace.slice(startIdx, startIdx + runLen);
+    run.forEach((span, i) => setTimeout(() => rescrambleSpan(span), i * 80));
+    const next = 4000 + Math.random() * 5000;
+    setTimeout(runIdle, next);
+  }
+  setTimeout(runIdle, 5500);
+}
+
 function scrambleHero(role, line1, line2){
 
   const roleEl = document.getElementById('hero-role');
@@ -453,53 +489,7 @@ function scrambleHero(role, line1, line2){
     });
   }
 
-  // Re-scramble a single span back to noise then lock again
-  function rescrambleSpan(span){
-    const ch = span.dataset.ch;
-    if(ch === ' ') return;
-    const p = pool(ch);
-    const cycles = 6;
-    let tick = 0;
-    function cycle(){
-      if(tick < cycles){
-        const overshoot = Math.max(0, tick - (cycles - 3));
-        const speed = 110 * (1 + overshoot * 1.6);
-        span.textContent = p[tick % p.length];
-        tick++;
-        setTimeout(cycle, speed);
-      } else {
-        span.textContent = ch;
-      }
-    }
-    cycle();
-  }
 
-  // Periodically pick a random word and ripple-scramble it
-  function scheduleIdle(allSpanGroups){
-    function runIdle(){
-      // Pick a random group (role, line1, or line2)
-      const group = allSpanGroups[Math.floor(Math.random() * allSpanGroups.length)];
-      const nonSpace = group.filter(s => s.dataset.ch !== ' ');
-      if(!nonSpace.length) return;
-
-      // Pick a random contiguous run of 2–5 chars within the group
-      const runLen = Math.min(nonSpace.length, 2 + Math.floor(Math.random() * 4));
-      const startIdx = Math.floor(Math.random() * (nonSpace.length - runLen + 1));
-      const run = nonSpace.slice(startIdx, startIdx + runLen);
-
-      // Stagger the rescramble slightly across the run
-      run.forEach((span, i) => {
-        setTimeout(() => rescrambleSpan(span), i * 80);
-      });
-
-      // Schedule next idle — between 4s and 9s
-      const next = 4000 + Math.random() * 5000;
-      setTimeout(runIdle, next);
-    }
-
-    // First idle fires after initial animation settles
-    setTimeout(runIdle, 5500);
-  }
 
   // Timing — slower and more staggered
   const START = 600;
