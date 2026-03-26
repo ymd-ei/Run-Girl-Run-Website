@@ -54,6 +54,9 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 #log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;pointer-events:none;max-width:240px}
 .ls-entry{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.9);line-height:1.5;text-align:right;opacity:0;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .ls-entry.show{transform:translateY(0)}
+#log-ticker{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;max-width:240px;overflow:hidden;pointer-events:none;height:1.2rem}
+.lt-wrap{display:flex;flex-direction:column;transition:transform .6s var(--ease)}
+.lt-item{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;line-height:1.5;text-align:right;flex-shrink:0;height:1.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .avail-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2.4s ease-in-out infinite}
 .avail-text{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.45)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
@@ -199,6 +202,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
   <h1 class="hname" id="hero-name"></h1>
 </div>
 <div id="log-stack"></div>
+<div id="log-ticker"><div class="lt-wrap" id="lt-wrap"></div></div>
 <div id="sh"><div class="avail-dot"></div><span class="avail-text">Available for work</span></div>
 
 <div id="watch-reel-wrap">
@@ -529,9 +533,8 @@ async function loadLog(){
 
     // Hero stack — last 8, newest at bottom, oldest most faded
     const stack = document.getElementById('log-stack');
-    const recent = entries.slice(-8); // oldest to newest
+    const recent = entries.slice(-8);
     stack.innerHTML = recent.map((e, i) => {
-      // i=0 is oldest (most faded), i=7 is newest (most visible)
       const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
       return `<span class="ls-entry" style="opacity:0" data-opacity="${opacity}">${e.text}</span>`;
     }).join('');
@@ -543,23 +546,17 @@ async function loadLog(){
     items.forEach((item, i) => {
       const finalOpacity = item.dataset.opacity;
       const text = item.textContent;
-
-      // Build char spans
       item.innerHTML = text.split('').map(ch =>
         ch === ' '
           ? `<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>`
           : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
       ).join('');
-
       const spans = Array.from(item.querySelectorAll('.sc-char'));
       logSpanGroups.push(spans);
-
       const entryDelay = 1400 + i * 120;
-
       setTimeout(() => {
         item.style.opacity = finalOpacity;
         item.classList.add('show');
-        // reveal chars with scramble
         spans.forEach((span, j) => {
           const ch = span.dataset.ch;
           const isSpace = ch === ' ';
@@ -576,9 +573,7 @@ async function loadLog(){
                 span.textContent = p[tick % p.length];
                 tick++;
                 setTimeout(cycle, speed);
-              } else {
-                span.textContent = ch;
-              }
+              } else { span.textContent = ch; }
             }
             cycle();
           }, j * 55);
@@ -586,9 +581,35 @@ async function loadLog(){
       }, entryDelay);
     });
 
-    // Idle rescramble for log stack — fires after all entries settled
+    // Idle rescramble
     const logIdleStart = 1400 + items.length * 120 + 2000;
     setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
+
+    // Ticker — single entry slides up and rotates through all entries
+    if(entries.length){
+      const wrap = document.getElementById('lt-wrap');
+      const ticker = document.getElementById('log-ticker');
+      // build doubled list for seamless loop: [...entries, ...entries]
+      const all = [...entries, ...entries];
+      wrap.innerHTML = all.map((e,i) => {
+        const opacity = 0.1 + (Math.min(i, entries.length-1) / (entries.length-1||1)) * 0.9;
+        return `<div class="lt-item" style="color:rgba(242,237,228,${opacity})">${e.text}</div>`;
+      }).join('');
+
+      let current = 0;
+      const itemH = 18; // px, matches 1.2rem line height
+      ticker.style.opacity = '0';
+      // fade ticker in after stack settles
+      setTimeout(()=>{ ticker.style.transition='opacity .8s'; ticker.style.opacity='1'; }, logIdleStart);
+
+      function tickNext(){
+        current++;
+        if(current >= entries.length) current = 0;
+        wrap.style.transform = `translateY(-${current * itemH}px)`;
+        setTimeout(tickNext, 4000);
+      }
+      setTimeout(tickNext, logIdleStart + 4000);
+    }
 
   }catch(e){
     document.getElementById('log-body').innerHTML='<p class="log-empty">Could not load log.</p>';
