@@ -394,6 +394,7 @@ function blockEditorHTML(scope, b, i, total){
     body=`
       <div class="size-row">${sizes.map(([v,l])=>`<button class="sz-btn ${b.type===v?'active':''}" onclick="changeBlockType('${scope}','${b.id}','${v}')">${l}</button>`).join('')}</div>
       <div class="field"><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
+      <p class="hint">Wrap text in &lt;b&gt;&lt;/b&gt; for accent bold</p>
       <div class="field"><label>Alignment</label><div class="align-row">
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
