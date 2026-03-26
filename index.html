@@ -54,9 +54,6 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 #log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;pointer-events:none;max-width:240px}
 .ls-entry{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.9);line-height:1.5;text-align:right;opacity:0;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .ls-entry.show{transform:translateY(0)}
-#log-ticker{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;max-width:240px;overflow:hidden;pointer-events:none;height:1.2rem}
-.lt-wrap{display:flex;flex-direction:column;transition:transform .6s var(--ease)}
-.lt-item{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;line-height:1.5;text-align:right;flex-shrink:0;height:1.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .avail-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2.4s ease-in-out infinite}
 .avail-text{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.45)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
@@ -202,7 +199,6 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
   <h1 class="hname" id="hero-name"></h1>
 </div>
 <div id="log-stack"></div>
-<div id="log-ticker"><div class="lt-wrap" id="lt-wrap"></div></div>
 <div id="sh"><div class="avail-dot"></div><span class="avail-text">Available for work</span></div>
 
 <div id="watch-reel-wrap">
@@ -585,30 +581,59 @@ async function loadLog(){
     const logIdleStart = 1400 + items.length * 120 + 2000;
     setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
 
-    // Ticker — single entry slides up and rotates through all entries
-    if(entries.length){
-      const wrap = document.getElementById('lt-wrap');
-      const ticker = document.getElementById('log-ticker');
-      // build doubled list for seamless loop: [...entries, ...entries]
-      const all = [...entries, ...entries];
-      wrap.innerHTML = all.map((e,i) => {
-        const opacity = 0.1 + (Math.min(i, entries.length-1) / (entries.length-1||1)) * 0.9;
-        return `<div class="lt-item" style="color:rgba(242,237,228,${opacity})">${e.text}</div>`;
-      }).join('');
+    // Rotate the stack — cycle entries upward every 7s
+    if(entries.length > 1){
+      let rotateIdx = 0; // index into entries of what's currently the "newest" shown
+      const SHOW = 8;
 
-      let current = 0;
-      const itemH = 18; // px, matches 1.2rem line height
-      ticker.style.opacity = '0';
-      // fade ticker in after stack settles
-      setTimeout(()=>{ ticker.style.transition='opacity .8s'; ticker.style.opacity='1'; }, logIdleStart);
+      function rotateStack(){
+        rotateIdx = (rotateIdx + 1) % entries.length;
+        // pick SHOW entries ending at rotateIdx (wrapping)
+        const shown = [];
+        for(let i = SHOW - 1; i >= 0; i--){
+          const ei = (rotateIdx - i + entries.length * 10) % entries.length;
+          shown.push(entries[ei]);
+        }
+        // rebuild spans with new opacities, slide out old bottom, fade in new
+        const items = Array.from(stack.querySelectorAll('.ls-entry'));
 
-      function tickNext(){
-        current++;
-        if(current >= entries.length) current = 0;
-        wrap.style.transform = `translateY(-${current * itemH}px)`;
-        setTimeout(tickNext, 4000);
+        // slide everything up and fade out top
+        items.forEach((item, i) => {
+          item.style.transition = 'opacity .6s var(--ease), transform .6s var(--ease)';
+          if(i === 0){
+            // top item slides up and disappears
+            item.style.transform = 'translateY(-18px)';
+            item.style.opacity = '0';
+          } else {
+            // rest shift up in opacity
+            const newOpacity = 0.1 + ((i - 1) / (SHOW - 1)) * 0.9;
+            item.style.opacity = newOpacity;
+          }
+        });
+
+        setTimeout(() => {
+          // rebuild with new entry at bottom
+          stack.innerHTML = shown.map((e, i) => {
+            const opacity = 0.1 + (i / (shown.length - 1 || 1)) * 0.9;
+            return `<span class="ls-entry show" style="opacity:${i === shown.length-1 ? 0 : opacity};transform:translateY(${i === shown.length-1 ? '12px' : '0'})">${e.text}</span>`;
+          }).join('');
+
+          // fade in new bottom entry
+          const newItems = Array.from(stack.querySelectorAll('.ls-entry'));
+          const last = newItems[newItems.length - 1];
+          if(last){
+            requestAnimationFrame(()=>{
+              last.style.transition = 'opacity .8s var(--ease), transform .8s var(--ease)';
+              last.style.opacity = '1';
+              last.style.transform = 'translateY(0)';
+            });
+          }
+        }, 650);
+
+        setTimeout(rotateStack, 7000);
       }
-      setTimeout(tickNext, logIdleStart + 4000);
+
+      setTimeout(rotateStack, logIdleStart + 7000);
     }
 
   }catch(e){
