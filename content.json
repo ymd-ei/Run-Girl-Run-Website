@@ -43,7 +43,7 @@
     {
       "id": "b1",
       "type": "text-lg",
-      "content": "We move stuff around.",
+      "content": "I like moving stuff around.",
       "align": "left"
     },
     {
@@ -55,7 +55,7 @@
     {
       "id": "b1774467865431",
       "type": "text-md",
-      "content": "Run Girl Run is an animation studio based in Toronto. We aim to bring unique concepts and ideas to life.",
+      "content": "<u>Run Girl Run</u> is an animation studio based in Toronto. We aim to bring unique concepts and ideas to life.",
       "align": "left"
     },
     {
@@ -71,9 +71,15 @@
       "align": "right"
     },
     {
+      "id": "b1774470306468",
+      "type": "text-md",
+      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
+      "align": "left"
+    },
+    {
       "id": "b1774473102333",
       "type": "text-md",
-      "content": "Independently developed and released character assets — rigged, textured, and animation-ready — for a AAA game title, shipped publicly and used actively by players.",
+      "content": "Independently developed and released character assets — rigged, textured, and animation-ready — for a <i>AAA game title</i>, shipped publicly and used actively by players with a combined total of: ",
       "align": "left"
     },
     {
@@ -91,25 +97,23 @@
       ]
     },
     {
-      "id": "b1774473179821",
-      "type": "text-sm",
-      "content": "with players actively using the work in-game.",
+      "id": "b1774495889365",
+      "type": "quote",
+      "content": "with players actively using in-game.",
       "align": "center"
-    },
-    {
-      "id": "b1774470306468",
-      "type": "text-md",
-      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
-      "align": "left"
     },
     {
       "id": "b1774473790218",
       "type": "divider"
     },
     {
+      "id": "b1774496196668",
+      "type": "divider"
+    },
+    {
       "id": "b1774473741087",
       "type": "text-sm",
-      "content": "Actively working on stuff. Enjoy your stay.",
+      "content": "Actively working on many different projects. <br><I> Please, enjoy your stay.</I>",
       "align": "center"
     }
   ]
