@@ -97,14 +97,10 @@
       ]
     },
     {
-      "id": "b1774495889365",
-      "type": "quote",
-      "content": "with players actively using in-game.",
-      "align": "center"
-    },
-    {
-      "id": "b1774473790218",
-      "type": "divider"
+      "id": "b1774502728190",
+      "type": "text-md",
+      "content": "players actively using them in-game.",
+      "align": "right"
     },
     {
       "id": "b1774496196668",
