@@ -180,6 +180,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 @media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://player.vimeo.com/api/player.js"></script>
 </head>
 <body>
 <div id="cur"></div>
@@ -273,7 +274,7 @@ const hs='a,button,.wc,.bp,.fb,.cl,.backbtn,#watch-reel,#lb-close';
 document.addEventListener('mouseover',e=>{if(e.target.closest(hs))document.body.classList.add('ch')});
 document.addEventListener('mouseout',e=>{if(e.target.closest(hs))document.body.classList.remove('ch')});
 
-let C={},projects=[];
+let C={},projects=[],bgPlayer=null;
 
 const THUMB={
   '2d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><circle cx="200" cy="145" r="70" fill="none" stroke="#71904c" stroke-width="1.5"/><circle cx="200" cy="145" r="38" fill="#71904c" opacity="0.08"/><line x1="200" y1="75" x2="200" y2="215" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><line x1="130" y1="145" x2="270" y2="145" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><circle cx="200" cy="87" r="5" fill="#71904c"/></svg>',
@@ -658,7 +659,7 @@ function render(){
   const reelEl=document.getElementById('reel');
   if(C.reel&&C.reel.url){
     if(C.reel.type==='youtube')reelEl.innerHTML=`<iframe src="${C.reel.url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
-    else if(C.reel.type==='vimeo')reelEl.innerHTML=`<iframe src="${C.reel.url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+    else if(C.reel.type==='vimeo'){reelEl.innerHTML=`<iframe id="bg-reel-iframe" src="${C.reel.url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;bgPlayer=new Vimeo.Player(document.getElementById('bg-reel-iframe'));}
     else if(C.reel.type==='video')reelEl.innerHTML=`<video autoplay muted loop playsinline src="${C.reel.url}"></video><div id="reel-block"></div>`;
   }else{
     reelEl.innerHTML=`<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
@@ -708,7 +709,6 @@ function openProject(id){
 function openLightbox(){
   if(!C.reel||!C.reel.url){alert('Add your reel URL to content.json first!');return;}
   let src=C.reel.url;
-  // build a clean full-player URL without background/muted params
   if(C.reel.type==='youtube'){
     src=src.replace('&controls=0','').replace('&mute=1','');
     if(!src.includes('controls=1'))src+='&controls=1';
@@ -716,14 +716,16 @@ function openLightbox(){
     src=src.replace('background=1','background=0').replace('&muted=1','').replace('autoplay=1','autoplay=0');
     if(!src.includes('autoplay'))src+='&autoplay=1';
   }
-  // inject a fresh iframe — background reel is untouched
   document.getElementById('lb-frame').innerHTML=`<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
-  // remove lightbox iframe after fade — background reel never paused
-  setTimeout(()=>{document.getElementById('lb-frame').innerHTML=''},400);
+  setTimeout(()=>{
+    document.getElementById('lb-frame').innerHTML='';
+    // resume background reel after lightbox closes
+    if(bgPlayer) bgPlayer.play().catch(()=>{});
+  },400);
 }
 function smartClose(){
   if(document.getElementById('pp').classList.contains('open'))closeProject();
