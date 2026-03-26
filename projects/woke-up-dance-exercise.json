@@ -1,0 +1,56 @@
+{
+  "id": "woke-up-dance-exercise",
+  "title": "Woke Up - Dance Exercise",
+  "type": "3d",
+  "typeLabel": "3D",
+  "year": "2026",
+  "client": "Personal",
+  "duration": "2 moths",
+  "tags": [
+    "3d animation",
+    "Blender",
+    "Exercise"
+  ],
+  "thumbnail": "",
+  "videoUrl": "",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "text-lg",
+      "content": "Woke Up - Dance Exercise",
+      "align": "left"
+    },
+    {
+      "id": "b1774532370151",
+      "type": "image",
+      "src": "",
+      "alt": ""
+    },
+    {
+      "id": "b1774532399158",
+      "type": "text-md",
+      "content": "This was made as an exercise for body mechanics and timing.\nThis isn’t the first time I’ve animated a dance; in fact, one of the pieces from my demo reel coming out of school was a dance\n",
+      "align": "left"
+    },
+    {
+      "id": "b1774532552389",
+      "type": "twocol",
+      "left": {
+        "type": "image",
+        "src": "",
+        "alt": ""
+      },
+      "right": {
+        "type": "text-md",
+        "content": "I find learning to animate dances is a pretty neat way to learn body mechanics being that its all fluid motions.<br>\nAnd in fact, what better way to update my demo reel by doing another dance.",
+        "align": "left"
+      }
+    },
+    {
+      "id": "b1774532506038",
+      "type": "text-md",
+      "content": "Since there is a never ending pool of dance videos that come out every year, the sky’s the limit.\nI have decided this time around, to use <rgr>WOKE UP</rgr> by XG as the subject of the exercise. ",
+      "align": "left"
+    }
+  ]
+}
