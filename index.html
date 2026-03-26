@@ -632,15 +632,21 @@ async function loadLog(){
         top.style.transform = 'translateY(-16px)';
         top.style.opacity = '0';
 
-        // Step 2 — shift opacity of remaining items upward
+        // Step 2 — shift opacity AND position of remaining items upward
         items.slice(1).forEach((item, i) => {
-          item.style.transition = 'opacity 1.2s var(--ease)';
+          item.style.transition = 'opacity 1.2s var(--ease), transform 1.2s var(--ease)';
           item.style.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
+          item.style.transform = 'translateY(-18px)';
         });
 
         // Step 3 — after slide out, remove top and append new entry at bottom
         setTimeout(() => {
           top.remove();
+          // reset transforms on remaining items so flexbox takes over
+          Array.from(stack.querySelectorAll('.ls-entry')).forEach(item => {
+            item.style.transition = 'none';
+            item.style.transform = 'translateY(0)';
+          });
 
           const newText = entries[rotateIdx].text;
           const newEntry = buildSpanEntry(newText, 0, 14);
