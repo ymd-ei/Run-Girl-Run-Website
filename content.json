@@ -37,7 +37,8 @@
     "architecture-study",
     "the-runner",
     "data-in-motion",
-    "cosmic-drift"
+    "cosmic-drift",
+    "woke-up-dance-exercise"
   ],
   "about": [
     {
@@ -113,5 +114,15 @@
       "align": "center"
     }
   ],
-  "siteTitle": "Run Girl Run"
+  "siteTitle": "Run Girl Run",
+  "filters": [
+    {
+      "value": "2d",
+      "label": "2D"
+    },
+    {
+      "value": "3d",
+      "label": "3D"
+    }
+  ]
 }
