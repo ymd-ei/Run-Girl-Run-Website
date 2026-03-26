@@ -244,7 +244,11 @@ function renderGlobal(){
           <div class="field"><label>Name</label><input value="${C.name}" oninput="C.name=this.value;document.getElementById('sb-name').textContent=this.value;markDirty()"></div>
           <div class="field"><label>Role</label><input value="${C.role}" oninput="C.role=this.value;markDirty()"></div>
         </div>
-        <div class="field"><label>Location</label><input value="${C.location||''}" oninput="C.location=this.value;markDirty()"></div>
+        <div class="field"><label>Site Title</label><input value="${C.siteTitle||''}" placeholder="${C.name} — Portfolio" oninput="C.siteTitle=this.value;markDirty()"><p class="hint">Browser tab title. Defaults to your name if left empty.</p></div>
+        <div class="field"><label>Favicon</label>
+          ${makeDropzone(C.favicon||'', v=>{ C.favicon=v; markDirty(); }, 'media', 'favicon.png')}
+          <p class="hint">Recommended: square PNG or ICO, at least 32×32px</p>
+        </div>
       </div>
     </div>
     <div class="section">
@@ -285,9 +289,17 @@ function renderGlobal(){
     <div class="section">
       <div class="sh" onclick="toggleSection(this)"><h3>Project Order</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
-        <p style="font-size:.75rem;color:var(--muted)">Current order — drag to reorder coming soon.</p>
-        <div style="display:flex;flex-direction:column;gap:.3rem">
-          ${C.projects.map((id,i)=>{const p=projects.find(x=>x.id===id);return`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem .7rem;background:var(--surface2);border:1px solid var(--border);font-size:.8rem"><span style="color:var(--muted);width:1rem">${i+1}</span>${p?p.title:id}</div>`}).join('')}
+        <p class="hint" style="margin-bottom:.5rem">Drag to reorder. Draft projects are hidden from the site but shown here.</p>
+        <div id="order-list" style="display:flex;flex-direction:column;gap:.3rem">
+          ${C.projects.map((id,i)=>{
+            const p=projects.find(x=>x.id===id);
+            const isDraft=p&&p.published===false;
+            return`<div draggable="true" data-id="${id}" onmousedown="this.style.cursor='grabbing'" onmouseup="this.style.cursor='grab'" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropOn(event)" ondragend="dragEnd(event)" style="display:flex;align-items:center;gap:.6rem;padding:.45rem .7rem;background:var(--surface2);border:1px solid var(--border);font-size:.8rem;cursor:grab;user-select:none">
+              <span style="color:var(--muted);font-size:.7rem">&#9776;</span>
+              <span style="flex:1">${p?p.title:id}</span>
+              ${isDraft?`<span style="font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:.1rem .3rem">Draft</span>`:''}
+            </div>`;
+          }).join('')}
         </div>
       </div>
     </div>`;
@@ -639,6 +651,23 @@ function addProject(){
   projects.push(p);C.projects.push(id);
   buildNav();markDirty();showProject(id);
 }
+// ── DRAG REORDER
+let dragId=null;
+function dragStart(e){ dragId=e.currentTarget.dataset.id; e.currentTarget.style.opacity='.4'; }
+function dragEnd(e){ e.currentTarget.style.opacity='1'; dragId=null; }
+function dragOver(e){ e.preventDefault(); }
+function dropOn(e){
+  e.preventDefault();
+  const targetId=e.currentTarget.dataset.id;
+  if(!dragId||dragId===targetId) return;
+  const from=C.projects.indexOf(dragId);
+  const to=C.projects.indexOf(targetId);
+  if(from<0||to<0) return;
+  C.projects.splice(from,1);
+  C.projects.splice(to,0,dragId);
+  markDirty(); renderGlobal(); showPage('global');
+}
+
 function getFilters(){ return C.filters||(C.filters=[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]); }
 function addFilter(){
   getFilters().push({value:'new',label:'New'});

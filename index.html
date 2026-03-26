@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio</title>
+<link rel="icon" id="favicon" href="">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
@@ -646,7 +647,8 @@ async function loadLog(){
 
 function render(){
   document.getElementById('nav-name').textContent=C.name;
-  document.title=C.name+' — Animator';
+  document.title=C.siteTitle||C.name||'Portfolio';
+  if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon; }
   const parts=C.name.split(' ');
   const line1=parts[0];
   const line2=parts.slice(1).join(' ');
