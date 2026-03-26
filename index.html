@@ -716,8 +716,14 @@ function openLightbox(){
     src=src.replace('background=1','background=0').replace('&muted=1','').replace('autoplay=1','autoplay=0');
     if(!src.includes('autoplay'))src+='&autoplay=1';
   }
-  document.getElementById('lb-frame').innerHTML=`<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  const lbFrame = document.getElementById('lb-frame');
+  lbFrame.innerHTML=`<iframe id="lb-iframe" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
   document.getElementById('lightbox').classList.add('open');
+  // Use Vimeo API to force play after iframe loads — bypasses autoplay block
+  if(C.reel.type==='vimeo'){
+    const lbPlayer = new Vimeo.Player(document.getElementById('lb-iframe'));
+    lbPlayer.ready().then(()=>lbPlayer.play().catch(()=>{}));
+  }
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
