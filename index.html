@@ -165,6 +165,11 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .si{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--border);color:rgba(26,23,20,0.45);text-decoration:none;transition:border-color .2s,color .2s;font-size:1.1rem}
 .si:hover{border-color:var(--accent);color:var(--accent)}
 
+.log-entries{display:flex;flex-direction:column}
+.log-entry{display:flex;gap:1.25rem;padding:.9rem 0;border-bottom:1px solid var(--border);align-items:baseline}
+.log-date{font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);flex-shrink:0;width:5.5rem}
+.log-text{font-size:.9rem;color:rgba(26,23,20,0.75);line-height:1.6;flex:1}
+.log-empty{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:2rem 0}
 @keyframes fup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fdn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
@@ -182,6 +187,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
     <li><button onclick="openPanel('work')">Work</button></li>
     <li><button onclick="openPanel('about')">About</button></li>
     <li><button onclick="openPanel('contact')">Contact</button></li>
+    <li><button onclick="openPanel('log')">Log</button></li>
   </ul>
 </nav>
 
@@ -235,6 +241,12 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
     <button class="pc" onclick="closeProject()">&#x2715;</button>
   </div>
   <div class="ppbody" id="ppb"></div>
+</div>
+
+<!-- LOG -->
+<div class="panel" id="panel-log">
+  <div class="ph"><span class="pt2">Log</span><button class="pc" onclick="closeToRoot()">&#x2715;</button></div>
+  <div class="pb" id="log-body"></div>
 </div>
 
 <!-- ABOUT -->
@@ -505,6 +517,24 @@ function scrambleHero(role, line1, line2){
 }
 
 
+async function loadLog(){
+  try{
+    const entries = await fetch('log.json?v='+Date.now()).then(r=>r.json());
+    const el = document.getElementById('log-body');
+    if(!entries.length){
+      el.innerHTML='<p class="log-empty">Nothing here yet.</p>';
+      return;
+    }
+    el.innerHTML='<div class="log-entries">'+
+      [...entries].reverse().map(e=>
+        `<div class="log-entry"><span class="log-date">${e.date}</span><span class="log-text">${e.text}</span></div>`
+      ).join('')+
+    '</div>';
+  }catch(e){
+    document.getElementById('log-body').innerHTML='<p class="log-empty">Could not load log.</p>';
+  }
+}
+
 function render(){
   document.getElementById('nav-name').textContent=C.name;
   document.title=C.name+' — Animator';
@@ -530,6 +560,7 @@ function render(){
 
   document.getElementById('about-body').innerHTML=renderBlocks(C.about||[]);
   setTimeout(initCountUps, 100);
+  loadLog();
 
   document.getElementById('contact-body').innerHTML=`
     ${C.contact.resume ? `<div style="display:flex;justify-content:center;margin-bottom:1.75rem"><a href="${C.contact.resume}" target="_blank" rel="noopener" class="resume-btn">View Resume</a></div>` : ""}
