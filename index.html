@@ -51,9 +51,10 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .sc-char{display:inline;opacity:0;transition:opacity .08s}
 .hname em{color:var(--accent);font-style:italic;display:block}
 #sh{position:fixed;z-index:10;bottom:3rem;right:2.5rem;display:flex;align-items:center;gap:.65rem;pointer-events:none;opacity:0;animation:fup .8s 1.1s var(--ease) forwards}
-#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;pointer-events:none;max-width:240px}
-.ls-entry{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.9);line-height:1.5;text-align:right;opacity:0;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-.ls-entry.show{transform:translateY(0)}
+#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;pointer-events:none;max-width:240px}
+.ls-inner{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;transition:transform 1.2s var(--ease)}
+.ls-entry{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.9);line-height:1.5;text-align:right;opacity:0;transition:opacity 1.2s var(--ease)}
+.ls-entry.show{opacity:1}
 .avail-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2.4s ease-in-out infinite}
 .avail-text{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(242,237,228,0.45)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
@@ -198,7 +199,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
   <p class="htag" id="hero-role"></p>
   <h1 class="hname" id="hero-name"></h1>
 </div>
-<div id="log-stack"></div>
+<div id="log-stack"><div id="ls-inner" class="ls-inner"></div></div>
 <div id="sh"><div class="avail-dot"></div><span class="avail-text">Available for work</span></div>
 
 <div id="watch-reel-wrap">
@@ -528,143 +529,112 @@ async function loadLog(){
     }
 
     // Hero stack — last 8, newest at bottom, oldest most faded
-    const stack = document.getElementById('log-stack');
-    const recent = entries.slice(-8);
-    stack.innerHTML = recent.map((e, i) => {
-      const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
-      return `<span class="ls-entry" style="opacity:0" data-opacity="${opacity}">${e.text}</span>`;
-    }).join('');
-
-    // Stagger fade in + scramble each entry
-    const items = Array.from(stack.querySelectorAll('.ls-entry'));
+    const inner = document.getElementById('ls-inner');
+    const SHOW = 8;
+    const ITEM_H = 18; // px per entry (line-height 1.5 on .6rem + gap)
+    let rotateIdx = entries.length - 1;
+    const recent = entries.slice(-SHOW);
     const logSpanGroups = [];
 
-    items.forEach((item, i) => {
-      const finalOpacity = item.dataset.opacity;
-      const text = item.textContent;
-      item.innerHTML = text.split('').map(ch =>
+    function buildEntry(text, opacity){
+      const span = document.createElement('span');
+      span.className = 'ls-entry';
+      span.dataset.opacity = opacity;
+      span.innerHTML = text.split('').map(ch =>
         ch === ' '
           ? `<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>`
           : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
       ).join('');
-      const spans = Array.from(item.querySelectorAll('.sc-char'));
+      return span;
+    }
+
+    function scrambleEntry(entry, delay){
+      const spans = Array.from(entry.querySelectorAll('.sc-char'));
       logSpanGroups.push(spans);
-      const entryDelay = 1400 + i * 120;
+      spans.forEach((span, j) => {
+        const ch = span.dataset.ch;
+        const isSpace = ch === ' ';
+        const p = isSpace ? [' '] : pool(ch);
+        let tick = 0; const cycles = 6;
+        setTimeout(() => {
+          span.style.opacity = '1';
+          if(isSpace){ span.innerHTML = '&nbsp;'; return; }
+          function cycle(){
+            if(tick < cycles){
+              const overshoot = Math.max(0, tick-(cycles-3));
+              span.textContent = p[tick % p.length];
+              tick++;
+              setTimeout(cycle, 90*(1+overshoot*1.4));
+            } else { span.textContent = ch; }
+          }
+          cycle();
+        }, delay + j * 55);
+      });
+      return spans;
+    }
+
+    // Build initial stack
+    recent.forEach((e, i) => {
+      const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
+      const entry = buildEntry(e.text, opacity);
+      inner.appendChild(entry);
+      const delay = 1400 + i * 120;
       setTimeout(() => {
-        item.style.opacity = finalOpacity;
-        item.classList.add('show');
-        spans.forEach((span, j) => {
-          const ch = span.dataset.ch;
-          const isSpace = ch === ' ';
-          const p = isSpace ? [' '] : pool(ch);
-          let tick = 0;
-          const cycles = 6;
-          setTimeout(() => {
-            span.style.opacity = '1';
-            if(isSpace){ span.innerHTML = '&nbsp;'; return; }
-            function cycle(){
-              if(tick < cycles){
-                const overshoot = Math.max(0, tick - (cycles - 3));
-                const speed = 90 * (1 + overshoot * 1.4);
-                span.textContent = p[tick % p.length];
-                tick++;
-                setTimeout(cycle, speed);
-              } else { span.textContent = ch; }
-            }
-            cycle();
-          }, j * 55);
-        });
-      }, entryDelay);
+        entry.style.opacity = opacity;
+        scrambleEntry(entry, 0);
+      }, delay);
     });
 
-    // Idle rescramble
-    const logIdleStart = 1400 + items.length * 120 + 2000;
+    const logIdleStart = 1400 + recent.length * 120 + 2000;
     setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
 
-    // Rotate the stack — cycle entries upward every 7s
+    // Rotate — slide entire inner container up by one row, swap top for new bottom
     if(entries.length > 1){
-      let rotateIdx = 0; // index into entries of what's currently the "newest" shown
-      const SHOW = 8;
-
-      function scrambleSpans(spans){
-        spans.forEach((span, j) => {
-          const ch = span.dataset.ch;
-          const isSpace = ch === ' ';
-          const p = isSpace ? [' '] : pool(ch);
-          let tick = 0; const cycles = 6;
-          setTimeout(() => {
-            span.style.opacity = '1';
-            if(isSpace){ span.innerHTML = '&nbsp;'; return; }
-            function cycle(){
-              if(tick < cycles){
-                const overshoot = Math.max(0, tick-(cycles-3));
-                span.textContent = p[tick % p.length];
-                tick++;
-                setTimeout(cycle, 90*(1+overshoot*1.4));
-              } else { span.textContent = ch; }
-            }
-            cycle();
-          }, j * 55);
-        });
-      }
-
-      function buildSpanEntry(text, opacity, translateY){
-        const span = document.createElement('span');
-        span.className = 'ls-entry show';
-        span.style.opacity = opacity;
-        span.style.transform = `translateY(${translateY}px)`;
-        span.style.transition = 'opacity 1.2s var(--ease), transform 1.2s var(--ease)';
-        span.innerHTML = text.split('').map(ch =>
-          ch === ' '
-            ? `<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>`
-            : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
-        ).join('');
-        return span;
-      }
-
       function rotateStack(){
         rotateIdx = (rotateIdx + 1) % entries.length;
-        const items = Array.from(stack.querySelectorAll('.ls-entry'));
+        const newText = entries[rotateIdx].text;
 
-        // Step 1 — slide top item up and out
-        const top = items[0];
-        top.style.transition = 'opacity 1.2s var(--ease), transform 1.2s var(--ease)';
-        top.style.transform = 'translateY(-16px)';
-        top.style.opacity = '0';
+        // 1. Append new entry at bottom, invisible
+        const newEntry = buildEntry(newText, 0);
+        newEntry.style.opacity = '0';
+        inner.appendChild(newEntry);
 
-        // Step 2 — shift opacity AND position of remaining items upward
-        items.slice(1).forEach((item, i) => {
-          item.style.transition = 'opacity 1.2s var(--ease), transform 1.2s var(--ease)';
-          item.style.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
-          item.style.transform = 'translateY(-18px)';
-        });
+        // 2. Slide whole inner up by one item height — smooth, no reflow
+        requestAnimationFrame(() => {
+          inner.style.transform = `translateY(-${ITEM_H}px)`;
 
-        // Step 3 — append new entry mid-animation so it overlaps with the shift
-        setTimeout(() => {
-          const newText = entries[rotateIdx].text;
-          const newEntry = buildSpanEntry(newText, 0, 14);
-          stack.appendChild(newEntry);
-
-          requestAnimationFrame(() => requestAnimationFrame(() => {
+          // 3. Mid-slide: fade in new entry and fade out top
+          setTimeout(() => {
             newEntry.style.opacity = '1';
-            newEntry.style.transform = 'translateY(0)';
-            // scramble the new entry
-            const spans = Array.from(newEntry.querySelectorAll('.sc-char'));
-            scrambleSpans(spans);
-            // add to idle group
+            const allEntries = Array.from(inner.querySelectorAll('.ls-entry'));
+            const top = allEntries[0];
+            top.style.opacity = '0';
+
+            // Recalculate opacities for all except top
+            allEntries.slice(1).forEach((item, i) => {
+              item.dataset.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
+              item.style.opacity = item.dataset.opacity;
+            });
+
+            // Scramble new entry
+            const spans = scrambleEntry(newEntry, 0);
             logSpanGroups.push(spans);
             if(logSpanGroups.length > SHOW) logSpanGroups.shift();
-          }));
-        }, 700);
 
-        // Remove top and reset remaining transforms after shift completes
-        setTimeout(() => {
-          top.remove();
-          Array.from(stack.querySelectorAll('.ls-entry')).forEach(item => {
-            item.style.transition = 'none';
-            item.style.transform = 'translateY(0)';
-          });
-        }, 1300);
+          }, 600);
+
+          // 4. After slide completes — remove top, reset transform instantly
+          setTimeout(() => {
+            const top = inner.querySelector('.ls-entry');
+            top.remove();
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(0)';
+            // re-enable transition next frame
+            requestAnimationFrame(() => {
+              inner.style.transition = '';
+            });
+          }, 1250);
+        });
 
         setTimeout(rotateStack, 12000);
       }
