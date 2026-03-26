@@ -476,13 +476,16 @@ function blockEditorHTML(scope, b, i, total){
     body=`<p style="font-size:.72rem;color:var(--muted)">Horizontal rule divider.</p>`;
   }
 
-  return`<div class="bk" id="bk-${b.id}">
+  return`<div class="bk" id="bk-${b.id}" draggable="true" data-scope="${scope}" data-bid="${b.id}"
+    ondragstart="blockDragStart(event)"
+    ondragover="blockDragOver(event)"
+    ondrop="blockDrop(event)"
+    ondragend="blockDragEnd(event)">
     <div class="bk-head" onclick="toggleBk('${b.id}')">
+      <span style="color:var(--muted);font-size:.8rem;cursor:grab;padding-right:.3rem" onmousedown="event.stopPropagation()" title="Drag to reorder">&#9776;</span>
       <span class="bk-type">${b.type}</span>
       <span class="bk-preview">${preview}</span>
       <div class="bk-actions">
-        ${canUp?`<button class="bk-btn" onclick="event.stopPropagation();moveBlock('${scope}','${b.id}',-1)" title="Move up">&#x2191;</button>`:''}
-        ${canDown?`<button class="bk-btn" onclick="event.stopPropagation();moveBlock('${scope}','${b.id}',1)" title="Move down">&#x2193;</button>`:''}
         <button class="bk-btn del" onclick="event.stopPropagation();removeBlock('${scope}','${b.id}')" title="Delete">&#x2715;</button>
       </div>
     </div>
@@ -651,7 +654,34 @@ function addProject(){
   projects.push(p);C.projects.push(id);
   buildNav();markDirty();showProject(id);
 }
-// ── DRAG REORDER
+// ── DRAG REORDER (projects)
+let dragId=null;
+
+// ── DRAG REORDER (blocks)
+let blockDragBid=null, blockDragScope=null;
+function blockDragStart(e){
+  blockDragBid=e.currentTarget.dataset.bid;
+  blockDragScope=e.currentTarget.dataset.scope;
+  e.currentTarget.style.opacity='.4';
+  e.dataTransfer.effectAllowed='move';
+}
+function blockDragEnd(e){ e.currentTarget.style.opacity='1'; blockDragBid=null; blockDragScope=null; }
+function blockDragOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+function blockDrop(e){
+  e.preventDefault();
+  const targetBid=e.currentTarget.dataset.bid;
+  const targetScope=e.currentTarget.dataset.scope;
+  if(!blockDragBid||blockDragBid===targetBid||blockDragScope!==targetScope) return;
+  const blocks=getBlocks(blockDragScope);
+  const from=blocks.findIndex(b=>b.id===blockDragBid);
+  const to=blocks.findIndex(b=>b.id===targetBid);
+  if(from<0||to<0) return;
+  const [moved]=blocks.splice(from,1);
+  blocks.splice(to,0,moved);
+  setBlocks(blockDragScope,blocks);
+  markDirty(); rerenderBlocks(blockDragScope);
+}
+
 let dragId=null;
 function dragStart(e){ dragId=e.currentTarget.dataset.id; e.currentTarget.style.opacity='.4'; }
 function dragEnd(e){ e.currentTarget.style.opacity='1'; dragId=null; }
