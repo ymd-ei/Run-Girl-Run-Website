@@ -708,13 +708,21 @@ function openProject(id){
 function openLightbox(){
   if(!C.reel||!C.reel.url){alert('Add your reel URL to content.json first!');return;}
   let src=C.reel.url;
-  if(C.reel.type==='youtube'){src=src.replace('&controls=0','').replace('&mute=1','');if(!src.includes('controls=1'))src+='&controls=1';}
-  else if(C.reel.type==='vimeo'){src=src.replace('background=1','background=0').replace('&muted=1','');}
-  document.getElementById('lb-frame').innerHTML=`<iframe src="${src}&autoplay=1" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  // build a clean full-player URL without background/muted params
+  if(C.reel.type==='youtube'){
+    src=src.replace('&controls=0','').replace('&mute=1','');
+    if(!src.includes('controls=1'))src+='&controls=1';
+  } else if(C.reel.type==='vimeo'){
+    src=src.replace('background=1','background=0').replace('&muted=1','').replace('autoplay=1','autoplay=0');
+    if(!src.includes('autoplay'))src+='&autoplay=1';
+  }
+  // inject a fresh iframe — background reel is untouched
+  document.getElementById('lb-frame').innerHTML=`<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
+  // remove lightbox iframe after fade — background reel never paused
   setTimeout(()=>{document.getElementById('lb-frame').innerHTML=''},400);
 }
 function smartClose(){
