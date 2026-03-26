@@ -664,7 +664,7 @@ function render(){
     reelEl.innerHTML=`<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
   }
 
-  document.getElementById('wg').innerHTML=projects.map(p=>`
+  document.getElementById('wg').innerHTML=projects.filter(p=>p.published!==false).map(p=>`
     <div class="wc" data-type="${p.type}" onclick="openProject('${p.id}')">
       <div class="wci">${p.thumbnail?`<img src="${p.thumbnail}" alt="${p.title}">`:thumb(p.type)}<div class="wco">View Project &#x2192;</div></div>
       <div class="wcm"><p class="wct">${p.title}</p><p class="wcty">${p.typeLabel} &middot; ${p.year}</p></div>

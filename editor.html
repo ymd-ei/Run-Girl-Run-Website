@@ -370,8 +370,9 @@ function renderProject(id){
         <div class="block-menu hidden" id="proj-menu-${id}">${blockMenuHTML('proj-'+id)}</div>
       </div>
     </div>
-    <div class="danger-zone">
+    <div class="danger-zone" style="display:flex;align-items:center;justify-content:space-between">
       <button class="danger-btn" onclick="deleteProject('${id}')">Delete Project</button>
+      <button class="preview-btn" style="font-size:.65rem;padding:.4rem .8rem;border:1px solid var(--border);background:none;color:${p.published===false?'var(--accent)':'var(--muted)'};font-family:var(--font)" onclick="togglePublished('${id}')">${p.published===false?'&#x25CF; Draft':'&#x25CB; Published'}</button>
     </div>`;
   renderBlockList('proj-'+id, p.blocks);
 }
@@ -615,6 +616,13 @@ function addProject(){
   projects.push(p);C.projects.push(id);
   buildNav();markDirty();showProject(id);
 }
+function togglePublished(id){
+  const p = projects.find(x=>x.id===id);
+  if(!p) return;
+  p.published = p.published===false ? true : false;
+  markDirty(); renderProject(id); showProject(id);
+}
+
 function deleteProject(id){
   if(!confirm('Delete this project? This cannot be undone.'))return;
   projects=projects.filter(p=>p.id!==id);
