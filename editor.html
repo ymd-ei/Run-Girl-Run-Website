@@ -381,6 +381,22 @@ async function loadAll(){
   updateTokenBtn();
 }
 
+function buildNav(){
+  document.getElementById('sb-name').textContent=C.name;
+  document.getElementById('project-nav').innerHTML=projects.map(p=>`
+    <button class="ni" id="nav-proj-${p.id}" draggable="true"
+      ondragstart="navDragStart(event,'${p.id}')"
+      ondragover="navDragOver(event)"
+      ondragend="navDragEnd(event)"
+      ondrop="navDrop(event,'${p.id}')"
+      ondragleave="navDragLeave(event)">
+      <span style="color:var(--muted);font-size:.7rem;margin-right:.2rem;cursor:grab">&#9776;</span>
+      <div class="dot"></div>
+      <span onclick="showProject('${p.id}')" style="flex:1;text-align:left">${p.title}</span>
+      <span class="badge">${p.type}</span>
+    </button>`).join('');
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', e=>{
   if((e.metaKey||e.ctrlKey) && e.key==='z' && !e.shiftKey){ e.preventDefault(); undo(); }
