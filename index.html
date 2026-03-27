@@ -658,7 +658,7 @@ async function loadLog(){
 function render(){
   document.getElementById('nav-name').textContent=C.name;
   document.title=C.siteTitle||C.name||'Portfolio';
-  if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon; }
+  if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon+'?v='+Date.now(); }
   const parts=C.name.split(' ');
   const line1=parts[0];
   const line2=parts.slice(1).join(' ');
