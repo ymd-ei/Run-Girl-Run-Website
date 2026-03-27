@@ -103,5 +103,6 @@
   ],
   "published": true,
   "sensitive": true,
-  "sensitiveLabel": "Non disclosure agreement"
+  "sensitiveLabel": "Non disclosure agreement",
+  "sensitiveColor": "#f5ec00"
 }
