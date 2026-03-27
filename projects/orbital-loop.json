@@ -102,5 +102,6 @@
     }
   ],
   "published": true,
-  "sensitive": true
+  "sensitive": true,
+  "sensitiveColor": "#874efe"
 }
