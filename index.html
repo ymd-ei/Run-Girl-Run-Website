@@ -924,7 +924,7 @@ function render(){
     const items = Array(12).fill(label);
     tape.innerHTML = items.map(w=>`<span style="display:inline-flex;align-items:center;padding:0 .3rem"><span class="wci-tape-word">${w}</span><span class="wci-tape-dot"></span></span>`).join('');
     // random jitter angle like contact tapes
-    const angle = (12 + Math.random() * 14) * (Math.random() > 0.5 ? 1 : -1);
+    const angle = (8 + Math.random() * 10) * (Math.random() > 0.5 ? 1 : -1);
     document.getElementById('st-'+p.id).style.transform = `rotate(${angle}deg)`;
     document.getElementById('st-'+p.id).style.top = '35%';
     startSensitiveTicker(tape, 0.4);
