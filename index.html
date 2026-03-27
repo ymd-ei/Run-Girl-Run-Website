@@ -1046,21 +1046,23 @@ document.addEventListener('keydown',e=>{
 // ─────────────────────────────────────────
 function startTicker(track, speed){
   if(!track) return;
-  // Prevent duplicate loops if render() is called again
   if(track._tickerRunning) return;
   track._tickerRunning = true;
 
-  let offset = 0;
-  let raf;
+  const container = track.parentElement;
   const reverse = speed < 0;
   const absSpeed = Math.abs(speed);
+
+  // Start off-screen so items scroll into view naturally
+  let offset = reverse ? container.offsetWidth : -container.offsetWidth;
+  let raf;
 
   function tick(){
     if(reverse){
       offset -= absSpeed;
       const last = track.lastElementChild;
       if(!last) return;
-      if(last.getBoundingClientRect().left > track.parentElement.getBoundingClientRect().right){
+      if(last.getBoundingClientRect().left > container.getBoundingClientRect().right){
         track.insertBefore(last, track.firstElementChild);
         offset += last.offsetWidth;
       }
@@ -1068,7 +1070,7 @@ function startTicker(track, speed){
       offset += absSpeed;
       const first = track.firstElementChild;
       if(!first) return;
-      if(first.getBoundingClientRect().right < track.parentElement.getBoundingClientRect().left){
+      if(first.getBoundingClientRect().right < container.getBoundingClientRect().left){
         track.appendChild(first);
         offset -= first.offsetWidth;
       }
