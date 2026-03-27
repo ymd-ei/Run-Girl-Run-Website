@@ -317,7 +317,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 // STATE
 // ─────────────────────────────────────────
 let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
-let openBlocks = new Set(); // tracks which block bodies are expanded
+let openBlocks = new Set();
+let dirtyFiles = new Set(); // tracks which files actually need saving
 
 // Undo/redo history
 let history=[], historyIdx=-1;
@@ -954,7 +955,15 @@ function removeBlock(scope,blockId){
 
 function updateBlock(scope,blockId,key,val){
   const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);if(b){b[key]=val;markDirty();}
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){
+    b[key]=val;
+    if(scope==='about') dirtyFiles.add('content.json');
+    else dirtyFiles.add('projects/'+scope.replace('proj-','')+'.json');
+    dirty=true;
+    document.getElementById('save-btn').textContent='Save All Changes *';
+    clearTimeout(previewTimer); previewTimer=setTimeout(pushPreview, 600);
+  }
 }
 
 function changeBlockType(scope,blockId,newType){
@@ -1043,7 +1052,8 @@ function toggleBlockMenu(menuId){
 // PROJECT HELPERS
 // ─────────────────────────────────────────
 function updateP(id,key,val){
-  const p=projects.find(x=>x.id===id);if(p){p[key]=val;markDirty();}
+  const p=projects.find(x=>x.id===id);if(p){p[key]=val;}
+  markProjectDirty(id);
   if(key==='sensitive'){
     const opts=document.getElementById('sensitive-opts-'+id);
     if(opts) opts.style.display=val?'block':'none';
@@ -1067,6 +1077,8 @@ let blockDragBid=null, blockDragScope=null;
 
 // ── Block drag with insert line indicator
 function blockDragStart(e){
+  // Don't hijack text selection drags inside textareas/inputs
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
   blockDragBid=e.currentTarget.dataset.bid;
   blockDragScope=e.currentTarget.dataset.scope;
   e.currentTarget.style.opacity='.4';
@@ -1084,9 +1096,9 @@ function blockDragOver(e){
   e.preventDefault(); e.dataTransfer.dropEffect='move';
   const bk=e.currentTarget;
   if(!blockDragBid||bk.dataset.bid===blockDragBid) return;
-  // Clear others
+  // Don't show indicator if hovering over an input/textarea
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
   document.querySelectorAll('.bk').forEach(b=>b.classList.remove('drag-over-top','drag-over-bottom'));
-  // Show indicator above or below based on mouse position
   const rect=bk.getBoundingClientRect();
   const mid=rect.top+rect.height/2;
   if(e.clientY<mid) bk.classList.add('drag-over-top');
@@ -1223,10 +1235,23 @@ function initPreview(){
   frame.src='index.html?preview=1';
 }
 
-function markDirty(label){
-  // Take a history snapshot on meaningful changes
+function markDirty(label, projectId){
   if(label) snapshot(label);
   dirty=true;
+  // Track which file was touched
+  if(projectId) dirtyFiles.add('projects/'+projectId+'.json');
+  else dirtyFiles.add('content.json'); // default — most changes touch content.json
+  document.getElementById('save-btn').textContent='Save All Changes *';
+  document.getElementById('pb-dot').classList.remove('live');
+  clearTimeout(previewTimer);
+  previewTimer=setTimeout(pushPreview, 600);
+}
+
+// Shorthand for marking a specific project dirty
+function markProjectDirty(id, label){
+  if(label) snapshot(label);
+  dirty=true;
+  dirtyFiles.add('projects/'+id+'.json');
   document.getElementById('save-btn').textContent='Save All Changes *';
   document.getElementById('pb-dot').classList.remove('live');
   clearTimeout(previewTimer);
@@ -1454,17 +1479,29 @@ async function saveAll(){
   }
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.textContent='Saving…';
+
+  // Build file list from dirtyFiles — fall back to all if somehow empty
+  const toSave = dirtyFiles.size > 0 ? [...dirtyFiles] : [
+    'content.json',
+    ...projects.map(p=>`projects/${p.id}.json`)
+  ];
+
+  // Build data map
+  const dataMap = {
+    'content.json': JSON.stringify(C,null,2),
+    ...Object.fromEntries(projects.map(p=>[`projects/${p.id}.json`, JSON.stringify(p,null,2)]))
+  };
+
   try{
-    const files=[
-      {path:'content.json', data:JSON.stringify(C,null,2)},
-      ...projects.map(p=>({path:`projects/${p.id}.json`, data:JSON.stringify(p,null,2)}))
-    ];
-    for(const f of files){
-      const sha=await ghGetSha(token, f.path);
-      await ghPutFile(token, f.path, f.data, sha, `Editor: update ${f.path}`);
+    for(const path of toSave){
+      if(!dataMap[path]) continue;
+      const sha=await ghGetSha(token, path);
+      await ghPutFile(token, path, dataMap[path], sha, `Editor: update ${path}`);
     }
-    dirty=false; btn.disabled=false; btn.textContent='Save All Changes';
-    toast('Saved to GitHub ✓');
+    dirty=false;
+    dirtyFiles.clear();
+    btn.disabled=false; btn.textContent='Save All Changes';
+    toast(`Saved ${toSave.length} file${toSave.length!==1?'s':''} ✓`);
   }catch(e){
     btn.disabled=false; btn.textContent='Save All Changes *';
     if(e.message.includes('Bad credentials')||e.message.includes('401')){
@@ -1827,7 +1864,10 @@ function filterMedia(query){
 
 function insertMedia(path){
   if(mediaCallback) mediaCallback(path);
-  markDirty('insert media');
+  // Re-render the current page so dropzones and path inputs reflect the new value
+  if(currentPage==='about'){ markDirty('insert media'); rerenderBlocks('about'); }
+  else if(currentPage==='project'&&currentProjectId){ markProjectDirty(currentProjectId,'insert media'); rerenderBlocks('proj-'+currentProjectId); }
+  else markDirty('insert media');
   closeMediaLibrary();
   toast('Inserted: '+path);
 }
