@@ -1060,13 +1060,15 @@ function startTicker(track, speed){
   // offset = translateX value applied directly
   // left-moving (speed > 0): start at 0, offset decreases → content moves left, wrap at -trackW back to 0
   // right-moving (speed < 0): start at -trackW, offset increases → content moves right, wrap at 0 back to -trackW
-  let offset = speed > 0 ? 0 : -trackW;
+  const absSpeed = Math.abs(speed);
+  const movingLeft = speed > 0;
+  let offset = movingLeft ? 0 : -trackW;
   let raf;
 
   function tick(){
-    offset += speed > 0 ? -speed : -speed; // always subtract speed magnitude based on direction
-    if(speed > 0 && offset < -trackW) offset = 0;
-    if(speed < 0 && offset > 0) offset = -trackW;
+    offset += movingLeft ? -absSpeed : absSpeed;
+    if(movingLeft && offset < -trackW) offset = 0;
+    if(!movingLeft && offset > 0) offset = -trackW;
     track.style.transform = `translateX(${offset}px)`;
     raf = requestAnimationFrame(tick);
   }
