@@ -201,6 +201,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .md-import-btn{width:100%;padding:.55rem;border:1px dashed var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:.72rem;letter-spacing:.04em;margin-top:.25rem;transition:all .15s;text-align:center}
 .md-import-btn:hover{border-color:#6a8ad0;color:#6a8ad0}
 
+/* ─────────────────────────────────────────
+   DRAG INDICATOR
+───────────────────────────────────────── */
+.bk.drag-over-top{border-top:2px solid var(--accent)}
+.bk.drag-over-bottom{border-bottom:2px solid var(--accent)}
+.ni.proj-drag-over{border-left-color:var(--accent);background:var(--surface2)}
+.ni[draggable=true]{cursor:grab}
+
+/* ─────────────────────────────────────────
+   UNDO BAR
+───────────────────────────────────────── */
+#undo-bar{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  display:flex;gap:.4rem;pointer-events:none;z-index:998;opacity:0;transition:opacity .2s}
+#undo-bar.show{opacity:1;pointer-events:all}
+.undo-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-family:var(--font);font-size:.65rem;letter-spacing:.08em;padding:.4rem .8rem;
+  transition:all .15s}
+.undo-btn:hover{border-color:var(--text);color:var(--text)}
+.undo-btn:disabled{opacity:.25;pointer-events:none}
+
 @media(max-width:900px){#app{grid-template-columns:200px 1fr}#preview-pane{display:none}}
 @media(max-width:680px){#app{grid-template-columns:1fr}#sidebar{position:relative;height:auto}.row2,.row3,.twocol-editor{grid-template-columns:1fr}}
 </style>
@@ -240,6 +260,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   </div>
 </div>
 <div id="toast"></div>
+<div id="undo-bar">
+  <button class="undo-btn" id="undo-btn" onclick="undo()">&#x21B6; Undo <span id="undo-label"></span></button>
+  <button class="undo-btn" id="redo-btn" onclick="redo()">Redo &#x21B7;</button>
+</div>
 
 <script>
 // ─────────────────────────────────────────
@@ -248,27 +272,73 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
 let openBlocks = new Set(); // tracks which block bodies are expanded
 
+// Undo/redo history
+let history=[], historyIdx=-1;
+const MAX_HISTORY=50;
+
+function snapshot(label){
+  // Trim any future states if we branched
+  history=history.slice(0,historyIdx+1);
+  history.push({label, C:JSON.parse(JSON.stringify(C)), projects:JSON.parse(JSON.stringify(projects))});
+  if(history.length>MAX_HISTORY) history.shift();
+  historyIdx=history.length-1;
+  updateUndoBar();
+}
+
+function undo(){
+  if(historyIdx<=0) return;
+  historyIdx--;
+  const s=history[historyIdx];
+  C=JSON.parse(JSON.stringify(s.C));
+  projects=JSON.parse(JSON.stringify(s.projects));
+  rebuildAfterHistoryChange();
+}
+
+function redo(){
+  if(historyIdx>=history.length-1) return;
+  historyIdx++;
+  const s=history[historyIdx];
+  C=JSON.parse(JSON.stringify(s.C));
+  projects=JSON.parse(JSON.stringify(s.projects));
+  rebuildAfterHistoryChange();
+}
+
+function rebuildAfterHistoryChange(){
+  rendered.clear(); // all pages need re-render after undo/redo
+  buildNav();
+  // Re-render currently visible page immediately
+  if(currentPage==='global') renderGlobal();
+  else if(currentPage==='about') renderAbout();
+  else if(currentPage==='contact') renderContact();
+  else if(currentPage==='project'&&currentProjectId){
+    const p=projects.find(x=>x.id===currentProjectId);
+    if(p) renderProject(currentProjectId);
+    else { currentProjectId=null; showPage('global'); }
+  }
+  rendered.add(currentPage);
+  markDirty();
+  updateUndoBar();
+}
+
+function updateUndoBar(){
+  const bar=document.getElementById('undo-bar');
+  const undoBtn=document.getElementById('undo-btn');
+  const redoBtn=document.getElementById('redo-btn');
+  const label=document.getElementById('undo-label');
+  const canUndo=historyIdx>0;
+  const canRedo=historyIdx<history.length-1;
+  undoBtn.disabled=!canUndo;
+  redoBtn.disabled=!canRedo;
+  label.textContent=canUndo ? '('+history[historyIdx].label+')' : '';
+  bar.classList.toggle('show', canUndo||canRedo);
+}
+
 // ─────────────────────────────────────────
 // DATA LOADING & NAV
 // ─────────────────────────────────────────
-async function loadAll(){
-  try{
-    C=await fetch('content.json?v='+Date.now()).then(r=>r.json());
-    projects=await Promise.all(C.projects.map(id=>fetch('projects/'+id+'.json?v='+Date.now()).then(r=>r.json())));
-    buildNav(); renderGlobal(); renderAbout(); renderContact();
-    initPreview();
-  }catch(e){ toast('Error loading files: '+e.message,true); }
-  updateTokenBtn();
-}
+const rendered = new Set(); // tracks which pages have been rendered at least once
 
-function buildNav(){
-  document.getElementById('sb-name').textContent=C.name;
-  document.getElementById('project-nav').innerHTML=projects.map(p=>`
-    <button class="ni" onclick="showProject('${p.id}')" id="nav-proj-${p.id}">
-      <div class="dot"></div>${p.title}
-      <span class="badge">${p.type}</span>
-    </button>`).join('');
-}
+function markPageStale(name){ rendered.delete(name); }
 
 function showPage(name){
   ['global','about','contact','project'].forEach(n=>{
@@ -280,8 +350,42 @@ function showPage(name){
   const navEl=document.getElementById('nav-'+name); if(navEl)navEl.classList.add('active');
   currentPage=name;
   if(name!=='project') currentProjectId=null;
+  // Only re-render if stale
+  if(!rendered.has(name)){
+    if(name==='global') renderGlobal();
+    else if(name==='about') renderAbout();
+    else if(name==='contact') renderContact();
+    rendered.add(name);
+  }
   sendPreviewNav();
 }
+
+function showProject(id){
+  showPage('project');
+  currentProjectId=id;
+  const el=document.getElementById('nav-proj-'+id); if(el)el.classList.add('active');
+  renderProject(id);
+  sendPreviewNav();
+}
+
+async function loadAll(){
+  try{
+    C=await fetch('content.json?v='+Date.now()).then(r=>r.json());
+    projects=await Promise.all(C.projects.map(id=>fetch('projects/'+id+'.json?v='+Date.now()).then(r=>r.json())));
+    buildNav();
+    renderGlobal(); renderAbout(); renderContact();
+    rendered.add('global'); rendered.add('about'); rendered.add('contact');
+    initPreview();
+    snapshot('initial');
+  }catch(e){ toast('Error loading files: '+e.message,true); }
+  updateTokenBtn();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='z' && !e.shiftKey){ e.preventDefault(); undo(); }
+  if((e.metaKey||e.ctrlKey) && (e.key==='y' || (e.key==='z' && e.shiftKey))){ e.preventDefault(); redo(); }
+});
 
 function showProject(id){
   showPage('project');
@@ -524,11 +628,11 @@ function renderContact(){
 function addLink(){
   if(!C.contact.links) C.contact.links=[];
   C.contact.links.push({label:'',url:''});
-  markDirty(); renderContact(); showPage('contact');
+  markDirty('add link'); markPageStale('contact'); renderContact(); showPage('contact');
 }
 function removeLink(i){
   C.contact.links.splice(i,1);
-  markDirty(); renderContact(); showPage('contact');
+  markDirty('remove link'); markPageStale('contact'); renderContact(); showPage('contact');
 }
 function renderProject(id){
   const p=projects.find(x=>x.id===id); if(!p)return;
@@ -747,9 +851,8 @@ function addBlock(scope, type){
   };
   blocks.push(defaults[type]||{id,type,content:''});
   setBlocks(scope,blocks);
-  markDirty();
+  markDirty('add block');
   rerenderBlocks(scope);
-  // auto-open the newly added block
   openBlocks.add(id);
   setTimeout(()=>{
     const el=document.getElementById('bkb-'+id);
@@ -762,7 +865,7 @@ function addBlock(scope, type){
 function removeBlock(scope,blockId){
   openBlocks.delete(blockId);
   const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
-  setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
+  setBlocks(scope,blocks);markDirty('delete block');rerenderBlocks(scope);
 }
 
 function updateBlock(scope,blockId,key,val){
@@ -870,35 +973,104 @@ function addProject(){
     {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
   ]};
   projects.push(p);C.projects.push(id);
-  buildNav();markDirty();showProject(id);
+  buildNav();markDirty('add project');showProject(id);
 }
 // ─────────────────────────────────────────
 // DRAG REORDER — PROJECTS & BLOCKS
 // ─────────────────────────────────────────
 let dragId=null;
 let blockDragBid=null, blockDragScope=null;
+
+// ── Block drag with insert line indicator
 function blockDragStart(e){
   blockDragBid=e.currentTarget.dataset.bid;
   blockDragScope=e.currentTarget.dataset.scope;
   e.currentTarget.style.opacity='.4';
   e.dataTransfer.effectAllowed='move';
 }
-function blockDragEnd(e){ e.currentTarget.style.opacity='1'; blockDragBid=null; blockDragScope=null; }
-function blockDragOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+function blockDragEnd(e){
+  e.currentTarget.style.opacity='1';
+  blockDragBid=null; blockDragScope=null;
+  // Clear all indicators
+  document.querySelectorAll('.bk').forEach(b=>{
+    b.classList.remove('drag-over-top','drag-over-bottom');
+  });
+}
+function blockDragOver(e){
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  const bk=e.currentTarget;
+  if(!blockDragBid||bk.dataset.bid===blockDragBid) return;
+  // Clear others
+  document.querySelectorAll('.bk').forEach(b=>b.classList.remove('drag-over-top','drag-over-bottom'));
+  // Show indicator above or below based on mouse position
+  const rect=bk.getBoundingClientRect();
+  const mid=rect.top+rect.height/2;
+  if(e.clientY<mid) bk.classList.add('drag-over-top');
+  else bk.classList.add('drag-over-bottom');
+}
 function blockDrop(e){
   e.preventDefault();
-  const targetBid=e.currentTarget.dataset.bid;
-  const targetScope=e.currentTarget.dataset.scope;
+  document.querySelectorAll('.bk').forEach(b=>b.classList.remove('drag-over-top','drag-over-bottom'));
+  const targetBk=e.currentTarget;
+  const targetBid=targetBk.dataset.bid;
+  const targetScope=targetBk.dataset.scope;
   if(!blockDragBid||blockDragBid===targetBid||blockDragScope!==targetScope) return;
   const blocks=getBlocks(blockDragScope);
   const from=blocks.findIndex(b=>b.id===blockDragBid);
-  const to=blocks.findIndex(b=>b.id===targetBid);
+  let to=blocks.findIndex(b=>b.id===targetBid);
   if(from<0||to<0) return;
+  // Insert above or below based on indicator
+  const rect=targetBk.getBoundingClientRect();
+  const insertAfter=e.clientY>rect.top+rect.height/2;
+  if(insertAfter && to>=from) to++;
+  else if(!insertAfter && to<=from) to--;
   const [moved]=blocks.splice(from,1);
-  blocks.splice(to,0,moved);
+  const finalTo=Math.max(0,Math.min(to,blocks.length));
+  blocks.splice(finalTo,0,moved);
   setBlocks(blockDragScope,blocks);
-  markDirty(); rerenderBlocks(blockDragScope);
+  markDirty('reorder block'); rerenderBlocks(blockDragScope);
 }
+
+// ── Sidebar project drag
+let navDragId=null;
+function navDragStart(e,id){
+  navDragId=id; e.currentTarget.style.opacity='.4';
+  e.dataTransfer.effectAllowed='move';
+}
+function navDragEnd(e){
+  e.currentTarget.style.opacity='1'; navDragId=null;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('proj-drag-over'));
+}
+function navDragOver(e){
+  e.preventDefault();
+  if(!navDragId) return;
+  document.querySelectorAll('.ni[draggable]').forEach(n=>n.classList.remove('proj-drag-over'));
+  e.currentTarget.classList.add('proj-drag-over');
+}
+function navDragLeave(e){ e.currentTarget.classList.remove('proj-drag-over'); }
+function navDrop(e,targetId){
+  e.preventDefault();
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('proj-drag-over'));
+  if(!navDragId||navDragId===targetId) return;
+  const from=C.projects.indexOf(navDragId);
+  const to=C.projects.indexOf(targetId);
+  if(from<0||to<0) return;
+  C.projects.splice(from,1);
+  C.projects.splice(to,0,navDragId);
+  // Also reorder projects array to match
+  const pFrom=projects.findIndex(p=>p.id===navDragId);
+  const pTo=projects.findIndex(p=>p.id===targetId);
+  const [moved]=projects.splice(pFrom,1);
+  projects.splice(pTo,0,moved);
+  markDirty('reorder project'); buildNav();
+  // Restore active state
+  if(currentProjectId){
+    const el=document.getElementById('nav-proj-'+currentProjectId);
+    if(el) el.classList.add('active');
+  }
+}
+
+// ── Global settings project drag (keep for backward compat)
 function dragStart(e){ dragId=e.currentTarget.dataset.id; e.currentTarget.style.opacity='.4'; }
 function dragEnd(e){ e.currentTarget.style.opacity='1'; dragId=null; }
 function dragOver(e){ e.preventDefault(); }
@@ -911,17 +1083,17 @@ function dropOn(e){
   if(from<0||to<0) return;
   C.projects.splice(from,1);
   C.projects.splice(to,0,dragId);
-  markDirty(); renderGlobal(); showPage('global');
+  markDirty('reorder project'); renderGlobal(); showPage('global');
 }
 
 function getFilters(){ return C.filters||(C.filters=[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]); }
 function addFilter(){
   getFilters().push({value:'new',label:'New'});
-  markDirty(); renderGlobal(); showPage('global');
+  markDirty('add filter'); markPageStale('global'); renderGlobal(); showPage('global');
 }
 function removeFilter(i){
   getFilters().splice(i,1);
-  markDirty(); renderGlobal(); showPage('global');
+  markDirty('remove filter'); markPageStale('global'); renderGlobal(); showPage('global');
 }
 function updateFilter(i,key,val){
   getFilters()[i][key]=val; markDirty();
@@ -931,14 +1103,16 @@ function togglePublished(id){
   const p = projects.find(x=>x.id===id);
   if(!p) return;
   p.published = p.published===false ? true : false;
-  markDirty(); renderProject(id); showProject(id);
+  markDirty(p.published===false?'set draft':'set published');
+  markPageStale('global');
+  renderProject(id); showProject(id);
 }
 
 function deleteProject(id){
   if(!confirm('Delete this project? This cannot be undone.'))return;
   projects=projects.filter(p=>p.id!==id);
   C.projects=C.projects.filter(i=>i!==id);
-  buildNav();markDirty();showPage('global');
+  buildNav();markDirty('delete project');showPage('global');
   toast('Project deleted — save to apply');
 }
 
@@ -965,7 +1139,9 @@ function initPreview(){
   frame.src='index.html?preview=1';
 }
 
-function markDirty(){
+function markDirty(label){
+  // Take a history snapshot on meaningful changes
+  if(label) snapshot(label);
   dirty=true;
   document.getElementById('save-btn').textContent='Save All Changes *';
   document.getElementById('pb-dot').classList.remove('live');
