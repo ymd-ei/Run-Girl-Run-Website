@@ -420,7 +420,7 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
         <p class="ct-email-label">Drop us a line</p>
         <a id="ct-email-link" href="#" class="ct-email-link">
           <span id="ct-email-text"></span>
-          <i class="ph ph-arrow-up-right arr"></i>
+          <i class="ph ph-fill ph-arrow-up-right arr"></i>
         </a>
       </div>
       <div id="ct-social-wrap">
@@ -430,9 +430,9 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
       <div class="ct-resume-block" id="ct-resume-wrap" style="display:none">
         <p class="ct-email-label">Credentials</p>
         <a id="ct-resume-link" href="#" target="_blank" class="ct-resume-link">
-          <i class="ph ph-file-pdf"></i>
+          <i class="ph ph-fill ph-file-pdf"></i>
           View Resume
-          <i class="ph ph-arrow-right"></i>
+          <i class="ph ph-fill ph-arrow-right"></i>
         </a>
       </div>
     </div>
@@ -575,17 +575,17 @@ function initCountUps(){
 }
 
 function phosphorIcon(url){
-  if(url.startsWith('mailto:')) return 'ph ph-envelope';
-  if(url.includes('linkedin.com')) return 'ph ph-linkedin-logo';
-  if(url.includes('instagram.com')) return 'ph ph-instagram-logo';
-  if(url.includes('vimeo.com')) return 'ph ph-vimeo-logo';
-  if(url.includes('youtube.com')||url.includes('youtu.be')) return 'ph ph-youtube-logo';
-  if(url.includes('twitter.com')||url.includes('x.com')) return 'ph ph-x-logo';
-  if(url.includes('github.com')) return 'ph ph-github-logo';
-  if(url.includes('behance.net')) return 'ph ph-behance-logo';
-  if(url.includes('dribbble.com')) return 'ph ph-dribbble-logo';
-  if(url.includes('tiktok.com')) return 'ph ph-tiktok-logo';
-  return 'ph ph-link';
+  if(url.startsWith('mailto:')) return 'ph ph-fill ph-envelope';
+  if(url.includes('linkedin.com')) return 'ph ph-fill ph-linkedin-logo';
+  if(url.includes('instagram.com')) return 'ph ph-fill ph-instagram-logo';
+  if(url.includes('vimeo.com')) return 'ph ph-fill ph-vimeo-logo';
+  if(url.includes('youtube.com')||url.includes('youtu.be')) return 'ph ph-fill ph-youtube-logo';
+  if(url.includes('twitter.com')||url.includes('x.com')) return 'ph ph-fill ph-x-logo';
+  if(url.includes('github.com')) return 'ph ph-fill ph-github-logo';
+  if(url.includes('behance.net')) return 'ph ph-fill ph-behance-logo';
+  if(url.includes('dribbble.com')) return 'ph ph-fill ph-dribbble-logo';
+  if(url.includes('tiktok.com')) return 'ph ph-fill ph-tiktok-logo';
+  return 'ph ph-fill ph-link';
 }
 
 const nearby = {
