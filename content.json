@@ -147,5 +147,9 @@
       "Game Cinematics"
     ],
     "sub": "We're always open to new collaborators, weird briefs, and good ideas. Run Girl Run is a small studio, so every project gets real attention — not handed off. Whether you've got something fully formed or just an early idea, reach out anytime."
+  },
+  "theme": {
+    "ctBg": "#1a1714",
+    "ctAccent": "#ff151f"
   }
 }
