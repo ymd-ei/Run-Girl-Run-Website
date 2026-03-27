@@ -915,7 +915,7 @@ function render(){
     return `<div class="wc" data-type="${p.type}" onclick="openProject('${p.id}')">
       <div class="wci ${isSensitive?'wci-blur':''}">
         ${p.thumbnail?`<img src="${p.thumbnail}" alt="${p.title}">`:thumb(p.type)}
-        <div class="wco">View Project &#x2192;</div>
+        <div class="wco"></div>
         ${sensitiveOverlay}
       </div>
       <div class="wcm"><p class="wct">${p.title}</p><p class="wcty">${p.typeLabel} &middot; ${p.year}</p></div>
