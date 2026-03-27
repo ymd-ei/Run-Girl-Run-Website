@@ -1010,8 +1010,7 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
   const loader = document.getElementById('loader');
 
   // Fetch the real name from content.json
-  fetch('content.json').then(r=>r.json()).then(d=>{
-    const nameText = (d.name || d.siteTitle || 'Portfolio').toUpperCase();
+  function runLoaderName(nameText){
     nameEl.innerHTML = nameText.split('').map(ch =>
       ch === ' '
         ? `<span style="width:.4em;display:inline-block;opacity:1"> </span>`
@@ -1020,13 +1019,11 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
     const allSpans = [...nameEl.querySelectorAll('span:not([style])')];
     const finalChars = nameText.split('').filter(c => c !== ' ');
 
-    // Phase 1 — all letters visible as noise immediately
     allSpans.forEach(sp => {
       sp.style.opacity = '1';
       sp.textContent = chars[Math.floor(Math.random()*chars.length)];
     });
 
-    // Phase 2 — keep all unsettled letters cycling
     const noiseTimer = setInterval(()=>{
       allSpans.forEach(sp => {
         if(!sp.dataset.settled)
@@ -1034,7 +1031,6 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
       });
     }, 60);
 
-    // Phase 3 — settle one by one
     allSpans.forEach((sp, i) => {
       setTimeout(()=>{
         sp.dataset.settled = '1';
@@ -1042,7 +1038,18 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
         if(i === allSpans.length - 1) clearInterval(noiseTimer);
       }, 100 + i * 75);
     });
-  }).catch(()=>{ nameEl.textContent = '...'; });
+  }
+
+  // Try to get the real name, fall back to title or placeholder
+  const fallbackName = (document.title && document.title !== 'Portfolio' ? document.title : 'Run Girl Run').toUpperCase();
+  runLoaderName(fallbackName);
+  fetch('content.json').then(r=>r.json()).then(d=>{
+    const name = (d.name || d.siteTitle || '').toUpperCase();
+    if(name && name !== fallbackName){
+      nameEl.innerHTML = '';
+      runLoaderName(name);
+    }
+  }).catch(()=>{});
 
   // Progress bar — fake stops at random percentages, then completes
   // Generate 2-3 random stop points
