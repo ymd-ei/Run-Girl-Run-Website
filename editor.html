@@ -6,6 +6,9 @@
 <title>Portfolio Editor</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+/* ─────────────────────────────────────────
+   RESET & TOKENS
+───────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f0f0f;--surface:#181818;--surface2:#212121;--border:#2c2c2c;
@@ -15,7 +18,9 @@
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;font-weight:300;min-height:100vh;overflow:hidden}
 #app{display:grid;grid-template-columns:200px 1fr 1fr;height:100vh;overflow:hidden}
 
-/* SIDEBAR */
+/* ─────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────── */
 #sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow-y:auto}
 .sb-logo{padding:1.25rem 1rem;border-bottom:1px solid var(--border);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .sb-logo span{color:var(--accent);display:block;font-size:.95rem;letter-spacing:.04em;margin-bottom:.15rem;font-weight:400}
@@ -35,12 +40,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .save-btn:hover{opacity:.85}
 .save-btn:disabled{opacity:.35}
 
-/* MAIN */
+/* ─────────────────────────────────────────
+   MAIN PANEL
+───────────────────────────────────────── */
 #main{padding:2rem;max-width:680px;height:100vh;overflow-y:auto}
 .page-title{font-size:1.3rem;font-weight:500;margin-bottom:.25rem}
 .page-sub{font-size:.78rem;color:var(--muted);margin-bottom:1.75rem}
 
-/* PREVIEW PANE */
+/* ─────────────────────────────────────────
+   PREVIEW PANE
+───────────────────────────────────────── */
 #preview-pane{border-left:1px solid var(--border);display:flex;flex-direction:column;height:100vh;background:#111}
 #preview-bar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
 #preview-bar span{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -51,7 +60,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 #preview-refresh:hover{border-color:var(--text);color:var(--text)}
 #preview-frame{flex:1;border:none;width:100%}
 
-/* SECTION CARDS */
+/* ─────────────────────────────────────────
+   SECTION CARDS
+───────────────────────────────────────── */
 .section{background:var(--surface);border:1px solid var(--border);margin-bottom:1rem;overflow:hidden}
 .sh{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .sh h3{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;color:var(--muted)}
@@ -60,7 +71,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .sb{padding:1.1rem;display:flex;flex-direction:column;gap:.9rem}
 .sb.hidden{display:none}
 
-/* FIELDS */
+/* ─────────────────────────────────────────
+   FIELDS
+───────────────────────────────────────── */
 .field{display:flex;flex-direction:column;gap:.35rem}
 .field label{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .field input,.field textarea,.field select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.85rem;font-weight:300;padding:.5rem .65rem;outline:none;width:100%;transition:border-color .15s}
@@ -71,7 +84,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
 
-/* BLOCK EDITOR */
+/* ─────────────────────────────────────────
+   BLOCK EDITOR
+───────────────────────────────────────── */
 .block-list{display:flex;flex-direction:column;gap:.5rem}
 .bk{background:var(--surface2);border:1px solid var(--border);overflow:hidden}
 .bk-head{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
@@ -84,22 +99,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .bk-body{padding:.8rem;display:flex;flex-direction:column;gap:.65rem}
 .bk-body.hidden{display:none}
 
-/* ALIGN TOGGLE */
+/* ─────────────────────────────────────────
+   ALIGN TOGGLE
+───────────────────────────────────────── */
 .align-row{display:flex;gap:.3rem}
 .al-btn{padding:.3rem .65rem;border:1px solid var(--border);background:none;color:var(--muted);font-size:.7rem;font-family:var(--font);transition:all .15s}
 .al-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* SIZE TOGGLE */
+/* ─────────────────────────────────────────
+   SIZE TOGGLE
+───────────────────────────────────────── */
 .size-row{display:flex;gap:.3rem}
 .sz-btn{padding:.3rem .65rem;border:1px solid var(--border);background:none;color:var(--muted);font-size:.7rem;font-family:var(--font);transition:all .15s}
 .sz-btn.active{background:var(--surface);border-color:var(--text);color:var(--text)}
 
-/* TWOCOL EDITOR */
+/* ─────────────────────────────────────────
+   TWOCOL EDITOR
+───────────────────────────────────────── */
 .twocol-editor{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .col-editor{border:1px solid var(--border);padding:.65rem}
 .col-label{font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
 
-/* ADD BLOCK MENU */
+/* ─────────────────────────────────────────
+   ADD BLOCK MENU
+───────────────────────────────────────── */
 .add-block-btn{width:100%;padding:.55rem;border:1px dashed var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:.72rem;letter-spacing:.04em;margin-top:.25rem;transition:all .15s}
 .add-block-btn:hover{border-color:var(--accent);color:var(--accent)}
 .block-menu{background:var(--surface);border:1px solid var(--border);padding:.4rem;display:grid;grid-template-columns:1fr 1fr;gap:.3rem;margin-top:.3rem}
@@ -108,7 +131,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .bm-item:hover{background:var(--surface2);color:var(--text)}
 .bm-icon{width:20px;height:20px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.6rem;color:var(--muted)}
 
-/* IMG FIELD */
+/* ─────────────────────────────────────────
+   IMG FIELD
+───────────────────────────────────────── */
 .img-row{display:flex;gap:.4rem}
 .img-path{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .55rem;outline:none;transition:border-color .15s;width:100%}
 .img-path:focus{border-color:var(--accent)}
@@ -123,7 +148,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .dz-path{font-size:.65rem;color:var(--muted);margin-top:.25rem;word-break:break-all}
 .dz-local-note{font-size:.6rem;color:var(--accent);margin-top:.2rem;letter-spacing:.04em}
 
-/* SKILLS */
+/* ─────────────────────────────────────────
+   SKILLS
+───────────────────────────────────────── */
 .skill-item{display:grid;grid-template-columns:1fr 80px auto;gap:.5rem;align-items:center}
 .skill-pct{font-size:.78rem;color:var(--accent);text-align:right;font-weight:500}
 .del-btn{background:none;border:none;color:var(--muted);font-size:.9rem;padding:.2rem;transition:color .15s}
@@ -131,26 +158,38 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .add-btn{background:none;border:1px dashed var(--border);color:var(--muted);font-family:var(--font);font-size:.7rem;padding:.45rem .8rem;transition:all .15s;align-self:flex-start}
 .add-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* STAT ITEMS */
+/* ─────────────────────────────────────────
+   STAT ITEMS
+───────────────────────────────────────── */
 .stat-item{display:grid;grid-template-columns:80px 1fr auto;gap:.5rem;align-items:center}
 
-/* CONTACT */
+/* ─────────────────────────────────────────
+   CONTACT
+───────────────────────────────────────── */
 .contact-fields{display:flex;flex-direction:column;gap:.65rem}
 
-/* REEL */
+/* ─────────────────────────────────────────
+   REEL
+───────────────────────────────────────── */
 .reel-row{display:grid;grid-template-columns:110px 1fr;gap:.75rem}
 
-/* TOAST */
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
 #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#fff;padding:.65rem 1.1rem;font-size:.78rem;letter-spacing:.04em;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;z-index:999}
 #toast.show{opacity:1;transform:translateY(0)}
 #toast.error{background:#8b2020}
 
-/* DANGER */
+/* ─────────────────────────────────────────
+   DANGER
+───────────────────────────────────────── */
 .danger-zone{border-top:1px solid var(--border);padding:.9rem 1.1rem;margin-top:.25rem}
 .danger-btn{background:none;border:1px solid #5a2020;color:#c06060;font-family:var(--font);font-size:.7rem;padding:.45rem .9rem;transition:all .15s}
 .danger-btn:hover{background:#5a2020;color:var(--text)}
 
-/* COLOR FIELD */
+/* ─────────────────────────────────────────
+   COLOR FIELD
+───────────────────────────────────────── */
 .color-field{display:flex;flex-direction:column;gap:.35rem}
 .color-field label{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .color-row{display:flex;align-items:center;gap:.5rem}
@@ -203,11 +242,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 <div id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
 let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
+let openBlocks = new Set(); // tracks which block bodies are expanded
 
-// ── FIX 2: track which block bodies are open so rerenderBlocks can restore them
-let openBlocks = new Set();
-
+// ─────────────────────────────────────────
+// DATA LOADING & NAV
+// ─────────────────────────────────────────
 async function loadAll(){
   try{
     C=await fetch('content.json?v='+Date.now()).then(r=>r.json());
@@ -248,7 +291,9 @@ function showProject(id){
   sendPreviewNav();
 }
 
-// ── GLOBAL
+// ─────────────────────────────────────────
+// PAGE RENDERERS — GLOBAL
+// ─────────────────────────────────────────
 function renderGlobal(){
   document.getElementById('page-global').innerHTML=`
     <div class="page-title">Site Settings</div>
@@ -345,7 +390,9 @@ function renderGlobal(){
     </div>`;
 }
 
-// ── ABOUT (block editor)
+// ─────────────────────────────────────────
+// PAGE RENDERERS — ABOUT
+// ─────────────────────────────────────────
 function renderAbout(){
   document.getElementById('page-about').innerHTML=`
     <div class="page-title">About</div>
@@ -357,7 +404,9 @@ function renderAbout(){
   renderBlockList('about', C.about);
 }
 
-// ── CONTACT
+// ─────────────────────────────────────────
+// PAGE RENDERERS — CONTACT
+// ─────────────────────────────────────────
 function getCP(){ return C.contactPanel||(C.contactPanel={}); }
 function cpSet(key,val){ getCP()[key]=val; markDirty(); }
 
@@ -528,7 +577,9 @@ function renderProject(id){
   renderBlockList('proj-'+id, p.blocks);
 }
 
-// ── BLOCK LIST RENDERER
+// ─────────────────────────────────────────
+// BLOCK LIST RENDERER
+// ─────────────────────────────────────────
 function renderBlockList(scope, blocks){
   const listId = scope==='about' ? 'about-blocks' : 'proj-blocks-'+scope.replace('proj-','');
   const el=document.getElementById(listId); if(!el)return;
@@ -644,7 +695,9 @@ function blockMenuHTML(scope){
   return types.map(([t,icon,label])=>`<button class="bm-item" onclick="addBlock('${scope}','${t}')"><div class="bm-icon">${icon}</div>${label}</button>`).join('');
 }
 
-// ── BLOCK OPERATIONS
+// ─────────────────────────────────────────
+// BLOCK OPERATIONS
+// ─────────────────────────────────────────
 function getBlocks(scope){
   if(scope==='about') return C.about;
   const id=scope.replace('proj-',''); const p=projects.find(x=>x.id===id); return p?p.blocks:[];
@@ -686,14 +739,6 @@ function addBlock(scope, type){
 function removeBlock(scope,blockId){
   openBlocks.delete(blockId);
   const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
-  setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
-}
-
-function moveBlock(scope,blockId,dir){
-  const blocks=getBlocks(scope)||[];
-  const i=blocks.findIndex(b=>b.id===blockId);if(i<0)return;
-  const ni=i+dir;if(ni<0||ni>=blocks.length)return;
-  [blocks[i],blocks[ni]]=[blocks[ni],blocks[i]];
   setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
 }
 
@@ -757,7 +802,9 @@ function removeSkillItem(scope,blockId,idx){
   if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
 }
 
-// ── FIX 2: rerenderBlocks restores open state
+// ─────────────────────────────────────────
+// RE-RENDER & TOGGLE (preserves open state)
+// ─────────────────────────────────────────
 function rerenderBlocks(scope){
   const blocks=getBlocks(scope)||[];
   const listId=scope==='about'?'about-blocks':'proj-blocks-'+scope.replace('proj-','');
@@ -771,7 +818,7 @@ function rerenderBlocks(scope){
   });
 }
 
-// ── FIX 2: toggleBk tracks open state
+// tracks open state on toggle
 function toggleBk(id){
   const el=document.getElementById('bkb-'+id);
   el.classList.toggle('hidden');
@@ -782,7 +829,9 @@ function toggleBlockMenu(menuId){
   document.getElementById(menuId).classList.toggle('hidden');
 }
 
-// ── PROJECT HELPERS
+// ─────────────────────────────────────────
+// PROJECT HELPERS
+// ─────────────────────────────────────────
 function updateP(id,key,val){
   const p=projects.find(x=>x.id===id);if(p){p[key]=val;markDirty();}
 }
@@ -796,10 +845,10 @@ function addProject(){
   projects.push(p);C.projects.push(id);
   buildNav();markDirty();showProject(id);
 }
-// ── DRAG REORDER (projects)
+// ─────────────────────────────────────────
+// DRAG REORDER — PROJECTS & BLOCKS
+// ─────────────────────────────────────────
 let dragId=null;
-
-// ── DRAG REORDER (blocks)
 let blockDragBid=null, blockDragScope=null;
 function blockDragStart(e){
   blockDragBid=e.currentTarget.dataset.bid;
@@ -866,13 +915,17 @@ function deleteProject(id){
   toast('Project deleted — save to apply');
 }
 
-// ── SECTION TOGGLE
+// ─────────────────────────────────────────
+// SECTION TOGGLE
+// ─────────────────────────────────────────
 function toggleSection(head){
   head.classList.toggle('collapsed');
   head.nextElementSibling.classList.toggle('hidden');
 }
 
-// ── DIRTY
+// ─────────────────────────────────────────
+// LIVE PREVIEW
+// ─────────────────────────────────────────
 let previewTimer=null, previewReady=false;
 
 function initPreview(){
@@ -926,7 +979,9 @@ function refreshPreview(){
   initPreview();
 }
 
-// ── MEDIA UPLOADER
+// ─────────────────────────────────────────
+// MEDIA UPLOADER
+// ─────────────────────────────────────────
 async function uploadMedia(file, folder){
   const tk = getToken();
   if(!tk) throw new Error('No GitHub token set');
@@ -959,7 +1014,9 @@ async function uploadMedia(file, folder){
   });
 }
 
-// ── FIX 1: makeDropzone — manual path input + local preview fallback
+// ─────────────────────────────────────────
+// DROPZONE (path input + local preview fallback)
+// ─────────────────────────────────────────
 function makeDropzone(currentVal, onUpload, folder, placeholder){
   const uid = 'dz' + Math.random().toString(36).slice(2,9);
   const pathId = uid + '_p';
@@ -1071,7 +1128,9 @@ function makeDropzone(currentVal, onUpload, folder, placeholder){
   </div>`;
 }
 
-// ── GITHUB API SAVE
+// ─────────────────────────────────────────
+// GITHUB API — SAVE
+// ─────────────────────────────────────────
 const REPO='ymd-ei/Run-Girl-Run-Website';
 const BRANCH='main';
 
@@ -1153,6 +1212,9 @@ function toast(msg,isError){
   el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3500);
 }
 
+// ─────────────────────────────────────────
+// REEL URL PARSER
+// ─────────────────────────────────────────
 function reelHint(){
   if(!C.reel||!C.reel.url) return 'Supports YouTube iframes, youtu.be links, Vimeo iframes, and vimeo.com links.';
   if(C.reel.type==='youtube') return '&#x2713; YouTube detected';
@@ -1198,7 +1260,9 @@ function updateReelHint(msg){
   if(el) el.innerHTML=msg;
 }
 
-// ── FIX 3: MARKDOWN IMPORT
+// ─────────────────────────────────────────
+// MARKDOWN IMPORT
+// ─────────────────────────────────────────
 function importMarkdown(scope){
   const input = document.createElement('input');
   input.type = 'file';
@@ -1332,7 +1396,9 @@ function parseMarkdownToBlocks(md){
   return blocks;
 }
 
-// ── THEME
+// ─────────────────────────────────────────
+// THEME
+// ─────────────────────────────────────────
 const THEME_DEFAULTS = {
   ink:'#1a1714', paper:'#f2ede4', accent:'#71904c', panelBg:'#f7f3ec',
   ctAccent:'#ff7828', ctBg:'#080808', ctHi:'#ffffff'
