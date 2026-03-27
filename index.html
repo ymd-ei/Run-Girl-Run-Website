@@ -1062,13 +1062,14 @@ function startTicker(track, speed){
   // right-moving (speed < 0): start at -trackW, offset increases → content moves right, wrap at 0 back to -trackW
   const absSpeed = Math.abs(speed);
   const movingLeft = speed > 0;
-  let offset = movingLeft ? 0 : -trackW;
+  const loopPoint = trackW / 4; // one copy length
+  let offset = movingLeft ? 0 : -loopPoint;
   let raf;
 
   function tick(){
     offset += movingLeft ? -absSpeed : absSpeed;
-    if(movingLeft && offset < -trackW) offset = 0;
-    if(!movingLeft && offset > 0) offset = -trackW;
+    if(movingLeft && offset < -loopPoint) offset = 0;
+    if(!movingLeft && offset > 0) offset = -loopPoint;
     track.style.transform = `translateX(${offset}px)`;
     raf = requestAnimationFrame(tick);
   }
