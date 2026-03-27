@@ -1446,11 +1446,14 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
 // ─────────────────────────────────────────
 const REPO='ymd-ei/Run-Girl-Run-Website';
 const BRANCH='main';
+const shaCache = {}; // path → sha, updated after each successful save
 
 function getToken(){ return localStorage.getItem('gh_token')||''; }
 function setToken(t){ localStorage.setItem('gh_token',t); }
 
 async function ghGetSha(token, path){
+  // Use cached SHA if available — avoids stale SHA on rapid saves
+  if(shaCache[path]) return shaCache[path];
   const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`,{
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
   });
@@ -1468,7 +1471,10 @@ async function ghPutFile(token, path, content, sha, message){
     body:JSON.stringify(body)
   });
   if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
-  return r.json();
+  const result = await r.json();
+  // Cache the new SHA so rapid saves don't conflict
+  if(result.content&&result.content.sha) shaCache[path] = result.content.sha;
+  return result;
 }
 
 async function saveAll(){
