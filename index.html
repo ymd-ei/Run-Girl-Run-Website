@@ -930,7 +930,8 @@ function render(){
 
   // Tickers — doubled for seamless loop
   function makeTickerHTML(items){
-    return items.map(w=>`<span class="ticker-item"><span class="ticker-word">${w}</span><span class="ticker-dot"></span></span>`).join('');
+    const copies = [...items,...items,...items,...items];
+    return copies.map(w=>`<span class="ticker-item"><span class="ticker-word">${w}</span><span class="ticker-dot"></span></span>`).join('');
   }
   const topItems = (cp.tickerTop&&cp.tickerTop.length) ? cp.tickerTop : defaultTicker;
   const midItems = (cp.tickerMid&&cp.tickerMid.length) ? cp.tickerMid : defaultTicker;
