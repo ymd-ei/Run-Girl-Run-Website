@@ -396,7 +396,7 @@ function renderProject(id){
           <div class="field"><label>Duration</label><input value="${p.duration}" oninput="updateP('${id}','duration',this.value)"></div>
         </div>
         <div class="field"><label>Thumbnail</label>
-          ${makeDropzone(p.thumbnail||'', v=>{ updateP('${id}','thumbnail',v); }, 'media/projects', 'thumbnail.jpg')}
+          ${makeDropzone(p.thumbnail||'', v=>{ updateP(id,'thumbnail',v); }, 'media/projects', 'thumbnail.jpg')}
         </div>
         <div class="field"><label>Tags (comma separated)</label>
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
@@ -447,7 +447,7 @@ function blockEditorHTML(scope, b, i, total){
   } else if(b.type==='image'){
     body=`
       <div class="field"><label>Image</label>
-        ${makeDropzone(b.src||'', v=>{ updateBlock('${scope}','${b.id}','src',v); }, 'media', 'image.jpg')}
+        ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media', 'image.jpg')}
       </div>
       <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
   } else if(b.type==='twocol'){
@@ -511,7 +511,7 @@ function colBlockEditor(scope, b, side){
       ${types.map(([v,l])=>`<option value="${v}" ${col.type===v?'selected':''}>${l}</option>`).join('')}
     </select>
     ${col.type==='image'
-      ? makeDropzone(col.src||'', v=>{ updateColField('${scope}','${b.id}','${side}','src',v); }, 'media', 'image.jpg')
+      ? makeDropzone(col.src||'', v=>{ updateColField(scope,b.id,side,'src',v); }, 'media', 'image.jpg')
       : `<textarea style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.8rem;padding:.45rem .55rem;outline:none;resize:vertical;min-height:60px;width:100%" oninput="updateColField('${scope}','${b.id}','${side}','content',this.value)">${col.content||''}</textarea>`
     }
     <div class="align-row">
