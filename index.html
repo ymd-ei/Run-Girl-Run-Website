@@ -1014,31 +1014,35 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
     const nameText = (d.name || d.siteTitle || 'Portfolio').toUpperCase();
     nameEl.innerHTML = nameText.split('').map(ch =>
       ch === ' '
-        ? `<span style="width:.4em;display:inline-block"> </span>`
+        ? `<span style="width:.4em;display:inline-block;opacity:1"> </span>`
         : `<span>${ch}</span>`
     ).join('');
-    const allSpans = [...nameEl.querySelectorAll('span')];
-    allSpans.forEach((sp, i) => {
-      const final = sp.textContent;
-      if(sp.style.width) return;
-      const delay = i * 55;
-      let tick = 0; const cycles = 7;
-      setTimeout(()=>{
-        sp.style.opacity = '1';
-        function cycle(){
-          if(tick < cycles){
-            sp.textContent = chars[Math.floor(Math.random()*chars.length)];
-            tick++;
-            setTimeout(cycle, 70 + tick * 12);
-          } else { sp.textContent = final; }
-        }
-        cycle();
-      }, delay);
+    const allSpans = [...nameEl.querySelectorAll('span:not([style])')];
+    const finalChars = nameText.split('').filter(c => c !== ' ');
+
+    // Phase 1 — all letters visible as noise immediately
+    allSpans.forEach(sp => {
+      sp.style.opacity = '1';
+      sp.textContent = chars[Math.floor(Math.random()*chars.length)];
     });
-  }).catch(()=>{
-    // fallback if fetch fails — just show dots
-    nameEl.textContent = '...';
-  });
+
+    // Phase 2 — keep all unsettled letters cycling
+    const noiseTimer = setInterval(()=>{
+      allSpans.forEach(sp => {
+        if(!sp.dataset.settled)
+          sp.textContent = chars[Math.floor(Math.random()*chars.length)];
+      });
+    }, 60);
+
+    // Phase 3 — settle one by one
+    allSpans.forEach((sp, i) => {
+      setTimeout(()=>{
+        sp.dataset.settled = '1';
+        sp.textContent = finalChars[i] || sp.textContent;
+        if(i === allSpans.length - 1) clearInterval(noiseTimer);
+      }, 100 + i * 75);
+    });
+  }).catch(()=>{ nameEl.textContent = '...'; });
 
   // Progress bar — fake stops at random percentages, then completes
   // Generate 2-3 random stop points
