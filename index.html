@@ -1057,14 +1057,16 @@ function startTicker(track, speed){
   track._tickerRunning = true;
 
   const trackW = track.scrollWidth;
-  let offset = speed > 0 ? -trackW : trackW;
+  // offset = translateX value applied directly
+  // left-moving (speed > 0): start at 0, offset decreases → content moves left, wrap at -trackW back to 0
+  // right-moving (speed < 0): start at -trackW, offset increases → content moves right, wrap at 0 back to -trackW
+  let offset = speed > 0 ? 0 : -trackW;
   let raf;
 
   function tick(){
-    offset += speed;
-    // Wrap seamlessly — reset to start of track when fully scrolled through
-    if(speed > 0 && offset > 0) offset = -trackW;
-    if(speed < 0 && offset < -trackW) offset = 0;
+    offset += speed > 0 ? -speed : -speed; // always subtract speed magnitude based on direction
+    if(speed > 0 && offset < -trackW) offset = 0;
+    if(speed < 0 && offset > 0) offset = -trackW;
     track.style.transform = `translateX(${offset}px)`;
     raf = requestAnimationFrame(tick);
   }
