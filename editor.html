@@ -110,7 +110,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 
 /* IMG FIELD */
 .img-row{display:flex;gap:.4rem}
-.img-path{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .55rem;outline:none;transition:border-color .15s}
+.img-path{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .55rem;outline:none;transition:border-color .15s;width:100%}
 .img-path:focus{border-color:var(--accent)}
 .dropzone{border:1px dashed var(--border);padding:.75rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;cursor:pointer;transition:border-color .15s,background .15s;position:relative;text-align:center}
 .dropzone:hover,.dropzone.drag{border-color:var(--accent);background:rgba(113,144,76,0.05)}
@@ -121,6 +121,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .dz-uploading{font-size:.68rem;color:var(--accent);letter-spacing:.06em;animation:pulse-o 1s infinite}
 @keyframes pulse-o{0%,100%{opacity:1}50%{opacity:.4}}
 .dz-path{font-size:.65rem;color:var(--muted);margin-top:.25rem;word-break:break-all}
+.dz-local-note{font-size:.6rem;color:var(--accent);margin-top:.2rem;letter-spacing:.04em}
 
 /* SKILLS */
 .skill-item{display:grid;grid-template-columns:1fr 80px auto;gap:.5rem;align-items:center}
@@ -148,6 +149,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .danger-zone{border-top:1px solid var(--border);padding:.9rem 1.1rem;margin-top:.25rem}
 .danger-btn{background:none;border:1px solid #5a2020;color:#c06060;font-family:var(--font);font-size:.7rem;padding:.45rem .9rem;transition:all .15s}
 .danger-btn:hover{background:#5a2020;color:var(--text)}
+
+/* MD IMPORT */
+.md-import-btn{width:100%;padding:.55rem;border:1px dashed var(--border);background:none;color:var(--muted);font-family:var(--font);font-size:.72rem;letter-spacing:.04em;margin-top:.25rem;transition:all .15s;text-align:center}
+.md-import-btn:hover{border-color:#6a8ad0;color:#6a8ad0}
 
 @media(max-width:900px){#app{grid-template-columns:200px 1fr}#preview-pane{display:none}}
 @media(max-width:680px){#app{grid-template-columns:1fr}#sidebar{position:relative;height:auto}.row2,.row3,.twocol-editor{grid-template-columns:1fr}}
@@ -191,6 +196,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 
 <script>
 let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
+
+// ── FIX 2: track which block bodies are open so rerenderBlocks can restore them
+let openBlocks = new Set();
 
 async function loadAll(){
   try{
@@ -312,7 +320,8 @@ function renderAbout(){
     <div class="page-sub">Build your about page with blocks.</div>
     <div class="block-list" id="about-blocks"></div>
     <button class="add-block-btn" onclick="toggleBlockMenu('about-menu')">+ Add Block</button>
-    <div class="block-menu hidden" id="about-menu">${blockMenuHTML('about')}</div>`;
+    <div class="block-menu hidden" id="about-menu">${blockMenuHTML('about')}</div>
+    <button class="md-import-btn" onclick="importMarkdown('about')" style="margin-top:.5rem">&#x1F4C4; Import from .md file</button>`;
   renderBlockList('about', C.about);
 }
 
@@ -403,6 +412,7 @@ function renderProject(id){
         <div class="block-list" id="proj-blocks-${id}"></div>
         <button class="add-block-btn" onclick="toggleBlockMenu('proj-menu-${id}')">+ Add Block</button>
         <div class="block-menu hidden" id="proj-menu-${id}">${blockMenuHTML('proj-'+id)}</div>
+        <button class="md-import-btn" onclick="importMarkdown('proj-${id}')">&#x1F4C4; Import from .md file</button>
       </div>
     </div>
     <div class="danger-zone" style="display:flex;align-items:center;justify-content:space-between">
@@ -557,11 +567,18 @@ function addBlock(scope, type){
   setBlocks(scope,blocks);
   markDirty();
   rerenderBlocks(scope);
+  // auto-open the newly added block
+  openBlocks.add(id);
+  setTimeout(()=>{
+    const el=document.getElementById('bkb-'+id);
+    if(el) el.classList.remove('hidden');
+  }, 20);
   const menuId=scope==='about'?'about-menu':'proj-menu-'+scope.replace('proj-','');
   const menu=document.getElementById(menuId);if(menu)menu.classList.add('hidden');
 }
 
 function removeBlock(scope,blockId){
+  openBlocks.delete(blockId);
   const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
   setBlocks(scope,blocks);markDirty();rerenderBlocks(scope);
 }
@@ -581,7 +598,12 @@ function updateBlock(scope,blockId,key,val){
 
 function changeBlockType(scope,blockId,newType){
   const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);if(b){b.type=newType;markDirty();rerenderBlocks(scope);}
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){
+    // keep the block open after type change
+    openBlocks.add(blockId);
+    b.type=newType;markDirty();rerenderBlocks(scope);
+  }
 }
 
 function updateColType(scope,blockId,side,type){
@@ -600,11 +622,13 @@ function updateStatItem(scope,blockId,idx,key,val){
   if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
 }
 function addStatItem(scope,blockId){
+  openBlocks.add(blockId);
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b.items=b.items||[];b.items.push({num:'',label:''});markDirty();rerenderBlocks(scope);}
 }
 function removeStatItem(scope,blockId,idx){
+  openBlocks.add(blockId);
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
@@ -615,26 +639,38 @@ function updateSkillItem(scope,blockId,idx,key,val){
   if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
 }
 function addSkillItem(scope,blockId){
+  openBlocks.add(blockId);
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b.items=b.items||[];b.items.push({name:'',pct:80});markDirty();rerenderBlocks(scope);}
 }
 function removeSkillItem(scope,blockId,idx){
+  openBlocks.add(blockId);
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
 }
 
+// ── FIX 2: rerenderBlocks restores open state
 function rerenderBlocks(scope){
   const blocks=getBlocks(scope)||[];
   const listId=scope==='about'?'about-blocks':'proj-blocks-'+scope.replace('proj-','');
   const el=document.getElementById(listId);if(!el)return;
   if(!blocks.length){el.innerHTML='<p style="font-size:.75rem;color:var(--muted);padding:.5rem 0">No blocks yet.</p>';return;}
   el.innerHTML=blocks.map((b,i)=>blockEditorHTML(scope,b,i,blocks.length)).join('');
+  // restore which blocks were open before the re-render
+  openBlocks.forEach(id=>{
+    const bodyEl=document.getElementById('bkb-'+id);
+    if(bodyEl) bodyEl.classList.remove('hidden');
+  });
 }
 
+// ── FIX 2: toggleBk tracks open state
 function toggleBk(id){
-  document.getElementById('bkb-'+id).classList.toggle('hidden');
+  const el=document.getElementById('bkb-'+id);
+  el.classList.toggle('hidden');
+  if(el.classList.contains('hidden')) openBlocks.delete(id);
+  else openBlocks.add(id);
 }
 function toggleBlockMenu(menuId){
   document.getElementById(menuId).classList.toggle('hidden');
@@ -786,13 +822,8 @@ function refreshPreview(){
 
 // ── MEDIA UPLOADER
 async function uploadMedia(file, folder){
-  const token = getToken();
-  if(!token){
-    const t = prompt('Enter your GitHub personal access token:');
-    if(!t) return null;
-    setToken(t); updateTokenBtn();
-  }
   const tk = getToken();
+  if(!tk) throw new Error('No GitHub token set');
   const path = folder + '/' + file.name;
   const existing = await ghGetSha(tk, path);
   if(existing){
@@ -822,59 +853,115 @@ async function uploadMedia(file, folder){
   });
 }
 
+// ── FIX 1: makeDropzone — manual path input + local preview fallback
 function makeDropzone(currentVal, onUpload, folder, placeholder){
-  const id = 'dz_' + Math.random().toString(36).slice(2);
+  const uid = 'dz' + Math.random().toString(36).slice(2,9);
+  const pathId = uid + '_p';
+  const dzId = uid + '_z';
+
   setTimeout(()=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    const input = el.querySelector('input[type=file]');
-    const label = el.querySelector('.dz-label');
-    const sub = el.querySelector('.dz-sub');
-    const pathEl = el.querySelector('.dz-path');
+    const dzEl = document.getElementById(dzId);
+    const pathInput = document.getElementById(pathId);
+    if(!dzEl || !pathInput) return;
+
+    const input = dzEl.querySelector('input[type=file]');
+    const label = dzEl.querySelector('.dz-label');
+    const sub   = dzEl.querySelector('.dz-sub');
+
+    // Typing the path directly always wins
+    pathInput.addEventListener('input', e=>{
+      onUpload(e.target.value);
+      markDirty();
+      // show as preview if it looks like an image path
+      if(/\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(e.target.value)){
+        showPreview(dzEl, e.target.value);
+      }
+    });
 
     async function handleFile(file){
       if(!file) return;
-      label.textContent = '';
-      label.innerHTML = '<span class="dz-uploading">Uploading ' + file.name + '...</span>';
+
+      // 1. Immediate local preview regardless of upload outcome
+      const objUrl = URL.createObjectURL(file);
+      showPreview(dzEl, objUrl);
+      const suggested = folder + '/' + file.name;
+
+      const token = getToken();
+      if(!token){
+        // No token — show local preview, pre-fill path, prompt user
+        label.textContent = file.name;
+        sub.textContent = 'No GitHub token — set one to upload, or edit path manually';
+        sub.style.opacity = '1';
+        pathInput.value = suggested;
+        // Don't call onUpload here; the user should confirm/edit the path first
+        toast('Set a GitHub token to upload files, or type the path manually', true);
+        return;
+      }
+
+      // 2. Try GitHub upload
+      label.innerHTML = '<span class="dz-uploading">Uploading ' + file.name + '…</span>';
       sub.style.display = 'none';
       try{
         const path = await uploadMedia(file, folder);
         if(path){
-          pathEl.textContent = path;
           label.textContent = file.name;
+          sub.textContent = '✓ Uploaded to ' + folder + '/';
           sub.style.display = '';
-          // show preview if image
-          let prev = el.querySelector('.dz-preview');
-          if(!prev){ prev=document.createElement('img'); prev.className='dz-preview'; el.insertBefore(prev, pathEl); }
-          prev.src = URL.createObjectURL(file);
+          sub.style.opacity = '1';
+          pathInput.value = path;
           onUpload(path);
+          markDirty();
           toast('Uploaded: ' + path);
         } else {
-          label.textContent = currentVal ? currentVal.split('/').pop() : 'Drop image here';
+          // User cancelled overwrite — restore
+          label.textContent = currentVal ? currentVal.split('/').pop() : 'Drop image or click to browse';
           sub.style.display = '';
         }
       } catch(err){
-        label.textContent = 'Upload failed';
+        // Upload failed — fall back to object URL for editor preview, flag to user
+        label.textContent = file.name + ' (local preview only)';
+        sub.textContent = 'Upload failed — enter the correct path manually below';
         sub.style.display = '';
+        sub.style.opacity = '1';
+        pathInput.value = suggested;
         toast('Upload error: ' + err.message, true);
+        // Use object URL so the block editor shows the image now
+        // but don't call onUpload — wait for user to type/confirm the real path
       }
     }
 
-    input.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
-    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
-    el.addEventListener('dragleave', () => el.classList.remove('drag'));
-    el.addEventListener('drop', e => {
-      e.preventDefault(); el.classList.remove('drag');
+    function showPreview(container, src){
+      let prev = container.querySelector('.dz-preview');
+      if(!prev){
+        prev = document.createElement('img');
+        prev.className = 'dz-preview';
+        container.appendChild(prev);
+      }
+      prev.src = src;
+    }
+
+    input.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+    dzEl.addEventListener('dragover', e=>{ e.preventDefault(); dzEl.classList.add('drag'); });
+    dzEl.addEventListener('dragleave', ()=> dzEl.classList.remove('drag'));
+    dzEl.addEventListener('drop', e=>{
+      e.preventDefault(); dzEl.classList.remove('drag');
       if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     });
+
+    // Show existing image preview on load
+    if(currentVal && /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(currentVal)){
+      showPreview(dzEl, currentVal);
+    }
   }, 50);
 
   const name = currentVal ? currentVal.split('/').pop() : null;
-  return `<div class="dropzone" id="${id}">
-    <input type="file" accept="image/*">
-    <span class="dz-label">${name || 'Drop image or click to browse'}</span>
-    <span class="dz-sub">Uploads to ${folder}/</span>
-    ${currentVal ? '<span class="dz-path">'+currentVal+'</span>' : ''}
+  return `<div style="display:flex;flex-direction:column;gap:.35rem">
+    <input type="text" id="${pathId}" class="img-path" value="${currentVal||''}" placeholder="${folder}/filename.jpg" title="Type a path or drop a file below">
+    <div class="dropzone" id="${dzId}">
+      <input type="file" accept="image/*,video/*">
+      <span class="dz-label">${name || 'Drop file or click to browse'}</span>
+      <span class="dz-sub">Requires GitHub token to upload</span>
+    </div>
   </div>`;
 }
 
@@ -914,7 +1001,7 @@ async function saveAll(){
     setToken(token);
   }
   const btn=document.getElementById('save-btn');
-  btn.disabled=true; btn.textContent='Saving...';
+  btn.disabled=true; btn.textContent='Saving…';
   try{
     const files=[
       {path:'content.json', data:JSON.stringify(C,null,2)},
@@ -972,11 +1059,9 @@ function parseReelInput(raw){
   const val=raw.trim();
   if(!val){ C.reel={type:'placeholder',url:''};markDirty();updateReelHint('No reel set');return; }
 
-  // Extract src from iframe tag if pasted
   const srcMatch=val.match(/src=["']([^"']+)["']/);
   const url=srcMatch?srcMatch[1]:val;
 
-  // YouTube — various formats
   const ytEmbed=url.match(/youtube\.com\/embed\/([\w-]+)/);
   const ytShort=url.match(/youtu\.be\/([\w-]+)/);
   const ytWatch=url.match(/youtube\.com\/watch\?v=([\w-]+)/);
@@ -986,7 +1071,6 @@ function parseReelInput(raw){
     markDirty();updateReelHint('&#x2713; YouTube detected — parameters added automatically');return;
   }
 
-  // Vimeo — various formats
   const vimeoEmbed=url.match(/player\.vimeo\.com\/video\/([\d]+)/);
   const vimeoWatch=url.match(/vimeo\.com\/([\d]+)/);
   const vimeoId=(vimeoEmbed&&vimeoEmbed[1])||(vimeoWatch&&vimeoWatch[1]);
@@ -995,7 +1079,6 @@ function parseReelInput(raw){
     markDirty();updateReelHint('&#x2713; Vimeo detected — parameters added automatically');return;
   }
 
-  // Local video file
   if(url.match(/\.(mp4|webm|ogg)$/i)){
     C.reel={type:'video',url};
     markDirty();updateReelHint('&#x2713; Local video file');return;
@@ -1007,6 +1090,140 @@ function parseReelInput(raw){
 function updateReelHint(msg){
   const el=document.getElementById('reel-hint');
   if(el) el.innerHTML=msg;
+}
+
+// ── FIX 3: MARKDOWN IMPORT
+function importMarkdown(scope){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.md,.txt,.markdown';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const md = ev.target.result;
+      const parsed = parseMarkdownToBlocks(md);
+      const existing = getBlocks(scope)||[];
+      if(existing.length > 0){
+        const mode = confirm(
+          `Found ${parsed.length} blocks in "${file.name}".\n\n` +
+          'OK = Replace all existing blocks\n' +
+          'Cancel = Append to the end'
+        );
+        if(mode){
+          setBlocks(scope, parsed);
+        } else {
+          setBlocks(scope, [...existing, ...parsed]);
+        }
+      } else {
+        setBlocks(scope, parsed);
+      }
+      markDirty();
+      rerenderBlocks(scope);
+      toast(`Imported ${parsed.length} blocks from ${file.name}`);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function uid(){ return 'b'+Date.now()+Math.random().toString(36).slice(2,6); }
+
+function parseMarkdownToBlocks(md){
+  const lines = md.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  function inlineFormat(text){
+    // Convert **bold** → <b>, *italic* → <i>, `code` → <b>
+    return text
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+      .replace(/`([^`]+)`/g, '<b>$1</b>');
+  }
+
+  while(i < lines.length){
+    const raw = lines[i];
+    const line = raw.trimEnd();
+
+    // Skip blank lines
+    if(!line.trim()){ i++; continue; }
+
+    // H1 → text-lg (accent large heading)
+    if(/^# /.test(line)){
+      blocks.push({id:uid(), type:'text-lg', content:inlineFormat(line.slice(2).trim()), align:'left'});
+      i++; continue;
+    }
+
+    // H2 → text-md bold
+    if(/^## /.test(line)){
+      blocks.push({id:uid(), type:'text-md', content:'<b>'+inlineFormat(line.slice(3).trim())+'</b>', align:'left'});
+      i++; continue;
+    }
+
+    // H3+ → text-sm uppercase label
+    if(/^#{3,} /.test(line)){
+      blocks.push({id:uid(), type:'text-sm', content:inlineFormat(line.replace(/^#+\s/,'')).toUpperCase(), align:'left'});
+      i++; continue;
+    }
+
+    // Blockquote — collect consecutive lines
+    if(/^> /.test(line)){
+      const quoteLines = [];
+      while(i < lines.length && /^> /.test(lines[i])){
+        quoteLines.push(lines[i].slice(2).trim());
+        i++;
+      }
+      blocks.push({id:uid(), type:'quote', content:inlineFormat(quoteLines.join(' ')), align:'left'});
+      continue;
+    }
+
+    // Divider
+    if(/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())){
+      blocks.push({id:uid(), type:'divider'});
+      i++; continue;
+    }
+
+    // Image: ![alt](src)
+    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+    if(imgMatch){
+      blocks.push({id:uid(), type:'image', src:imgMatch[2], alt:imgMatch[1]});
+      i++; continue;
+    }
+
+    // Stats shorthand: lines like "148,000 | Combined Views"
+    const statMatch = line.match(/^([\d,]+\+?)\s*\|\s*(.+)$/);
+    if(statMatch){
+      // Collect consecutive stat lines into one stats block
+      const items = [];
+      while(i < lines.length){
+        const sm = lines[i].match(/^([\d,]+[^|]*?)\s*\|\s*(.+)$/);
+        if(!sm) break;
+        items.push({num: sm[1].trim(), label: sm[2].trim()});
+        i++;
+      }
+      blocks.push({id:uid(), type:'stats', items});
+      continue;
+    }
+
+    // Regular paragraph — collect until blank line or block-level marker
+    const paraLines = [];
+    while(i < lines.length){
+      const l = lines[i];
+      if(!l.trim()) break; // blank line ends paragraph
+      if(/^[#>!]/.test(l)) break; // block marker
+      if(/^---+$/.test(l.trim()) || /^\*\*\*+$/.test(l.trim())) break;
+      paraLines.push(l.trim());
+      i++;
+    }
+    if(paraLines.length){
+      const content = inlineFormat(paraLines.join(' '));
+      blocks.push({id:uid(), type:'text-md', content, align:'left'});
+    }
+  }
+
+  return blocks;
 }
 
 loadAll();
