@@ -1049,42 +1049,33 @@ function startTicker(track, speed){
   if(track._tickerRunning) return;
   track._tickerRunning = true;
 
-  const container = track.parentElement;
   const reverse = speed < 0;
   const absSpeed = Math.abs(speed);
 
-  // Start off-screen so items scroll into view naturally
-  let offset = reverse ? container.offsetWidth : -container.offsetWidth;
-  let raf;
+  // Repeat items 4 times so there's always enough content
+  const items = [...track.children];
+  for(let i = 0; i < 3; i++) items.forEach(el => track.appendChild(el.cloneNode(true)));
 
-  function tick(){
-    if(reverse){
-      offset -= absSpeed;
-      const last = track.lastElementChild;
-      if(!last) return;
-      if(last.getBoundingClientRect().left > container.getBoundingClientRect().right){
-        track.insertBefore(last, track.firstElementChild);
-        offset += last.offsetWidth;
-      }
-    } else {
-      offset += absSpeed;
-      const first = track.firstElementChild;
-      if(!first) return;
-      if(first.getBoundingClientRect().right < container.getBoundingClientRect().left){
-        track.appendChild(first);
-        offset -= first.offsetWidth;
-      }
+  // Wait one frame so track has rendered width
+  requestAnimationFrame(()=>{
+    const trackW = track.scrollWidth;
+    // Start off-screen: left-moving starts from right, right-moving starts from left
+    let offset = reverse ? -trackW : trackW;
+    let raf;
+
+    function tick(){
+      offset += reverse ? -absSpeed : absSpeed;
+      track.style.transform = `translateX(${-offset}px)`;
+      raf = requestAnimationFrame(tick);
     }
-    track.style.transform = `translateX(${-offset}px)`;
+
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden){ cancelAnimationFrame(raf); }
+      else { raf = requestAnimationFrame(tick); }
+    });
+
     raf = requestAnimationFrame(tick);
-  }
-
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.hidden){ cancelAnimationFrame(raf); }
-    else { raf = requestAnimationFrame(tick); }
   });
-
-  raf = requestAnimationFrame(tick);
 }
 
 function jitterTapes(){
