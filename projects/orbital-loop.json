@@ -101,5 +101,6 @@
       "align": "left"
     }
   ],
-  "published": false
+  "published": true,
+  "sensitive": true
 }
