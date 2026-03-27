@@ -1062,9 +1062,9 @@ function startTicker(track, speed){
 
   function tick(){
     offset += speed;
-    // Wrap when fully scrolled through
-    if(speed > 0 && offset > 0) offset -= trackW;
-    if(speed < 0 && offset < -trackW) offset += trackW;
+    // Wrap seamlessly — reset to start of track when fully scrolled through
+    if(speed > 0 && offset > 0) offset = -trackW;
+    if(speed < 0 && offset < -trackW) offset = 0;
     track.style.transform = `translateX(${offset}px)`;
     raf = requestAnimationFrame(tick);
   }
