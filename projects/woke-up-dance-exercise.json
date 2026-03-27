@@ -53,5 +53,7 @@
       "align": "left"
     }
   ],
-  "published": true
+  "published": true,
+  "sensitive": true,
+  "sensitiveLabel": "18+ NSFW"
 }
