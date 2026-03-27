@@ -202,6 +202,43 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .md-import-btn:hover{border-color:#6a8ad0;color:#6a8ad0}
 
 /* ─────────────────────────────────────────
+   RICH TEXT TOOLBAR
+───────────────────────────────────────── */
+.rt-toolbar{display:flex;gap:.25rem;margin-bottom:.35rem;flex-wrap:wrap}
+.rt-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-family:var(--font);font-size:.7rem;padding:.25rem .55rem;min-width:28px;
+  transition:all .15s;line-height:1.4}
+.rt-btn:hover{border-color:var(--text);color:var(--text)}
+.rt-btn b{font-weight:700}
+.rt-btn i{font-style:italic}
+.rt-btn u{text-decoration:underline}
+
+/* ─────────────────────────────────────────
+   MEDIA LIBRARY
+───────────────────────────────────────── */
+#media-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);opacity:0;pointer-events:none;transition:opacity .2s}
+#media-modal.open{opacity:1;pointer-events:all}
+#media-inner{background:var(--surface);border:1px solid var(--border);width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+#media-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+#media-header span{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+#media-close{background:none;border:none;color:var(--muted);font-size:1rem;padding:.2rem .4rem;transition:color .15s}
+#media-close:hover{color:var(--text)}
+#media-search{padding:.65rem 1.1rem;border-bottom:1px solid var(--border);flex-shrink:0}
+#media-search input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.82rem;padding:.4rem .6rem;outline:none;width:100%;transition:border-color .15s}
+#media-search input:focus{border-color:var(--accent)}
+#media-grid{flex:1;overflow-y:auto;padding:.75rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.5rem}
+#media-grid::-webkit-scrollbar{width:3px}#media-grid::-webkit-scrollbar-thumb{background:var(--border)}
+#media-empty{padding:2rem;text-align:center;font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.media-item{display:flex;flex-direction:column;gap:.3rem;cursor:pointer;transition:opacity .15s}
+.media-item:hover{opacity:.75}
+.media-thumb{aspect-ratio:1;background:var(--surface2);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--muted);position:relative}
+.media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.media-thumb .media-ext{font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.media-name{font-size:.6rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.media-insert-btn{width:100%;padding:.5rem;background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:.65rem;letter-spacing:.06em;margin-top:.25rem;transition:opacity .15s}
+.media-insert-btn:hover{opacity:.85}
+
+/* ─────────────────────────────────────────
    DRAG INDICATOR
 ───────────────────────────────────────── */
 .bk.drag-over-top{border-top:2px solid var(--accent)}
@@ -263,6 +300,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 <div id="undo-bar">
   <button class="undo-btn" id="undo-btn" onclick="undo()">&#x21B6; Undo <span id="undo-label"></span></button>
   <button class="undo-btn" id="redo-btn" onclick="redo()">Redo &#x21B7;</button>
+</div>
+<div id="media-modal">
+  <div id="media-inner">
+    <div id="media-header">
+      <span>Media Library</span>
+      <button id="media-close" onclick="closeMediaLibrary()">&#x2715;</button>
+    </div>
+    <div id="media-search"><input type="text" placeholder="Filter files…" oninput="filterMedia(this.value)"></div>
+    <div id="media-grid"></div>
+  </div>
 </div>
 
 <script>
@@ -607,7 +654,15 @@ function renderContact(){
           <div class="field"><label>Title Line</label><input value="${cp.title||"Let's"}" oninput="cpSet('title',this.value)" placeholder="Let's"></div>
           <div class="field"><label>Accent Word</label><input value="${cp.titleAccent||'work.'}" oninput="cpSet('titleAccent',this.value)" placeholder="work."></div>
         </div>
-        <div class="field"><label>Subheading</label><textarea oninput="cpSet('sub',this.value)">${cp.sub||'Animation, motion, original features — whatever the idea, we\'re built for it. Let\'s talk.'}</textarea></div>
+        <div class="field"><label>Subheading</label>
+          <div class="rt-toolbar">
+            <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-ct-sub','b')"><b>B</b></button>
+            <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-ct-sub','i')"><i>I</i></button>
+            <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-ct-sub','u')"><u>U</u></button>
+            <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtInsert('rta-ct-sub','&lt;br&gt;')" title="Line break">↵</button>
+          </div>
+          <textarea id="rta-ct-sub" oninput="cpSet('sub',this.value)">${cp.sub||'Animation, motion, original features — whatever the idea, we\'re built for it. Let\'s talk.'}</textarea>
+        </div>
         <div class="field"><label>Scroll Cue</label><input value="${cp.scrollCue||'See how to reach us'}" oninput="cpSet('scrollCue',this.value)"></div>
       </div>
     </div>
@@ -673,6 +728,7 @@ function renderProject(id){
         </div>
         <div class="field"><label>Thumbnail</label>
           ${makeDropzone(p.thumbnail||'', v=>{ updateP(id,'thumbnail',v); }, 'media/projects', 'thumbnail.jpg')}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateP('${id}','thumbnail',v))">&#x1F5C2; Browse Media</button>
         </div>
         <div class="field"><label>Tags (comma separated)</label>
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
@@ -739,8 +795,14 @@ function blockEditorHTML(scope, b, i, total){
     const sizes=[['text-sm','Small'],['text-md','Medium'],['text-lg','Large']];
     body=`
       <div class="size-row">${sizes.map(([v,l])=>`<button class="sz-btn ${b.type===v?'active':''}" onclick="changeBlockType('${scope}','${b.id}','${v}')">${l}</button>`).join('')}</div>
-      <div class="field"><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
-      <p class="hint">Wrap text in &lt;b&gt;&lt;/b&gt; for accent bold &nbsp;·&nbsp; &lt;rgr&gt;&lt;/rgr&gt; for a badge</p>
+      <div class="rt-toolbar">
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-${b.id}','b')"><b>B</b></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-${b.id}','i')"><i>I</i></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-${b.id}','u')"><u>U</u></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-${b.id}','rgr')" style="font-size:.58rem;letter-spacing:.06em">RGR</button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtInsert('rta-${b.id}','&lt;br&gt;')" title="Line break">↵</button>
+      </div>
+      <div class="field"><textarea id="rta-${b.id}" oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
       <div class="field"><label>Alignment</label><div class="align-row">
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
@@ -748,6 +810,7 @@ function blockEditorHTML(scope, b, i, total){
     body=`
       <div class="field"><label>Image</label>
         ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media', 'image.jpg')}
+        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','src',v))">&#x1F5C2; Browse Media</button>
       </div>
       <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
   } else if(b.type==='twocol'){
@@ -757,7 +820,12 @@ function blockEditorHTML(scope, b, i, total){
     </div>`;
   } else if(b.type==='quote'){
     body=`
-      <div class="field"><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
+      <div class="rt-toolbar">
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-q-${b.id}','b')"><b>B</b></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-q-${b.id}','i')"><i>I</i></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="rtWrap('rta-q-${b.id}','u')"><u>U</u></button>
+      </div>
+      <div class="field"><textarea id="rta-q-${b.id}" oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>
       <div class="field"><label>Alignment</label><div class="align-row">
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
@@ -1657,6 +1725,117 @@ function resetTheme(){
   renderGlobal();
   showPage('global');
 }
+
+// ─────────────────────────────────────────
+// RICH TEXT HELPERS
+// ─────────────────────────────────────────
+function rtWrap(textareaId, tag){
+  const ta = document.getElementById(textareaId);
+  if(!ta) return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.slice(start, end);
+  const wrapped = `<${tag}>${selected}</${tag}>`;
+  ta.value = ta.value.slice(0, start) + wrapped + ta.value.slice(end);
+  // Restore cursor after closing tag
+  const newPos = start + wrapped.length;
+  ta.setSelectionRange(newPos, newPos);
+  ta.dispatchEvent(new Event('input'));
+  ta.focus();
+}
+
+function rtInsert(textareaId, text){
+  const ta = document.getElementById(textareaId);
+  if(!ta) return;
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, pos) + text + ta.value.slice(pos);
+  ta.setSelectionRange(pos + text.length, pos + text.length);
+  ta.dispatchEvent(new Event('input'));
+  ta.focus();
+}
+
+// ─────────────────────────────────────────
+// MEDIA LIBRARY
+// ─────────────────────────────────────────
+let mediaCallback = null;
+let mediaFiles = [];
+
+async function openMediaLibrary(onInsert){
+  mediaCallback = onInsert;
+  document.getElementById('media-modal').classList.add('open');
+  document.getElementById('media-search').querySelector('input').value = '';
+  const grid = document.getElementById('media-grid');
+  grid.innerHTML = '<div id="media-empty">Loading…</div>';
+  const token = getToken();
+  if(!token){
+    grid.innerHTML = '<div id="media-empty">GitHub token required to browse media.</div>';
+    return;
+  }
+  try{
+    mediaFiles = await fetchMediaFiles(token, 'media');
+    renderMediaGrid(mediaFiles);
+  } catch(e){
+    grid.innerHTML = `<div id="media-empty">Error: ${e.message}</div>`;
+  }
+}
+
+function closeMediaLibrary(){
+  document.getElementById('media-modal').classList.remove('open');
+  mediaCallback = null;
+}
+
+async function fetchMediaFiles(token, path){
+  const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`, {
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
+  });
+  if(!r.ok) throw new Error('Could not load media folder');
+  const items = await r.json();
+  const files = [];
+  for(const item of items){
+    if(item.type==='file' && /\.(jpe?g|png|gif|webp|bmp|svg|mp4|webm|mov)$/i.test(item.name)){
+      files.push({name:item.name, path:item.path, url:item.download_url});
+    } else if(item.type==='dir'){
+      // one level deep — fetch subfolders too
+      try{
+        const sub = await fetchMediaFiles(token, item.path);
+        files.push(...sub);
+      } catch(e){}
+    }
+  }
+  return files;
+}
+
+function renderMediaGrid(files){
+  const grid = document.getElementById('media-grid');
+  if(!files.length){ grid.innerHTML = '<div id="media-empty">No media files found.</div>'; return; }
+  const imgExts = /\.(jpe?g|png|gif|webp|bmp|svg)$/i;
+  grid.innerHTML = files.map(f=>`
+    <div class="media-item" onclick="insertMedia('${f.path}')">
+      <div class="media-thumb">
+        ${imgExts.test(f.name)
+          ? `<img src="${f.url}" loading="lazy">`
+          : `<span class="media-ext">${f.name.split('.').pop()}</span>`}
+      </div>
+      <div class="media-name" title="${f.path}">${f.name}</div>
+    </div>`).join('');
+}
+
+function filterMedia(query){
+  const q = query.toLowerCase();
+  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  renderMediaGrid(filtered);
+}
+
+function insertMedia(path){
+  if(mediaCallback) mediaCallback(path);
+  markDirty('insert media');
+  closeMediaLibrary();
+  toast('Inserted: '+path);
+}
+
+// Close on backdrop click
+document.getElementById('media-modal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('media-modal')) closeMediaLibrary();
+});
 
 loadAll();
 </script>
