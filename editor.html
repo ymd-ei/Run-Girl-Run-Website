@@ -565,9 +565,21 @@ function renderProject(id){
           <label for="sensitive-${id}" style="font-size:.72rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer">Mark as sensitive — blurs thumbnail with tape overlay</label>
         </div>
         <div id="sensitive-opts-${id}" style="display:${p.sensitive?'block':'none'}">
-          <div class="field"><label>Tape Label</label>
-            <input value="${p.sensitiveLabel||'MATURE'}" placeholder="MATURE" oninput="updateP('${id}','sensitiveLabel',this.value)">
-            <p class="hint">Text that repeats across the tape</p>
+          <div class="row2">
+            <div class="field"><label>Tape Label</label>
+              <input value="${p.sensitiveLabel||'MATURE'}" placeholder="MATURE" oninput="updateP('${id}','sensitiveLabel',this.value)">
+              <p class="hint">Text that repeats across the tape</p>
+            </div>
+            <div class="field"><label>Tape Color</label>
+              <div class="color-row">
+                <div class="color-swatch" style="background:${p.sensitiveColor||'#e03030'}">
+                  <div class="color-swatch-fill" style="background:${p.sensitiveColor||'#e03030'}" id="sc-fill-${id}"></div>
+                  <input type="color" value="${p.sensitiveColor||'#e03030'}" oninput="updateP('${id}','sensitiveColor',this.value);document.getElementById('sc-fill-${id}').style.background=this.value;document.getElementById('sc-fill-${id}').parentElement.style.background=this.value;document.getElementById('sc-hex-${id}').value=this.value;">
+                </div>
+                <input class="color-hex" id="sc-hex-${id}" value="${p.sensitiveColor||'#e03030'}" maxlength="7"
+                  oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){updateP('${id}','sensitiveColor',this.value);document.getElementById('sc-fill-${id}').style.background=this.value;document.getElementById('sc-fill-${id}').parentElement.style.background=this.value;}">
+              </div>
+            </div>
           </div>
         </div>
       </div>

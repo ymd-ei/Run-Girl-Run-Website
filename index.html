@@ -904,7 +904,7 @@ function render(){
   document.getElementById('wg').innerHTML=projects.filter(p=>p.published!==false).map(p=>{
     const isSensitive = p.sensitive;
     const label = p.sensitiveLabel || 'MATURE';
-    const color = C.theme&&C.theme.sensitiveColor ? C.theme.sensitiveColor : '#e03030';
+    const color = p.sensitiveColor || (C.theme&&C.theme.sensitiveColor) || '#e03030';
     const sensitiveOverlay = isSensitive ? `
       <div class="wci-sensitive">
         <div class="wci-tape" id="st-${p.id}" style="--sensitive-color:${color}">
