@@ -969,9 +969,11 @@ function openPanel(name){
     document.getElementById('contact-wrapper').scrollTop=0;
     updateCtBg(0);
     jitterTapes();
-    // Start tickers now — panel is visible so track widths are measurable
-    startTicker(document.querySelector('#ct-ticker-top .ticker-track'), -0.6);
-    startTicker(document.querySelector('#ct-ticker-mid .ticker-track'), 0.5);
+    // Wait for panel slide-in transition (0.8s) before measuring and starting tickers
+    setTimeout(()=>{
+      startTicker(document.querySelector('#ct-ticker-top .ticker-track'), -0.6);
+      startTicker(document.querySelector('#ct-ticker-mid .ticker-track'), 0.5);
+    }, 820);
     return;
   }
 
@@ -1029,6 +1031,11 @@ function closeToRoot(){
   document.getElementById('ct-sliver').classList.remove('open');
   document.querySelectorAll('.nls button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#skl .skf').forEach(b=>b.classList.remove('go'));
+  // Reset ticker flags so they restart fresh next open
+  const top = document.querySelector('#ct-ticker-top .ticker-track');
+  const mid = document.querySelector('#ct-ticker-mid .ticker-track');
+  if(top) delete top._tickerRunning;
+  if(mid) delete mid._tickerRunning;
 }
 function filterWork(btn,type){
   document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
