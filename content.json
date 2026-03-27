@@ -127,6 +127,25 @@
       "type": "youtube",
       "url": "https://www.youtube.com/embed/k2h4CKbiVbQ?autoplay=1&mute=1&loop=1&playlist=k2h4CKbiVbQ&controls=0&rel=0"
     },
-    "titleAccent": "work together!"
+    "titleAccent": "work together!",
+    "tickerMid": [
+      "3D Animation",
+      "2D Animation",
+      "Character Performance",
+      "Storytelling",
+      "Short Films",
+      "Original Features"
+    ],
+    "tickerTop": [
+      "Short Films",
+      "Freelance",
+      "Collaborations",
+      "Passion Projects",
+      "Commercials",
+      "Music Videos",
+      "Independent Films",
+      "Game Cinematics"
+    ],
+    "sub": "We're always open to new collaborators, weird briefs, and good ideas. Run Girl Run is a small studio, so every project gets real attention — not handed off. Whether you've got something fully formed or just an early idea, reach out anytime."
   }
 }
