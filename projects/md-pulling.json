@@ -101,6 +101,12 @@
       "type": "divider"
     },
     {
+      "id": "b1774624269511wrp0",
+      "type": "text-md",
+      "content": "Sound design by a collaborator. Everything else in-house.",
+      "align": "left"
+    },
+    {
       "id": "b17746242695111agj",
       "type": "stats",
       "items": [
@@ -118,12 +124,6 @@
       "id": "b17746242695118sy3",
       "type": "text-sm",
       "content": "CREDITS",
-      "align": "left"
-    },
-    {
-      "id": "b1774624269511wrp0",
-      "type": "text-md",
-      "content": "Sound design by a collaborator. Everything else in-house.",
       "align": "left"
     }
   ]
