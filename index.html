@@ -931,8 +931,16 @@ function render(){
 
   // Tickers — doubled for seamless loop
   function makeTickerHTML(items){
-    const doubled=[...items,...items];
-    return doubled.map(w=>`<span class="ticker-item"><span class="ticker-word">${w}</span><span class="ticker-dot"></span></span>`).join('');
+    // Repeat enough times so the track is always wider than the viewport.
+    // We need at least 2 full copies for the -50% loop trick to work seamlessly.
+    // With few/short items we need more copies — 6 is safe for any reasonable set.
+    const minCopies = 6;
+    const copies = [];
+    for(let i = 0; i < minCopies; i++) copies.push(...items);
+    // The animation translates to -50% of the track, so we need exactly half
+    // the track to be one "loop unit". We put N copies, animate to -(N/2)/N = -50%.
+    // This works as long as minCopies is even.
+    return copies.map(w=>`<span class="ticker-item"><span class="ticker-word">${w}</span><span class="ticker-dot"></span></span>`).join('');
   }
   const topItems = (cp.tickerTop&&cp.tickerTop.length) ? cp.tickerTop : defaultTicker;
   const midItems = (cp.tickerMid&&cp.tickerMid.length) ? cp.tickerMid : defaultTicker;
