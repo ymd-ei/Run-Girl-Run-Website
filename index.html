@@ -938,7 +938,7 @@ function render(){
   document.querySelector('#ct-ticker-mid .ticker-track').innerHTML = makeTickerHTML(midItems);
 
   // Start infinite recycling ticker on both tracks
-  startTicker(document.querySelector('#ct-ticker-top .ticker-track'), 0.6);
+  startTicker(document.querySelector('#ct-ticker-top .ticker-track'), -0.6);
   startTicker(document.querySelector('#ct-ticker-mid .ticker-track'), 0.5);
 
   // Background video — contactPanel.video takes priority, falls back to reel
@@ -1045,27 +1045,38 @@ document.addEventListener('keydown',e=>{
 // CONTACT PANEL HELPERS
 // ─────────────────────────────────────────
 function startTicker(track, speed){
-  // Clones the first item and appends it to the end to seed the track,
-  // then uses RAF to scroll pixel by pixel. When an item fully exits
-  // the left edge it gets moved to the end — genuinely infinite.
   if(!track) return;
+  // Prevent duplicate loops if render() is called again
+  if(track._tickerRunning) return;
+  track._tickerRunning = true;
+
   let offset = 0;
   let raf;
+  const reverse = speed < 0;
+  const absSpeed = Math.abs(speed);
 
   function tick(){
-    offset += speed;
-    const first = track.firstElementChild;
-    if(!first) return;
-    // If the first item has scrolled fully past the left edge, recycle it
-    if(first.getBoundingClientRect().right < track.parentElement.getBoundingClientRect().left){
-      track.appendChild(first);
-      offset -= first.offsetWidth;
+    if(reverse){
+      offset -= absSpeed;
+      const last = track.lastElementChild;
+      if(!last) return;
+      if(last.getBoundingClientRect().left > track.parentElement.getBoundingClientRect().right){
+        track.insertBefore(last, track.firstElementChild);
+        offset += last.offsetWidth;
+      }
+    } else {
+      offset += absSpeed;
+      const first = track.firstElementChild;
+      if(!first) return;
+      if(first.getBoundingClientRect().right < track.parentElement.getBoundingClientRect().left){
+        track.appendChild(first);
+        offset -= first.offsetWidth;
+      }
     }
     track.style.transform = `translateX(${-offset}px)`;
     raf = requestAnimationFrame(tick);
   }
 
-  // Pause when tab is hidden to save resources
   document.addEventListener('visibilitychange', ()=>{
     if(document.hidden){ cancelAnimationFrame(raf); }
     else { raf = requestAnimationFrame(tick); }
