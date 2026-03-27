@@ -1056,18 +1056,17 @@ function startTicker(track, speed){
   if(track._tickerRunning) return;
   track._tickerRunning = true;
 
-  const reverse = speed < 0;
-  const absSpeed = Math.abs(speed);
-
-  // Measure now — panel is visible so scrollWidth is real
   const trackW = track.scrollWidth;
-  // Start so first item enters from off-screen
-  let offset = reverse ? trackW : -trackW;
+  // speed > 0 = scroll left (items move left)
+  // speed < 0 = scroll right (items move right)
+  // offset is the raw pixel position; translateX(-offset) moves content
+  // Start off-screen: left-scroll starts off right, right-scroll starts off left
+  let offset = speed > 0 ? -trackW : trackW;
   let raf;
 
   function tick(){
-    offset += reverse ? -absSpeed : absSpeed;
-    track.style.transform = `translateX(${-offset}px)`;
+    offset += speed;
+    track.style.transform = `translateX(${offset}px)`;
     raf = requestAnimationFrame(tick);
   }
 
