@@ -326,40 +326,119 @@ function renderAbout(){
 }
 
 // ── CONTACT
+function getCP(){ return C.contactPanel||(C.contactPanel={}); }
+function cpSet(key,val){ getCP()[key]=val; markDirty(); }
+
+function parseContactVideo(raw){
+  const val=raw.trim();
+  if(!val){ getCP().video={type:'placeholder',url:''}; markDirty(); updateContactVideoHint('No video set'); return; }
+  const srcMatch=val.match(/src=["']([^"']+)["']/);
+  const url=srcMatch?srcMatch[1]:val;
+  const ytEmbed=url.match(/youtube\.com\/embed\/([\w-]+)/);
+  const ytShort=url.match(/youtu\.be\/([\w-]+)/);
+  const ytWatch=url.match(/youtube\.com\/watch\?v=([\w-]+)/);
+  const ytId=(ytEmbed&&ytEmbed[1])||(ytShort&&ytShort[1])||(ytWatch&&ytWatch[1]);
+  if(ytId){ getCP().video={type:'youtube',url:`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0`}; markDirty(); updateContactVideoHint('&#x2713; YouTube detected'); return; }
+  const vimeoEmbed=url.match(/player\.vimeo\.com\/video\/([\d]+)/);
+  const vimeoWatch=url.match(/vimeo\.com\/([\d]+)/);
+  const vimeoId=(vimeoEmbed&&vimeoEmbed[1])||(vimeoWatch&&vimeoWatch[1]);
+  if(vimeoId){ getCP().video={type:'vimeo',url:`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&background=1&muted=1`}; markDirty(); updateContactVideoHint('&#x2713; Vimeo detected'); return; }
+  if(url.match(/\.(mp4|webm|ogg)$/i)){ getCP().video={type:'video',url}; markDirty(); updateContactVideoHint('&#x2713; Local video'); return; }
+  updateContactVideoHint('Could not detect — paste a Vimeo or YouTube URL');
+}
+function updateContactVideoHint(msg){ const el=document.getElementById('ct-video-hint'); if(el)el.innerHTML=msg; }
+
 function renderContact(){
   if(!C.contact.links) C.contact.links=[];
+  const cp=getCP();
+  const tickerTopVal=(cp.tickerTop||['3D Animation','Motion Design','Original Films','Character Animation','In-House Production','2D Animation','Rigging','Compositing','Visual Development','Original Features']).join('\n');
+  const tickerMidVal=(cp.tickerMid||['3D Animation','Motion Design','Original Films','Character Animation','In-House Production','2D Animation','Rigging','Compositing','Visual Development','Original Features']).join('\n');
+
   document.getElementById('page-contact').innerHTML=`
     <div class="page-title">Contact</div>
-    <div class="page-sub">Your links and resume.</div>
+    <div class="page-sub">Links, resume, and the contact panel content.</div>
+
     <div class="section">
-      <div class="sh" onclick="toggleSection(this)"><h3>Resume</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sh" onclick="toggleSection(this)"><h3>Email &amp; Resume</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
-        <div class="field"><label>PDF Path</label><input value="${C.contact.resume||''}" placeholder="resume/yourfile.pdf" oninput="C.contact.resume=this.value;markDirty()"><p class="hint">Path to your PDF relative to site root</p></div>
+        <div class="field"><label>Email Address</label><input value="${C.contact.email||''}" placeholder="you@studio.com" oninput="C.contact.email=this.value;markDirty()"></div>
+        <div class="field"><label>Resume PDF Path</label><input value="${C.contact.resume||''}" placeholder="resume/yourfile.pdf" oninput="C.contact.resume=this.value;markDirty()"><p class="hint">Path relative to site root</p></div>
       </div>
     </div>
+
     <div class="section">
-      <div class="sh" onclick="toggleSection(this)"><h3>Links</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sh" onclick="toggleSection(this)"><h3>Social Links</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
         <div class="block-list" id="links-list">
           ${C.contact.links.map((l,i)=>`
             <div class="bk">
               <div class="bk-head">
                 <span class="bk-type">Link</span>
-                <span class="bk-preview">${l.label} — ${l.url}</span>
-                <div class="bk-actions">
-                  <button class="bk-btn del" onclick="removeLink(${i})">&#x2715;</button>
-                </div>
+                <span class="bk-preview">${l.label||''} — ${l.url||''}</span>
+                <div class="bk-actions"><button class="bk-btn del" onclick="removeLink(${i})">&#x2715;</button></div>
               </div>
               <div class="bk-body">
-                <div class="field"><label>Label</label><input value="${l.label}" oninput="C.contact.links[${i}].label=this.value;markDirty();rebuildLinkPreviews()"></div>
-                <div class="field"><label>URL</label><input value="${l.url}" placeholder="https:// or mailto:" oninput="C.contact.links[${i}].url=this.value;markDirty();rebuildLinkPreviews()"></div>
+                <div class="field"><label>Label</label><input value="${l.label||''}" oninput="C.contact.links[${i}].label=this.value;markDirty()"></div>
+                <div class="field"><label>URL</label><input value="${l.url||''}" placeholder="https:// or mailto:" oninput="C.contact.links[${i}].url=this.value;markDirty()"></div>
               </div>
             </div>`).join('')}
         </div>
         <button class="add-btn" onclick="addLink()" style="margin-top:.5rem">+ Add Link</button>
       </div>
+    </div>
+
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Panel — Background Video</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="field">
+          <label>Vimeo / YouTube URL</label>
+          <textarea placeholder="Paste embed URL or share link" oninput="parseContactVideo(this.value)" style="min-height:55px">${(cp.video&&cp.video.url)||''}</textarea>
+          <span class="hint" id="ct-video-hint">${(cp.video&&cp.video.type&&cp.video.type!=='placeholder')?'&#x2713; '+cp.video.type+' detected':'Separate from your main reel — leave blank to reuse reel.'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Panel — Splash Text</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="row2">
+          <div class="field"><label>Title Line</label><input value="${cp.title||"Let's"}" oninput="cpSet('title',this.value)" placeholder="Let's"></div>
+          <div class="field"><label>Accent Word</label><input value="${cp.titleAccent||'work.'}" oninput="cpSet('titleAccent',this.value)" placeholder="work."></div>
+        </div>
+        <div class="field"><label>Subheading</label><textarea oninput="cpSet('sub',this.value)">${cp.sub||'Animation, motion, original features — whatever the idea, we\'re built for it. Let\'s talk.'}</textarea></div>
+        <div class="field"><label>Scroll Cue</label><input value="${cp.scrollCue||'See how to reach us'}" oninput="cpSet('scrollCue',this.value)"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Panel — Labels</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="row3">
+          <div class="field"><label>Email Label</label><input value="${cp.emailLabel||'Drop us a line'}" oninput="cpSet('emailLabel',this.value)"></div>
+          <div class="field"><label>Social Label</label><input value="${cp.socialLabel||'Find us'}" oninput="cpSet('socialLabel',this.value)"></div>
+          <div class="field"><label>Resume Label</label><input value="${cp.resumeLabel||'Credentials'}" oninput="cpSet('resumeLabel',this.value)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Panel — Ticker Tapes</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <p class="hint" style="margin-bottom:.5rem">One item per line. Both tapes scroll the same list by default — edit them independently here.</p>
+        <div class="row2">
+          <div class="field">
+            <label>Top Tape</label>
+            <textarea style="min-height:140px;line-height:1.7" oninput="cpSet('tickerTop',this.value.split('\\n').map(s=>s.trim()).filter(Boolean))">${tickerTopVal}</textarea>
+          </div>
+          <div class="field">
+            <label>Mid Tape</label>
+            <textarea style="min-height:140px;line-height:1.7" oninput="cpSet('tickerMid',this.value.split('\\n').map(s=>s.trim()).filter(Boolean))">${tickerMidVal}</textarea>
+          </div>
+        </div>
+      </div>
     </div>`;
 }
+
 function addLink(){
   if(!C.contact.links) C.contact.links=[];
   C.contact.links.push({label:'',url:''});
@@ -369,11 +448,6 @@ function removeLink(i){
   C.contact.links.splice(i,1);
   markDirty(); renderContact(); showPage('contact');
 }
-function rebuildLinkPreviews(){
-  // previews update on next renderContact, fine for now
-}
-
-// ── PROJECT PAGE
 function renderProject(id){
   const p=projects.find(x=>x.id===id); if(!p)return;
   document.getElementById('page-project').innerHTML=`

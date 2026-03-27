@@ -329,58 +329,16 @@ body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition
   </div>
   <div id="ct-content">
     <div id="ct-splash">
-      <div class="ct-ticker tape-top reverse">
-        <div class="ticker-track">
-          <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
-          <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
-        </div>
+      <div class="ct-ticker tape-top reverse" id="ct-ticker-top">
+        <div class="ticker-track"></div>
       </div>
       <p class="ct-tag" id="ct-location"></p>
       <h1 class="ct-hero">Let's<br><span class="accent-word">work.</span></h1>
       <p class="ct-sub">Animation, motion, original features — whatever the idea, we're built for it. Let's talk.</p>
       <div class="ct-scroll-cue"><span class="ct-scroll-line"></span>See how to reach us</div>
     </div>
-    <div class="ct-ticker tape-mid">
-      <div class="ticker-track">
-        <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
-        <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
-      </div>
+    <div class="ct-ticker tape-mid" id="ct-ticker-mid">
+      <div class="ticker-track"></div>
     </div>
     <div id="ct-links">
       <div class="ct-email-block">
@@ -835,18 +793,43 @@ function render(){
   setTimeout(initCountUps, 100);
   loadLog();
 
-  // Contact panel — wire data from content.json
+  // ── Contact panel
+  const cp = C.contactPanel||{};
+  const defaultTicker = ['3D Animation','Motion Design','Original Films','Character Animation','In-House Production','2D Animation','Rigging','Compositing','Visual Development','Original Features'];
+
+  // Text fields
+  const ctTitle  = cp.title||"Let's";
+  const ctAccent = cp.titleAccent||'work.';
+  const ctSub    = cp.sub||'Animation, motion, original features — whatever the idea, we\'re built for it. Let\'s talk.';
+  const ctCue    = cp.scrollCue||'See how to reach us';
+  document.querySelector('.ct-hero').innerHTML = ctTitle+'<br><span class="accent-word">'+ctAccent+'</span>';
+  document.querySelector('.ct-sub').textContent = ctSub;
+  document.querySelector('.ct-scroll-cue').innerHTML = '<span class="ct-scroll-line"></span>'+ctCue;
+
+  // Labels
+  document.querySelector('.ct-email-label').textContent = cp.emailLabel||'Drop us a line';
+  document.querySelector('.ct-social-label').textContent = cp.socialLabel||'Find us';
+  const resumeLabelEl = document.querySelector('.ct-resume-block .ct-email-label');
+  if(resumeLabelEl) resumeLabelEl.textContent = cp.resumeLabel||'Credentials';
+
+  // Tag line
+  document.getElementById('ct-location').textContent = (C.name||'') + (C.location ? '\u00a0·\u00a0'+C.location : '');
+
+  // Email
   const email = C.contact.email||'';
   document.getElementById('ct-email-link').href = email ? 'mailto:'+email : '#';
   document.getElementById('ct-email-text').textContent = email;
-  document.getElementById('ct-location').textContent = (C.name||'') + (C.location ? '\u00a0·\u00a0'+C.location : '');
+
+  // Footer
   document.getElementById('ct-footer-name').textContent = C.name||'';
   document.getElementById('ct-footer-loc').textContent = C.location||'';
+
   // Social icons
   document.getElementById('ct-icons').innerHTML=(C.contact.links||[]).map(l=>`
     <a href="${l.url}" target="${l.url.startsWith('mailto')?'_self':'_blank'}" rel="noopener" class="ct-icon-btn" title="${l.label}">
       <i class="${phosphorIcon(l.url)}"></i>
     </a>`).join('');
+
   // Resume
   if(C.contact.resume){
     document.getElementById('ct-resume-wrap').style.display='';
@@ -854,13 +837,25 @@ function render(){
   } else {
     document.getElementById('ct-resume-wrap').style.display='none';
   }
-  // Contact background video — reuse the reel
+
+  // Tickers — doubled for seamless loop
+  function makeTickerHTML(items){
+    const doubled=[...items,...items];
+    return doubled.map(w=>`<span class="ticker-item"><span class="ticker-word">${w}</span><span class="ticker-dot"></span></span>`).join('');
+  }
+  const topItems = (cp.tickerTop&&cp.tickerTop.length) ? cp.tickerTop : defaultTicker;
+  const midItems = (cp.tickerMid&&cp.tickerMid.length) ? cp.tickerMid : defaultTicker;
+  document.querySelector('#ct-ticker-top .ticker-track').innerHTML = makeTickerHTML(topItems);
+  document.querySelector('#ct-ticker-mid .ticker-track').innerHTML = makeTickerHTML(midItems);
+
+  // Background video — contactPanel.video takes priority, falls back to reel
   const ctVid = document.getElementById('ct-bg-video');
-  if(C.reel&&C.reel.url){
-    if(C.reel.type==='vimeo'||C.reel.type==='youtube'){
-      ctVid.innerHTML=`<iframe src="${C.reel.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-    } else if(C.reel.type==='video'){
-      ctVid.innerHTML=`<video autoplay muted loop playsinline src="${C.reel.url}"></video>`;
+  const vid = (cp.video&&cp.video.url&&cp.video.type!=='placeholder') ? cp.video : C.reel;
+  if(vid&&vid.url){
+    if(vid.type==='vimeo'||vid.type==='youtube'){
+      ctVid.innerHTML=`<iframe src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    } else if(vid.type==='video'){
+      ctVid.innerHTML=`<video autoplay muted loop playsinline src="${vid.url}"></video>`;
     }
   }
 }
