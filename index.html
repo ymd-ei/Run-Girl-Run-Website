@@ -1054,7 +1054,7 @@ function startTicker(track, speed){
   // Measure now — panel is visible so scrollWidth is real
   const trackW = track.scrollWidth;
   // Start so first item enters from off-screen
-  let offset = reverse ? -trackW : trackW;
+  let offset = reverse ? trackW : -trackW;
   let raf;
 
   function tick(){
