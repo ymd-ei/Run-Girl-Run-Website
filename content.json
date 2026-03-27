@@ -120,6 +120,10 @@
     {
       "value": "3d",
       "label": "3D"
+    },
+    {
+      "value": "Motion",
+      "label": "MOTION"
     }
   ],
   "favicon": "media/rgr_favicon.png",
