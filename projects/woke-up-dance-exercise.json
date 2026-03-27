@@ -12,7 +12,7 @@
     "Exercise"
   ],
   "thumbnail": "media/projects/Website Media Snapshot.png",
-  "videoUrl": "",
+  "videoUrl": "https://www.youtube.com/shorts/xbIFMNQgkiE",
   "blocks": [
     {
       "id": "b1",
@@ -23,7 +23,7 @@
     {
       "id": "b1774532370151",
       "type": "image",
-      "src": "",
+      "src": "media/projects/Website Media Snapshot.png",
       "alt": ""
     },
     {
@@ -37,7 +37,7 @@
       "type": "twocol",
       "left": {
         "type": "image",
-        "src": "",
+        "src": "media/projects/Website Media Snapshot.png",
         "alt": ""
       },
       "right": {
