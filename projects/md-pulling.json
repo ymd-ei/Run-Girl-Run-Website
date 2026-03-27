@@ -1,0 +1,130 @@
+{
+  "id": "md-pulling",
+  "title": "MD pulling",
+  "type": "motion",
+  "typeLabel": "Motion",
+  "year": "2026",
+  "client": "",
+  "duration": "",
+  "tags": [],
+  "thumbnail": "",
+  "videoUrl": "",
+  "blocks": [
+    {
+      "id": "b1774624269509cfgk",
+      "type": "text-lg",
+      "content": "Orbital Loop",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269509bged",
+      "type": "text-md",
+      "content": "<b>A short film about cycles.</b>",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269510rxhk",
+      "type": "text-sm",
+      "content": "ROLE",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511sxsb",
+      "type": "text-md",
+      "content": "Animator, Director",
+      "align": "left"
+    },
+    {
+      "id": "b177462426951195r1",
+      "type": "text-sm",
+      "content": "STUDIO",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511bhrt",
+      "type": "text-md",
+      "content": "Run Girl Run · 2024",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511v280",
+      "type": "divider"
+    },
+    {
+      "id": "b1774624269511kidr",
+      "type": "text-md",
+      "content": "This project started as an experiment in looping animation — what happens when a scene has no clear beginning or end.",
+      "align": "left"
+    },
+    {
+      "id": "b17746242695112x9e",
+      "type": "text-md",
+      "content": "Developed over three months, working entirely in-house from concept to final render.",
+      "align": "left"
+    },
+    {
+      "id": "b17746242695110tcd",
+      "type": "quote",
+      "content": "The loop isn't a gimmick. It's the point.",
+      "align": "left"
+    },
+    {
+      "id": "b17746242695115rei",
+      "type": "divider"
+    },
+    {
+      "id": "b1774624269511r5hr",
+      "type": "image",
+      "src": "images/orbital-still.jpg",
+      "alt": "Orbital Loop still"
+    },
+    {
+      "id": "b1774624269511smtv",
+      "type": "text-md",
+      "content": "<b>Process</b>",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511osft",
+      "type": "text-md",
+      "content": "Blocked out the timing in After Effects first, then moved into Cinema 4D for the 3D work. The character rig was built from scratch.",
+      "align": "left"
+    },
+    {
+      "id": "b17746242695117xe3",
+      "type": "text-md",
+      "content": "<i>Compositing</i> done in After Effects with some light <b>colour grading</b> in DaVinci.",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511ftso",
+      "type": "divider"
+    },
+    {
+      "id": "b17746242695111agj",
+      "type": "stats",
+      "items": [
+        {
+          "num": "148,000",
+          "label": "Combined Views"
+        },
+        {
+          "num": "11,000",
+          "label": "Downloads"
+        }
+      ]
+    },
+    {
+      "id": "b17746242695118sy3",
+      "type": "text-sm",
+      "content": "CREDITS",
+      "align": "left"
+    },
+    {
+      "id": "b1774624269511wrp0",
+      "type": "text-md",
+      "content": "Sound design by a collaborator. Everything else in-house.",
+      "align": "left"
+    }
+  ]
+}
