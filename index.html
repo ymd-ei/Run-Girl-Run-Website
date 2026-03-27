@@ -242,7 +242,6 @@ body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition
 #loader.done{opacity:0;visibility:hidden;pointer-events:none}
 #loader-name{font-family:var(--font-b);font-size:clamp(.65rem,1.2vw,.85rem);font-weight:400;letter-spacing:.35em;color:rgba(242,237,228,0.6);text-transform:uppercase;display:flex;gap:0}
 #loader-name span{opacity:0;transition:opacity .06s}
-#loader-name span{opacity:0;transition:opacity .06s}
 #loader-bar-wrap{width:min(260px,50vw);height:1px;background:rgba(242,237,228,0.1);position:relative;overflow:hidden}
 #loader-bar{position:absolute;top:0;left:0;height:100%;width:0;background:var(--accent);transition:width .0s linear}
 body.page-loading #stage,
@@ -1009,47 +1008,47 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
   const bar    = document.getElementById('loader-bar');
   const loader = document.getElementById('loader');
 
-  // Fetch the real name from content.json
-  function runLoaderName(nameText){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const nameText = 'RUN GIRL RUN';
+
+  function runLoaderName(){
+    // Build spans hidden first
     nameEl.innerHTML = nameText.split('').map(ch =>
       ch === ' '
-        ? `<span style="width:.4em;display:inline-block;opacity:1"> </span>`
-        : `<span>${ch}</span>`
+        ? `<span style="width:.4em;display:inline-block"> </span>`
+        : `<span style="opacity:0">${ch}</span>`
     ).join('');
-    const allSpans = [...nameEl.querySelectorAll('span:not([style])')];
+    const allSpans  = [...nameEl.querySelectorAll('span:not([style*="width"])')];
     const finalChars = nameText.split('').filter(c => c !== ' ');
 
-    allSpans.forEach(sp => {
-      sp.style.opacity = '1';
-      sp.textContent = chars[Math.floor(Math.random()*chars.length)];
-    });
-
-    const noiseTimer = setInterval(()=>{
+    // Small delay so the loader bg has painted before we start
+    setTimeout(()=>{
+      // Show all as noise at once
       allSpans.forEach(sp => {
-        if(!sp.dataset.settled)
-          sp.textContent = chars[Math.floor(Math.random()*chars.length)];
+        sp.style.opacity = '1';
+        sp.textContent = chars[Math.floor(Math.random()*chars.length)];
       });
-    }, 60);
 
-    allSpans.forEach((sp, i) => {
-      setTimeout(()=>{
-        sp.dataset.settled = '1';
-        sp.textContent = finalChars[i] || sp.textContent;
-        if(i === allSpans.length - 1) clearInterval(noiseTimer);
-      }, 100 + i * 75);
-    });
+      // Keep cycling noise on unsettled spans
+      const noiseTimer = setInterval(()=>{
+        allSpans.forEach(sp => {
+          if(!sp.dataset.settled)
+            sp.textContent = chars[Math.floor(Math.random()*chars.length)];
+        });
+      }, 55);
+
+      // Settle each span into its real character
+      allSpans.forEach((sp, i) => {
+        setTimeout(()=>{
+          sp.dataset.settled = '1';
+          sp.textContent = finalChars[i];
+          if(i === allSpans.length - 1) clearInterval(noiseTimer);
+        }, i * 80);
+      });
+    }, 80);
   }
 
-  // Try to get the real name, fall back to title or placeholder
-  const fallbackName = (document.title && document.title !== 'Portfolio' ? document.title : 'Run Girl Run').toUpperCase();
-  runLoaderName(fallbackName);
-  fetch('content.json').then(r=>r.json()).then(d=>{
-    const name = (d.name || d.siteTitle || '').toUpperCase();
-    if(name && name !== fallbackName){
-      nameEl.innerHTML = '';
-      runLoaderName(name);
-    }
-  }).catch(()=>{});
+  runLoaderName();
 
   // Progress bar — fake stops at random percentages, then completes
   // Generate 2-3 random stop points
