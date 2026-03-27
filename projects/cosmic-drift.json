@@ -1,8 +1,8 @@
 {
   "id": "cosmic-drift",
   "title": "Data in Motion",
-  "type": "motion",
-  "typeLabel": "Motion",
+  "type": "2d",
+  "typeLabel": "2D",
   "year": "2023",
   "client": "TechConf 2023",
   "duration": "2:30",
