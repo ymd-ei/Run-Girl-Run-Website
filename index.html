@@ -1004,41 +1004,35 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
   const bar    = document.getElementById('loader-bar');
   const loader = document.getElementById('loader');
 
-  // Grab site name from content.json asynchronously — fall back to title
-  // We just use whatever is in the <title> tag or a short placeholder
-  // The real name will be filled once content loads, but for the loader
-  // we can read from the page title or just wait for a tiny fetch.
-  // Actually, let's do a quick fetch of content.json just for the name.
-  const nameText = (document.title || 'Run Girl Run').toUpperCase();
-
-  // Build letter spans
-  nameEl.innerHTML = nameText.split('').map(ch =>
-    ch === ' '
-      ? `<span style="width:.4em;display:inline-block"> </span>`
-      : `<span>${ch}</span>`
-  ).join('');
-  const spans = [...nameEl.querySelectorAll('span[style=""]'), ...nameEl.querySelectorAll('span:not([style])')];
-  // simpler: get all spans
-  const allSpans = [...nameEl.querySelectorAll('span')];
-
-  // Scramble each character in
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  allSpans.forEach((sp, i) => {
-    const final = sp.textContent;
-    if(final === ' ' || sp.style.width) return;
-    const delay = i * 55;
-    let tick = 0; const cycles = 7;
-    setTimeout(()=>{
-      sp.style.opacity = '1';
-      function cycle(){
-        if(tick < cycles){
-          sp.textContent = chars[Math.floor(Math.random()*chars.length)];
-          tick++;
-          setTimeout(cycle, 70 + tick * 12);
-        } else { sp.textContent = final; }
-      }
-      cycle();
-    }, delay);
+  // Fetch the real name from content.json
+  fetch('content.json').then(r=>r.json()).then(d=>{
+    const nameText = (d.name || d.siteTitle || 'Portfolio').toUpperCase();
+    nameEl.innerHTML = nameText.split('').map(ch =>
+      ch === ' '
+        ? `<span style="width:.4em;display:inline-block"> </span>`
+        : `<span>${ch}</span>`
+    ).join('');
+    const allSpans = [...nameEl.querySelectorAll('span')];
+    allSpans.forEach((sp, i) => {
+      const final = sp.textContent;
+      if(sp.style.width) return;
+      const delay = i * 55;
+      let tick = 0; const cycles = 7;
+      setTimeout(()=>{
+        sp.style.opacity = '1';
+        function cycle(){
+          if(tick < cycles){
+            sp.textContent = chars[Math.floor(Math.random()*chars.length)];
+            tick++;
+            setTimeout(cycle, 70 + tick * 12);
+          } else { sp.textContent = final; }
+        }
+        cycle();
+      }, delay);
+    });
+  }).catch(()=>{
+    // fallback if fetch fails — just show dots
+    nameEl.textContent = '...';
   });
 
   // Progress bar — fake stops at random percentages, then completes
