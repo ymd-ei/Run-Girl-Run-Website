@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio</title>
 <link rel="icon" id="favicon" href="">
+<style id="theme-vars"></style>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
@@ -781,7 +782,24 @@ async function loadLog(){
   }
 }
 
+function applyTheme(t){
+  if(!t) return;
+  const el = document.getElementById('theme-vars');
+  const vars = [
+    t.ink        && `--ink:${t.ink}`,
+    t.paper      && `--paper:${t.paper}`,
+    t.accent     && `--accent:${t.accent}`,
+    t.surface    && `--surface:${t.surface}`,
+    t.panelBg    && `--panel-bg:${t.panelBg}`,
+    t.ctAccent   && `--ct-accent:${t.ctAccent}`,
+    t.ctBg       && `--ct-bg:${t.ctBg}`,
+    t.ctHi       && `--ct-hi:${t.ctHi}`,
+  ].filter(Boolean).join(';');
+  el.textContent = vars ? `:root{${vars}}` : '';
+}
+
 function render(){
+  applyTheme(C.theme);
   document.getElementById('nav-name').textContent=C.name;
   document.title=C.siteTitle||C.name||'Portfolio';
   if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon; }
