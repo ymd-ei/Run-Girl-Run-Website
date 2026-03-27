@@ -949,7 +949,7 @@ function render(){
   const ctSub    = cp.sub||'Animation, motion, original features — whatever the idea, we\'re built for it. Let\'s talk.';
   const ctCue    = cp.scrollCue||'See how to reach us';
   document.querySelector('.ct-hero').innerHTML = ctTitle+'<br><span class="accent-word">'+ctAccent+'</span>';
-  document.querySelector('.ct-sub').textContent = ctSub;
+  document.querySelector('.ct-sub').innerHTML = ctSub;
   document.querySelector('.ct-scroll-cue').innerHTML = '<span class="ct-scroll-line"></span>'+ctCue;
 
   // Labels
