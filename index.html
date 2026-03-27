@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio</title>
 <link rel="icon" id="favicon" href="">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
 :root{
@@ -151,26 +151,77 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .skf{position:absolute;top:0;left:0;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform 1.2s var(--ease)}
 .skf.go{transform:scaleX(var(--pct))}
 
-/* CONTACT */
-.cls{display:flex;flex-direction:column}
-.cl{display:flex;align-items:center;gap:1.25rem;padding:.9rem 0;border-bottom:1px solid var(--border);text-decoration:none;color:var(--ink);font-size:.88rem;transition:color .2s,padding-left .28s var(--ease)}
-.cl:hover{color:var(--accent);padding-left:.5rem}
-.clt{font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);width:5rem;flex-shrink:0}
-.fd{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:1.75rem 0 1.25rem}
-.form{display:flex;flex-direction:column;gap:1.2rem}
-.fg{display:flex;flex-direction:column;gap:.38rem}
-.fl{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-.fi,.fta{font-family:var(--font-b);font-size:.92rem;font-weight:300;background:transparent;border:none;border-bottom:1px solid var(--border);padding:.55rem 0;color:var(--ink);outline:none;width:100%;transition:border-color .2s}
-.fi:focus,.fta:focus{border-color:var(--accent)}
-.fi::placeholder,.fta::placeholder{color:rgba(26,23,20,0.22)}
-.fta{resize:vertical;min-height:88px}
-.bs{align-self:flex-start;margin-top:.5rem;font-family:var(--font-b);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);border:none;color:var(--paper);padding:.82rem 2rem;transition:opacity .2s,transform .15s}
-.bs:hover{opacity:.75;transform:translateY(-1px)}
-.resume-btn{display:inline-flex;align-items:center;font-family:var(--font-b);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--border);color:var(--ink);padding:.7rem 1.5rem;text-decoration:none;margin-bottom:1.75rem;transition:border-color .2s,color .2s;background:var(--panel-bg)}
-.resume-btn:hover{border-color:var(--accent);color:var(--accent)}
-.social-icons{display:flex;gap:.75rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:1.75rem}
-.si{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--border);color:rgba(26,23,20,0.45);text-decoration:none;transition:border-color .2s,color .2s;font-size:1.1rem;background:var(--panel-bg)}
-.si:hover{border-color:var(--accent);color:var(--accent)}
+/* CONTACT — new full-overlay dark panel */
+:root{
+  --ct-bg:#080808;--ct-hi:#ffffff;--ct-accent:#ff7828;
+  --ct-muted:rgba(255,255,255,0.35);--ct-border:rgba(255,255,255,0.1);
+  --ct-panel-w:94vw;--ct-sliver:6vw;
+  --font-hero:'Bebas Neue',sans-serif;--font-ui:'Space Grotesk',sans-serif;
+}
+#contact-wrapper{
+  position:fixed;top:0;right:0;bottom:0;width:var(--ct-panel-w);z-index:300;
+  transform:translateX(100%);transition:transform .8s var(--ease);
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;
+}
+#contact-wrapper::-webkit-scrollbar{width:2px}
+#contact-wrapper::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
+#contact-wrapper.open{transform:translateX(0)}
+#stage.contact-open{transform:translateX(calc(-1 * var(--ct-panel-w)));filter:brightness(0.38);pointer-events:none}
+#ct-bg{position:sticky;top:0;height:100vh;margin-bottom:-100vh;overflow:hidden;pointer-events:none}
+#ct-bg-video{position:absolute;inset:0;filter:saturate(0.55) brightness(0.9);transition:filter .2s ease}
+#ct-bg-video iframe,#ct-bg-video video{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1.1);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none;pointer-events:none}
+#ct-bg-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.97) 0%,rgba(8,8,8,0.5) 35%,rgba(8,8,8,0.1) 65%),linear-gradient(to bottom,rgba(8,8,8,0.7) 0%,transparent 30%)}
+#ct-bg-dark{position:absolute;inset:0;background:rgba(8,8,8,0);transition:background .2s ease}
+#ct-bg-grain{position:absolute;inset:0;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:128px 128px}
+#ct-content{position:relative;z-index:1}
+#ct-splash{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:3rem 3.5rem 4rem;position:relative}
+.ct-tag{font-family:var(--font-ui);font-size:.62rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--ct-accent);display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;opacity:0;transform:translateY(10px);transition:opacity .6s .2s var(--ease),transform .6s .2s var(--ease)}
+#contact-wrapper.open .ct-tag{opacity:1;transform:translateY(0)}
+.ct-hero{font-family:var(--font-hero);font-size:clamp(5rem,13vw,14rem);line-height:.88;letter-spacing:.01em;color:var(--ct-hi);text-transform:uppercase;opacity:0;transform:translateY(40px);transition:opacity .85s .05s var(--ease),transform .85s .05s var(--ease)}
+.ct-hero .accent-word{color:var(--ct-accent)}
+#contact-wrapper.open .ct-hero{opacity:1;transform:translateY(0)}
+.ct-sub{font-family:var(--font-ui);font-weight:300;font-size:.9rem;color:var(--ct-muted);line-height:1.8;max-width:480px;margin-top:1.75rem;opacity:0;transform:translateY(16px);transition:opacity .7s .35s var(--ease),transform .7s .35s var(--ease)}
+#contact-wrapper.open .ct-sub{opacity:1;transform:translateY(0)}
+.ct-ticker{position:relative;z-index:2;width:115%;margin-left:-7.5%;overflow:hidden;border-top:1.5px solid rgba(255,120,40,0.7);border-bottom:1.5px solid rgba(255,120,40,0.7);padding:.55rem 0;background:rgba(255,120,40,0.2)}
+.ct-ticker::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(255,120,40,0.3) 18px,rgba(255,120,40,0.3) 19.5px);background-size:23.8px 100%;animation:pinstripe-scroll 1.8s linear infinite}
+@keyframes pinstripe-scroll{from{background-position-x:0}to{background-position-x:23.8px}}
+.ct-ticker.tape-mid{transform:rotate(-6deg)}
+.ct-ticker.tape-top{position:absolute;left:-20%;right:-20%;width:140%;margin-left:0;top:8%;transform:rotate(20deg);transform-origin:center center;translate:140px 0;transition:translate .65s .4s var(--ease)}
+#contact-wrapper.open .ct-ticker.tape-top{translate:0 0}
+.ct-ticker.reverse .ticker-track{animation-direction:reverse}
+.ticker-track{display:flex;gap:0;white-space:nowrap;will-change:transform;animation:ticker-scroll 22s linear infinite}
+.ticker-item{display:inline-flex;align-items:center;gap:.5rem;padding:0 .5rem;flex-shrink:0}
+.ticker-word{font-family:var(--font-b);font-weight:500;font-size:clamp(.75rem,1.2vw,1rem);text-transform:uppercase;letter-spacing:.08em;color:#ff7828;white-space:nowrap}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:#ff7828;flex-shrink:0;opacity:.7}
+@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ct-scroll-cue{display:flex;align-items:center;gap:.75rem;margin-top:2.5rem;font-family:var(--font-ui);font-size:.58rem;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--ct-muted);opacity:0;transition:opacity .6s .65s var(--ease)}
+#contact-wrapper.open .ct-scroll-cue{opacity:1}
+.ct-scroll-line{width:0;height:1px;background:var(--ct-accent);transition:width .9s .85s var(--ease)}
+#contact-wrapper.open .ct-scroll-line{width:36px}
+#ct-links{padding:5rem 3.5rem 4rem;display:flex;flex-direction:column;gap:4rem}
+.ct-email-block{display:flex;flex-direction:column;gap:.75rem}
+.ct-email-label{font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--ct-muted)}
+.ct-email-link{font-family:var(--font-hero);font-size:clamp(2.5rem,6vw,5.5rem);letter-spacing:.02em;text-transform:uppercase;color:var(--ct-hi);text-decoration:none;line-height:1;display:inline-flex;align-items:center;gap:1rem;transition:color .2s}
+.ct-email-link:hover{color:var(--ct-accent)}
+.ct-email-link .arr{font-size:clamp(1.5rem,3vw,3rem);color:var(--ct-accent);transition:transform .3s var(--ease)}
+.ct-email-link:hover .arr{transform:translate(6px,-6px)}
+.ct-social-label{font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--ct-muted);margin-bottom:1.25rem}
+.ct-icons{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.ct-icon-btn{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border:1px solid var(--ct-border);color:rgba(255,255,255,0.5);text-decoration:none;font-size:1.3rem;transition:border-color .2s,color .2s,background .2s,transform .25s var(--ease)}
+.ct-icon-btn:hover{border-color:#ff7828;color:#ff7828;background:rgba(255,120,40,0.08);transform:translateY(-4px)}
+.ct-resume-block{display:flex;flex-direction:column;gap:.75rem}
+.ct-resume-link{display:inline-flex;align-items:center;gap:1rem;padding:1rem 1.75rem;border:1px solid var(--ct-border);background:transparent;color:var(--ct-hi);font-family:var(--font-ui);font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;text-decoration:none;align-self:flex-start;transition:border-color .2s,background .2s,gap .3s var(--ease),color .2s}
+.ct-resume-link:hover{border-color:var(--ct-accent);background:rgba(255,120,40,0.06);color:var(--ct-accent);gap:1.5rem}
+.ct-resume-link i{font-size:1rem;color:var(--ct-accent)}
+.ct-footer{padding:1.5rem 3.5rem 3rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--ct-border);font-family:var(--font-ui);font-size:.58rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ct-muted)}
+.ct-footer-dot{width:6px;height:6px;border-radius:50%;background:var(--ct-accent);animation:pulse 2.4s ease-in-out infinite}
+#ct-close{position:fixed;top:2rem;right:2rem;z-index:500;width:42px;height:42px;border:1px solid var(--ct-border);background:none;color:rgba(255,255,255,0.45);font-size:.95rem;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s .35s ease,border-color .2s,color .2s,transform .25s,background .2s}
+#ct-close.open{opacity:1;pointer-events:all}
+#ct-close:hover{border-color:#ff7828;color:#ff7828;background:rgba(255,120,40,0.08);transform:rotate(90deg)}
+#ct-sliver{position:fixed;top:0;left:0;bottom:0;width:var(--ct-sliver);z-index:299;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .4s .3s}
+#ct-sliver.open{opacity:1;pointer-events:all}
+@media(max-width:600px){#contact-wrapper{width:100vw}#ct-splash,#ct-links{padding:2rem 1.5rem}.ct-footer{padding:1.5rem}}
 
 .log-entries{display:flex;flex-direction:column}
 .log-entry{display:flex;gap:1.25rem;padding:.9rem 0;border-bottom:1px solid var(--border);align-items:baseline}
@@ -179,6 +230,12 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .log-empty{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:2rem 0}
 @keyframes fup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fdn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+body.contact-open #nav,
+body.contact-open #watch-reel-wrap,
+body.contact-open #ht,
+body.contact-open #sh,
+body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition:opacity .3s ease}
+#nav,#watch-reel-wrap,#ht,#sh,#log-stack{transition:opacity .4s .2s ease}
 @media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -258,16 +315,106 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
   <div class="pb" id="about-body"></div>
 </div>
 
-<!-- CONTACT -->
-<div class="panel" id="panel-contact">
-  <div class="ph"><span class="pt2">Contact</span><button class="pc" onclick="closeToRoot()">&#x2715;</button></div>
-  <div class="pb" id="contact-body"></div>
+<!-- CONTACT SLIVER + CLOSE -->
+<div id="ct-sliver" onclick="closeToRoot()"></div>
+<button id="ct-close" onclick="closeToRoot()">&#x2715;</button>
+
+<!-- CONTACT PANEL -->
+<div id="contact-wrapper">
+  <div id="ct-bg">
+    <div id="ct-bg-video"></div>
+    <div id="ct-bg-grad"></div>
+    <div id="ct-bg-dark"></div>
+    <div id="ct-bg-grain"></div>
+  </div>
+  <div id="ct-content">
+    <div id="ct-splash">
+      <div class="ct-ticker tape-top reverse">
+        <div class="ticker-track">
+          <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
+          <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
+        </div>
+      </div>
+      <p class="ct-tag" id="ct-location"></p>
+      <h1 class="ct-hero">Let's<br><span class="accent-word">work.</span></h1>
+      <p class="ct-sub">Animation, motion, original features — whatever the idea, we're built for it. Let's talk.</p>
+      <div class="ct-scroll-cue"><span class="ct-scroll-line"></span>See how to reach us</div>
+    </div>
+    <div class="ct-ticker tape-mid">
+      <div class="ticker-track">
+        <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">3D Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Motion Design</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Original Films</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Character Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">In-House Production</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">2D Animation</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Rigging</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Compositing</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Visual Development</span><span class="ticker-dot"></span></span>
+        <span class="ticker-item"><span class="ticker-word">Original Features</span><span class="ticker-dot"></span></span>
+      </div>
+    </div>
+    <div id="ct-links">
+      <div class="ct-email-block">
+        <p class="ct-email-label">Drop us a line</p>
+        <a id="ct-email-link" href="#" class="ct-email-link">
+          <span id="ct-email-text"></span>
+          <i class="ph ph-arrow-up-right arr"></i>
+        </a>
+      </div>
+      <div id="ct-social-wrap">
+        <p class="ct-social-label">Find us</p>
+        <div class="ct-icons" id="ct-icons"></div>
+      </div>
+      <div class="ct-resume-block" id="ct-resume-wrap" style="display:none">
+        <p class="ct-email-label">Credentials</p>
+        <a id="ct-resume-link" href="#" target="_blank" class="ct-resume-link">
+          <i class="ph ph-file-pdf"></i>
+          View Resume
+          <i class="ph ph-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <div class="ct-footer">
+      <span id="ct-footer-name"></span>
+      <div class="ct-footer-dot"></div>
+      <span id="ct-footer-loc"></span>
+    </div>
+  </div>
 </div>
 
 <script>
 const cur=document.getElementById('cur');
 document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px'},{passive:true});
-const hs='a,button,.wc,.bp,.fb,.cl,.backbtn,#watch-reel,#lb-close';
+const hs='a,button,.wc,.bp,.fb,.cl,.backbtn,#watch-reel,#lb-close,.ct-icon-btn,.ct-email-link,.ct-resume-link,#ct-close';
 document.addEventListener('mouseover',e=>{if(e.target.closest(hs))document.body.classList.add('ch')});
 document.addEventListener('mouseout',e=>{if(e.target.closest(hs))document.body.classList.remove('ch')});
 
@@ -658,7 +805,7 @@ async function loadLog(){
 function render(){
   document.getElementById('nav-name').textContent=C.name;
   document.title=C.siteTitle||C.name||'Portfolio';
-  if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon+'?v='+Date.now(); }
+  if(C.favicon){ const fv=document.getElementById('favicon'); fv.href=C.favicon; }
   const parts=C.name.split(' ');
   const line1=parts[0];
   const line2=parts.slice(1).join(' ');
@@ -688,27 +835,57 @@ function render(){
   setTimeout(initCountUps, 100);
   loadLog();
 
-  document.getElementById('contact-body').innerHTML=`
-    ${C.contact.resume ? `<div style="display:flex;justify-content:center;margin-bottom:1.75rem"><a href="${C.contact.resume}" target="_blank" rel="noopener" class="resume-btn">View Resume</a></div>` : ""}
-    <div class="social-icons">${(C.contact.links||[]).map(l=>`<a href="${l.url}" target="${l.url.startsWith("mailto")?"_self":"_blank"}" rel="noopener" class="si" title="${l.label}"><i class="${phosphorIcon(l.url)}"></i></a>`).join("")}</div>
-    <p class="fd">&#8212; or send a message</p>
-    <form class="form" onsubmit="handleSubmit(event)">
-      <div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="fc-name" placeholder="Jane Smith" required></div>
-      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="fc-email" placeholder="jane@studio.com" required></div>
-      <div class="fg"><label class="fl">Project type</label><input type="text" class="fi" id="fc-type" placeholder="2D animation, motion graphics&#8230;"></div>
-      <div class="fg"><label class="fl">Message</label><textarea class="fta" id="fc-msg" placeholder="Tell me about your project&#8230;"></textarea></div>
-      <button type="submit" class="bs">Send Message</button>
-    </form>`;
+  // Contact panel — wire data from content.json
+  const email = C.contact.email||'';
+  document.getElementById('ct-email-link').href = email ? 'mailto:'+email : '#';
+  document.getElementById('ct-email-text').textContent = email;
+  document.getElementById('ct-location').textContent = (C.name||'') + (C.location ? '\u00a0·\u00a0'+C.location : '');
+  document.getElementById('ct-footer-name').textContent = C.name||'';
+  document.getElementById('ct-footer-loc').textContent = C.location||'';
+  // Social icons
+  document.getElementById('ct-icons').innerHTML=(C.contact.links||[]).map(l=>`
+    <a href="${l.url}" target="${l.url.startsWith('mailto')?'_self':'_blank'}" rel="noopener" class="ct-icon-btn" title="${l.label}">
+      <i class="${phosphorIcon(l.url)}"></i>
+    </a>`).join('');
+  // Resume
+  if(C.contact.resume){
+    document.getElementById('ct-resume-wrap').style.display='';
+    document.getElementById('ct-resume-link').href=C.contact.resume;
+  } else {
+    document.getElementById('ct-resume-wrap').style.display='none';
+  }
+  // Contact background video — reuse the reel
+  const ctVid = document.getElementById('ct-bg-video');
+  if(C.reel&&C.reel.url){
+    if(C.reel.type==='vimeo'||C.reel.type==='youtube'){
+      ctVid.innerHTML=`<iframe src="${C.reel.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    } else if(C.reel.type==='video'){
+      ctVid.innerHTML=`<video autoplay muted loop playsinline src="${C.reel.url}"></video>`;
+    }
+  }
 }
 
 function openPanel(name){
   document.getElementById('pp').classList.remove('open');
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));
-  document.getElementById('bd').classList.add('open');
-  document.getElementById('panel-'+name).classList.add('open');
   document.querySelectorAll('.nls button').forEach(b=>b.classList.remove('active'));
   const btn=[...document.querySelectorAll('.nls button')].find(b=>b.getAttribute('onclick').includes("'"+name+"'"));
   if(btn)btn.classList.add('active');
+
+  if(name==='contact'){
+    document.body.classList.add('contact-open');
+    document.getElementById('stage').classList.add('contact-open');
+    document.getElementById('contact-wrapper').classList.add('open');
+    document.getElementById('ct-close').classList.add('open');
+    document.getElementById('ct-sliver').classList.add('open');
+    document.getElementById('contact-wrapper').scrollTop=0;
+    updateCtBg(0);
+    jitterTapes();
+    return;
+  }
+
+  document.getElementById('bd').classList.add('open');
+  document.getElementById('panel-'+name).classList.add('open');
   if(name==='about')setTimeout(()=>document.querySelectorAll('#skl .skf').forEach(b=>b.classList.add('go')),340);
 }
 
@@ -754,6 +931,11 @@ function closeProject(){document.getElementById('pp').classList.remove('open')}
 function closeToRoot(){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('open'));
   document.getElementById('bd').classList.remove('open');
+  document.body.classList.remove('contact-open');
+  document.getElementById('stage').classList.remove('contact-open');
+  document.getElementById('contact-wrapper').classList.remove('open');
+  document.getElementById('ct-close').classList.remove('open');
+  document.getElementById('ct-sliver').classList.remove('open');
   document.querySelectorAll('.nls button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#skl .skf').forEach(b=>b.classList.remove('go'));
 }
@@ -778,6 +960,23 @@ document.addEventListener('keydown',e=>{
     else closeToRoot();
   }
 });
+function jitterTapes(){
+  const topAngle = 17 + Math.random()*6;
+  const midAngle = -5 + Math.random()*5;
+  const top = document.querySelector('.ct-ticker.tape-top');
+  const mid = document.querySelector('.ct-ticker.tape-mid');
+  if(top) top.style.transform=`rotate(${topAngle}deg)`;
+  if(mid) mid.style.transform=`rotate(${midAngle}deg)`;
+}
+function updateCtBg(scrollY){
+  const progress=Math.min(scrollY/window.innerHeight,1);
+  const vid=document.getElementById('ct-bg-video');
+  const dark=document.getElementById('ct-bg-dark');
+  if(vid) vid.style.filter=`saturate(0.55) brightness(0.9) blur(${progress*16}px)`;
+  if(dark) dark.style.background=`rgba(8,8,8,${progress*0.68})`;
+}
+document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateCtBg(document.getElementById('contact-wrapper').scrollTop),{passive:true});
+
 load();
 </script>
 </body>
