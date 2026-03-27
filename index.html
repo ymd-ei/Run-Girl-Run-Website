@@ -170,6 +170,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #stage.contact-open{transform:translateX(calc(-1 * var(--ct-panel-w)));filter:brightness(0.38);pointer-events:none}
 #ct-bg{position:sticky;top:0;height:100vh;margin-bottom:-100vh;overflow:hidden;pointer-events:none}
 #ct-bg-video{position:absolute;inset:0;filter:saturate(0.55) brightness(0.9);transition:filter .2s ease}
+#ct-bg-video::after{content:'';position:absolute;inset:0;z-index:1}
 #ct-bg-video iframe,#ct-bg-video video{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1.1);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none;pointer-events:none}
 #ct-bg-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.97) 0%,rgba(8,8,8,0.5) 35%,rgba(8,8,8,0.1) 65%),linear-gradient(to bottom,rgba(8,8,8,0.7) 0%,transparent 30%)}
 #ct-bg-dark{position:absolute;inset:0;background:rgba(8,8,8,0);transition:background .2s ease}
@@ -236,6 +237,19 @@ body.contact-open #ht,
 body.contact-open #sh,
 body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition:opacity .3s ease}
 #nav,#watch-reel-wrap,#ht,#sh,#log-stack{transition:opacity .4s .2s ease}
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;background:var(--ink);transition:opacity .7s var(--ease),visibility .7s}
+#loader.done{opacity:0;visibility:hidden;pointer-events:none}
+#loader-name{font-family:var(--font-b);font-size:clamp(.65rem,1.2vw,.85rem);font-weight:400;letter-spacing:.35em;color:rgba(242,237,228,0.6);text-transform:uppercase;display:flex;gap:0}
+#loader-name span{opacity:0;transition:opacity .06s}
+#loader-bar-wrap{width:min(260px,50vw);height:1px;background:rgba(242,237,228,0.1);position:relative;overflow:hidden}
+#loader-bar{position:absolute;top:0;left:0;height:100%;width:0;background:var(--accent);transition:width .0s linear}
+body.page-loading #stage,
+body.page-loading #nav,
+body.page-loading #ht,
+body.page-loading #sh,
+body.page-loading #log-stack,
+body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 @media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -244,6 +258,13 @@ body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition
 <body>
 <div id="cur"></div>
 <div id="grain"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div id="loader-name"></div>
+  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+</div>
+
 <div id="stage"><div id="reel"></div></div>
 
 <nav id="nav">
@@ -971,6 +992,107 @@ function updateCtBg(scrollY){
   if(dark) dark.style.background=`rgba(8,8,8,${progress*0.68})`;
 }
 document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateCtBg(document.getElementById('contact-wrapper').scrollTop),{passive:true});
+
+// ── LOADER
+(function(){
+  // Skip in editor preview mode
+  if(new URLSearchParams(location.search).has('preview')) return;
+
+  document.body.classList.add('page-loading');
+
+  const nameEl = document.getElementById('loader-name');
+  const bar    = document.getElementById('loader-bar');
+  const loader = document.getElementById('loader');
+
+  // Grab site name from content.json asynchronously — fall back to title
+  // We just use whatever is in the <title> tag or a short placeholder
+  // The real name will be filled once content loads, but for the loader
+  // we can read from the page title or just wait for a tiny fetch.
+  // Actually, let's do a quick fetch of content.json just for the name.
+  const nameText = (document.title || 'Run Girl Run').toUpperCase();
+
+  // Build letter spans
+  nameEl.innerHTML = nameText.split('').map(ch =>
+    ch === ' '
+      ? `<span style="width:.4em;display:inline-block"> </span>`
+      : `<span>${ch}</span>`
+  ).join('');
+  const spans = [...nameEl.querySelectorAll('span[style=""]'), ...nameEl.querySelectorAll('span:not([style])')];
+  // simpler: get all spans
+  const allSpans = [...nameEl.querySelectorAll('span')];
+
+  // Scramble each character in
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  allSpans.forEach((sp, i) => {
+    const final = sp.textContent;
+    if(final === ' ' || sp.style.width) return;
+    const delay = i * 55;
+    let tick = 0; const cycles = 7;
+    setTimeout(()=>{
+      sp.style.opacity = '1';
+      function cycle(){
+        if(tick < cycles){
+          sp.textContent = chars[Math.floor(Math.random()*chars.length)];
+          tick++;
+          setTimeout(cycle, 70 + tick * 12);
+        } else { sp.textContent = final; }
+      }
+      cycle();
+    }, delay);
+  });
+
+  // Progress bar — fake stops at random percentages, then completes
+  // Generate 2-3 random stop points
+  const numStops = 2 + Math.floor(Math.random() * 2); // 2 or 3 stops
+  const stops = [];
+  let cursor = 0;
+  for(let i = 0; i < numStops; i++){
+    cursor += 15 + Math.random() * 35;
+    if(cursor < 90) stops.push(Math.round(cursor));
+  }
+  stops.push(100);
+
+  let stopIdx = 0;
+  function animateBar(){
+    if(stopIdx >= stops.length) return;
+    const target = stops[stopIdx];
+    const prev   = stopIdx === 0 ? 0 : stops[stopIdx - 1];
+    const range  = target - prev;
+    const duration = 280 + Math.random() * 340; // ms to reach this stop
+    const startTime = performance.now();
+
+    function step(now){
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 2);
+      bar.style.width = (prev + range * eased) + '%';
+      if(t < 1){ requestAnimationFrame(step); }
+      else {
+        bar.style.width = target + '%';
+        stopIdx++;
+        if(target < 100){
+          // Pause at this stop — longer pause = more dramatic
+          const pause = 180 + Math.random() * 420;
+          setTimeout(animateBar, pause);
+        } else {
+          // Done — short hold then fade out
+          setTimeout(dismiss, 260);
+        }
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Start bar after name has started scrambling
+  setTimeout(animateBar, 120);
+
+  function dismiss(){
+    loader.classList.add('done');
+    document.body.classList.remove('page-loading');
+  }
+
+  // Safety net — never block longer than 4s
+  setTimeout(()=>{ if(!loader.classList.contains('done')) dismiss(); }, 4000);
+})();
 
 load();
 </script>
