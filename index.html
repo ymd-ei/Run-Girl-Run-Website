@@ -140,22 +140,22 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 /* sensitive overlay */
 .wci-blur img,.wci-blur .tph{filter:blur(10px);transform:scale(1.05)}
 .wci-sensitive{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
-.wci-tape{position:absolute;left:-20%;right:-20%;width:140%;padding:.4rem 0;
+.wci-tape{position:absolute;left:-20%;right:-20%;width:140%;padding:.8rem 0;
   border-top:1px solid color-mix(in srgb,var(--sensitive-color,#e03030) 70%,transparent);
   border-bottom:1px solid color-mix(in srgb,var(--sensitive-color,#e03030) 70%,transparent);
   background:color-mix(in srgb,var(--sensitive-color,#e03030) 20%,transparent);
   overflow:hidden}
 .wci-tape::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
-  background:repeating-linear-gradient(-55deg,transparent,transparent 10px,
-    color-mix(in srgb,var(--sensitive-color,#e03030) 30%,transparent) 10px,
-    color-mix(in srgb,var(--sensitive-color,#e03030) 30%,transparent) 11px);
-  background-size:13.5px 100%;animation:pinstripe-scroll 1.8s linear infinite}
+  background:repeating-linear-gradient(-55deg,transparent,transparent 20px,
+    color-mix(in srgb,var(--sensitive-color,#e03030) 30%,transparent) 20px,
+    color-mix(in srgb,var(--sensitive-color,#e03030) 30%,transparent) 21px);
+  background-size:27px 100%;animation:pinstripe-scroll 1.8s linear infinite}
 .wci-tape-track{display:flex;gap:0;white-space:nowrap;will-change:transform}
-.wci-tape-word{font-family:var(--font-b);font-weight:600;font-size:.55rem;
+.wci-tape-word{font-family:var(--font-b);font-weight:600;font-size:1.1rem;
   text-transform:uppercase;letter-spacing:.1em;
   color:var(--sensitive-color,#e03030);white-space:nowrap}
-.wci-tape-dot{width:4px;height:4px;border-radius:50%;
-  background:var(--sensitive-color,#e03030);flex-shrink:0;opacity:.7;margin:0 .4rem}
+.wci-tape-dot{width:7px;height:7px;border-radius:50%;
+  background:var(--sensitive-color,#e03030);flex-shrink:0;opacity:.7;margin:0 .6rem}
 
 /* PROJECT PANEL */
 #pp{z-index:400;width:min(680px,96vw);background:var(--panel-bg);border-left:1px solid var(--panel-border)}
