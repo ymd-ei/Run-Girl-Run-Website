@@ -728,8 +728,8 @@ function renderProject(id){
           <div class="field"><label>Duration</label><input value="${p.duration}" oninput="updateP('${id}','duration',this.value)"></div>
         </div>
         <div class="field"><label>Thumbnail</label>
-          ${makeDropzone(p.thumbnail||'', v=>{ updateP(id,'thumbnail',v); }, 'media/projects', 'thumbnail.jpg')}
-          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateP('${id}','thumbnail',v))">&#x1F5C2; Browse Media</button>
+          ${makeDropzone(p.thumbnail||'', v=>{ updateP(id,'thumbnail',v); }, 'media/projects', 'thumbnail.jpg', 'thdz_'+id)}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateP('${id}','thumbnail',v),'thdz_${id}_p')">&#x1F5C2; Browse Media</button>
         </div>
         <div class="field"><label>Tags (comma separated)</label>
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
@@ -808,10 +808,11 @@ function blockEditorHTML(scope, b, i, total){
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
   } else if(b.type==='image'){
+    const dzStableId = 'imdz_'+b.id;
     body=`
       <div class="field"><label>Image</label>
-        ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media', 'image.jpg')}
-        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','src',v))">&#x1F5C2; Browse Media</button>
+        ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media', 'image.jpg', dzStableId)}
+        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','src',v),'${dzStableId}_p')">&#x1F5C2; Browse Media</button>
       </div>
       <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
   } else if(b.type==='twocol'){
@@ -1329,8 +1330,8 @@ async function uploadMedia(file, folder){
 // ─────────────────────────────────────────
 // DROPZONE (path input + local preview fallback)
 // ─────────────────────────────────────────
-function makeDropzone(currentVal, onUpload, folder, placeholder){
-  const uid = 'dz' + Math.random().toString(36).slice(2,9);
+function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
+  const uid = stableId || ('dz' + Math.random().toString(36).slice(2,9));
   const pathId = uid + '_p';
   const dzId = uid + '_z';
 
@@ -1795,9 +1796,11 @@ function rtInsert(textareaId, text){
 // ─────────────────────────────────────────
 let mediaCallback = null;
 let mediaFiles = [];
+let mediaPathInputId = null; // direct reference to the path input to update
 
-async function openMediaLibrary(onInsert){
+async function openMediaLibrary(onInsert, pathInputId){
   mediaCallback = onInsert;
+  mediaPathInputId = pathInputId || null;
   document.getElementById('media-modal').classList.add('open');
   document.getElementById('media-search').querySelector('input').value = '';
   const grid = document.getElementById('media-grid');
@@ -1864,13 +1867,32 @@ function filterMedia(query){
 
 function insertMedia(path){
   if(mediaCallback) mediaCallback(path);
-  // Re-render the current page so dropzones and path inputs reflect the new value
-  if(currentPage==='about'){ markDirty('insert media'); rerenderBlocks('about'); }
-  else if(currentPage==='project'&&currentProjectId){ markProjectDirty(currentProjectId,'insert media'); rerenderBlocks('proj-'+currentProjectId); }
-  else markDirty('insert media');
+  // Directly update the path input if we have a reference — no re-render needed
+  if(mediaPathInputId){
+    const input = document.getElementById(mediaPathInputId);
+    if(input){ input.value = path; input.dispatchEvent(new Event('input')); }
+  }
+  if(currentPage==='about') dirtyFiles.add('content.json');
+  else if(currentPage==='project'&&currentProjectId) dirtyFiles.add('projects/'+currentProjectId+'.json');
+  dirty=true;
+  document.getElementById('save-btn').textContent='Save All Changes *';
   closeMediaLibrary();
   toast('Inserted: '+path);
 }
+
+// Prevent block drag when user is typing in a field
+document.addEventListener('focusin', e=>{
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT'){
+    const bk=e.target.closest('.bk');
+    if(bk) bk.draggable=false;
+  }
+});
+document.addEventListener('focusout', e=>{
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT'){
+    const bk=e.target.closest('.bk');
+    if(bk) bk.draggable=true;
+  }
+});
 
 // Close on backdrop click
 document.getElementById('media-modal').addEventListener('click', e=>{
