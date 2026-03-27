@@ -1059,8 +1059,8 @@ function startTicker(track, speed){
   // Wait one frame so track has rendered width
   requestAnimationFrame(()=>{
     const trackW = track.scrollWidth;
-    // Start off-screen: left-moving starts from right, right-moving starts from left
-    let offset = reverse ? -trackW : trackW;
+    // Left-moving starts off right (translateX positive), right-moving starts off left (translateX negative)
+    let offset = reverse ? trackW : -trackW;
     let raf;
 
     function tick(){
