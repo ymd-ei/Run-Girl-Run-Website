@@ -996,7 +996,11 @@ document.getElementById('contact-wrapper').addEventListener('scroll',()=>updateC
 // ── LOADER
 (function(){
   // Skip in editor preview mode
-  if(new URLSearchParams(location.search).has('preview')) return;
+  if(new URLSearchParams(location.search).has('preview')){
+    const l=document.getElementById('loader');
+    if(l){ l.style.display='none'; }
+    return;
+  }
 
   document.body.classList.add('page-loading');
 
