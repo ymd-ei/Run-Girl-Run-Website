@@ -11,7 +11,7 @@
     "Blender",
     "Exercise"
   ],
-  "thumbnail": "media/projects/Website Media Snapshot.png",
+  "thumbnail": "media/projects/woke-up_thumbnail@2x.webp",
   "videoUrl": "https://www.youtube.com/shorts/xbIFMNQgkiE",
   "blocks": [
     {
@@ -23,7 +23,7 @@
     {
       "id": "b1774532370151",
       "type": "image",
-      "src": "media/projects/Website Media Snapshot.png",
+      "src": "media/woke-up_hero@2x.webp",
       "alt": ""
     },
     {
@@ -37,7 +37,7 @@
       "type": "twocol",
       "left": {
         "type": "image",
-        "src": "media/projects/Website Media Snapshot.png",
+        "src": "media/woke-up_thumbnail@2x.webp",
         "alt": ""
       },
       "right": {
@@ -54,6 +54,6 @@
     }
   ],
   "published": true,
-  "sensitive": true,
+  "sensitive": false,
   "sensitiveLabel": "18+ NSFW"
 }
