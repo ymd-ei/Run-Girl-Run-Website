@@ -22,7 +22,7 @@ const nearby = {
  * @param {string} ch - Character to get pool for
  * @returns {string[]} Array of similar characters
  */
-function pool(ch) {
+export function pool(ch) {
   const p = nearby[ch] || nearby[ch.toLowerCase()] || 'abcdefghijklmnopqrstuvwxyz';
   return (p + ch).split('');
 }
