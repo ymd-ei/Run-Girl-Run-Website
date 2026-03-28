@@ -882,7 +882,10 @@ function colBlockEditor(scope, b, side){
       ${types.map(([v,l])=>`<option value="${v}" ${col.type===v?'selected':''}>${l}</option>`).join('')}
     </select>
     ${col.type==='image'
-      ? makeDropzone(col.src||'', v=>{ updateColField(scope,b.id,side,'src',v); }, 'media', 'image.jpg')
+      ? `<div>
+          ${makeDropzone(col.src||'', v=>{ updateColField(scope,b.id,side,'src',v); }, 'media', 'image.jpg', 'imdz_'+b.id+'_'+side)}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateColField('${scope}','${b.id}','${side}','src',v),'imdz_${b.id}_${side}_p')">&#x1F5C2; Browse Media</button>
+        </div>`
       : `<textarea style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.8rem;padding:.45rem .55rem;outline:none;resize:vertical;min-height:60px;width:100%" oninput="updateColField('${scope}','${b.id}','${side}','content',this.value)">${col.content||''}</textarea>`
     }
     <div class="align-row">
