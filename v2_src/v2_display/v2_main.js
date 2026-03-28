@@ -368,18 +368,34 @@ function setupEventListeners() {
     openPanel(name) {
       if (name === 'contact') {
         const contact = document.getElementById('contact-wrapper');
+        const stage = document.getElementById('stage');
+        const bd = document.getElementById('bd');
         if (contact) contact.classList.add('open');
+        if (stage) stage.classList.add('contact-open');
+        if (bd) bd.classList.add('open');
+        // Start tickers and jitter
+        jitterTapes();
+        setTimeout(() => {
+          startTicker(document.querySelector('#ct-ticker-top .ticker-track'), -0.6);
+          startTicker(document.querySelector('#ct-ticker-mid .ticker-track'), 0.5);
+        }, 820);
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
         const panel = document.getElementById('panel-' + name);
+        const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
+        if (bd) bd.classList.add('open');
       }
     },
 
     closeToRoot() {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
       const contact = document.getElementById('contact-wrapper');
+      const stage = document.getElementById('stage');
+      const bd = document.getElementById('bd');
       if (contact) contact.classList.remove('open');
+      if (stage) stage.classList.remove('contact-open');
+      if (bd) bd.classList.remove('open');
     },
 
     smartClose() {
