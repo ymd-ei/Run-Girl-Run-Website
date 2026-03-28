@@ -1,6 +1,6 @@
 {
   "name": "Run Girl Run",
-  "role": "BANANA ENTHUSIAST",
+  "role": "Animator",
   "location": "Toronto, Canada",
   "reel": {
     "type": "youtube",
@@ -13,20 +13,24 @@
     "instagram": "@me_are_jei",
     "links": [
       {
-        "label": "",
+        "label": "E-mail",
         "url": "mailto:contact@rogel.ca"
       },
       {
-        "label": "",
+        "label": "Twitter",
         "url": "https://x.com/ymd_ei"
       },
       {
-        "label": "",
+        "label": "Instagram",
         "url": "https://www.instagram.com/me_are_jei"
       },
       {
-        "label": "",
+        "label": "Linkedin",
         "url": "https://www.linkedin.com/in/rj-rogel-7a162b320/"
+      },
+      {
+        "label": "Pixiv",
+        "url": "https://www.pixiv.net/en/users/92179210"
       }
     ],
     "resume": "resume/RJ_Rogel_anim-02_W25.pdf"
@@ -95,12 +99,6 @@
       ]
     },
     {
-      "id": "b1774502728190",
-      "type": "text-md",
-      "content": "players actively using them in-game.",
-      "align": "right"
-    },
-    {
       "id": "b1774496196668",
       "type": "divider"
     },
@@ -122,8 +120,12 @@
       "label": "3D"
     },
     {
-      "value": "Motion",
-      "label": "MOTION"
+      "value": "Design",
+      "label": "Design"
+    },
+    {
+      "value": "Pipeline",
+      "label": "Pipeline"
     }
   ],
   "favicon": "media/rgr_fav.png",
@@ -132,7 +134,7 @@
       "type": "youtube",
       "url": "https://www.youtube.com/embed/HskH0IU2cbc?autoplay=1&mute=1&loop=1&playlist=HskH0IU2cbc&controls=0&rel=0"
     },
-    "titleAccent": "work together!",
+    "titleAccent": "on something!",
     "tickerMid": [
       "3D Animation",
       "2D Animation",
@@ -151,7 +153,10 @@
       "Independent Films",
       "Game Cinematics"
     ],
-    "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention — not handed off. Whether you've got something fully formed or just an early idea, reach out anytime."
+    "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention — not handed off.<br><br> Whether you've got something fully formed or just an early idea, reach out anytime.",
+    "emailLabel": "Hit us up",
+    "socialLabel": "Here we are",
+    "title": "Let's work"
   },
   "theme": {
     "ink": "#1a1714",
