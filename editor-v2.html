@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Editor v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles-editor.css">
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor v2</div>
+    <div class="sb-section">Global</div>
+    <button class="ni active" onclick="window.v2Events?.onShowPage?.('global')" id="nav-global"><div class="dot"></div>Settings</button>
+    <button class="ni" onclick="window.v2Events?.onShowPage?.('about')" id="nav-about"><div class="dot"></div>About</button>
+    <button class="ni" onclick="window.v2Events?.onShowPage?.('contact')" id="nav-contact"><div class="dot"></div>Contact</button>
+    <div class="sb-section">Projects</div>
+    <div id="project-nav"></div>
+    <button class="add-proj" onclick="window.v2Events?.onAddProject?.()">+ New Project</button>
+    <div class="sb-footer">
+      <button class="preview-btn" onclick="window.open('index-v2.html','_blank')">Preview Site &#x2197;</button>
+      <button class="preview-btn" onclick="window.v2Events?.onClearToken?.()" id="token-btn">&#x1F511; Token: Not set</button>
+      <button class="save-btn" id="save-btn" onclick="window.v2Events?.onSaveAll?.()">Save All Changes</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="page-global"></div>
+    <div id="page-about" style="display:none"></div>
+    <div id="page-contact" style="display:none"></div>
+    <div id="page-project" style="display:none"></div>
+  </div>
+  <div id="preview-pane">
+    <div id="preview-bar">
+      <span>Live Preview v2</span>
+      <div class="pb-actions">
+        <div class="pb-indicator" id="pb-dot"></div>
+        <button id="preview-refresh" onclick="window.v2Events?.onRefreshPreview?.()">Refresh</button>
+      </div>
+    </div>
+    <iframe id="preview-frame" src="index-v2.html?preview=1"></iframe>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="undo-bar">
+  <button class="undo-btn" id="undo-btn" onclick="window.v2Events?.onUndo?.()">&#x21B6; Undo <span id="undo-label"></span></button>
+  <button class="undo-btn" id="redo-btn" onclick="window.v2Events?.onRedo?.()">Redo &#x21B7;</button>
+</div>
+
+<div id="media-modal">
+  <div id="media-inner">
+    <div id="media-header">
+      <span>Media Library</span>
+      <button id="media-close" onclick="window.v2Events?.onCloseMediaLibrary?.()">&#x2715;</button>
+    </div>
+    <div id="media-search"><input type="text" placeholder="Filter files…" oninput="window.v2Events?.onFilterMedia?.(this.value)"></div>
+    <div id="media-grid"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { bootstrap } from './v2_src/v2_editor.js';
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    bootstrap().catch(err => {
+      console.error('Failed to bootstrap editor:', err);
+      document.getElementById('main').innerHTML = '<p style="padding: 2rem; color: red;">Error loading editor: ' + err.message + '</p>';
+    });
+  });
+</script>
+</body>
+</html>

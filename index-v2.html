@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio v2</title>
+<link rel="icon" id="favicon" href="">
+<link rel="apple-touch-icon" id="favicon-apple" href="">
+<link rel="mask-icon" id="favicon-mask" href="" color="#71904c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="styles-main.css">
+<style id="theme-vars"></style>
+<style id="pattern-styles"></style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="grain"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div id="loader-name"></div>
+  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+</div>
+
+<div id="stage"><div id="reel"></div></div>
+
+<nav id="nav">
+  <a href="#" class="nl" id="nav-name" onclick="return false;"></a>
+  <ul class="nls">
+    <li><button onclick="window.v2Display?.openPanel?.('work')">Work</button></li>
+    <li><button onclick="window.v2Display?.openPanel?.('about')">About</button></li>
+    <li><button onclick="window.v2Display?.openPanel?.('contact')">Contact</button></li>
+  </ul>
+</nav>
+
+<div id="ht">
+  <p class="htag" id="hero-role"></p>
+  <h1 class="hname" id="hero-name"></h1>
+</div>
+<div id="log-stack"><div id="ls-inner" class="ls-inner"></div></div>
+<div id="sh"><div class="avail-dot"></div><span class="avail-text">Available for work</span></div>
+
+<div id="watch-reel-wrap">
+  <button id="watch-reel" onclick="window.v2Display?.openLightbox?.()">
+    <span class="wr-play"><span class="wr-tri"></span></span>
+    Watch Reel
+  </button>
+</div>
+
+<div id="lightbox">
+  <div id="lb-backdrop" onclick="window.v2Display?.closeLightbox?.()"></div>
+  <div id="lb-inner">
+    <div id="lb-top">
+      <span id="lb-label">Demo Reel</span>
+      <button id="lb-close" onclick="window.v2Display?.closeLightbox?.()">&#x2715;</button>
+    </div>
+    <div id="lb-frame"></div>
+  </div>
+</div>
+
+<div id="bd" onclick="window.v2Display?.smartClose?.()"></div>
+
+<!-- WORK -->
+<div class="panel wide" id="panel-work">
+  <div class="ph"><span class="pt2">Work</span><button class="pc" onclick="window.v2Display?.closeToRoot?.()">&#x2715;</button></div>
+  <div class="pb">
+    <div class="wf" id="work-filters"></div>
+    <div class="wg" id="wg"></div>
+  </div>
+</div>
+
+<!-- PROJECT DETAIL -->
+<div class="panel" id="pp">
+  <div class="ph">
+    <button class="backbtn" onclick="window.v2Display?.closeProject?.()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Back
+    </button>
+    <button class="pc" onclick="window.v2Display?.closeProject?.()">&#x2715;</button>
+  </div>
+  <div class="ppbody" id="ppb"></div>
+</div>
+
+<!-- ABOUT -->
+<div class="panel" id="panel-about">
+  <div class="ph"><span class="pt2">About</span><button class="pc" onclick="window.v2Display?.closeToRoot?.()">&#x2715;</button></div>
+  <div class="pb" id="about-body"></div>
+</div>
+
+<!-- CONTACT PANEL & CLOSE BUTTON -->
+<div id="ct-sliver" onclick="window.v2Display?.closeToRoot?.()"></div>
+<button id="ct-close" onclick="window.v2Display?.closeToRoot?.()">&#x2715;</button>
+
+<div id="contact-wrapper">
+  <div id="contact-wrapper-scroller">
+    <!-- CONTACT HERO -->
+    <div class="ct-hero-section">
+      <h2 class="ct-hero"></h2>
+    </div>
+
+    <!-- CONTACT SUB -->
+    <p class="ct-sub"></p>
+
+    <!-- SCROLL CUE -->
+    <div class="ct-scroll-cue"></div>
+
+    <!-- CONTACT TICKERS -->
+    <div id="ct-ticker-top" class="ct-ticker tape-top">
+      <div class="ticker-track"></div>
+    </div>
+
+    <!-- EMAIL & SOCIAL -->
+    <div class="ct-content">
+      <div class="ct-header">
+        <p class="ct-email-label"></p>
+      </div>
+
+      <a id="ct-email-link" href="#">
+        <div class="ct-email"><span id="ct-email-text"></span></div>
+      </a>
+
+      <div class="ct-social">
+        <p class="ct-social-label"></p>
+        <div id="ct-icons"></div>
+      </div>
+
+      <!-- RESUME LINK -->
+      <div id="ct-resume-wrap" style="display:none">
+        <div class="ct-header">
+          <p class="ct-email-label"></p>
+        </div>
+        <a id="ct-resume-link" href="#" target="_blank" rel="noopener">
+          <div class="ct-email ct-resume"><span>Download Credentials</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MID TICKER -->
+    <div id="ct-ticker-mid" class="ct-ticker tape-mid">
+      <div class="ticker-track"></div>
+    </div>
+
+    <!-- BACKGROUND VIDEO -->
+    <div id="ct-bg-video" class="ct-bg-video"></div>
+    <div id="ct-bg-dark" class="ct-bg-dark"></div>
+
+    <!-- FOOTER -->
+    <footer class="ct-footer">
+      <div><span id="ct-location"></span></div>
+      <div><span id="ct-footer-name"></span> &ndash; <span id="ct-footer-loc"></span></div>
+    </footer>
+  </div>
+</div>
+
+<div id="contact-wrapper-bg"></div>
+
+<!-- Vimeo API (optional, for Vimeo player support) -->
+<script src="https://player.vimeo.com/api/player.js" defer></script>
+
+<script type="module">
+  import { bootstrap } from './v2_src/v2_display/v2_main.js';
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    bootstrap().catch(err => {
+      console.error('Failed to bootstrap display:', err);
+      document.body.innerHTML += '<p style="padding: 2rem; color: red;">Error loading portfolio: ' + err.message + '</p>';
+    });
+  });
+</script>
+</body>
+</html>
