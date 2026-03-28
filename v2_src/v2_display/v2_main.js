@@ -388,6 +388,15 @@ function setupEventListeners() {
       { passive: true }
     );
   }
+
+  // Cursor tracking
+  const cur = document.getElementById('cur');
+  if (cur) {
+    document.addEventListener('mousemove', e => {
+      cur.style.left = e.clientX + 'px';
+      cur.style.top = e.clientY + 'px';
+    }, { passive: true });
+  }
 }
 
 /**
