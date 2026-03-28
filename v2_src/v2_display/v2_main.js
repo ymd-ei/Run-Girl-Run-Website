@@ -52,6 +52,12 @@ export async function bootstrap() {
     // 9. Handle preview message bridge from editor
     setupEditorPreviewBridge();
 
+    // 10. Hide loader
+    const loader = document.getElementById('loader');
+    if (loader) {
+      loader.classList.add('done');
+    }
+
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
     console.error('✗ Display bootstrap failed:', error);
