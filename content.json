@@ -35,13 +35,6 @@
     ],
     "resume": "resume/RJ_Rogel_anim-02_W25.pdf"
   },
-  "contactPanel": {
-    "title": "Let's",
-    "titleAccent": "work.",
-    "sub": "Animation, motion, original features — whatever the idea, we're built for it. Let's talk.",
-    "emailLabel": "Drop us a line",
-    "socialLabel": "Find us"
-  },
   "projects": [
     "woke-up-dance-exercise",
     "md-pulling",
