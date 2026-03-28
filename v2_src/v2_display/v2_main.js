@@ -286,6 +286,13 @@ function renderContactSection() {
       }
     }
   }
+
+  // Apply contact theme colors
+  const theme = globalState.theme || {};
+  document.documentElement.style.setProperty('--ct-accent', theme.ctAccent || '#ff4361');
+  document.documentElement.style.setProperty('--ct-bg', theme.ctBg || '#080808');
+  document.documentElement.style.setProperty('--ct-hi', theme.ctHi || '#ffffff');
+  document.documentElement.style.setProperty('--ct-muted', 'rgba(255,255,255,0.6)');
 }
 
 /**
