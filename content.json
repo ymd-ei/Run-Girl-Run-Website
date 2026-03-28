@@ -47,7 +47,7 @@
     {
       "id": "b1774463111099",
       "type": "image",
-      "src": "media/woke-up_hero@2x.webp",
+      "src": "media/woke-up_hero.webp",
       "alt": "about me header image "
     },
     {
@@ -126,7 +126,7 @@
       "label": "MOTION"
     }
   ],
-  "favicon": "media/rgr_favicon.png",
+  "favicon": "media/rgr_fav.png",
   "contactPanel": {
     "video": {
       "type": "youtube",
@@ -154,7 +154,13 @@
     "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention — not handed off. Whether you've got something fully formed or just an early idea, reach out anytime."
   },
   "theme": {
-    "ctBg": "#1a1714",
-    "ctAccent": "#ff1f42"
+    "ink": "#1a1714",
+    "paper": "#f2ede4",
+    "accent": "#71904c",
+    "panelBg": "#f7f3ec",
+    "ctAccent": "#ff4361",
+    "ctBg": "#080808",
+    "ctHi": "#ffffff",
+    "sensitiveColor": "#e03030"
   }
 }
