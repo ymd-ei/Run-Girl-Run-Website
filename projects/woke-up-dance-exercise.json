@@ -11,7 +11,7 @@
     "Blender",
     "Exercise"
   ],
-  "thumbnail": "media/projects/woke-up_thumbnail@2x.webp",
+  "thumbnail": "media/woke-up_thumbnail.webp",
   "videoUrl": "https://www.youtube.com/shorts/xbIFMNQgkiE",
   "blocks": [
     {
@@ -23,7 +23,7 @@
     {
       "id": "b1774532370151",
       "type": "image",
-      "src": "media/woke-up_hero@2x.webp",
+      "src": "media/woke-up_hero.webp",
       "alt": ""
     },
     {
@@ -37,7 +37,7 @@
       "type": "twocol",
       "left": {
         "type": "image",
-        "src": "media/woke-up_thumbnail@2x.webp",
+        "src": "media/woke-up_thumbnail.webp",
         "alt": ""
       },
       "right": {
