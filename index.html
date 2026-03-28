@@ -15,7 +15,7 @@
 ───────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
 :root{
-  --ink:#1a1714;--paper:#f2ede4;--surface:#ede8df;--accent:#71904c;
+  --ink:#1a1714;--paper:#f2ede4;--surface:#ede8df;--accent:#71904c;--accent-rgb:113,144,76;
   --muted:rgba(26,23,20,0.4);--border:rgba(26,23,20,0.12);
   --panel-bg:#f7f3ec;--panel-border:rgba(26,23,20,0.1);
   --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;
@@ -34,7 +34,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
    STAGE & REEL
 ───────────────────────────────────────── */
 #stage{position:fixed;inset:0;z-index:0;background:var(--ink);overflow:hidden}
-#stage::after{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(113,144,76,0.06) 0%,transparent 70%),linear-gradient(to top,rgba(26,23,20,0.78) 0%,rgba(26,23,20,0.05) 50%,rgba(26,23,20,0.52) 100%);pointer-events:none}
+#stage::after{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(var(--accent-rgb),0.06) 0%,transparent 70%),linear-gradient(to top,rgba(26,23,20,0.78) 0%,rgba(26,23,20,0.05) 50%,rgba(26,23,20,0.52) 100%);pointer-events:none}
 #reel{position:absolute;inset:0;overflow:hidden}
 #reel iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none}
 #reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none}
@@ -83,7 +83,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 ───────────────────────────────────────── */
 #watch-reel-wrap{position:fixed;z-index:10;top:66.666%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0;animation:fup .8s 1s var(--ease) forwards}
 #watch-reel{display:flex;align-items:center;justify-content:center;gap:.75rem;background:none;border:1px solid rgba(242,237,228,0.3);color:var(--paper);font-family:var(--font-b);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;padding:.7rem 1.5rem;transition:border-color .25s,background .25s}
-#watch-reel:hover{border-color:var(--accent);background:rgba(113,144,76,0.12)}
+#watch-reel:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),0.12)}
 .wr-play{width:22px;height:22px;border:1px solid rgba(242,237,228,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .25s}
 #watch-reel:hover .wr-play{border-color:var(--accent)}
 .wr-tri{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:9px solid rgba(242,237,228,0.7);margin-left:2px}
@@ -116,7 +116,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .pt2{font-family:var(--font-s);font-size:2.2rem;font-weight:400;letter-spacing:.04em;color:var(--ink)}
 .pc{width:34px;height:34px;border:1px solid var(--border);background:none;color:rgba(26,23,20,0.4);font-size:.85rem;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s,color .2s,width .28s var(--ease),height .28s var(--ease),transform .25s}
 .pc:hover{border-color:transparent;color:var(--accent);width:24px;height:24px;transform:rotate(90deg)}
-.pb{flex:1;overflow-y:auto;padding:2rem;scrollbar-width:thin;scrollbar-color:rgba(26,23,20,0.1) transparent;color:var(--ink);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='0' cy='0' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='6' cy='6' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='10' cy='0' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='10' cy='10' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='0' cy='10' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3C/svg%3E");background-size:10px 10px}
+.pb{flex:1;overflow-y:auto;padding:2rem;scrollbar-width:thin;scrollbar-color:rgba(26,23,20,0.1) transparent;color:var(--ink)}
 .pb::-webkit-scrollbar{width:3px}.pb::-webkit-scrollbar-thumb{background:rgba(26,23,20,0.1)}
 .panel.open .pb>*{opacity:0;animation:fup .5s var(--ease) forwards}
 .panel.open .pb>*:nth-child(1){animation-delay:.08s}.panel.open .pb>*:nth-child(2){animation-delay:.15s}.panel.open .pb>*:nth-child(3){animation-delay:.21s}.panel.open .pb>*:nth-child(4){animation-delay:.27s}.panel.open .pb>*:nth-child(5){animation-delay:.32s}.panel.open .pb>*:nth-child(6){animation-delay:.37s}
@@ -132,7 +132,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .wci{aspect-ratio:4/3;background:var(--surface);position:relative;overflow:hidden;margin-bottom:.65rem;transition:transform .35s var(--ease)}
 .wc:hover .wci{transform:scale(1.025)}
 .wci img{width:100%;height:100%;object-fit:cover;display:block}
-.wco{position:absolute;inset:0;background:rgba(113,144,76,0.45);display:flex;align-items:center;justify-content:center;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:0;transition:opacity .25s}
+.wco{position:absolute;inset:0;background:rgba(var(--accent-rgb),0.45);display:flex;align-items:center;justify-content:center;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:0;transition:opacity .25s}
 .wc:hover .wco{opacity:1}
 .wcm{display:flex;justify-content:space-between;align-items:baseline}
 .wct{font-size:.85rem;font-weight:500;color:var(--ink)}
@@ -162,7 +162,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 
 /* PROJECT PANEL */
 #pp{z-index:400;width:min(680px,96vw);background:var(--panel-bg);border-left:1px solid var(--panel-border)}
-.ppbody{flex:1;overflow-y:auto;padding:2rem;scrollbar-width:thin;color:var(--ink);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='0' cy='0' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='6' cy='6' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='10' cy='0' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='10' cy='10' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3Ccircle cx='0' cy='10' r='0.75' fill='%2371904c' fill-opacity='0.2'/%3E%3C/svg%3E");background-size:10px 10px}
+.ppbody{flex:1;overflow-y:auto;padding:2rem;scrollbar-width:thin;color:var(--ink)}
 .ppbody::-webkit-scrollbar{width:3px}.ppbody::-webkit-scrollbar-thumb{background:rgba(26,23,20,0.08)}
 .backbtn{display:flex;align-items:center;gap:.6rem;border:none;background:none;color:var(--muted);font-family:var(--font-b);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;transition:color .2s;padding:0;margin-right:auto}
 .backbtn:hover{color:var(--ink)}
@@ -464,12 +464,27 @@ let C={},projects=[],bgPlayer=null;
 // ─────────────────────────────────────────
 // THUMBNAIL PLACEHOLDERS
 // ─────────────────────────────────────────
-const THUMB={
-  '2d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><circle cx="200" cy="145" r="70" fill="none" stroke="#71904c" stroke-width="1.5"/><circle cx="200" cy="145" r="38" fill="#71904c" opacity="0.08"/><line x1="200" y1="75" x2="200" y2="215" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><line x1="130" y1="145" x2="270" y2="145" stroke="#71904c" stroke-width="0.8" opacity="0.3"/><circle cx="200" cy="87" r="5" fill="#71904c"/></svg>',
-  '3d':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><polygon points="200,55 305,148 200,178 95,148" fill="none" stroke="#71904c" stroke-width="1.5"/><polygon points="200,178 305,148 305,222 200,252" fill="#71904c" opacity="0.06" stroke="#71904c" stroke-width="0.8"/><polygon points="200,178 95,148 95,222 200,252" fill="#1a1714" opacity="0.03" stroke="#1a1714" stroke-width="0.5"/><circle cx="200" cy="55" r="4" fill="#71904c"/></svg>',
-  'motion':'<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#e8e3da"/><rect x="80" y="115" width="240" height="2.5" fill="#71904c" rx="1"/><rect x="80" y="128" width="180" height="2" fill="#1a1714" opacity="0.18" rx="1"/><rect x="80" y="141" width="210" height="2" fill="#1a1714" opacity="0.12" rx="1"/><rect x="80" y="75" width="55" height="20" rx="2" fill="#71904c"/></svg>'
-};
-function thumb(type){return`<div class="tph">${THUMB[type]||THUMB.motion}</div>`}
+function generateThumbSVG(type, accentColor, bgColor){
+  // Default colors if not provided
+  accentColor = accentColor || '#71904c';
+  bgColor = bgColor || '#e8e3da';
+  const inkColor = '#1a1714';
+  
+  const svgs = {
+    '2d': `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="${bgColor}"/><circle cx="200" cy="145" r="70" fill="none" stroke="${accentColor}" stroke-width="1.5"/><circle cx="200" cy="145" r="38" fill="${accentColor}" opacity="0.08"/><line x1="200" y1="75" x2="200" y2="215" stroke="${accentColor}" stroke-width="0.8" opacity="0.3"/><line x1="130" y1="145" x2="270" y2="145" stroke="${accentColor}" stroke-width="0.8" opacity="0.3"/><circle cx="200" cy="87" r="5" fill="${accentColor}"/></svg>`,
+    '3d': `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="${bgColor}"/><polygon points="200,55 305,148 200,178 95,148" fill="none" stroke="${accentColor}" stroke-width="1.5"/><polygon points="200,178 305,148 305,222 200,252" fill="${accentColor}" opacity="0.06" stroke="${accentColor}" stroke-width="0.8"/><polygon points="200,178 95,148 95,222 200,252" fill="${inkColor}" opacity="0.03" stroke="${inkColor}" stroke-width="0.5"/><circle cx="200" cy="55" r="4" fill="${accentColor}"/></svg>`,
+    'motion': `<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="${bgColor}"/><rect x="80" y="115" width="240" height="2.5" fill="${accentColor}" rx="1"/><rect x="80" y="128" width="180" height="2" fill="${inkColor}" opacity="0.18" rx="1"/><rect x="80" y="141" width="210" height="2" fill="${inkColor}" opacity="0.12" rx="1"/><rect x="80" y="75" width="55" height="20" rx="2" fill="${accentColor}"/></svg>`
+  };
+  
+  return svgs[type] || svgs.motion;
+}
+
+function thumb(type){
+  const accentColor = C.theme?.accent || '#71904c';
+  const bgColor = C.theme?.paper || '#e8e3da';
+  const svg = generateThumbSVG(type, accentColor, bgColor);
+  return`<div class="tph">${svg}</div>`;
+}
 
 // ─────────────────────────────────────────
 // BLOCK RENDERER
@@ -859,6 +874,11 @@ async function loadLog(){
 // ─────────────────────────────────────────
 // THEME & RENDER
 // ─────────────────────────────────────────
+function hexToRGB(hex){
+  const result=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? `${parseInt(result[1],16)},${parseInt(result[2],16)},${parseInt(result[3],16)}` : null;
+}
+
 function applyTheme(t){
   if(!t) return;
   const el = document.getElementById('theme-vars');
@@ -866,6 +886,7 @@ function applyTheme(t){
     t.ink        && `--ink:${t.ink}`,
     t.paper      && `--paper:${t.paper}`,
     t.accent     && `--accent:${t.accent}`,
+    t.accent     && `--accent-rgb:${hexToRGB(t.accent)}`,
     t.surface    && `--surface:${t.surface}`,
     t.panelBg    && `--panel-bg:${t.panelBg}`,
     t.ctAccent   && `--ct-accent:${t.ctAccent}`,
@@ -874,6 +895,23 @@ function applyTheme(t){
     t.sensitiveColor && `--sensitive-color:${t.sensitiveColor}`,
   ].filter(Boolean).join(';');
   el.textContent = vars ? `:root{${vars}}` : '';
+  updatePatternStyles(t);
+}
+
+function updatePatternStyles(t){
+  const accentColor = t.accent || '#71904c';
+  const patternSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><circle cx='0' cy='0' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='6' cy='6' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='10' cy='0' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='10' cy='10' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='0' cy='10' r='0.75' fill='${accentColor}' fill-opacity='0.2'/></svg>`;
+  const encoded = encodeURIComponent(patternSvg);
+  const dataUri = `url("data:image/svg+xml,${encoded}")`;
+  
+  let styleEl = document.getElementById('pattern-styles');
+  if(!styleEl){
+    styleEl = document.createElement('style');
+    styleEl.id = 'pattern-styles';
+    document.head.appendChild(styleEl);
+  }
+  
+  styleEl.textContent = `.pb{background-image:${dataUri};background-size:10px 10px} .ppbody{background-image:${dataUri};background-size:10px 10px}`;
 }
 
 function render(){
