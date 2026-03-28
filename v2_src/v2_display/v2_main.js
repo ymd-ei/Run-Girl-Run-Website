@@ -25,6 +25,10 @@ let bgPlayer = null;
  */
 export async function bootstrap() {
   try {
+    // Show loading progress
+    const loaderBar = document.getElementById('loader-bar');
+    if (loaderBar) loaderBar.style.width = '90%';
+
     // 1. Load data
     await loadAllData();
 
@@ -52,11 +56,16 @@ export async function bootstrap() {
     // 9. Handle preview message bridge from editor
     setupEditorPreviewBridge();
 
-    // 10. Hide loader
-    const loader = document.getElementById('loader');
-    if (loader) {
-      loader.classList.add('done');
-    }
+    // Complete loading bar
+    if (loaderBar) loaderBar.style.width = '100%';
+
+    // 10. Hide loader after minimum delay
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.classList.add('done');
+      }
+    }, 1500); // Minimum 1.5 seconds to show loader
 
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
