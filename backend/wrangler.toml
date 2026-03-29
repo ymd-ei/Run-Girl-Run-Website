@@ -1,0 +1,43 @@
+name = "run-girl-run-editor-backend"
+type = "javascript"
+account_id = "YOUR_ACCOUNT_ID"
+workers_dev = true
+route = ""
+zone_id = ""
+
+[env.production]
+name = "run-girl-run-editor-backend-prod"
+routes = [
+  { pattern = "api.rungirlrun.studio/*", zone_id = "YOUR_ZONE_ID" }
+]
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+
+[build]
+command = ""
+cwd = ""
+
+[build.upload]
+format = "service-worker"
+
+[triggers.crons]
+crons = []
+
+[env.production.vars]
+GITHUB_OWNER = "ymd-ei"
+GITHUB_REPO = "Run-Girl-Run-Website"
+GITHUB_BRANCH = "main"
+ALLOWED_GITHUB_USER = "ymd-ei"
+FRONTEND_URL = "https://api.rungirlrun.studio"
+FRONTEND_HOST = "rungirlrun.studio"
+
+[env.production.secrets]
+# Run: wrangler secret put GITHUB_CLIENT_ID --env production
+GITHUB_CLIENT_ID = ""
+# Run: wrangler secret put GITHUB_CLIENT_SECRET --env production
+GITHUB_CLIENT_SECRET = ""
+# Run: wrangler secret put GITHUB_TOKEN --env production
+GITHUB_TOKEN = ""
+# Run: wrangler secret put COOKIE_SECRET --env production
+COOKIE_SECRET = ""

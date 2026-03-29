@@ -20,9 +20,14 @@
     <button class="add-proj" onclick="addProject()">+ New Project</button>
     <div class="sb-footer">
       <button class="preview-btn" onclick="window.open('index.html','_blank')">Preview Site &#x2197;</button>
-      <button class="preview-btn" onclick="configureSaveTarget()" ondblclick="resetSaveTarget()" id="target-btn">Target: ymd-ei/Run-Girl-Run-Website @ main</button>
-      <button class="preview-btn" onclick="clearToken()" id="token-btn">&#x1F511; Token: Not set</button>
-      <button class="save-btn" id="save-btn" onclick="saveAll()">Save All Changes</button>
+      <div id="auth-panel">
+        <button class="preview-btn" id="login-btn" onclick="login()" style="display:none">Log In with GitHub</button>
+        <div id="user-status" style="display:none">
+          <span id="user-name" class="preview-btn">Logged in as @</span>
+          <button class="preview-btn" onclick="logout()">Log Out</button>
+        </div>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveAll()" disabled>Save All Changes</button>
       <div class="deploy-status" id="deploy-status">Deploy: idle</div>
     </div>
   </div>
@@ -62,6 +67,15 @@
   </div>
 </div>
 
+<script>
+  // Backend API URL - change to your deployed backend
+  const API_BASE = 'https://api.rungirlrun.studio';
+  const LOGIN_URL = `${API_BASE}/auth/login`;
+  const LOGOUT_URL = `${API_BASE}/auth/logout`;
+  const AUTH_CHECK_URL = `${API_BASE}/auth/check`;
+  const SAVE_URL = `${API_BASE}/api/save`;
+  const MEDIA_URL = `${API_BASE}/api/media`;
+</script>
 <script defer src="editor.js"></script>
 </body>
 </html>

@@ -111,8 +111,6 @@ async function loadAll(){
     initPreview();
     snapshot('initial');
   }catch(e){ toast('Error loading files: '+e.message,true); }
-  updateTokenBtn();
-  updateTargetBtn();
   setDeployStatus('idle');
 }
 
@@ -1145,40 +1143,64 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
 }
 
 // ─────────────────────────────────────────
-// GITHUB API — SAVE
+// AUTH & API
 // ─────────────────────────────────────────
-const DEFAULT_REPO='ymd-ei/Run-Girl-Run-Website';
-const DEFAULT_BRANCH='main';
-const shaCache = {}; // path → sha, updated after each successful save
+let currentUser = null;
 let deployPollTimer = null;
 
-function getToken(){ return localStorage.getItem('gh_token')||''; }
-function setToken(t){ localStorage.setItem('gh_token',t); }
-
-function getSaveRepo(){
-  const fromUrl = new URLSearchParams(location.search).get('repo');
-  if(fromUrl) return fromUrl.trim();
-  return localStorage.getItem('gh_repo') || DEFAULT_REPO;
+/**
+ * Initialize auth panel on page load
+ */
+async function initializeAuth(){
+  try {
+    const response = await fetch(AUTH_CHECK_URL, {
+      method: 'GET',
+      credentials: 'include'
+    });
+    const data = await response.json();
+    
+    if(data.authenticated){
+      setAuthenticated(data.user);
+    } else {
+      setUnauthenticated();
+    }
+  } catch(e){
+    console.error('Auth check failed:', e);
+    setUnauthenticated();
+  }
 }
 
-function getSaveBranch(){
-  const fromUrl = new URLSearchParams(location.search).get('branch');
-  if(fromUrl) return fromUrl.trim();
-  return localStorage.getItem('gh_branch') || DEFAULT_BRANCH;
+function setAuthenticated(username){
+  currentUser = username;
+  document.getElementById('login-btn').style.display = 'none';
+  document.getElementById('user-status').style.display = 'flex';
+  document.getElementById('user-name').textContent = `Logged in as @${username}`;
+  document.getElementById('save-btn').disabled = false;
 }
 
-function isValidRepoName(repo){
-  return /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo || '');
+function setUnauthenticated(){
+  currentUser = null;
+  document.getElementById('login-btn').style.display = 'block';
+  document.getElementById('user-status').style.display = 'none';
+  document.getElementById('save-btn').disabled = true;
 }
 
-function setSaveTarget(repo, branch){
-  localStorage.setItem('gh_repo', repo);
-  localStorage.setItem('gh_branch', branch);
+function login(){
+  // Redirect to backend OAuth login
+  window.location.href = LOGIN_URL;
 }
 
-function clearSaveTarget(){
-  localStorage.removeItem('gh_repo');
-  localStorage.removeItem('gh_branch');
+async function logout(){
+  try {
+    await fetch(LOGOUT_URL, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    setUnauthenticated();
+    toast('Logged out');
+  } catch(e){
+    toast('Logout failed: ' + e.message, true);
+  }
 }
 
 function setDeployStatus(msg, state){
@@ -1189,19 +1211,6 @@ function setDeployStatus(msg, state){
   if(state) el.classList.add(state);
 }
 
-async function fetchLatestPagesBuild(token){
-  const [owner, repo] = getSaveRepo().split('/');
-  const headers={Accept:'application/vnd.github.v3+json'};
-  if(token) headers.Authorization='token '+token;
-  const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/pages/builds/latest`,{headers});
-  if(r.status===404) return {status:'none'};
-  if(!r.ok){
-    const e=await r.json().catch(()=>({}));
-    throw new Error(e.message||r.status);
-  }
-  return r.json();
-}
-
 function startDeployPolling(){
   if(deployPollTimer){ clearInterval(deployPollTimer); deployPollTimer=null; }
 
@@ -1210,14 +1219,19 @@ function startDeployPolling(){
   const poll=async()=>{
     tries++;
     try{
-      const build=await fetchLatestPagesBuild(getToken());
-      const st=(build.status||'').toLowerCase();
-
-      if(st==='none'){
+      const r=await fetch(`https://api.github.com/repos/ymd-ei/Run-Girl-Run-Website/pages/builds/latest`,{
+        headers:{Accept:'application/vnd.github.v3+json'}
+      });
+      if(r.status===404){ 
         setDeployStatus('pages not enabled','error');
         clearInterval(deployPollTimer); deployPollTimer=null;
         return;
       }
+      if(!r.ok) throw new Error(r.status);
+      
+      const build=await r.json();
+      const st=(build.status||'').toLowerCase();
+
       if(st==='built'){
         setDeployStatus('live','live');
         clearInterval(deployPollTimer); deployPollTimer=null;
@@ -1247,94 +1261,12 @@ function startDeployPolling(){
   deployPollTimer=setInterval(poll,10000);
 }
 
-async function ghGetSha(token, path){
-  const repo=getSaveRepo();
-  const branch=getSaveBranch();
-  // Use cached SHA if available — avoids stale SHA on rapid saves
-  if(shaCache[path]) return shaCache[path];
-  const r=await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`,{
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
-  });
-  if(r.status===404) return null;
-  const d=await r.json();
-  return d.sha||null;
-}
-
-async function ghPutFile(token, path, content, sha, message){
-  const repo=getSaveRepo();
-  const branch=getSaveBranch();
-  const body={message, content:btoa(unescape(encodeURIComponent(content))), branch};
-  if(sha) body.sha=sha;
-  const r=await fetch(`https://api.github.com/repos/${repo}/contents/${path}`,{
-    method:'PUT',
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
-  const result = await r.json();
-  // Cache the new SHA so rapid saves don't conflict
-  if(result.content&&result.content.sha) shaCache[path] = result.content.sha;
-  return result;
-}
-
-async function ghCommitFiles(token, filesMap, message){
-  const repo=getSaveRepo();
-  const branch=getSaveBranch();
-
-  const refRes=await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${branch}`,{
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
-  });
-  if(!refRes.ok){ const e=await refRes.json().catch(()=>({})); throw new Error(e.message||refRes.status); }
-  const refData=await refRes.json();
-  const parentCommitSha=refData.object.sha;
-
-  const parentRes=await fetch(`https://api.github.com/repos/${repo}/git/commits/${parentCommitSha}`,{
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
-  });
-  if(!parentRes.ok){ const e=await parentRes.json().catch(()=>({})); throw new Error(e.message||parentRes.status); }
-  const parentData=await parentRes.json();
-  const baseTreeSha=parentData.tree.sha;
-
-  const treeEntries=Object.entries(filesMap).map(([path,content])=>({
-    path,
-    mode:'100644',
-    type:'blob',
-    content
-  }));
-
-  const treeRes=await fetch(`https://api.github.com/repos/${repo}/git/trees`,{
-    method:'POST',
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
-    body:JSON.stringify({base_tree:baseTreeSha, tree:treeEntries})
-  });
-  if(!treeRes.ok){ const e=await treeRes.json().catch(()=>({})); throw new Error(e.message||treeRes.status); }
-  const treeData=await treeRes.json();
-
-  const commitRes=await fetch(`https://api.github.com/repos/${repo}/git/commits`,{
-    method:'POST',
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
-    body:JSON.stringify({message, tree:treeData.sha, parents:[parentCommitSha]})
-  });
-  if(!commitRes.ok){ const e=await commitRes.json().catch(()=>({})); throw new Error(e.message||commitRes.status); }
-  const commitData=await commitRes.json();
-
-  const updateRefRes=await fetch(`https://api.github.com/repos/${repo}/git/refs/heads/${branch}`,{
-    method:'PATCH',
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
-    body:JSON.stringify({sha:commitData.sha, force:false})
-  });
-  if(!updateRefRes.ok){ const e=await updateRefRes.json().catch(()=>({})); throw new Error(e.message||updateRefRes.status); }
-
-  return commitData;
-}
-
 async function saveAll(){
-  let token=getToken();
-  if(!token){
-    token=prompt('Enter your GitHub personal access token (stored locally in browser only):');
-    if(!token) return;
-    setToken(token);
+  if(!currentUser){
+    toast('You must be logged in to save', true);
+    return;
   }
+
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.textContent='Saving…';
 
@@ -1353,86 +1285,47 @@ async function saveAll(){
   try{
     const filesToCommit = Object.fromEntries(toSave.filter(path=>!!dataMap[path]).map(path=>[path, dataMap[path]]));
     const changedPaths = Object.keys(filesToCommit);
-    if(changedPaths.length>0){
-      await ghCommitFiles(token, filesToCommit, `Editor: update ${changedPaths.length} file(s)`);
-      for(const path of changedPaths) delete shaCache[path];
+    
+    if(changedPaths.length===0){
+      btn.disabled=false;
+      btn.textContent='Save All Changes';
+      toast('No changes to save');
+      return;
     }
+
+    // Call backend API
+    const response = await fetch(SAVE_URL, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        files: filesToCommit,
+        message: `Editor: update ${changedPaths.length} file(s)`
+      })
+    });
+
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || 'Save failed');
+    }
+
     dirty=false;
     dirtyFiles.clear();
-    btn.disabled=false; btn.textContent='Save All Changes';
+    btn.disabled=false;
+    btn.textContent='Save All Changes';
     toast(`Saved ${changedPaths.length} file${changedPaths.length!==1?'s':''} ✓`);
     startDeployPolling();
   }catch(e){
-    btn.disabled=false; btn.textContent='Save All Changes *';
-    if(e.message.includes('Bad credentials')||e.message.includes('401')){
-      localStorage.removeItem('gh_token'); updateTokenBtn();
-      if(confirm('GitHub token is invalid or expired.\n\nClick OK to open GitHub and generate a new one.')){
-        window.open('https://github.com/settings/personal-access-tokens/new','_blank');
-      }
-      toast('Token cleared — generate a new one',true);
+    btn.disabled=false;
+    btn.textContent='Save All Changes *';
+    if(e.message.includes('Unauthorized')){
+      setUnauthenticated();
+      toast('Session expired, please log in again', true);
     } else {
-      toast('Error: '+e.message,true);
+      toast('Error: '+e.message, true);
     }
   }
-}
-
-function clearToken(){
-  if(getToken()){
-    if(confirm('Clear saved GitHub token?')){ localStorage.removeItem('gh_token'); updateTokenBtn(); toast('Token cleared'); }
-  } else {
-    const t=prompt('Enter GitHub personal access token:');
-    if(t){ setToken(t); updateTokenBtn(); toast('Token saved'); }
-  }
-}
-
-function configureSaveTarget(){
-  const currentRepo=getSaveRepo();
-  const currentBranch=getSaveBranch();
-  const repo=prompt('GitHub repo (owner/name):', currentRepo);
-  if(repo===null) return;
-  const repoVal=repo.trim();
-  if(!isValidRepoName(repoVal)){
-    toast('Repo must look like owner/name', true);
-    return;
-  }
-
-  const branch=prompt('Branch name:', currentBranch);
-  if(branch===null) return;
-  const branchVal=branch.trim();
-  if(!branchVal){
-    toast('Branch cannot be empty', true);
-    return;
-  }
-
-  setSaveTarget(repoVal, branchVal);
-  Object.keys(shaCache).forEach(k => delete shaCache[k]);
-  updateTargetBtn();
-  setDeployStatus('idle');
-  toast('Save target updated');
-}
-
-function updateTargetBtn(){
-  const btn=document.getElementById('target-btn');
-  if(!btn) return;
-  const repo=getSaveRepo();
-  const branch=getSaveBranch();
-  btn.textContent='Target: '+repo+' @ '+branch;
-}
-
-function resetSaveTarget(){
-  if(confirm('Reset save target to defaults?')){
-    clearSaveTarget();
-    Object.keys(shaCache).forEach(k => delete shaCache[k]);
-    updateTargetBtn();
-    setDeployStatus('idle');
-    toast('Save target reset');
-  }
-}
-
-function updateTokenBtn(){
-  const btn=document.getElementById('token-btn');
-  if(!btn) return;
-  btn.textContent=getToken()?'\u{1F511} Token: Set':'\u{1F511} Token: Not set';
 }
 
 function toast(msg,isError){
@@ -1805,3 +1698,4 @@ document.getElementById('media-modal').addEventListener('click', e=>{
 });
 
 loadAll();
+initializeAuth();
