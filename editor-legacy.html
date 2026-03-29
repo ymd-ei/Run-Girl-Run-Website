@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Editor</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles-editor.css">
-</head>
+<link rel="stylesheet" href="styles-editor.css"></head>
 <body>
 <div id="app">
   <div id="sidebar">
@@ -20,7 +19,6 @@
     <button class="add-proj" onclick="addProject()">+ New Project</button>
     <div class="sb-footer">
       <button class="preview-btn" onclick="window.open('index.html','_blank')">Preview Site &#x2197;</button>
-      <button class="preview-btn" onclick="configureSaveTarget()" ondblclick="resetSaveTarget()" id="target-btn">Target: ymd-ei/Run-Girl-Run-Website @ main</button>
       <button class="preview-btn" onclick="clearToken()" id="token-btn">&#x1F511; Token: Not set</button>
       <button class="save-btn" id="save-btn" onclick="saveAll()">Save All Changes</button>
       <div class="deploy-status" id="deploy-status">Deploy: idle</div>
@@ -43,14 +41,11 @@
     <iframe id="preview-frame" src="index.html?preview=1"></iframe>
   </div>
 </div>
-
 <div id="toast"></div>
-
 <div id="undo-bar">
   <button class="undo-btn" id="undo-btn" onclick="undo()">&#x21B6; Undo <span id="undo-label"></span></button>
   <button class="undo-btn" id="redo-btn" onclick="redo()">Redo &#x21B7;</button>
 </div>
-
 <div id="media-modal">
   <div id="media-inner">
     <div id="media-header">

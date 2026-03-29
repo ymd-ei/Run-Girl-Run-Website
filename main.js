@@ -215,11 +215,18 @@ async function loadLog(){
     function scrambleEntry(entry, delay){
       const spans = Array.from(entry.querySelectorAll('.sc-char'));
       logSpanGroups.push(spans);
-      spans.forEach((span, j) => {
+
+      const revealWindowMs = 550;
+      const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
+      const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
+      let revealIndex = 0;
+
+      spans.forEach(span => {
         const ch = span.dataset.ch;
         const isSpace = ch === ' ';
         const p = isSpace ? [' '] : pool(ch);
         let tick = 0; const cycles = 6;
+        const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
         setTimeout(() => {
           span.style.opacity = '1';
           if(isSpace){ span.innerHTML = '&nbsp;'; return; }
@@ -232,7 +239,7 @@ async function loadLog(){
             } else { span.textContent = ch; }
           }
           cycle();
-        }, delay + j * 55);
+        }, delay + staggerDelay);
       });
       return spans;
     }
@@ -251,7 +258,9 @@ async function loadLog(){
     setTimeout(() => {
       const stack = document.getElementById('log-stack');
       const innerEl = document.getElementById('ls-inner');
-      stack.style.height = innerEl.offsetHeight + 'px';
+      runWhenLayoutStable(() => {
+        stack.style.height = innerEl.offsetHeight + 'px';
+      });
     }, 1400 + recent.length * 120 + 500);
 
     const logIdleStart = 1400 + recent.length * 120 + 2000;
@@ -265,16 +274,44 @@ async function loadLog(){
         newEntry.style.opacity = '0';
         inner.appendChild(newEntry);
 
-        requestAnimationFrame(() => {
+        runWhenLayoutStable(() => {
           const topEntry = inner.querySelector('.ls-entry');
-          const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
-          inner.style.transform = `translateY(-${actualH}px)`;
+          const innerStyles = window.getComputedStyle(inner);
+          const gap = parseFloat(innerStyles.rowGap || innerStyles.gap || '0') || 0;
+          const shiftRaw = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
+          const shift = Math.max(18, Math.round(shiftRaw));
+
+          let finalized = false;
+          let cleanupFallback = null;
+
+          const finalizeRotation = () => {
+            if(finalized) return;
+            finalized = true;
+            if(cleanupFallback) clearTimeout(cleanupFallback);
+
+            const top = inner.querySelector('.ls-entry');
+            if(top) top.remove();
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(0)';
+            requestAnimationFrame(() => {
+              inner.style.transition = '';
+            });
+          };
+
+          const onTransformEnd = event => {
+            if(event.target !== inner || event.propertyName !== 'transform') return;
+            inner.removeEventListener('transitionend', onTransformEnd);
+            finalizeRotation();
+          };
+
+          inner.addEventListener('transitionend', onTransformEnd);
+          inner.style.transform = `translateY(-${shift}px)`;
 
           setTimeout(() => {
             newEntry.style.opacity = '1';
             const allEntries = Array.from(inner.querySelectorAll('.ls-entry'));
             const top = allEntries[0];
-            top.style.opacity = '0';
+            if(top) top.style.opacity = '0';
 
             allEntries.slice(1).forEach((item, i) => {
               item.dataset.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
@@ -286,15 +323,10 @@ async function loadLog(){
             if(logSpanGroups.length > SHOW) logSpanGroups.shift();
           }, 600);
 
-          setTimeout(() => {
-            const top = inner.querySelector('.ls-entry');
-            top.remove();
-            inner.style.transition = 'none';
-            inner.style.transform = 'translateY(0)';
-            requestAnimationFrame(() => {
-              inner.style.transition = '';
-            });
-          }, 1250);
+          cleanupFallback = setTimeout(() => {
+            inner.removeEventListener('transitionend', onTransformEnd);
+            finalizeRotation();
+          }, 1500);
         });
 
         setTimeout(rotateStack, 12000);
@@ -306,6 +338,22 @@ async function loadLog(){
   }catch(e){
     document.getElementById('log-body').innerHTML='<p class="log-empty">Could not load log.</p>';
   }
+}
+
+function runWhenLayoutStable(task){
+  const run=()=>{
+    // Double RAF gives the browser a frame to apply final styles before layout reads.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(task);
+    });
+  };
+
+  if(document.readyState==='complete'){
+    run();
+    return;
+  }
+
+  window.addEventListener('load', run, {once:true});
 }
 
 // ─────────────────────────────────────────

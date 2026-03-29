@@ -1,0 +1,315 @@
+/**
+ * Form Helpers
+ * HTML generation for forms, fields, and editors
+ */
+
+import { getCustomizableColors, getColorDisplayName } from '../../utils/colors.js';
+
+/**
+ * Get a short preview of a block for the block list header
+ * @param {Object} block - Block object
+ * @returns {string} Preview text
+ */
+export function getBlockPreview(block) {
+  if (block.type === 'divider') return '—';
+  if (block.type === 'stats') {
+    return (block.items || [])
+      .map(s => s.num)
+      .join(' · ');
+  }
+  if (block.type === 'skills') {
+    return (block.items || [])
+      .map(s => s.name)
+      .join(', ');
+  }
+  if (block.type === 'image') {
+    return block.src || block.alt || '(empty)';
+  }
+  if (block.type === 'twocol') {
+    return 'Two columns';
+  }
+  return (block.content || '').slice(0, 60);
+}
+
+/**
+ * Get display label for a block type
+ * @param {string} type - Block type
+ * @returns {string} Display label
+ */
+export function getBlockTypeLabel(type) {
+  const labels = {
+    'text-sm': 'Text (Small)',
+    'text-md': 'Text (Medium)',
+    'text-lg': 'Text (Large)',
+    image: 'Image',
+    twocol: 'Two Columns',
+    quote: 'Quote',
+    video: 'Video',
+    stats: 'Statistics',
+    skills: 'Skills',
+    divider: 'Divider'
+  };
+  return labels[type] || type;
+}
+
+/**
+ * Generate HTML for block type menu
+ * @param {string} scope - Scope (e.g., 'about' or 'proj-id')
+ * @returns {string} HTML
+ */
+export function getBlockMenuHTML(scope) {
+  const types = [
+    ['text-md', 'T', 'Text'],
+    ['image', '🖼', 'Image'],
+    ['twocol', '⊞', 'Two Col'],
+    ['quote', '"', 'Quote'],
+    ['video', '▶', 'Video'],
+    ['stats', '#', 'Stats'],
+    ['skills', '%', 'Skills'],
+    ['divider', '—', 'Divider']
+  ];
+
+  return types
+    .map(
+      ([t, icon, label]) =>
+        `<button class="bm-item" onclick="window.events?.onAddBlock?.('${scope}', '${t}')">
+        <div class="bm-icon">${icon}</div>${label}</button>`
+    )
+    .join('');
+}
+
+/**
+ * Generate color picker field HTML
+ * @param {string} label - Field label
+ * @param {string} key - Color key (e.g., 'accent')
+ * @param {string} currentValue - Current hex color
+ * @returns {string} HTML
+ */
+export function getColorFieldHTML(label, key, currentValue) {
+  const uid = 'cf_' + key;
+  return `
+    <div class="color-field">
+      <label>${label}</label>
+      <div class="color-row">
+        <div class="color-swatch" style="background:${currentValue}">
+          <div class="color-swatch-fill" style="background:${currentValue}" id="${uid}_fill"></div>
+          <input type="color" value="${currentValue}" oninput="window.events?.onColorChange?.('${key}', this.value, '${uid}')">
+        </div>
+        <input class="color-hex" id="${uid}_hex" value="${currentValue}" maxlength="7"
+          oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))window.events?.onColorChange?.('${key}', this.value, '${uid}')">
+      </div>
+    </div>`;
+}
+
+/**
+ * Generate block editor form HTML
+ * @param {Object} block - Block object
+ * @param {string} scope - Scope (e.g., 'about' or 'proj-id')
+ * @returns {string} HTML for block body/controls
+ */
+export function getBlockBodyHTML(block, scope) {
+  const type = block.type;
+
+  // Text blocks (text-sm, text-md, text-lg)
+  if (type.startsWith('text-')) {
+    const sizes = [
+      ['text-sm', 'Small'],
+      ['text-md', 'Medium'],
+      ['text-lg', 'Large']
+    ];
+    return `
+      <div class="size-row">
+        ${sizes
+          .map(
+            ([v, l]) =>
+              `<button class="sz-btn ${block.type === v ? 'active' : ''}" 
+            onclick="window.events?.onChangeBlockType?.('${scope}', '${block.id}', '${v}')">${l}</button>`
+          )
+          .join('')}
+      </div>
+      <div class="rt-toolbar">
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-${block.id}', 'b')"><b>B</b></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-${block.id}', 'i')"><i>I</i></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-${block.id}', 'u')"><u>U</u></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-${block.id}', 'rgr')" style="font-size:.58rem;letter-spacing:.06em">RGR</button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.insertAt?.('rta-${block.id}', '&lt;br&gt;')" title="Line break">↵</button>
+      </div>
+      <div class="field"><textarea id="rta-${block.id}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
+      <div class="field"><label>Alignment</label>
+        <div class="align-row">
+          ${['left', 'center', 'right']
+            .map(
+              a =>
+                `<button class="al-btn ${(block.align || 'left') === a ? 'active' : ''}" 
+              onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
+            )
+            .join('')}
+        </div>
+      </div>`;
+  }
+
+  // Image block
+  if (type === 'image') {
+    const dzStableId = 'imdz_' + block.id;
+    return `
+      <div class="field"><label>Image</label>
+        <div id="${dzStableId}">
+          <input type="file" accept="image/*" style="display:none">
+          <div class="dz-label">Drag & drop or click to select</div>
+          <div class="dz-sub">Loading...</div>
+        </div>
+        <input type="text" id="${dzStableId}_p" value="${block.src || ''}" placeholder="Path or URL" 
+          style="margin-top:.5rem" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
+        <button class="add-btn" style="margin-top:.35rem" onclick="window.events?.onBrowseMedia?.('${scope}', '${block.id}', '${dzStableId}_p')">📁 Browse Media</button>
+      </div>
+      <div class="field"><label>Alt Text</label>
+        <input value="${block.alt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'alt', this.value)">
+      </div>`;
+  }
+
+  // Two column block
+  if (type === 'twocol') {
+    return `<div class="twocol-editor">
+      <div><div class="col-label">Left Column</div>
+        ${getTwoColEditor(scope, block.id, block.left || {}, 'left')}
+      </div>
+      <div><div class="col-label">Right Column</div>
+        ${getTwoColEditor(scope, block.id, block.right || {}, 'right')}
+      </div>
+    </div>`;
+  }
+
+  // Quote block
+  if (type === 'quote') {
+    return `
+      <div class="rt-toolbar">
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-q-${block.id}', 'b')"><b>B</b></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-q-${block.id}', 'i')"><i>I</i></button>
+        <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-q-${block.id}', 'u')"><u>U</u></button>
+      </div>
+      <div class="field"><textarea id="rta-q-${block.id}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
+      <div class="field"><label>Alignment</label>
+        <div class="align-row">
+          ${['left', 'center', 'right']
+            .map(
+              a =>
+                `<button class="al-btn ${(block.align || 'left') === a ? 'active' : ''}" 
+              onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
+            )
+            .join('')}
+        </div>
+      </div>`;
+  }
+
+  // Video block
+  if (type === 'video') {
+    return `
+      <div class="field"><label>Embed URL</label>
+        <input value="${block.src || ''}" placeholder="Vimeo or YouTube embed URL" 
+          oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
+      </div>`;
+  }
+
+  // Stats block
+  if (type === 'stats') {
+    return `
+      <div style="display:flex;flex-direction:column;gap:.5rem" id="stats-${block.id}">
+        ${(block.items || [])
+          .map(
+            (s, si) =>
+              `<div class="stat-item">
+          <input value="${s.num || ''}" placeholder="40+" oninput="window.events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'num', this.value)">
+          <input value="${s.label || ''}" placeholder="Projects" oninput="window.events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'label', this.value)">
+          <button class="del-btn" onclick="window.events?.onRemoveStatItem?.('${scope}', '${block.id}', ${si})">✕</button>
+        </div>`
+          )
+          .join('')}
+      </div>
+      <button class="add-btn" onclick="window.events?.onAddStatItem?.('${scope}', '${block.id}')">+ Add Stat</button>`;
+  }
+
+  // Skills block
+  if (type === 'skills') {
+    return `
+      <div style="display:flex;flex-direction:column;gap:.5rem" id="skills-${block.id}">
+        ${(block.items || [])
+          .map(
+            (s, si) =>
+              `<div class="skill-item">
+          <input value="${s.name || ''}" placeholder="After Effects" oninput="window.events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'name', this.value)">
+          <input type="range" min="0" max="100" value="${s.pct || 0}" step="1" 
+            oninput="window.events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'pct', +this.value);this.nextElementSibling.textContent=this.value+'%'">
+          <span class="skill-pct">${s.pct || 0}%</span>
+          <button class="del-btn" onclick="window.events?.onRemoveSkillItem?.('${scope}', '${block.id}', ${si})">✕</button>
+        </div>`
+          )
+          .join('')}
+      </div>
+      <button class="add-btn" onclick="window.events?.onAddSkillItem?.('${scope}', '${block.id}')">+ Add Skill</button>`;
+  }
+
+  // Divider block
+  if (type === 'divider') {
+    return `<p style="font-size:.72rem;color:var(--muted)">Horizontal rule divider.</p>`;
+  }
+
+  return '';
+}
+
+/**
+ * Get two-column editor HTML for a single column
+ * @param {string} scope - Scope
+ * @param {string} blockId - Block ID
+ * @param {Object} colData - Column data
+ * @param {string} side - 'left' or 'right'
+ * @returns {string} HTML
+ */
+function getTwoColEditor(scope, blockId, colData, side) {
+  const types = [
+    ['text-sm', 'Text S'],
+    ['text-md', 'Text M'],
+    ['text-lg', 'Text L'],
+    ['image', 'Image']
+  ];
+  const colType = colData.type || 'text-md';
+  const dzStableId = 'imdz_' + blockId + '_' + side;
+
+  return `<div style="display:flex;flex-direction:column;gap:.5rem">
+    <select style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .5rem;outline:none" 
+      onchange="window.events?.onUpdateColType?.('${scope}', '${blockId}', '${side}', this.value);window.events?.onRerenderBlocks?.('${scope}')">
+      ${types.map(([v, l]) => `<option value="${v}" ${colType === v ? 'selected' : ''}>${l}</option>`).join('')}
+    </select>
+    ${
+      colType === 'image'
+        ? `<div>
+        <div id="${dzStableId}"><input type="file" accept="image/*" style="display:none">
+          <div class="dz-label">Drag & drop or click</div>
+          <div class="dz-sub">Loading...</div>
+        </div>
+        <input type="text" id="${dzStableId}_p" value="${colData.src || ''}" placeholder="Path or URL" style="margin-top:.5rem" 
+          oninput="window.events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'src', this.value)">
+        <button class="add-btn" style="margin-top:.35rem" onclick="window.events?.onBrowseMedia?.('${scope}', '${blockId}', '${dzStableId}_p')">📁 Browse Media</button>
+      </div>`
+        : `<textarea style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.8rem;padding:.45rem .55rem;outline:none;resize:vertical;min-height:60px;width:100%" 
+        oninput="window.events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'content', this.value)">${colData.content || ''}</textarea>`
+    }
+  </div>`;
+}
+
+/**
+ * Get all customizable color field HTMLs
+ * @param {Object} theme - Current theme object
+ * @returns {string} HTML for all color fields
+ */
+export function getAllColorFieldsHTML(theme) {
+  const fields = [];
+  const colors = getCustomizableColors();
+
+  colors.forEach(key => {
+    const label = getColorDisplayName(key);
+    const value = theme[key] || '#000000';
+    fields.push(getColorFieldHTML(label, key, value));
+  });
+
+  return fields.join('\n');
+}
