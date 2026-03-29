@@ -112,6 +112,7 @@ async function loadAll(){
     snapshot('initial');
   }catch(e){ toast('Error loading files: '+e.message,true); }
   updateTokenBtn();
+  setDeployStatus('idle');
 }
 
 function buildNav(){
@@ -1137,9 +1138,76 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
 const REPO='ymd-ei/Run-Girl-Run-Website';
 const BRANCH='main';
 const shaCache = {}; // path → sha, updated after each successful save
+let deployPollTimer = null;
 
 function getToken(){ return localStorage.getItem('gh_token')||''; }
 function setToken(t){ localStorage.setItem('gh_token',t); }
+
+function setDeployStatus(msg, state){
+  const el=document.getElementById('deploy-status');
+  if(!el) return;
+  el.textContent='Deploy: '+msg;
+  el.classList.remove('waiting','building','live','error');
+  if(state) el.classList.add(state);
+}
+
+async function fetchLatestPagesBuild(token){
+  const [owner, repo] = REPO.split('/');
+  const headers={Accept:'application/vnd.github.v3+json'};
+  if(token) headers.Authorization='token '+token;
+  const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/pages/builds/latest`,{headers});
+  if(r.status===404) return {status:'none'};
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    throw new Error(e.message||r.status);
+  }
+  return r.json();
+}
+
+function startDeployPolling(){
+  if(deployPollTimer){ clearInterval(deployPollTimer); deployPollTimer=null; }
+
+  let tries=0;
+  const maxTries=24; // ~4 minutes at 10s polling
+  const poll=async()=>{
+    tries++;
+    try{
+      const build=await fetchLatestPagesBuild(getToken());
+      const st=(build.status||'').toLowerCase();
+
+      if(st==='none'){
+        setDeployStatus('pages not enabled','error');
+        clearInterval(deployPollTimer); deployPollTimer=null;
+        return;
+      }
+      if(st==='built'){
+        setDeployStatus('live','live');
+        clearInterval(deployPollTimer); deployPollTimer=null;
+        return;
+      }
+      if(st==='errored'){
+        setDeployStatus('failed','error');
+        clearInterval(deployPollTimer); deployPollTimer=null;
+        return;
+      }
+
+      if(st==='building') setDeployStatus('building…','building');
+      else setDeployStatus('queued…','waiting');
+
+      if(tries>=maxTries){
+        setDeployStatus('still processing','waiting');
+        clearInterval(deployPollTimer); deployPollTimer=null;
+      }
+    }catch(e){
+      setDeployStatus('status unavailable','error');
+      clearInterval(deployPollTimer); deployPollTimer=null;
+    }
+  };
+
+  setDeployStatus('checking…','waiting');
+  poll();
+  deployPollTimer=setInterval(poll,10000);
+}
 
 async function ghGetSha(token, path){
   // Use cached SHA if available — avoids stale SHA on rapid saves
@@ -1248,6 +1316,7 @@ async function saveAll(){
     dirtyFiles.clear();
     btn.disabled=false; btn.textContent='Save All Changes';
     toast(`Saved ${changedPaths.length} file${changedPaths.length!==1?'s':''} ✓`);
+    startDeployPolling();
   }catch(e){
     btn.disabled=false; btn.textContent='Save All Changes *';
     if(e.message.includes('Bad credentials')||e.message.includes('401')){

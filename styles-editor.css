@@ -31,6 +31,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .save-btn{padding:.55rem;background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:.7rem;letter-spacing:.04em;transition:opacity .15s}
 .save-btn:hover{opacity:.85}
 .save-btn:disabled{opacity:.35}
+.deploy-status{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:.2rem .1rem}
+.deploy-status.waiting{color:#d1b067}
+.deploy-status.building{color:#6aa7d8}
+.deploy-status.live{color:var(--green)}
+.deploy-status.error{color:#c06060}
 
 /* ─────────────────────────────────────────
    MAIN PANEL

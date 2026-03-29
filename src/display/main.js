@@ -11,7 +11,6 @@ import {
   renderContactPanel,
   scrambleHero,
   initCountUps,
-  jitterTapes,
   updateContactPanelBackground,
   renderDisplayBlocks
 } from './displayRenderer.js';
@@ -19,6 +18,7 @@ import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
 
 let bgPlayer = null;
+let contactTickersStarted = false;
 
 /**
  * Run the loader animation with randomized percentage stops.
@@ -155,6 +155,9 @@ export async function bootstrap() {
 
     // 5. Render work grid with filters
     renderWorkSection();
+
+    // 5b. Render lower-right updates stack from log.json
+    await loadLogStack();
 
     // 6. Render about panel
     renderAboutPanel();
@@ -403,6 +406,55 @@ function renderContactSection() {
   document.documentElement.style.setProperty('--ct-bg', theme.ctBg || '#080808');
   document.documentElement.style.setProperty('--ct-hi', theme.ctHi || '#ffffff');
   document.documentElement.style.setProperty('--ct-muted', 'rgba(255,255,255,0.6)');
+
+  startContactTickers();
+}
+
+function startContactTickers() {
+  const topTrack = document.querySelector('#ct-ticker-top .ticker-track');
+  const midTrack = document.querySelector('#ct-ticker-mid .ticker-track');
+
+  if (topTrack && !topTrack._tickerRunning) {
+    startTicker(topTrack, -0.6);
+  }
+  if (midTrack && !midTrack._tickerRunning) {
+    startTicker(midTrack, 0.5);
+  }
+
+  contactTickersStarted = true;
+}
+
+async function loadLogStack() {
+  const inner = document.getElementById('ls-inner');
+  const stack = document.getElementById('log-stack');
+  if (!inner || !stack) return;
+
+  try {
+    const response = await fetch('log.json?v=' + Date.now());
+    if (!response.ok) throw new Error('Failed to load log.json');
+
+    const entries = await response.json();
+    if (!Array.isArray(entries) || entries.length === 0) {
+      inner.innerHTML = '';
+      stack.style.height = '0px';
+      return;
+    }
+
+    const recent = entries.slice(-8).reverse();
+    inner.innerHTML = recent
+      .map((entry, i) => {
+        const opacity = 1 - i * 0.12;
+        const text = (entry && entry.text) || '';
+        return `<span class="ls-entry show" style="opacity:${Math.max(opacity, 0.3)}">${text}</span>`;
+      })
+      .join('');
+
+    requestAnimationFrame(() => {
+      stack.style.height = inner.offsetHeight + 'px';
+    });
+  } catch (error) {
+    console.warn('Could not load log stack:', error);
+  }
 }
 
 /**
@@ -490,12 +542,7 @@ function setupEventListeners() {
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
         if (bd) bd.classList.add('open');
-        // Start tickers and jitter
-        jitterTapes();
-        setTimeout(() => {
-          startTicker(document.querySelector('#ct-ticker-top .ticker-track'), -0.6);
-          startTicker(document.querySelector('#ct-ticker-mid .ticker-track'), 0.5);
-        }, 820);
+        if (!contactTickersStarted) startContactTickers();
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
         const panel = document.getElementById('panel-' + name);
@@ -576,6 +623,7 @@ function setupEditorPreviewBridge() {
       renderWorkSection();
       renderAboutPanel();
       renderContactSection();
+      loadLogStack();
     }
   });
 }
