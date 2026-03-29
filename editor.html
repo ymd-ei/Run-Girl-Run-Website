@@ -83,7 +83,7 @@
   if (apiParam) {
     localStorage.setItem('editor_api_base', apiParam);
   }
-  const API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://api.rungirlrun.studio';
+  const API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://rgr-editor-backend.rungirlrun.workers.dev';
   const LOGIN_URL = `${API_BASE}/auth/login`;
   const LOGOUT_URL = `${API_BASE}/auth/logout`;
   const AUTH_CHECK_URL = `${API_BASE}/auth/check`;
