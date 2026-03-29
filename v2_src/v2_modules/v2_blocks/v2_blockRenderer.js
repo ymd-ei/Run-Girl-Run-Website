@@ -12,7 +12,7 @@ import { generateThumbSVG } from '../../v2_utils/v2_svg.js';
  * @returns {string} HTML string
  */
 export function renderBlockThumbnail(type, theme = {}) {
-  const accentColor = theme.accent || '#71904c';
+  const accentColor = theme.accent || '#5e30eb';
   const bgColor = theme.paper || '#e8e3da';
   const svg = generateThumbSVG(type, accentColor, bgColor);
   return `<div class="tph">${svg}</div>`;

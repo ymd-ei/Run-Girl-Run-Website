@@ -16,7 +16,7 @@ export function applyTheme(theme) {
   if (!theme) return;
 
   const vars = {
-    '--color-accent': theme.accent || '#71904c',
+    '--color-accent': theme.accent || '#5e30eb',
     '--color-paper': theme.paper || '#f2ede4',
     '--color-ink': theme.ink || '#1a1714',
     '--color-panel-bg': theme.panelBg || '#f7f3ec',
@@ -249,7 +249,7 @@ export function scrambleHero(role, line1, line2) {
  * @returns {string} HTML
  */
 export function renderWorkGrid(projects, theme) {
-  const accentColor = theme?.accent || '#71904c';
+  const accentColor = theme?.accent || '#5e30eb';
   const bgColor = theme?.paper || '#e8e3da';
 
   return projects

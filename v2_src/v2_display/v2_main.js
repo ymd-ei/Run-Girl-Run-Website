@@ -37,6 +37,11 @@ function runLoaderAnimation() {
   const loader = document.getElementById('loader');
   if (!nameEl || !bar || !loader) return;
 
+  // Ensure the loader can replay correctly on hard reloads and bfcache restores.
+  loader.classList.remove('done');
+  bar.style.width = '0%';
+  nameEl.innerHTML = '';
+
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const nameText = 'RUN GIRL RUN';
 
@@ -72,7 +77,7 @@ function runLoaderAnimation() {
           sp.dataset.settled = '1';
           sp.textContent = finalChars[i];
           if (i === allSpans.length - 1) clearInterval(noiseTimer);
-        }, i * 80);
+        }, i * 120);
       });
     }, 80);
   }
