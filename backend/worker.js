@@ -486,8 +486,12 @@ async function uploadFileToGitHub(token, path, base64Content, env) {
  * Helper: List media files in folder
  */
 async function listMediaFiles(token, env) {
+  return listMediaFilesRecursive(token, 'media');
+}
+
+async function listMediaFilesRecursive(token, folderPath) {
   const response = await fetch(
-    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/media`,
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${folderPath}`,
     {
       headers: {
         'Authorization': `token ${token}`,
@@ -498,15 +502,29 @@ async function listMediaFiles(token, env) {
   );
 
   if (response.status === 404) return [];
-  if (!response.ok) throw new Error('Failed to list media');
+  if (!response.ok) throw new Error(`Failed to list ${folderPath}`);
 
   const data = await response.json();
-  return data.map(f => ({
-    name: f.name,
-    path: f.path,
-    size: f.size,
-    url: f.download_url
-  }));
+  const files = [];
+
+  for (const entry of data) {
+    if (entry.type === 'file') {
+      files.push({
+        name: entry.name,
+        path: entry.path,
+        size: entry.size,
+        url: entry.download_url
+      });
+      continue;
+    }
+
+    if (entry.type === 'dir') {
+      const nestedFiles = await listMediaFilesRecursive(token, entry.path);
+      files.push(...nestedFiles);
+    }
+  }
+
+  return files;
 }
 
 /**
