@@ -2,3 +2,7 @@ name = "rgr-editor-backend"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
+
+[vars]
+FRONTEND_HOST = "rungirlrun.studio"
+FRONTEND_URL = "https://rungirlrun.studio/editor.html?api=https://rgr-editor-backend.rungirlrun.workers.dev"
