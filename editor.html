@@ -15,6 +15,7 @@
     <button class="ni active" onclick="showPage('global')" id="nav-global"><div class="dot"></div>Settings</button>
     <button class="ni" onclick="showPage('about')" id="nav-about"><div class="dot"></div>About</button>
     <button class="ni" onclick="showPage('contact')" id="nav-contact"><div class="dot"></div>Contact</button>
+    <button class="ni" onclick="showPage('media')" id="nav-media"><div class="dot"></div>Media</button>
     <div class="sb-section">Projects</div>
     <div id="project-nav"></div>
     <button class="add-proj" onclick="addProject()">+ New Project</button>
@@ -35,6 +36,7 @@
     <div id="page-global"></div>
     <div id="page-about" style="display:none"></div>
     <div id="page-contact" style="display:none"></div>
+    <div id="page-media" style="display:none"></div>
     <div id="page-project" style="display:none"></div>
   </div>
   <div id="preview-pane">
@@ -61,6 +63,12 @@
     <div id="media-header">
       <span>Media Library</span>
       <button id="media-close" onclick="closeMediaLibrary()">&#x2715;</button>
+    </div>
+    <div id="media-tools">
+      <input type="text" id="media-folder" value="media" placeholder="media" title="Upload folder path">
+      <label id="media-upload-btn">+ Upload File
+        <input type="file" id="media-upload-input" accept="image/*,video/*">
+      </label>
     </div>
     <div id="media-search"><input type="text" placeholder="Filter files…" oninput="filterMedia(this.value)"></div>
     <div id="media-grid"></div>

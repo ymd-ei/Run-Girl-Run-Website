@@ -75,7 +75,7 @@ const rendered = new Set(); // tracks which pages have been rendered at least on
 function markPageStale(name){ rendered.delete(name); }
 
 function showPage(name){
-  ['global','about','contact','project'].forEach(n=>{
+  ['global','about','contact','media','project'].forEach(n=>{
     document.getElementById('page-'+n).style.display='none';
     const el=document.getElementById('nav-'+n); if(el)el.classList.remove('active');
   });
@@ -89,6 +89,7 @@ function showPage(name){
     if(name==='global') renderGlobal();
     else if(name==='about') renderAbout();
     else if(name==='contact') renderContact();
+    else if(name==='media') renderMediaPage();
     rendered.add(name);
   }
   sendPreviewNav();
@@ -108,8 +109,8 @@ async function loadAll(){
     projects=await Promise.all(C.projects.map(id=>fetch('projects/'+id+'.json?v='+Date.now()).then(r=>r.json())));
     applyEditorTheme();
     buildNav();
-    renderGlobal(); renderAbout(); renderContact();
-    rendered.add('global'); rendered.add('about'); rendered.add('contact');
+    renderGlobal(); renderAbout(); renderContact(); renderMediaPage();
+    rendered.add('global'); rendered.add('about'); rendered.add('contact'); rendered.add('media');
     initPreview();
     snapshot('initial');
   }catch(e){ toast('Error loading files: '+e.message,true); }
@@ -384,6 +385,104 @@ function renderContact(){
         </div>
       </div>
     </div>`;
+}
+
+// ─────────────────────────────────────────
+// PAGE RENDERERS — MEDIA
+// ─────────────────────────────────────────
+function renderMediaPage(){
+  const root = document.getElementById('page-media');
+  if(!root) return;
+  root.innerHTML = `
+    <div class="page-title">Media</div>
+    <div class="page-sub">Browse, upload, and remove media files.</div>
+    <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Media Library</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <div class="media-page-tools">
+          <input id="media-page-folder" type="text" value="media" placeholder="Upload folder (example: media/projects)">
+          <label class="media-upload-trigger">+ Upload File
+            <input type="file" id="media-page-upload" accept="image/*,video/*">
+          </label>
+          <input id="media-page-search" type="text" placeholder="Filter files..." oninput="filterMediaPage(this.value)">
+        </div>
+        <div id="media-page-grid" class="media-page-grid">
+          <div class="media-page-empty">Loading...</div>
+        </div>
+      </div>
+    </div>`;
+
+  const uploadInput = document.getElementById('media-page-upload');
+  if(uploadInput){
+    uploadInput.addEventListener('change', async e=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const folderInput = document.getElementById('media-page-folder');
+      const folder = normalizeMediaFolder(folderInput ? folderInput.value : 'media');
+      try{
+        uploadInput.disabled = true;
+        toast('Uploading ' + file.name + '...');
+        const path = await uploadMedia(file, folder);
+        await refreshMediaViews();
+        toast('Uploaded: ' + path);
+      }catch(err){
+        toast('Upload error: ' + err.message, true);
+      }finally{
+        uploadInput.value = '';
+        uploadInput.disabled = false;
+      }
+    });
+  }
+
+  refreshMediaPage();
+}
+
+function renderMediaPageGrid(files){
+  const grid = document.getElementById('media-page-grid');
+  if(!grid) return;
+  if(!files.length){
+    grid.innerHTML = '<div class="media-page-empty">No media files found.</div>';
+    return;
+  }
+  const imgExts = /\.(jpe?g|png|gif|webp|bmp|svg)$/i;
+  grid.innerHTML = files.map(f=>{
+    const encodedPath = encodeURIComponent(f.path || '');
+    const safePath = escapeHtml(f.path || '');
+    const safeName = escapeHtml(f.name || '');
+    const ext = escapeHtml((f.name || '').split('.').pop() || 'FILE');
+    const thumb = imgExts.test(f.name)
+      ? `<img src="${f.url}" loading="lazy">`
+      : `<span class="media-ext">${ext}</span>`;
+    return `<div class="media-item" title="${safePath}">
+      <div class="media-thumb">${thumb}</div>
+      <div class="media-name">${safeName}</div>
+      <div class="media-meta">${formatBytes(f.size)}</div>
+      <div class="media-actions">
+        <button class="media-del-btn" type="button" onclick="deleteMedia(decodeURIComponent('${encodedPath}')).catch(e=>toast('Delete error: '+e.message,true))">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterMediaPage(query){
+  const q = (query || '').toLowerCase();
+  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  renderMediaPageGrid(filtered);
+}
+
+async function refreshMediaPage(){
+  const grid = document.getElementById('media-page-grid');
+  if(!grid) return;
+  grid.innerHTML = '<div class="media-page-empty">Loading...</div>';
+  mediaFiles = await fetchMediaFiles();
+  const q = document.getElementById('media-page-search')?.value?.trim().toLowerCase() || '';
+  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  renderMediaPageGrid(filtered);
+}
+
+async function refreshMediaViews(){
+  await refreshMediaGrid();
+  await refreshMediaPage();
 }
 
 function addLink(){
@@ -1600,6 +1699,60 @@ let mediaCallback = null;
 let mediaFiles = [];
 let mediaPathInputId = null; // direct reference to the path input to update
 
+function formatBytes(bytes){
+  const size = Number(bytes);
+  if(!Number.isFinite(size) || size < 0) return '';
+  if(size < 1024) return size + ' B';
+  const units = ['KB','MB','GB'];
+  let value = size / 1024;
+  let idx = 0;
+  while(value >= 1024 && idx < units.length - 1){
+    value /= 1024;
+    idx++;
+  }
+  return value.toFixed(value >= 100 ? 0 : 1) + ' ' + units[idx];
+}
+
+function escapeHtml(value){
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeMediaFolder(raw){
+  const folder = (raw || 'media').trim().replace(/^\/+|\/+$/g, '');
+  if(!folder) return 'media';
+  return folder;
+}
+
+function collectMediaUsage(value, path, hits){
+  if(typeof value === 'string'){
+    if(value === path) hits.push(value);
+    return;
+  }
+  if(Array.isArray(value)){
+    for(const item of value) collectMediaUsage(item, path, hits);
+    return;
+  }
+  if(value && typeof value === 'object'){
+    for(const key in value){
+      collectMediaUsage(value[key], path, hits);
+    }
+  }
+}
+
+function getMediaUsageCount(path){
+  const hits = [];
+  collectMediaUsage(C, path, hits);
+  for(const project of projects){
+    collectMediaUsage(project, path, hits);
+  }
+  return hits.length;
+}
+
 async function openMediaLibrary(onInsert, pathInputId){
   mediaCallback = onInsert;
   mediaPathInputId = pathInputId || null;
@@ -1620,6 +1773,58 @@ function closeMediaLibrary(){
   mediaCallback = null;
 }
 
+async function refreshMediaGrid(){
+  const grid = document.getElementById('media-grid');
+  if(!grid) return;
+  grid.innerHTML = '<div id="media-empty">Loading…</div>';
+  mediaFiles = await fetchMediaFiles();
+  const q = document.querySelector('#media-search input')?.value?.trim().toLowerCase() || '';
+  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  renderMediaGrid(filtered);
+}
+
+async function uploadMediaFromLibrary(file){
+  if(!file) return;
+  const folderInput = document.getElementById('media-folder');
+  const folder = normalizeMediaFolder(folderInput ? folderInput.value : 'media');
+  const uploadInput = document.getElementById('media-upload-input');
+  try{
+    if(uploadInput) uploadInput.disabled = true;
+    toast('Uploading ' + file.name + '…');
+    const path = await uploadMedia(file, folder);
+    await refreshMediaViews();
+    if(uploadInput) uploadInput.value = '';
+    toast('Uploaded: ' + path);
+  }catch(e){
+    if(uploadInput) uploadInput.value = '';
+    toast('Upload error: ' + e.message, true);
+  }finally{
+    if(uploadInput) uploadInput.disabled = false;
+  }
+}
+
+async function deleteMedia(path){
+  if(!path) return;
+  const usageCount = getMediaUsageCount(path);
+  const warning = usageCount > 0
+    ? `This file is currently referenced ${usageCount} time${usageCount===1?'':'s'}. Delete anyway?`
+    : 'Delete this media file?';
+  if(!confirm(warning)) return;
+
+  const r = await fetch(MEDIA_URL, getAuthFetchOptions({
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  }));
+  const data = await r.json().catch(() => ({}));
+  if(!r.ok){
+    throw new Error(data.error || 'Delete failed');
+  }
+
+  await refreshMediaViews();
+  toast('Deleted: ' + path);
+}
+
 async function fetchMediaFiles(){
   const r = await fetch(MEDIA_URL, getAuthFetchOptions({ method:'GET' }));
   const data = await r.json().catch(() => ({}));
@@ -1631,15 +1836,26 @@ function renderMediaGrid(files){
   const grid = document.getElementById('media-grid');
   if(!files.length){ grid.innerHTML = '<div id="media-empty">No media files found.</div>'; return; }
   const imgExts = /\.(jpe?g|png|gif|webp|bmp|svg)$/i;
-  grid.innerHTML = files.map(f=>`
-    <div class="media-item" onclick="insertMedia('${f.path}')">
+  grid.innerHTML = files.map(f=>{
+    const encodedPath = encodeURIComponent(f.path || '');
+    const safeName = escapeHtml(f.name || '');
+    const safePath = escapeHtml(f.path || '');
+    const ext = escapeHtml((f.name || '').split('.').pop() || 'FILE');
+    const thumb = imgExts.test(f.name)
+      ? `<img src="${f.url}" loading="lazy">`
+      : `<span class="media-ext">${ext}</span>`;
+    return `
+    <div class="media-item" onclick="insertMedia(decodeURIComponent('${encodedPath}'))">
       <div class="media-thumb">
-        ${imgExts.test(f.name)
-          ? `<img src="${f.url}" loading="lazy">`
-          : `<span class="media-ext">${f.name.split('.').pop()}</span>`}
+        ${thumb}
       </div>
-      <div class="media-name" title="${f.path}">${f.name}</div>
-    </div>`).join('');
+      <div class="media-name" title="${safePath}">${safeName}</div>
+      <div class="media-meta">${formatBytes(f.size)}</div>
+      <div class="media-actions">
+        <button class="media-del-btn" type="button" onclick="event.stopPropagation();deleteMedia(decodeURIComponent('${encodedPath}')).catch(e=>toast('Delete error: '+e.message,true))">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function filterMedia(query){
@@ -1681,6 +1897,14 @@ document.addEventListener('focusout', e=>{
 document.getElementById('media-modal').addEventListener('click', e=>{
   if(e.target===document.getElementById('media-modal')) closeMediaLibrary();
 });
+
+const mediaUploadInput = document.getElementById('media-upload-input');
+if(mediaUploadInput){
+  mediaUploadInput.addEventListener('change', e=>{
+    const file = e.target.files && e.target.files[0];
+    uploadMediaFromLibrary(file);
+  });
+}
 
 loadAll();
 initializeAuth();

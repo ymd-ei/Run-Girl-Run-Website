@@ -339,6 +339,42 @@ async function handleMedia(request, env) {
     }
   }
 
+  if (request.method === 'DELETE') {
+    try {
+      const { path } = await request.json();
+
+      if (!path || typeof path !== 'string') {
+        return corsResponse(new Response(JSON.stringify({ error: 'Missing media path' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }), request, env);
+      }
+
+      const cleanedPath = path.replace(/^\/+/, '');
+      if (!cleanedPath.startsWith('media/')) {
+        return corsResponse(new Response(JSON.stringify({ error: 'Invalid media path' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }), request, env);
+      }
+
+      await deleteFileFromGitHub(session.token, cleanedPath);
+
+      return corsResponse(new Response(JSON.stringify({
+        success: true,
+        path: cleanedPath
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }), request, env);
+    } catch (error) {
+      return corsResponse(new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }), request, env);
+    }
+  }
+
   return new Response('Method not allowed', { status: 405 });
 }
 
@@ -480,6 +516,56 @@ async function uploadFileToGitHub(token, path, base64Content, env) {
 
   const data = await response.json();
   return { path: data.content.path };
+}
+
+/**
+ * Helper: Delete file from GitHub
+ */
+async function deleteFileFromGitHub(token, path) {
+  const getResponse = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+    {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'rgr-editor-backend'
+      }
+    }
+  );
+
+  if (getResponse.status === 404) {
+    throw new Error('File not found');
+  }
+  if (!getResponse.ok) {
+    const error = await parseJsonOrText(getResponse);
+    throw new Error(error.message || 'Failed to fetch file for deletion');
+  }
+
+  const fileData = await getResponse.json();
+  const deleteResponse = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
+      },
+      body: JSON.stringify({
+        message: `Delete: ${path}`,
+        sha: fileData.sha,
+        branch: GITHUB_BRANCH
+      })
+    }
+  );
+
+  if (!deleteResponse.ok) {
+    const error = await parseJsonOrText(deleteResponse);
+    throw new Error(error.message || 'Delete failed');
+  }
+
+  return true;
 }
 
 /**
