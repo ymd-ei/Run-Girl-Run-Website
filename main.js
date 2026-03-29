@@ -215,11 +215,18 @@ async function loadLog(){
     function scrambleEntry(entry, delay){
       const spans = Array.from(entry.querySelectorAll('.sc-char'));
       logSpanGroups.push(spans);
-      spans.forEach((span, j) => {
+
+      const revealWindowMs = 550;
+      const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
+      const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
+      let revealIndex = 0;
+
+      spans.forEach(span => {
         const ch = span.dataset.ch;
         const isSpace = ch === ' ';
         const p = isSpace ? [' '] : pool(ch);
         let tick = 0; const cycles = 6;
+        const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
         setTimeout(() => {
           span.style.opacity = '1';
           if(isSpace){ span.innerHTML = '&nbsp;'; return; }
@@ -232,7 +239,7 @@ async function loadLog(){
             } else { span.textContent = ch; }
           }
           cycle();
-        }, delay + j * 55);
+        }, delay + staggerDelay);
       });
       return spans;
     }

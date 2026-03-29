@@ -20,6 +20,7 @@ import { pool, scheduleIdle } from '../utils/text.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
+let pendingPreviewNav = null;
 
 /**
  * Run the loader animation with randomized percentage stops.
@@ -172,9 +173,38 @@ export async function bootstrap() {
     // 8. Set up event listeners
     setupEventListeners();
 
+    // Apply any queued navigation state received before controls were ready.
+    if (pendingPreviewNav) {
+      applyPreviewNavigation(pendingPreviewNav);
+      pendingPreviewNav = null;
+    }
+
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
     console.error('✗ Display bootstrap failed:', error);
+  }
+}
+
+function applyPreviewNavigation(message) {
+  if (!message) return;
+
+  const panel = message.panel;
+  if (panel === 'home') {
+    window.display?.closeToRoot?.();
+    return;
+  }
+
+  if (panel === 'about' || panel === 'contact') {
+    window.display?.openPanel?.(panel);
+    return;
+  }
+
+  if (panel === 'project' && message.projectId) {
+    const workPanel = document.getElementById('panel-work');
+    const bd = document.getElementById('bd');
+    if (workPanel) workPanel.classList.add('open');
+    if (bd) bd.classList.add('open');
+    window.display?.openProject?.(message.projectId);
   }
 }
 
@@ -483,12 +513,18 @@ async function loadLogStack() {
       const spans = Array.from(entry.querySelectorAll('.sc-char'));
       logSpanGroups.push(spans);
 
-      spans.forEach((span, j) => {
+      const revealWindowMs = 550;
+      const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
+      const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
+      let revealIndex = 0;
+
+      spans.forEach(span => {
         const ch = span.dataset.ch;
         const isSpace = ch === ' ';
         const charPool = isSpace ? [' '] : pool(ch);
         let tick = 0;
         const cycles = 6;
+        const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
 
         setTimeout(() => {
           span.style.opacity = '1';
@@ -509,7 +545,7 @@ async function loadLogStack() {
           }
 
           cycle();
-        }, delay + j * 55);
+        }, delay + staggerDelay);
       });
 
       return spans;
@@ -755,6 +791,10 @@ function setupEditorPreviewBridge() {
       renderAboutPanel();
       renderContactSection();
       loadLogStack();
+    } else if (e.data.type === 'preview-nav') {
+      // Messages can arrive before event handlers are fully initialized.
+      pendingPreviewNav = e.data;
+      applyPreviewNavigation(e.data);
     }
   });
 }
