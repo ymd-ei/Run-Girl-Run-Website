@@ -118,7 +118,8 @@ async function handleCallback(request, env) {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
       },
       body: JSON.stringify({
         client_id: env.GITHUB_CLIENT_ID,
@@ -128,23 +129,36 @@ async function handleCallback(request, env) {
       })
     });
 
-    const tokenData = await tokenResponse.json();
-
-    if (tokenData.error) {
-      return new Response(`OAuth error: ${tokenData.error_description}`, { status: 401 });
+    const tokenData = await parseJsonOrText(tokenResponse);
+    if (!tokenResponse.ok || tokenData.error) {
+      const detail =
+        tokenData.error_description ||
+        tokenData.error ||
+        tokenData.message ||
+        tokenData.raw ||
+        tokenResponse.status;
+      return new Response(`OAuth error: ${detail}`, { status: 401 });
     }
 
     const accessToken = tokenData.access_token;
+    if (!accessToken) {
+      return new Response('OAuth error: Missing access token', { status: 401 });
+    }
 
     // Verify user is allowed (check GitHub username)
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
         'Authorization': `token ${accessToken}`,
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'rgr-editor-backend'
       }
     });
 
-    const userData = await userResponse.json();
+    const userData = await parseJsonOrText(userResponse);
+    if (!userResponse.ok || !userData.login) {
+      const detail = userData.message || userData.error || userData.raw || userResponse.status;
+      return new Response(`GitHub user lookup failed: ${detail}`, { status: 401 });
+    }
 
     // Only allow specific GitHub user
     if (userData.login !== ALLOWED_GITHUB_USER) {
@@ -581,6 +595,15 @@ function withSessionOk(frontendUrl) {
     // Fallback for malformed env values.
     const hasQuery = (frontendUrl || '').includes('?');
     return `${frontendUrl}${hasQuery ? '&' : '?'}session_ok=1`;
+  }
+}
+
+async function parseJsonOrText(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
   }
 }
 
