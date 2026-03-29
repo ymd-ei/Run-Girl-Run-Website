@@ -251,7 +251,9 @@ async function loadLog(){
     setTimeout(() => {
       const stack = document.getElementById('log-stack');
       const innerEl = document.getElementById('ls-inner');
-      stack.style.height = innerEl.offsetHeight + 'px';
+      runWhenLayoutStable(() => {
+        stack.style.height = innerEl.offsetHeight + 'px';
+      });
     }, 1400 + recent.length * 120 + 500);
 
     const logIdleStart = 1400 + recent.length * 120 + 2000;
@@ -265,7 +267,7 @@ async function loadLog(){
         newEntry.style.opacity = '0';
         inner.appendChild(newEntry);
 
-        requestAnimationFrame(() => {
+        runWhenLayoutStable(() => {
           const topEntry = inner.querySelector('.ls-entry');
           const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
           inner.style.transform = `translateY(-${actualH}px)`;
@@ -306,6 +308,22 @@ async function loadLog(){
   }catch(e){
     document.getElementById('log-body').innerHTML='<p class="log-empty">Could not load log.</p>';
   }
+}
+
+function runWhenLayoutStable(task){
+  const run=()=>{
+    // Double RAF gives the browser a frame to apply final styles before layout reads.
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(task);
+    });
+  };
+
+  if(document.readyState==='complete'){
+    run();
+    return;
+  }
+
+  window.addEventListener('load', run, {once:true});
 }
 
 // ─────────────────────────────────────────

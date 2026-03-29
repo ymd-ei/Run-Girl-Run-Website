@@ -425,6 +425,22 @@ function startContactTickers() {
   contactTickersStarted = true;
 }
 
+function runWhenLayoutStable(task) {
+  const run = () => {
+    // Double RAF gives the browser a frame to apply final styles before layout reads.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(task);
+    });
+  };
+
+  if (document.readyState === 'complete') {
+    run();
+    return;
+  }
+
+  window.addEventListener('load', run, { once: true });
+}
+
 async function loadLogStack() {
   const inner = document.getElementById('ls-inner');
   const stack = document.getElementById('log-stack');
@@ -511,7 +527,9 @@ async function loadLogStack() {
     });
 
     setTimeout(() => {
-      stack.style.height = inner.offsetHeight + 'px';
+      runWhenLayoutStable(() => {
+        stack.style.height = inner.offsetHeight + 'px';
+      });
     }, 1400 + recent.length * 120 + 500);
 
     const logIdleStart = 1400 + recent.length * 120 + 2000;
@@ -524,7 +542,7 @@ async function loadLogStack() {
         newEntry.style.opacity = '0';
         inner.appendChild(newEntry);
 
-        requestAnimationFrame(() => {
+        runWhenLayoutStable(() => {
           const topEntry = inner.querySelector('.ls-entry');
           const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
           inner.style.transform = `translateY(-${actualH}px)`;
