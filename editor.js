@@ -1167,6 +1167,54 @@ async function ghPutFile(token, path, content, sha, message){
   return result;
 }
 
+async function ghCommitFiles(token, filesMap, message){
+  const refRes=await fetch(`https://api.github.com/repos/${REPO}/git/ref/heads/${BRANCH}`,{
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
+  });
+  if(!refRes.ok){ const e=await refRes.json().catch(()=>({})); throw new Error(e.message||refRes.status); }
+  const refData=await refRes.json();
+  const parentCommitSha=refData.object.sha;
+
+  const parentRes=await fetch(`https://api.github.com/repos/${REPO}/git/commits/${parentCommitSha}`,{
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
+  });
+  if(!parentRes.ok){ const e=await parentRes.json().catch(()=>({})); throw new Error(e.message||parentRes.status); }
+  const parentData=await parentRes.json();
+  const baseTreeSha=parentData.tree.sha;
+
+  const treeEntries=Object.entries(filesMap).map(([path,content])=>({
+    path,
+    mode:'100644',
+    type:'blob',
+    content
+  }));
+
+  const treeRes=await fetch(`https://api.github.com/repos/${REPO}/git/trees`,{
+    method:'POST',
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
+    body:JSON.stringify({base_tree:baseTreeSha, tree:treeEntries})
+  });
+  if(!treeRes.ok){ const e=await treeRes.json().catch(()=>({})); throw new Error(e.message||treeRes.status); }
+  const treeData=await treeRes.json();
+
+  const commitRes=await fetch(`https://api.github.com/repos/${REPO}/git/commits`,{
+    method:'POST',
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
+    body:JSON.stringify({message, tree:treeData.sha, parents:[parentCommitSha]})
+  });
+  if(!commitRes.ok){ const e=await commitRes.json().catch(()=>({})); throw new Error(e.message||commitRes.status); }
+  const commitData=await commitRes.json();
+
+  const updateRefRes=await fetch(`https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}`,{
+    method:'PATCH',
+    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
+    body:JSON.stringify({sha:commitData.sha, force:false})
+  });
+  if(!updateRefRes.ok){ const e=await updateRefRes.json().catch(()=>({})); throw new Error(e.message||updateRefRes.status); }
+
+  return commitData;
+}
+
 async function saveAll(){
   let token=getToken();
   if(!token){
@@ -1190,15 +1238,16 @@ async function saveAll(){
   };
 
   try{
-    for(const path of toSave){
-      if(!dataMap[path]) continue;
-      const sha=await ghGetSha(token, path);
-      await ghPutFile(token, path, dataMap[path], sha, `Editor: update ${path}`);
+    const filesToCommit = Object.fromEntries(toSave.filter(path=>!!dataMap[path]).map(path=>[path, dataMap[path]]));
+    const changedPaths = Object.keys(filesToCommit);
+    if(changedPaths.length>0){
+      await ghCommitFiles(token, filesToCommit, `Editor: update ${changedPaths.length} file(s)`);
+      for(const path of changedPaths) delete shaCache[path];
     }
     dirty=false;
     dirtyFiles.clear();
     btn.disabled=false; btn.textContent='Save All Changes';
-    toast(`Saved ${toSave.length} file${toSave.length!==1?'s':''} ✓`);
+    toast(`Saved ${changedPaths.length} file${changedPaths.length!==1?'s':''} ✓`);
   }catch(e){
     btn.disabled=false; btn.textContent='Save All Changes *';
     if(e.message.includes('Bad credentials')||e.message.includes('401')){

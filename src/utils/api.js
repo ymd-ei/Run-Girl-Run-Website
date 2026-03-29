@@ -104,6 +104,118 @@ export async function ghPutFile(token, path, content, sha, message) {
 }
 
 /**
+ * Commit multiple text files in one commit using the Git Data API.
+ * This avoids creating one commit per file, which can trigger slower Pages propagation.
+ * @param {string} token - GitHub token
+ * @param {Object} filesMap - Map of { path: textContent }
+ * @param {string} message - Commit message
+ * @returns {Promise<Object>} Commit metadata
+ */
+export async function ghCommitFiles(token, filesMap, message) {
+  const refRes = await fetch(
+    `https://api.github.com/repos/${REPO}/git/ref/heads/${BRANCH}`,
+    {
+      headers: {
+        Authorization: 'token ' + token,
+        Accept: 'application/vnd.github.v3+json'
+      }
+    }
+  );
+  if (!refRes.ok) {
+    const err = await refRes.json().catch(() => ({}));
+    throw new Error(err.message || refRes.status);
+  }
+
+  const refData = await refRes.json();
+  const parentCommitSha = refData.object.sha;
+
+  const parentCommitRes = await fetch(
+    `https://api.github.com/repos/${REPO}/git/commits/${parentCommitSha}`,
+    {
+      headers: {
+        Authorization: 'token ' + token,
+        Accept: 'application/vnd.github.v3+json'
+      }
+    }
+  );
+  if (!parentCommitRes.ok) {
+    const err = await parentCommitRes.json().catch(() => ({}));
+    throw new Error(err.message || parentCommitRes.status);
+  }
+
+  const parentCommitData = await parentCommitRes.json();
+  const baseTreeSha = parentCommitData.tree.sha;
+
+  const treeEntries = Object.entries(filesMap).map(([path, content]) => ({
+    path,
+    mode: '100644',
+    type: 'blob',
+    content
+  }));
+
+  const treeRes = await fetch(`https://api.github.com/repos/${REPO}/git/trees`, {
+    method: 'POST',
+    headers: {
+      Authorization: 'token ' + token,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      base_tree: baseTreeSha,
+      tree: treeEntries
+    })
+  });
+  if (!treeRes.ok) {
+    const err = await treeRes.json().catch(() => ({}));
+    throw new Error(err.message || treeRes.status);
+  }
+
+  const treeData = await treeRes.json();
+
+  const commitRes = await fetch(`https://api.github.com/repos/${REPO}/git/commits`, {
+    method: 'POST',
+    headers: {
+      Authorization: 'token ' + token,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message,
+      tree: treeData.sha,
+      parents: [parentCommitSha]
+    })
+  });
+  if (!commitRes.ok) {
+    const err = await commitRes.json().catch(() => ({}));
+    throw new Error(err.message || commitRes.status);
+  }
+
+  const commitData = await commitRes.json();
+
+  const updateRefRes = await fetch(
+    `https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'token ' + token,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sha: commitData.sha,
+        force: false
+      })
+    }
+  );
+  if (!updateRefRes.ok) {
+    const err = await updateRefRes.json().catch(() => ({}));
+    throw new Error(err.message || updateRefRes.status);
+  }
+
+  return commitData;
+}
+
+/**
  * Save all files to GitHub
  * @param {Object} state - Global state object ({globalState, projects})
  * @param {Set} dirtyFiles - Set of file paths requiring save
@@ -134,18 +246,28 @@ export async function saveAllToGitHub(state, dirtyFiles, onProgress = () => {}) 
     )
   };
 
-  // Save each file
-  for (const path of toSave) {
-    if (!dataMap[path]) continue;
+  const filesToCommit = Object.fromEntries(toSave.filter(path => !!dataMap[path]).map(path => [path, dataMap[path]]));
 
-    const sha = await ghGetSha(token, path);
-    await ghPutFile(token, path, dataMap[path], sha, `Editor: update ${path}`);
+  const changedPaths = Object.keys(filesToCommit);
+  if (changedPaths.length === 0) {
+    return {
+      success: true,
+      filesCount: 0,
+      files: []
+    };
+  }
+
+  await ghCommitFiles(token, filesToCommit, `Editor: update ${changedPaths.length} file(s)`);
+
+  // Clear cache for changed files since SHAs changed after batch commit.
+  for (const path of changedPaths) {
+    delete shaCache[path];
     onProgress(`Saved ${path}`);
   }
 
   return {
     success: true,
-    filesCount: toSave.length,
-    files: toSave
+    filesCount: changedPaths.length,
+    files: changedPaths
   };
 }
