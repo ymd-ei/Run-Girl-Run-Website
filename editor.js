@@ -759,6 +759,8 @@ function addProject(){
     {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
   ]};
   projects.push(p);C.projects.push(id);
+  dirtyFiles.add('content.json');
+  dirtyFiles.add('projects/'+id+'.json');
   buildNav();markDirty('add project');showProject(id);
 }
 // ─────────────────────────────────────────

@@ -1,0 +1,26 @@
+{
+  "id": "final-fantasy-modding",
+  "title": "Final Fantasy Modding",
+  "type": "motion",
+  "typeLabel": "Motion",
+  "year": "2026",
+  "client": "",
+  "duration": "",
+  "tags": [],
+  "thumbnail": "",
+  "videoUrl": "",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "text-lg",
+      "content": "Final Fantasy Modding",
+      "align": "left"
+    },
+    {
+      "id": "b2",
+      "type": "text-sm",
+      "content": "Motion · 2026",
+      "align": "left"
+    }
+  ]
+}
