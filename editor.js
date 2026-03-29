@@ -916,8 +916,17 @@ function toggleSection(head){
 // ─────────────────────────────────────────
 let previewTimer=null, previewReady=false;
 
+window.addEventListener('message', e=>{
+  if(e.data&&e.data.type==='preview-ready'){
+    previewReady=true;
+    document.getElementById('pb-dot')?.classList.add('live');
+    pushPreview();
+  }
+});
+
 function initPreview(){
   const frame=document.getElementById('preview-frame');
+  previewReady=false;
   frame.onload=()=>{
     previewReady=true;
     document.getElementById('pb-dot').classList.add('live');

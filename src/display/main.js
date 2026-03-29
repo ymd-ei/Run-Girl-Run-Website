@@ -142,6 +142,9 @@ export async function bootstrap() {
   try {
     runLoaderAnimation();
 
+    // Set up bridge immediately to avoid missing the editor's first preview push.
+    setupEditorPreviewBridge();
+
     // 1. Load data
     await loadAllData();
 
@@ -168,9 +171,6 @@ export async function bootstrap() {
 
     // 8. Set up event listeners
     setupEventListeners();
-
-    // 9. Handle preview message bridge from editor
-    setupEditorPreviewBridge();
 
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
@@ -719,6 +719,10 @@ function setupEventListeners() {
  * Handle preview data from editor
  */
 function setupEditorPreviewBridge() {
+  if (new URLSearchParams(location.search).has('preview') && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'preview-ready' }, '*');
+  }
+
   window.addEventListener('message', e => {
     if (e.data.type === 'preview-data') {
       Object.assign(globalState, e.data.content);
