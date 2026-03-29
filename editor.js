@@ -1000,11 +1000,7 @@ async function uploadMedia(file, folder){
   form.append('file', file);
   form.append('folder', folder);
 
-  const r = await fetch(MEDIA_URL, {
-    method: 'POST',
-    credentials: 'include',
-    body: form
-  });
+  const r = await fetch(MEDIA_URL, getAuthFetchOptions({ method: 'POST', body: form }));
 
   const data = await r.json().catch(() => ({}));
   if(!r.ok){
@@ -1123,15 +1119,27 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
 let currentUser = null;
 let deployPollTimer = null;
 
+function getSessionToken(){
+  return localStorage.getItem('editor_session_token') || '';
+}
+
+function getAuthFetchOptions(extra = {}){
+  const token = getSessionToken();
+  const headers = { ...(extra.headers || {}) };
+  if(token) headers.Authorization = `Bearer ${token}`;
+  return {
+    credentials: 'include',
+    ...extra,
+    headers
+  };
+}
+
 /**
  * Initialize auth panel on page load
  */
 async function initializeAuth(){
   try {
-    const response = await fetch(AUTH_CHECK_URL, {
-      method: 'GET',
-      credentials: 'include'
-    });
+    const response = await fetch(AUTH_CHECK_URL, getAuthFetchOptions({ method: 'GET' }));
     const data = await response.json();
     
     if(data.authenticated){
@@ -1167,10 +1175,8 @@ function login(){
 
 async function logout(){
   try {
-    await fetch(LOGOUT_URL, {
-      method: 'POST',
-      credentials: 'include'
-    });
+    await fetch(LOGOUT_URL, getAuthFetchOptions({ method: 'POST' }));
+    localStorage.removeItem('editor_session_token');
     setUnauthenticated();
     toast('Logged out');
   } catch(e){
@@ -1269,15 +1275,14 @@ async function saveAll(){
     }
 
     // Call backend API
-    const response = await fetch(SAVE_URL, {
+    const response = await fetch(SAVE_URL, getAuthFetchOptions({
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         files: filesToCommit,
         message: `Editor: update ${changedPaths.length} file(s)`
       })
-    });
+    }));
 
     const result = await response.json();
 
@@ -1613,10 +1618,7 @@ function closeMediaLibrary(){
 }
 
 async function fetchMediaFiles(){
-  const r = await fetch(MEDIA_URL, {
-    method:'GET',
-    credentials:'include'
-  });
+  const r = await fetch(MEDIA_URL, getAuthFetchOptions({ method:'GET' }));
   const data = await r.json().catch(() => ({}));
   if(!r.ok) throw new Error(data.error || 'Could not load media folder');
   return data.files || [];
