@@ -179,12 +179,18 @@
   const moduleVersion = Date.now();
   import(`./src/display/main.js?v=${moduleVersion}`)
     .then(({ bootstrap }) => {
-      document.addEventListener('DOMContentLoaded', () => {
+      const start = () => {
         bootstrap().catch(err => {
           console.error('Failed to bootstrap display:', err);
           document.body.innerHTML += '<p style="padding: 2rem; color: red;">Error loading portfolio: ' + err.message + '</p>';
         });
-      });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+      } else {
+        start();
+      }
     })
     .catch(err => {
       console.error('Failed to load display module:', err);
