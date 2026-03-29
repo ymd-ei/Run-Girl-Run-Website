@@ -7,7 +7,7 @@
   "client": "",
   "duration": "",
   "tags": [],
-  "thumbnail": "",
+  "thumbnail": "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp",
   "videoUrl": "",
   "blocks": [
     {
@@ -21,6 +21,12 @@
       "type": "text-sm",
       "content": "Motion · 2026",
       "align": "left"
+    },
+    {
+      "id": "b1774819361925",
+      "type": "image",
+      "src": "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp",
+      "alt": ""
     }
   ]
 }
