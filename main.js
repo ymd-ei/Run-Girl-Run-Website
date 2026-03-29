@@ -392,7 +392,7 @@ function updatePatternStyles(t){
     document.head.appendChild(styleEl);
   }
   
-  styleEl.textContent = `#panel-work .pb,#panel-about .pb{background-image:repeating-linear-gradient(-55deg,transparent,transparent 15px,rgba(${accentRgb},0.35) 15px,rgba(${accentRgb},0.35) 16px);background-size:21px 100%}.ppbody{background-image:${dataUri};background-size:10px 10px}`;
+  styleEl.textContent = `.pb{background-image:${dataUri};background-size:10px 10px} .ppbody{background-image:${dataUri};background-size:10px 10px}`;
 }
 
 function render(){
