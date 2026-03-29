@@ -319,7 +319,7 @@ async function handleMedia(request, env) {
       }
 
       const buffer = await file.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const base64 = arrayBufferToBase64(buffer);
       const path = `${folder}/${file.name}`;
 
       const uploadResult = await uploadFileToGitHub(session.token, path, base64, env);
@@ -609,6 +609,19 @@ function withSessionOk(frontendUrl, sessionToken) {
     const tokenPart = sessionToken ? `&session_token=${encodeURIComponent(sessionToken)}` : '';
     return `${frontendUrl}${hasQuery ? '&' : '?'}session_ok=1${tokenPart}`;
   }
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
 }
 
 async function parseJsonOrText(response) {
