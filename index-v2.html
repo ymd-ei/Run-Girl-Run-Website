@@ -95,63 +95,51 @@
 <button id="ct-close" onclick="window.v2Display?.closeToRoot?.()">&#x2715;</button>
 
 <div id="contact-wrapper">
-  <div id="contact-wrapper-scroller">
-    <!-- BACKGROUND VIDEO -->
-    <div id="ct-bg">
-      <div id="ct-bg-video" class="ct-bg-video"></div>
-      <div id="ct-bg-dark" class="ct-bg-dark"></div>
-    </div>
-
-    <!-- CONTACT HERO -->
-    <div class="ct-hero-section">
-      <h2 class="ct-hero"></h2>
-    </div>
-
-    <!-- CONTACT SUB -->
-    <p class="ct-sub"></p>
-
-    <!-- SCROLL CUE -->
-    <div class="ct-scroll-cue"></div>
-
-    <!-- CONTACT TICKERS -->
-    <div id="ct-ticker-top" class="ct-ticker tape-top">
-      <div class="ticker-track"></div>
-    </div>
-
-    <!-- EMAIL & SOCIAL -->
-    <div class="ct-content">
-      <div class="ct-header">
-        <p class="ct-email-label"></p>
+  <div id="ct-bg">
+    <div id="ct-bg-video"></div>
+    <div id="ct-bg-grad"></div>
+    <div id="ct-bg-dark"></div>
+    <div id="ct-bg-grain"></div>
+  </div>
+  <div id="ct-content">
+    <div id="ct-splash">
+      <div class="ct-ticker tape-top reverse" id="ct-ticker-top">
+        <div class="ticker-track"></div>
       </div>
-
-      <a id="ct-email-link" href="#">
-        <div class="ct-email"><span id="ct-email-text"></span></div>
-      </a>
-
-      <div class="ct-social">
-        <p class="ct-social-label"></p>
-    <div id="ct-icons" class="ct-icons"></div>
-      <!-- RESUME LINK -->
-      <div id="ct-resume-wrap" style="display:none">
-        <div class="ct-header">
-          <p class="ct-email-label"></p>
-        </div>
-        <a id="ct-resume-link" href="#" target="_blank" rel="noopener">
-          <div class="ct-email ct-resume"><span>Download Credentials</span></div>
-        </a>
-      </div>
+      <p class="ct-tag" id="ct-location"></p>
+      <h1 class="ct-hero"></h1>
+      <p class="ct-sub"></p>
+      <div class="ct-scroll-cue"><span class="ct-scroll-line"></span>See how to reach us</div>
     </div>
-
-    <!-- MID TICKER -->
     <div id="ct-ticker-mid" class="ct-ticker tape-mid">
       <div class="ticker-track"></div>
     </div>
-
-    <!-- FOOTER -->
-    <footer class="ct-footer">
-      <div><span id="ct-location"></span></div>
-      <div><span id="ct-footer-name"></span> &ndash; <span id="ct-footer-loc"></span></div>
-    </footer>
+    <div id="ct-links">
+      <div class="ct-email-block">
+        <p class="ct-email-label"></p>
+        <a id="ct-email-link" href="#" class="ct-email-link">
+          <span id="ct-email-text"></span>
+          <i class="ph-fill ph-arrow-up-right arr"></i>
+        </a>
+      </div>
+      <div id="ct-social-wrap">
+        <p class="ct-social-label"></p>
+        <div class="ct-icons" id="ct-icons"></div>
+      </div>
+      <div class="ct-resume-block" id="ct-resume-wrap" style="display:none">
+        <p class="ct-email-label">Credentials</p>
+        <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="ct-resume-link">
+          <i class="ph-fill ph-file-pdf"></i>
+          View Resume
+          <i class="ph-fill ph-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    <div class="ct-footer">
+      <span id="ct-footer-name"></span>
+      <div class="ct-footer-dot"></div>
+      <span id="ct-footer-loc"></span>
+    </div>
   </div>
 </div>
 

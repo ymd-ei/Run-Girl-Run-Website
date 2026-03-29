@@ -21,13 +21,120 @@ import { phosphorIcon } from '../v2_utils/v2_icons.js';
 let bgPlayer = null;
 
 /**
+ * Run the loader animation with randomized percentage stops.
+ */
+function runLoaderAnimation() {
+  if (new URLSearchParams(location.search).has('preview')) {
+    const loaderEl = document.getElementById('loader');
+    if (loaderEl) loaderEl.style.display = 'none';
+    return;
+  }
+
+  document.body.classList.add('page-loading');
+
+  const nameEl = document.getElementById('loader-name');
+  const bar = document.getElementById('loader-bar');
+  const loader = document.getElementById('loader');
+  if (!nameEl || !bar || !loader) return;
+
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const nameText = 'RUN GIRL RUN';
+
+  function runLoaderName() {
+    nameEl.innerHTML = nameText
+      .split('')
+      .map(ch =>
+        ch === ' '
+          ? '<span style="width:.4em;display:inline-block"> </span>'
+          : `<span style="opacity:0">${ch}</span>`
+      )
+      .join('');
+
+    const allSpans = [...nameEl.querySelectorAll('span:not([style*="width"])')];
+    const finalChars = nameText.split('').filter(c => c !== ' ');
+
+    setTimeout(() => {
+      allSpans.forEach(sp => {
+        sp.style.opacity = '1';
+        sp.textContent = chars[Math.floor(Math.random() * chars.length)];
+      });
+
+      const noiseTimer = setInterval(() => {
+        allSpans.forEach(sp => {
+          if (!sp.dataset.settled) {
+            sp.textContent = chars[Math.floor(Math.random() * chars.length)];
+          }
+        });
+      }, 55);
+
+      allSpans.forEach((sp, i) => {
+        setTimeout(() => {
+          sp.dataset.settled = '1';
+          sp.textContent = finalChars[i];
+          if (i === allSpans.length - 1) clearInterval(noiseTimer);
+        }, i * 80);
+      });
+    }, 80);
+  }
+
+  runLoaderName();
+
+  const numStops = 2 + Math.floor(Math.random() * 2);
+  const stops = [];
+  let cursor = 0;
+  for (let i = 0; i < numStops; i++) {
+    cursor += 15 + Math.random() * 35;
+    if (cursor < 90) stops.push(Math.round(cursor));
+  }
+  stops.push(100);
+
+  let stopIdx = 0;
+  function animateBar() {
+    if (stopIdx >= stops.length) return;
+    const target = stops[stopIdx];
+    const prev = stopIdx === 0 ? 0 : stops[stopIdx - 1];
+    const range = target - prev;
+    const duration = 280 + Math.random() * 340;
+    const startTime = performance.now();
+
+    function step(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 2);
+      bar.style.width = prev + range * eased + '%';
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        bar.style.width = target + '%';
+        stopIdx++;
+        if (target < 100) {
+          const pause = 180 + Math.random() * 420;
+          setTimeout(animateBar, pause);
+        } else {
+          setTimeout(dismiss, 260);
+        }
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function dismiss() {
+    loader.classList.add('done');
+    document.body.classList.remove('page-loading');
+  }
+
+  setTimeout(animateBar, 120);
+  setTimeout(() => {
+    if (!loader.classList.contains('done')) dismiss();
+  }, 4000);
+}
+
+/**
  * Bootstrap the public display site
  */
 export async function bootstrap() {
   try {
-    // Show loading progress
-    const loaderBar = document.getElementById('loader-bar');
-    if (loaderBar) loaderBar.style.width = '90%';
+    runLoaderAnimation();
 
     // 1. Load data
     await loadAllData();
@@ -55,17 +162,6 @@ export async function bootstrap() {
 
     // 9. Handle preview message bridge from editor
     setupEditorPreviewBridge();
-
-    // Complete loading bar
-    if (loaderBar) loaderBar.style.width = '100%';
-
-    // 10. Hide loader after minimum delay
-    setTimeout(() => {
-      const loader = document.getElementById('loader');
-      if (loader) {
-        loader.classList.add('done');
-      }
-    }, 1500); // Minimum 1.5 seconds to show loader
 
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
