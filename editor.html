@@ -69,7 +69,17 @@
 
 <script>
   // Backend API URL. Override with ?api=https://<worker>.workers.dev during setup.
-  const apiParam = new URLSearchParams(window.location.search).get('api');
+  const params = new URLSearchParams(window.location.search);
+  const apiParam = params.get('api');
+  const sessionTokenParam = params.get('session_token');
+
+  if (sessionTokenParam) {
+    localStorage.setItem('editor_session_token', sessionTokenParam);
+    params.delete('session_token');
+    const next = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState({}, '', next);
+  }
+
   if (apiParam) {
     localStorage.setItem('editor_api_base', apiParam);
   }

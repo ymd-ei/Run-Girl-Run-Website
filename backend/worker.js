@@ -176,7 +176,7 @@ async function handleCallback(request, env) {
 
     // Redirect back to editor with session cookie
     const frontendUrl = env.FRONTEND_URL || new URL(request.url).origin;
-    const returnUrl = withSessionOk(frontendUrl);
+    const returnUrl = withSessionOk(frontendUrl, sessionToken);
     const response = new Response(null, {
       status: 302,
       headers: {
@@ -506,7 +506,9 @@ async function listMediaFiles(token, env) {
  * Helper: Get session from cookie
  */
 async function getSession(request, env) {
-  const sessionToken = getCookie(request, 'editor_session');
+  const auth = request.headers.get('Authorization') || '';
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const sessionToken = bearer || getCookie(request, 'editor_session');
   if (!sessionToken) return null;
 
   try {
@@ -586,15 +588,19 @@ function generateRandomString(length) {
   return result;
 }
 
-function withSessionOk(frontendUrl) {
+function withSessionOk(frontendUrl, sessionToken) {
   try {
     const u = new URL(frontendUrl);
     u.searchParams.set('session_ok', '1');
+    if (sessionToken) {
+      u.searchParams.set('session_token', sessionToken);
+    }
     return u.toString();
   } catch {
     // Fallback for malformed env values.
     const hasQuery = (frontendUrl || '').includes('?');
-    return `${frontendUrl}${hasQuery ? '&' : '?'}session_ok=1`;
+    const tokenPart = sessionToken ? `&session_token=${encodeURIComponent(sessionToken)}` : '';
+    return `${frontendUrl}${hasQuery ? '&' : '?'}session_ok=1${tokenPart}`;
   }
 }
 
