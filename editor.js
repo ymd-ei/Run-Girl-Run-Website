@@ -162,7 +162,8 @@ function renderGlobal(){
         </div>
         <div class="field"><label>Site Title</label><input value="${C.siteTitle||''}" placeholder="${C.name} — Portfolio" oninput="C.siteTitle=this.value;markDirty()"><p class="hint">Browser tab title. Defaults to your name if left empty.</p></div>
         <div class="field"><label>Favicon</label>
-          ${makeDropzone(C.favicon||'', v=>{ C.favicon=v; markDirty(); }, 'media', 'favicon.png')}
+          ${makeDropzone(C.favicon||'', v=>{ C.favicon=v; markDirty(); }, 'media', 'favicon.png', 'favicon_dz')}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>{ C.favicon=v; markDirty(); },'favicon_dz_p')">&#x1F5C2; Browse Media</button>
           <p class="hint">Recommended: square PNG or ICO, at least 32×32px</p>
         </div>
       </div>
