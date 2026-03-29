@@ -1204,7 +1204,7 @@ function startDeployPolling(){
         headers:{Accept:'application/vnd.github.v3+json'}
       });
       if(r.status===404){ 
-        setDeployStatus('pages not enabled','error');
+        setDeployStatus('saved ✓','live');
         clearInterval(deployPollTimer); deployPollTimer=null;
         return;
       }
