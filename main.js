@@ -276,14 +276,16 @@ async function loadLog(){
 
         runWhenLayoutStable(() => {
           const topEntry = inner.querySelector('.ls-entry');
-          const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
-          inner.style.transform = `translateY(-${actualH}px)`;
+          const innerStyles = window.getComputedStyle(inner);
+          const gap = parseFloat(innerStyles.rowGap || innerStyles.gap || '0') || 0;
+          const shift = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
+          inner.style.transform = `translateY(-${shift}px)`;
 
           setTimeout(() => {
             newEntry.style.opacity = '1';
             const allEntries = Array.from(inner.querySelectorAll('.ls-entry'));
             const top = allEntries[0];
-            top.style.opacity = '0';
+            if(top) top.style.opacity = '0';
 
             allEntries.slice(1).forEach((item, i) => {
               item.dataset.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
@@ -297,7 +299,7 @@ async function loadLog(){
 
           setTimeout(() => {
             const top = inner.querySelector('.ls-entry');
-            top.remove();
+            if(top) top.remove();
             inner.style.transition = 'none';
             inner.style.transform = 'translateY(0)';
             requestAnimationFrame(() => {

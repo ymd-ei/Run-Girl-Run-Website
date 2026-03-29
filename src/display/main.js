@@ -580,8 +580,10 @@ async function loadLogStack() {
 
         runWhenLayoutStable(() => {
           const topEntry = inner.querySelector('.ls-entry');
-          const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
-          inner.style.transform = `translateY(-${actualH}px)`;
+          const innerStyles = window.getComputedStyle(inner);
+          const gap = parseFloat(innerStyles.rowGap || innerStyles.gap || '0') || 0;
+          const shift = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
+          inner.style.transform = `translateY(-${shift}px)`;
 
           setTimeout(() => {
             newEntry.style.opacity = '1';
