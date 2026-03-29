@@ -37,6 +37,7 @@ function redo(){
 }
 
 function rebuildAfterHistoryChange(){
+  applyEditorTheme();
   rendered.clear(); // all pages need re-render after undo/redo
   buildNav();
   // Re-render currently visible page immediately
@@ -105,6 +106,7 @@ async function loadAll(){
   try{
     C=await fetch('content.json?v='+Date.now()).then(r=>r.json());
     projects=await Promise.all(C.projects.map(id=>fetch('projects/'+id+'.json?v='+Date.now()).then(r=>r.json())));
+    applyEditorTheme();
     buildNav();
     renderGlobal(); renderAbout(); renderContact();
     rendered.add('global'); rendered.add('about'); rendered.add('contact');
@@ -210,12 +212,12 @@ function renderGlobal(){
           ${colorField('Text / Paper','paper','#f2ede4')}
         </div>
         <div class="row2">
-          ${colorField('Accent','accent','#71904c')}
+          ${colorField('Accent','accent','#5e30eb')}
           ${colorField('Panel Background','panelBg','#f7f3ec')}
         </div>
         <p class="hint" style="margin:.75rem 0 .5rem;letter-spacing:.1em;text-transform:uppercase;font-size:.55rem">Contact Panel</p>
         <div class="row2">
-          ${colorField('Contact Accent','ctAccent','#ff7828')}
+          ${colorField('Contact Accent','ctAccent','#ff4361')}
           ${colorField('Contact Background','ctBg','#080808')}
         </div>
         <div class="row2">
@@ -1496,11 +1498,30 @@ function parseMarkdownToBlocks(md){
 // THEME
 // ─────────────────────────────────────────
 const THEME_DEFAULTS = {
-  ink:'#1a1714', paper:'#f2ede4', accent:'#71904c', panelBg:'#f7f3ec',
-  ctAccent:'#ff7828', ctBg:'#080808', ctHi:'#ffffff', sensitiveColor:'#e03030'
+  ink:'#1a1714', paper:'#f2ede4', accent:'#5e30eb', panelBg:'#f7f3ec',
+  ctAccent:'#ff4361', ctBg:'#080808', ctHi:'#ffffff', sensitiveColor:'#e03030'
 };
 
 function getTheme(){ return C.theme||(C.theme={}); }
+
+function hexToRgbCsv(hex){
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex || '');
+  if(!m) return null;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return `${r},${g},${b}`;
+}
+
+function applyEditorTheme(){
+  const t = { ...THEME_DEFAULTS, ...getTheme() };
+  const root = document.documentElement;
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--accent-rgb', hexToRgbCsv(t.accent) || '94,48,235');
+  // Keep status/toast accents aligned with the active accent.
+  root.style.setProperty('--green', t.accent);
+}
 
 function colorField(label, key, defaultVal){
   const current = getTheme()[key] || defaultVal;
@@ -1520,6 +1541,7 @@ function colorField(label, key, defaultVal){
 
 function setThemeColor(key, val, uid){
   getTheme()[key] = val;
+  applyEditorTheme();
   markDirty();
   const fill = document.getElementById(uid+'_fill');
   const hex  = document.getElementById(uid+'_hex');
@@ -1530,6 +1552,7 @@ function setThemeColor(key, val, uid){
 function resetTheme(){
   if(!confirm('Reset all colours to defaults?')) return;
   C.theme = {...THEME_DEFAULTS};
+  applyEditorTheme();
   markDirty();
   renderGlobal();
   showPage('global');

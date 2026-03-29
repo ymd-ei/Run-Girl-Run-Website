@@ -162,11 +162,12 @@ async function handleCallback(request, env) {
 
     // Redirect back to editor with session cookie
     const frontendUrl = env.FRONTEND_URL || new URL(request.url).origin;
+    const returnUrl = withSessionOk(frontendUrl);
     const response = new Response(null, {
       status: 302,
       headers: {
-        'Location': `${frontendUrl}/?session_ok=1`,
-        'Set-Cookie': `editor_session=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Max-Age=604800; Path=/`
+        'Location': returnUrl,
+        'Set-Cookie': `editor_session=${sessionToken}; HttpOnly; Secure; SameSite=None; Max-Age=604800; Path=/`
       }
     });
 
@@ -207,7 +208,7 @@ async function handleLogout(request, env) {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Set-Cookie': 'editor_session=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/'
+      'Set-Cookie': 'editor_session=; HttpOnly; Secure; SameSite=None; Max-Age=0; Path=/'
     }
   });
 
@@ -569,6 +570,18 @@ function generateRandomString(length) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+function withSessionOk(frontendUrl) {
+  try {
+    const u = new URL(frontendUrl);
+    u.searchParams.set('session_ok', '1');
+    return u.toString();
+  } catch {
+    // Fallback for malformed env values.
+    const hasQuery = (frontendUrl || '').includes('?');
+    return `${frontendUrl}${hasQuery ? '&' : '?'}session_ok=1`;
+  }
 }
 
 /**

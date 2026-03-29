@@ -68,8 +68,12 @@
 </div>
 
 <script>
-  // Backend API URL - change to your deployed backend
-  const API_BASE = 'https://api.rungirlrun.studio';
+  // Backend API URL. Override with ?api=https://<worker>.workers.dev during setup.
+  const apiParam = new URLSearchParams(window.location.search).get('api');
+  if (apiParam) {
+    localStorage.setItem('editor_api_base', apiParam);
+  }
+  const API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://api.rungirlrun.studio';
   const LOGIN_URL = `${API_BASE}/auth/login`;
   const LOGOUT_URL = `${API_BASE}/auth/logout`;
   const AUTH_CHECK_URL = `${API_BASE}/auth/check`;
