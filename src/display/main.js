@@ -582,7 +582,33 @@ async function loadLogStack() {
           const topEntry = inner.querySelector('.ls-entry');
           const innerStyles = window.getComputedStyle(inner);
           const gap = parseFloat(innerStyles.rowGap || innerStyles.gap || '0') || 0;
-          const shift = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
+          const shiftRaw = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
+          const shift = Math.max(18, Math.round(shiftRaw));
+
+          let finalized = false;
+          let cleanupFallback = null;
+
+          const finalizeRotation = () => {
+            if (finalized) return;
+            finalized = true;
+            if (cleanupFallback) clearTimeout(cleanupFallback);
+
+            const top = inner.querySelector('.ls-entry');
+            if (top) top.remove();
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(0)';
+            requestAnimationFrame(() => {
+              inner.style.transition = '';
+            });
+          };
+
+          const onTransformEnd = event => {
+            if (event.target !== inner || event.propertyName !== 'transform') return;
+            inner.removeEventListener('transitionend', onTransformEnd);
+            finalizeRotation();
+          };
+
+          inner.addEventListener('transitionend', onTransformEnd);
           inner.style.transform = `translateY(-${shift}px)`;
 
           setTimeout(() => {
@@ -601,15 +627,10 @@ async function loadLogStack() {
             if (logSpanGroups.length > SHOW) logSpanGroups.shift();
           }, 600);
 
-          setTimeout(() => {
-            const top = inner.querySelector('.ls-entry');
-            if (top) top.remove();
-            inner.style.transition = 'none';
-            inner.style.transform = 'translateY(0)';
-            requestAnimationFrame(() => {
-              inner.style.transition = '';
-            });
-          }, 1250);
+          cleanupFallback = setTimeout(() => {
+            inner.removeEventListener('transitionend', onTransformEnd);
+            finalizeRotation();
+          }, 1500);
         });
 
         setTimeout(rotateStack, 12000);
