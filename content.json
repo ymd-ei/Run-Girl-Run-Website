@@ -1,6 +1,6 @@
 {
   "name": "Run Girl Run",
-  "role": "ALL STAR",
+  "role": "Animator",
   "location": "Toronto, Canada",
   "reel": {
     "type": "youtube",
@@ -38,9 +38,9 @@
   "projects": [
     "woke-up-dance-exercise",
     "md-pulling",
+    "final-fantasy-modding",
     "orbital-loop",
-    "cosmic-drift",
-    "final-fantasy-modding"
+    "cosmic-drift"
   ],
   "about": [
     {
