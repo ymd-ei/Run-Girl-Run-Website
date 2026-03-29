@@ -380,6 +380,7 @@ function applyTheme(t){
 
 function updatePatternStyles(t){
   const accentColor = t.accent || '#71904c';
+  const accentRgb = hexToRGB(accentColor);
   const patternSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><circle cx='0' cy='0' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='6' cy='6' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='10' cy='0' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='10' cy='10' r='0.75' fill='${accentColor}' fill-opacity='0.2'/><circle cx='0' cy='10' r='0.75' fill='${accentColor}' fill-opacity='0.2'/></svg>`;
   const encoded = encodeURIComponent(patternSvg);
   const dataUri = `url("data:image/svg+xml,${encoded}")`;
@@ -391,7 +392,7 @@ function updatePatternStyles(t){
     document.head.appendChild(styleEl);
   }
   
-  styleEl.textContent = `.pb{background-image:${dataUri};background-size:10px 10px} .ppbody{background-image:${dataUri};background-size:10px 10px}`;
+  styleEl.textContent = `.pb,.ppbody{background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(${accentRgb},0.08) 18px,rgba(${accentRgb},0.08) 19px),${dataUri};background-size:24px 100%,10px 10px}`;
 }
 
 function render(){
