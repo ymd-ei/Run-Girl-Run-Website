@@ -462,7 +462,8 @@ async function uploadFileToGitHub(token, path, base64Content, env) {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
       },
       body: JSON.stringify({
         message: `Upload: ${path}`,
