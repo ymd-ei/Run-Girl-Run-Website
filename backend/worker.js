@@ -352,7 +352,8 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
     {
       headers: {
         'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'rgr-editor-backend'
       }
     }
   );
@@ -367,7 +368,8 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
     {
       headers: {
         'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'rgr-editor-backend'
       }
     }
   );
@@ -391,7 +393,8 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
       },
       body: JSON.stringify({
         base_tree: baseTreeSha,
@@ -411,7 +414,8 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
       },
       body: JSON.stringify({
         message,
@@ -432,7 +436,8 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
       headers: {
         'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
       },
       body: JSON.stringify({
         sha: newCommitData.sha,
@@ -485,7 +490,8 @@ async function listMediaFiles(token, env) {
     {
       headers: {
         'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'rgr-editor-backend'
       }
     }
   );
@@ -552,7 +558,7 @@ async function verifySession(sessionToken, secret) {
     encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['verify']
+    ['sign']
   );
   const expectedSig = await crypto.subtle.sign('HMAC', key, encoder.encode(json));
   const expectedSigStr = btoa(String.fromCharCode(...new Uint8Array(expectedSig))).substring(0, 32);
