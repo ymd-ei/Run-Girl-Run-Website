@@ -392,7 +392,7 @@ function updatePatternStyles(t){
     document.head.appendChild(styleEl);
   }
   
-  styleEl.textContent = `.panel,#pp,.pb,.ppbody{background-image:repeating-linear-gradient(-55deg,transparent,transparent 15px,rgba(${accentRgb},0.16) 15px,rgba(${accentRgb},0.16) 16px),${dataUri};background-size:21px 100%,10px 10px}`;
+  styleEl.textContent = `#panel-work .pb,#panel-about .pb{background-image:repeating-linear-gradient(-55deg,transparent,transparent 14px,rgba(${accentRgb},0.2) 14px,rgba(${accentRgb},0.2) 15px),${dataUri};background-size:20px 100%,10px 10px}`;
 }
 
 function render(){
