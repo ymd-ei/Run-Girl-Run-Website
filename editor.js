@@ -994,37 +994,22 @@ function refreshPreview(){
 // MEDIA UPLOADER
 // ─────────────────────────────────────────
 async function uploadMedia(file, folder){
-  const tk = getToken();
-  if(!tk) throw new Error('No GitHub token set');
-  const repo = getSaveRepo();
-  const branch = getSaveBranch();
-  const path = folder + '/' + file.name;
-  const existing = await ghGetSha(tk, path);
-  if(existing){
-    if(!confirm(file.name + ' already exists. Overwrite?')) return null;
-  }
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async e => {
-      try{
-        const b64 = e.target.result.split(',')[1];
-        const body = {
-          message: 'Editor: upload ' + path,
-          content: b64,
-          branch
-        };
-        if(existing) body.sha = existing;
-        const r = await fetch('https://api.github.com/repos/' + repo + '/contents/' + path, {
-          method: 'PUT',
-          headers: {Authorization:'token '+tk, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
-          body: JSON.stringify(body)
-        });
-        if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
-        resolve(path);
-      } catch(err){ reject(err); }
-    };
-    reader.readAsDataURL(file);
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', folder);
+
+  const r = await fetch(MEDIA_URL, {
+    method: 'POST',
+    credentials: 'include',
+    body: form
   });
+
+  const data = await r.json().catch(() => ({}));
+  if(!r.ok){
+    throw new Error(data.error || 'Upload failed');
+  }
+
+  return data.path;
 }
 
 // ─────────────────────────────────────────
@@ -1062,18 +1047,6 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
       showPreview(dzEl, objUrl);
       const suggested = folder + '/' + file.name;
 
-      const token = getToken();
-      if(!token){
-        // No token — show local preview, pre-fill path, prompt user
-        label.textContent = file.name;
-        sub.textContent = 'No GitHub token — set one to upload, or edit path manually';
-        sub.style.opacity = '1';
-        pathInput.value = suggested;
-        // Don't call onUpload here; the user should confirm/edit the path first
-        toast('Set a GitHub token to upload files, or type the path manually', true);
-        return;
-      }
-
       // 2. Try GitHub upload
       label.innerHTML = '<span class="dz-uploading">Uploading ' + file.name + '…</span>';
       sub.style.display = 'none';
@@ -1096,7 +1069,7 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
       } catch(err){
         // Upload failed — fall back to object URL for editor preview, flag to user
         label.textContent = file.name + ' (local preview only)';
-        sub.textContent = 'Upload failed — enter the correct path manually below';
+        sub.textContent = 'Upload failed or not logged in — enter path manually below';
         sub.style.display = '';
         sub.style.opacity = '1';
         pathInput.value = suggested;
@@ -1603,13 +1576,8 @@ async function openMediaLibrary(onInsert, pathInputId){
   document.getElementById('media-search').querySelector('input').value = '';
   const grid = document.getElementById('media-grid');
   grid.innerHTML = '<div id="media-empty">Loading…</div>';
-  const token = getToken();
-  if(!token){
-    grid.innerHTML = '<div id="media-empty">GitHub token required to browse media.</div>';
-    return;
-  }
   try{
-    mediaFiles = await fetchMediaFiles(token, 'media');
+    mediaFiles = await fetchMediaFiles();
     renderMediaGrid(mediaFiles);
   } catch(e){
     grid.innerHTML = `<div id="media-empty">Error: ${e.message}</div>`;
@@ -1621,25 +1589,14 @@ function closeMediaLibrary(){
   mediaCallback = null;
 }
 
-async function fetchMediaFiles(token, path){
-  const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`, {
-    headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
+async function fetchMediaFiles(){
+  const r = await fetch(MEDIA_URL, {
+    method:'GET',
+    credentials:'include'
   });
-  if(!r.ok) throw new Error('Could not load media folder');
-  const items = await r.json();
-  const files = [];
-  for(const item of items){
-    if(item.type==='file' && /\.(jpe?g|png|gif|webp|bmp|svg|mp4|webm|mov)$/i.test(item.name)){
-      files.push({name:item.name, path:item.path, url:item.download_url});
-    } else if(item.type==='dir'){
-      // one level deep — fetch subfolders too
-      try{
-        const sub = await fetchMediaFiles(token, item.path);
-        files.push(...sub);
-      } catch(e){}
-    }
-  }
-  return files;
+  const data = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(data.error || 'Could not load media folder');
+  return data.files || [];
 }
 
 function renderMediaGrid(files){

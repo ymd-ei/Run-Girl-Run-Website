@@ -31,6 +31,17 @@ async function handleRequest(request, env) {
     return corsResponse(new Response(''), request, env);
   }
 
+  if (path === '/health') {
+    return corsResponse(
+      new Response(JSON.stringify({ ok: true, service: 'editor-backend' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      request,
+      env
+    );
+  }
+
   // Auth routes
   if (path === '/auth/login') {
     return handleLogin(request, env);
@@ -62,8 +73,8 @@ async function handleRequest(request, env) {
 function handleLogin(request, env) {
   const state = generateRandomString(32);
   const clientId = env.GITHUB_CLIENT_ID;
-  const frontendUrl = env.FRONTEND_URL || new URL(request.url).origin;
-  const redirectUri = `${frontendUrl}/auth/callback`;
+  const backendOrigin = new URL(request.url).origin;
+  const redirectUri = `${backendOrigin}/auth/callback`;
   
   const githubAuthUrl = `https://github.com/login/oauth/authorize?` +
     `client_id=${clientId}&` +
@@ -113,7 +124,7 @@ async function handleCallback(request, env) {
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
         code: code,
-        redirect_uri: env.FRONTEND_URL
+        redirect_uri: `${new URL(request.url).origin}/auth/callback`
       })
     });
 
