@@ -3,10 +3,10 @@
  * Renders the public-facing portfolio pages
  */
 
-import { generateThumbSVG, startTicker, startSensitiveTicker } from '../v2_utils/v2_svg.js';
-import { pool, scheduleIdle } from '../v2_utils/v2_text.js';
-import { phosphorIcon } from '../v2_utils/v2_icons.js';
-import { renderBlocks } from '../v2_modules/v2_blocks/v2_blockRenderer.js';
+import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
+import { pool, scheduleIdle } from '../utils/text.js';
+import { phosphorIcon } from '../utils/icons.js';
+import { renderBlocks } from '../modules/blocks/blockRenderer.js';
 
 /**
  * Apply theme colors to CSS variables
@@ -271,7 +271,7 @@ export function renderWorkGrid(projects, theme) {
         ? `<img src="${p.thumbnail}" alt="${p.title}">`
         : getProjectThumbnail(p.type, accentColor, bgColor);
 
-      return `<div class="wc" data-type="${p.type}" onclick="window.v2Display?.openProject?.('${p.id}')">
+      return `<div class="wc" data-type="${p.type}" onclick="window.display?.openProject?.('${p.id}')">
         <div class="wci ${isSensitive ? 'wci-blur' : ''}">
           ${thumbnail}
           <div class="wco"></div>

@@ -4,7 +4,7 @@
  * Decoupled from rendering and DOM manipulation
  */
 
-import { uid } from '../../v2_utils/v2_validation.js';
+import { uid } from '../../utils/validation.js';
 
 /**
  * Block type defaults (templates for new blocks)

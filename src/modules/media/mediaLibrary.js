@@ -3,7 +3,7 @@
  * Handles media file browsing and insertion
  */
 
-import { getToken } from '../../v2_utils/v2_api.js';
+import { getToken } from '../../utils/api.js';
 
 const REPO = 'ymd/Run-Girl-Run-Website';
 const BRANCH = 'main';
@@ -131,7 +131,7 @@ export function renderMediaGrid(files) {
       const ext = f.name.split('.').pop().toUpperCase();
 
       return `
-        <div class="media-item" onclick="window.v2Events?.onMediaSelect?.('${f.path}')">
+        <div class="media-item" onclick="window.events?.onMediaSelect?.('${f.path}')">
           <div class="media-thumb">
             ${isImage ? `<img src="${f.url}" loading="lazy" alt="${f.name}">` : `<span class="media-ext">${ext}</span>`}
           </div>

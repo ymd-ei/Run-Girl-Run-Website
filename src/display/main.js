@@ -3,7 +3,7 @@
  * Initializes the public-facing portfolio website
  */
 
-import { globalState, projects } from '../v2_state/v2_globalState.js';
+import { globalState, projects } from '../state/globalState.js';
 import {
   applyTheme,
   renderWorkGrid,
@@ -14,9 +14,9 @@ import {
   jitterTapes,
   updateContactPanelBackground,
   renderDisplayBlocks
-} from './v2_displayRenderer.js';
-import { startTicker } from '../v2_utils/v2_svg.js';
-import { phosphorIcon } from '../v2_utils/v2_icons.js';
+} from './displayRenderer.js';
+import { startTicker } from '../utils/svg.js';
+import { phosphorIcon } from '../utils/icons.js';
 
 let bgPlayer = null;
 
@@ -289,8 +289,8 @@ function renderWorkSection() {
   ];
 
   filtersEl.innerHTML =
-    `<button class="fb active" onclick="window.v2Display?.filterWork?.(this, 'all')">All</button>` +
-    filters.map(f => `<button class="fb" onclick="window.v2Display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
+    `<button class="fb active" onclick="window.display?.filterWork?.(this, 'all')">All</button>` +
+    filters.map(f => `<button class="fb" onclick="window.display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
 
   gridEl.innerHTML = renderWorkGrid(projects, globalState.theme);
 
@@ -410,7 +410,7 @@ function renderContactSection() {
  */
 function setupEventListeners() {
   // Filter work by type
-  window.v2Display = {
+  window.display = {
     filterWork(btn, type) {
       document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -530,9 +530,9 @@ function setupEventListeners() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (document.getElementById('lightbox')?.classList.contains('open')) {
-        window.v2Display?.closeLightbox?.();
+        window.display?.closeLightbox?.();
       } else {
-        window.v2Display?.smartClose?.();
+        window.display?.smartClose?.();
       }
     }
   });

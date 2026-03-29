@@ -52,8 +52,8 @@ export const dragDropState = {
     }
 
     // Delegate to event handler
-    if (window.v2Events && window.v2Events.onProjectReorder) {
-      window.v2Events.onProjectReorder(this.currentDragId, targetProjectId);
+    if (window.events && window.events.onProjectReorder) {
+      window.events.onProjectReorder(this.currentDragId, targetProjectId);
     }
   },
 
@@ -85,8 +85,8 @@ export const dragDropState = {
     if (this.dragType !== 'block' || !this.currentDragId) return;
 
     // Delegate to event handler
-    if (window.v2Events && window.v2Events.onBlockReorder) {
-      window.v2Events.onBlockReorder(
+    if (window.events && window.events.onBlockReorder) {
+      window.events.onBlockReorder(
         this.sourceScope,
         this.currentDragId,
         targetScope || this.sourceScope,
@@ -120,8 +120,8 @@ export const dragDropState = {
     if (this.currentDragId === targetId) return;
 
     // Delegate to event handler
-    if (window.v2Events && window.v2Events.onProjectReorderInSettings) {
-      window.v2Events.onProjectReorderInSettings(this.currentDragId, targetId);
+    if (window.events && window.events.onProjectReorderInSettings) {
+      window.events.onProjectReorderInSettings(this.currentDragId, targetId);
     }
   }
 };
@@ -131,7 +131,7 @@ export const dragDropState = {
  * Call this in bootstrap to make handlers available in HTML attributes
  */
 export function initializeDragDropHandlers() {
-  window.v2_dragDropState = dragDropState;
+  window.dragDropState = dragDropState;
 }
 
 /**
@@ -142,11 +142,11 @@ export function initializeDragDropHandlers() {
 export function getProjectDragAttrs(projectId) {
   return {
     draggable: 'true',
-    'ondragstart': `window.v2_dragDropState.onNavProjectDragStart(event, '${projectId}')`,
-    'ondragend': `window.v2_dragDropState.onNavProjectDragEnd(event)`,
-    'ondragover': `window.v2_dragDropState.onNavProjectDragOver(event)`,
-    'ondrop': `window.v2_dragDropState.onNavProjectDrop(event, '${projectId}')`,
-    'ondragleave': `window.v2_dragDropState.onNavProjectDragLeave(event)`
+    'ondragstart': `window.dragDropState.onNavProjectDragStart(event, '${projectId}')`,
+    'ondragend': `window.dragDropState.onNavProjectDragEnd(event)`,
+    'ondragover': `window.dragDropState.onNavProjectDragOver(event)`,
+    'ondrop': `window.dragDropState.onNavProjectDrop(event, '${projectId}')`,
+    'ondragleave': `window.dragDropState.onNavProjectDragLeave(event)`
   };
 }
 
@@ -161,10 +161,10 @@ export function getBlockDragAttrs(blockId, scope) {
     draggable: 'true',
     'data-bid': blockId,
     'data-scope': scope,
-    'ondragstart': `window.v2_dragDropState.onBlockDragStart(event)`,
-    'ondragend': `window.v2_dragDropState.onBlockDragEnd(event)`,
-    'ondragover': `window.v2_dragDropState.onBlockDragOver(event)`,
-    'ondrop': `window.v2_dragDropState.onBlockDrop(event, '${blockId}', '${scope}')`
+    'ondragstart': `window.dragDropState.onBlockDragStart(event)`,
+    'ondragend': `window.dragDropState.onBlockDragEnd(event)`,
+    'ondragover': `window.dragDropState.onBlockDragOver(event)`,
+    'ondrop': `window.dragDropState.onBlockDrop(event, '${blockId}', '${scope}')`
   };
 }
 

@@ -3,7 +3,7 @@
  * Handles theme colors and styling configuration
  */
 
-import { THEME_DEFAULTS } from '../../v2_utils/v2_colors.js';
+import { THEME_DEFAULTS } from '../../utils/colors.js';
 
 /**
  * Get or initialize theme object

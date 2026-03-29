@@ -3,7 +3,7 @@
  * HTML generation for forms, fields, and editors
  */
 
-import { getCustomizableColors, getColorDisplayName } from '../../v2_utils/v2_colors.js';
+import { getCustomizableColors, getColorDisplayName } from '../../utils/colors.js';
 
 /**
  * Get a short preview of a block for the block list header
@@ -72,7 +72,7 @@ export function getBlockMenuHTML(scope) {
   return types
     .map(
       ([t, icon, label]) =>
-        `<button class="bm-item" onclick="window.v2Events?.onAddBlock?.('${scope}', '${t}')">
+        `<button class="bm-item" onclick="window.events?.onAddBlock?.('${scope}', '${t}')">
         <div class="bm-icon">${icon}</div>${label}</button>`
     )
     .join('');
@@ -93,10 +93,10 @@ export function getColorFieldHTML(label, key, currentValue) {
       <div class="color-row">
         <div class="color-swatch" style="background:${currentValue}">
           <div class="color-swatch-fill" style="background:${currentValue}" id="${uid}_fill"></div>
-          <input type="color" value="${currentValue}" oninput="window.v2Events?.onColorChange?.('${key}', this.value, '${uid}')">
+          <input type="color" value="${currentValue}" oninput="window.events?.onColorChange?.('${key}', this.value, '${uid}')">
         </div>
         <input class="color-hex" id="${uid}_hex" value="${currentValue}" maxlength="7"
-          oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))window.v2Events?.onColorChange?.('${key}', this.value, '${uid}')">
+          oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))window.events?.onColorChange?.('${key}', this.value, '${uid}')">
       </div>
     </div>`;
 }
@@ -123,7 +123,7 @@ export function getBlockBodyHTML(block, scope) {
           .map(
             ([v, l]) =>
               `<button class="sz-btn ${block.type === v ? 'active' : ''}" 
-            onclick="window.v2Events?.onChangeBlockType?.('${scope}', '${block.id}', '${v}')">${l}</button>`
+            onclick="window.events?.onChangeBlockType?.('${scope}', '${block.id}', '${v}')">${l}</button>`
           )
           .join('')}
       </div>
@@ -134,14 +134,14 @@ export function getBlockBodyHTML(block, scope) {
         <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-${block.id}', 'rgr')" style="font-size:.58rem;letter-spacing:.06em">RGR</button>
         <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.insertAt?.('rta-${block.id}', '&lt;br&gt;')" title="Line break">↵</button>
       </div>
-      <div class="field"><textarea id="rta-${block.id}" oninput="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
+      <div class="field"><textarea id="rta-${block.id}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
       <div class="field"><label>Alignment</label>
         <div class="align-row">
           ${['left', 'center', 'right']
             .map(
               a =>
                 `<button class="al-btn ${(block.align || 'left') === a ? 'active' : ''}" 
-              onclick="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.v2Events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
+              onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
             )
             .join('')}
         </div>
@@ -159,11 +159,11 @@ export function getBlockBodyHTML(block, scope) {
           <div class="dz-sub">Loading...</div>
         </div>
         <input type="text" id="${dzStableId}_p" value="${block.src || ''}" placeholder="Path or URL" 
-          style="margin-top:.5rem" oninput="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
-        <button class="add-btn" style="margin-top:.35rem" onclick="window.v2Events?.onBrowseMedia?.('${scope}', '${block.id}', '${dzStableId}_p')">📁 Browse Media</button>
+          style="margin-top:.5rem" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
+        <button class="add-btn" style="margin-top:.35rem" onclick="window.events?.onBrowseMedia?.('${scope}', '${block.id}', '${dzStableId}_p')">📁 Browse Media</button>
       </div>
       <div class="field"><label>Alt Text</label>
-        <input value="${block.alt || ''}" oninput="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'alt', this.value)">
+        <input value="${block.alt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'alt', this.value)">
       </div>`;
   }
 
@@ -187,14 +187,14 @@ export function getBlockBodyHTML(block, scope) {
         <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-q-${block.id}', 'i')"><i>I</i></button>
         <button class="rt-btn" onmousedown="event.preventDefault()" onclick="window.v2RichText?.wrapSelection?.('rta-q-${block.id}', 'u')"><u>U</u></button>
       </div>
-      <div class="field"><textarea id="rta-q-${block.id}" oninput="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
+      <div class="field"><textarea id="rta-q-${block.id}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>
       <div class="field"><label>Alignment</label>
         <div class="align-row">
           ${['left', 'center', 'right']
             .map(
               a =>
                 `<button class="al-btn ${(block.align || 'left') === a ? 'active' : ''}" 
-              onclick="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.v2Events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
+              onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'align', '${a}'); window.events?.onRerenderBlocks?.('${scope}')">${a[0].toUpperCase() + a.slice(1)}</button>`
             )
             .join('')}
         </div>
@@ -206,7 +206,7 @@ export function getBlockBodyHTML(block, scope) {
     return `
       <div class="field"><label>Embed URL</label>
         <input value="${block.src || ''}" placeholder="Vimeo or YouTube embed URL" 
-          oninput="window.v2Events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
+          oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
       </div>`;
   }
 
@@ -218,14 +218,14 @@ export function getBlockBodyHTML(block, scope) {
           .map(
             (s, si) =>
               `<div class="stat-item">
-          <input value="${s.num || ''}" placeholder="40+" oninput="window.v2Events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'num', this.value)">
-          <input value="${s.label || ''}" placeholder="Projects" oninput="window.v2Events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'label', this.value)">
-          <button class="del-btn" onclick="window.v2Events?.onRemoveStatItem?.('${scope}', '${block.id}', ${si})">✕</button>
+          <input value="${s.num || ''}" placeholder="40+" oninput="window.events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'num', this.value)">
+          <input value="${s.label || ''}" placeholder="Projects" oninput="window.events?.onUpdateStatItem?.('${scope}', '${block.id}', ${si}, 'label', this.value)">
+          <button class="del-btn" onclick="window.events?.onRemoveStatItem?.('${scope}', '${block.id}', ${si})">✕</button>
         </div>`
           )
           .join('')}
       </div>
-      <button class="add-btn" onclick="window.v2Events?.onAddStatItem?.('${scope}', '${block.id}')">+ Add Stat</button>`;
+      <button class="add-btn" onclick="window.events?.onAddStatItem?.('${scope}', '${block.id}')">+ Add Stat</button>`;
   }
 
   // Skills block
@@ -236,16 +236,16 @@ export function getBlockBodyHTML(block, scope) {
           .map(
             (s, si) =>
               `<div class="skill-item">
-          <input value="${s.name || ''}" placeholder="After Effects" oninput="window.v2Events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'name', this.value)">
+          <input value="${s.name || ''}" placeholder="After Effects" oninput="window.events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'name', this.value)">
           <input type="range" min="0" max="100" value="${s.pct || 0}" step="1" 
-            oninput="window.v2Events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'pct', +this.value);this.nextElementSibling.textContent=this.value+'%'">
+            oninput="window.events?.onUpdateSkillItem?.('${scope}', '${block.id}', ${si}, 'pct', +this.value);this.nextElementSibling.textContent=this.value+'%'">
           <span class="skill-pct">${s.pct || 0}%</span>
-          <button class="del-btn" onclick="window.v2Events?.onRemoveSkillItem?.('${scope}', '${block.id}', ${si})">✕</button>
+          <button class="del-btn" onclick="window.events?.onRemoveSkillItem?.('${scope}', '${block.id}', ${si})">✕</button>
         </div>`
           )
           .join('')}
       </div>
-      <button class="add-btn" onclick="window.v2Events?.onAddSkillItem?.('${scope}', '${block.id}')">+ Add Skill</button>`;
+      <button class="add-btn" onclick="window.events?.onAddSkillItem?.('${scope}', '${block.id}')">+ Add Skill</button>`;
   }
 
   // Divider block
@@ -276,7 +276,7 @@ function getTwoColEditor(scope, blockId, colData, side) {
 
   return `<div style="display:flex;flex-direction:column;gap:.5rem">
     <select style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.78rem;padding:.4rem .5rem;outline:none" 
-      onchange="window.v2Events?.onUpdateColType?.('${scope}', '${blockId}', '${side}', this.value);window.v2Events?.onRerenderBlocks?.('${scope}')">
+      onchange="window.events?.onUpdateColType?.('${scope}', '${blockId}', '${side}', this.value);window.events?.onRerenderBlocks?.('${scope}')">
       ${types.map(([v, l]) => `<option value="${v}" ${colType === v ? 'selected' : ''}>${l}</option>`).join('')}
     </select>
     ${
@@ -287,11 +287,11 @@ function getTwoColEditor(scope, blockId, colData, side) {
           <div class="dz-sub">Loading...</div>
         </div>
         <input type="text" id="${dzStableId}_p" value="${colData.src || ''}" placeholder="Path or URL" style="margin-top:.5rem" 
-          oninput="window.v2Events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'src', this.value)">
-        <button class="add-btn" style="margin-top:.35rem" onclick="window.v2Events?.onBrowseMedia?.('${scope}', '${blockId}', '${dzStableId}_p')">📁 Browse Media</button>
+          oninput="window.events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'src', this.value)">
+        <button class="add-btn" style="margin-top:.35rem" onclick="window.events?.onBrowseMedia?.('${scope}', '${blockId}', '${dzStableId}_p')">📁 Browse Media</button>
       </div>`
         : `<textarea style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:.8rem;padding:.45rem .55rem;outline:none;resize:vertical;min-height:60px;width:100%" 
-        oninput="window.v2Events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'content', this.value)">${colData.content || ''}</textarea>`
+        oninput="window.events?.onUpdateColField?.('${scope}', '${blockId}', '${side}', 'content', this.value)">${colData.content || ''}</textarea>`
     }
   </div>`;
 }

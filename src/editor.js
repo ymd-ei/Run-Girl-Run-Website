@@ -3,25 +3,25 @@
  * Main entry point that wires together all modules and initializes the editor
  */
 
-import { globalState, projects, pageState, uiState, createSnapshot, restoreSnapshot } from '../v2_state/v2_globalState.js';
-import { HistoryManager } from '../v2_state/v2_history.js';
+import { globalState, projects, pageState, uiState, createSnapshot, restoreSnapshot } from './state/globalState.js';
+import { HistoryManager } from './state/history.js';
 
 // UI and page management
-import { showPage, showProject, buildNav, markPageStale, isPageRendered } from '../v2_modules/v2_ui/v2_pageManager.js';
-import { getBlockPreview, getBlockMenuHTML, getColorFieldHTML, getBlockBodyHTML } from '../v2_modules/v2_ui/v2_formHelpers.js';
-import { initializeDragDropHandlers } from '../v2_modules/v2_ui/v2_dragDrop.js';
+import { showPage, showProject, buildNav, markPageStale, isPageRendered } from './modules/ui/pageManager.js';
+import { getBlockPreview, getBlockMenuHTML, getColorFieldHTML, getBlockBodyHTML } from './modules/ui/formHelpers.js';
+import { initializeDragDropHandlers } from './modules/ui/dragDrop.js';
 
 // Blocks and rendering
-import { renderBlocks, renderBlock } from '../v2_modules/v2_blocks/v2_blockRenderer.js';
-import * as blockManager from '../v2_modules/v2_blocks/v2_blockManager.js';
+import { renderBlocks, renderBlock } from './modules/blocks/blockRenderer.js';
+import * as blockManager from './modules/blocks/blockManager.js';
 
 // Projects and themes
-import * as projectManager from '../v2_modules/v2_projects/v2_projectManager.js';
-import * as themeManager from '../v2_modules/v2_themes/v2_themeManager.js';
+import * as projectManager from './modules/projects/projectManager.js';
+import * as themeManager from './modules/themes/themeManager.js';
 
 // Utilities
-import * as dom from '../v2_utils/v2_dom.js';
-import { openMediaLibrary, closeMediaLibrary, filterMedia, handleMediaSelect, initializeMediaLibrary } from '../v2_modules/v2_media/v2_mediaLibrary.js';
+import * as dom from './utils/dom.js';
+import { openMediaLibrary, closeMediaLibrary, filterMedia, handleMediaSelect, initializeMediaLibrary } from './modules/media/mediaLibrary.js';
 
 // ─────────────────────────────────────────
 // INITIALIZATION
@@ -151,12 +151,12 @@ function renderEditorGlobal() {
           <div class="field">
             <label>Name</label>
             <input value="${globalState.name || ''}" 
-              oninput="window.v2Events?.onChangeGlobalField?.('name', this.value)">
+              oninput="window.events?.onChangeGlobalField?.('name', this.value)">
           </div>
           <div class="field">
             <label>Role</label>
             <input value="${globalState.role || ''}" 
-              oninput="window.v2Events?.onChangeGlobalField?.('role', this.value)">
+              oninput="window.events?.onChangeGlobalField?.('role', this.value)">
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@ function renderEditorAbout() {
     <div class="page-title">About</div>
     <div class="page-sub">Build your about page with blocks.</div>
     <div class="block-list" id="about-blocks">${blocksHTML}</div>
-    <button class="add-block-btn" onclick="window.v2Events?.onToggleBlockMenu?.('about-menu')">+ Add Block</button>
+    <button class="add-block-btn" onclick="window.events?.onToggleBlockMenu?.('about-menu')">+ Add Block</button>
     <div class="block-menu hidden" id="about-menu">${getBlockMenuHTML('about')}</div>
   `;
 
@@ -200,7 +200,7 @@ function renderEditorContact() {
         <div class="field">
           <label>Email Label</label>
           <input value="${cp.emailLabel || 'Drop us a line'}" 
-            oninput="window.v2Events?.onChangeContactField?.('emailLabel', this.value)">
+            oninput="window.events?.onChangeContactField?.('emailLabel', this.value)">
         </div>
       </div>
     </div>
@@ -233,11 +233,11 @@ function renderEditorProject(projectId) {
           <div class="field">
             <label>Title</label>
             <input value="${project.title}" 
-              oninput="window.v2Events?.onChangeProjectField?.('${projectId}', 'title', this.value)">
+              oninput="window.events?.onChangeProjectField?.('${projectId}', 'title', this.value)">
           </div>
           <div class="field">
             <label>Type</label>
-            <select onchange="window.v2Events?.onChangeProjectField?.('${projectId}', 'type', this.value)">
+            <select onchange="window.events?.onChangeProjectField?.('${projectId}', 'type', this.value)">
               <option value="2d" ${project.type === '2d' ? 'selected' : ''}>2D</option>
               <option value="3d" ${project.type === '3d' ? 'selected' : ''}>3D</option>
               <option value="motion" ${project.type === 'motion' ? 'selected' : ''}>Motion</option>
@@ -251,7 +251,7 @@ function renderEditorProject(projectId) {
       <div class="sh"><h3>Content Blocks</h3><span class="chev">▾</span></div>
       <div class="sb">
         <div class="block-list">${blocksHTML}</div>
-        <button class="add-block-btn" onclick="window.v2Events?.onToggleBlockMenu?.('proj-menu-${projectId}')">+ Add Block</button>
+        <button class="add-block-btn" onclick="window.events?.onToggleBlockMenu?.('proj-menu-${projectId}')">+ Add Block</button>
         <div class="block-menu hidden" id="proj-menu-${projectId}">${getBlockMenuHTML(blockScope)}</div>
       </div>
     </div>
@@ -315,7 +315,7 @@ function showToast(message, isError = false) {
 // GLOBAL EVENT HANDLERS
 // ─────────────────────────────────────────
 
-window.v2Events = {
+window.events = {
   onChangeGlobalField(key, value) {
     globalState[key] = value;
     uiState.dirtyFiles.add('content.json');

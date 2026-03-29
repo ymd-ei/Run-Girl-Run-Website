@@ -3,7 +3,7 @@
  * Single source of truth for rendering blocks in both editor and display contexts
  */
 
-import { generateThumbSVG } from '../../v2_utils/v2_svg.js';
+import { generateThumbSVG } from '../../utils/svg.js';
 
 /**
  * Generate thumbnail HTML for block preview
