@@ -112,6 +112,7 @@ async function loadAll(){
     snapshot('initial');
   }catch(e){ toast('Error loading files: '+e.message,true); }
   updateTokenBtn();
+  updateTargetBtn();
   setDeployStatus('idle');
 }
 
@@ -997,6 +998,8 @@ function refreshPreview(){
 async function uploadMedia(file, folder){
   const tk = getToken();
   if(!tk) throw new Error('No GitHub token set');
+  const repo = getSaveRepo();
+  const branch = getSaveBranch();
   const path = folder + '/' + file.name;
   const existing = await ghGetSha(tk, path);
   if(existing){
@@ -1010,10 +1013,10 @@ async function uploadMedia(file, folder){
         const body = {
           message: 'Editor: upload ' + path,
           content: b64,
-          branch: BRANCH
+          branch
         };
         if(existing) body.sha = existing;
-        const r = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + path, {
+        const r = await fetch('https://api.github.com/repos/' + repo + '/contents/' + path, {
           method: 'PUT',
           headers: {Authorization:'token '+tk, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
           body: JSON.stringify(body)
@@ -1144,13 +1147,39 @@ function makeDropzone(currentVal, onUpload, folder, placeholder, stableId){
 // ─────────────────────────────────────────
 // GITHUB API — SAVE
 // ─────────────────────────────────────────
-const REPO='ymd-ei/Run-Girl-Run-Website';
-const BRANCH='main';
+const DEFAULT_REPO='ymd-ei/Run-Girl-Run-Website';
+const DEFAULT_BRANCH='main';
 const shaCache = {}; // path → sha, updated after each successful save
 let deployPollTimer = null;
 
 function getToken(){ return localStorage.getItem('gh_token')||''; }
 function setToken(t){ localStorage.setItem('gh_token',t); }
+
+function getSaveRepo(){
+  const fromUrl = new URLSearchParams(location.search).get('repo');
+  if(fromUrl) return fromUrl.trim();
+  return localStorage.getItem('gh_repo') || DEFAULT_REPO;
+}
+
+function getSaveBranch(){
+  const fromUrl = new URLSearchParams(location.search).get('branch');
+  if(fromUrl) return fromUrl.trim();
+  return localStorage.getItem('gh_branch') || DEFAULT_BRANCH;
+}
+
+function isValidRepoName(repo){
+  return /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo || '');
+}
+
+function setSaveTarget(repo, branch){
+  localStorage.setItem('gh_repo', repo);
+  localStorage.setItem('gh_branch', branch);
+}
+
+function clearSaveTarget(){
+  localStorage.removeItem('gh_repo');
+  localStorage.removeItem('gh_branch');
+}
 
 function setDeployStatus(msg, state){
   const el=document.getElementById('deploy-status');
@@ -1161,7 +1190,7 @@ function setDeployStatus(msg, state){
 }
 
 async function fetchLatestPagesBuild(token){
-  const [owner, repo] = REPO.split('/');
+  const [owner, repo] = getSaveRepo().split('/');
   const headers={Accept:'application/vnd.github.v3+json'};
   if(token) headers.Authorization='token '+token;
   const r=await fetch(`https://api.github.com/repos/${owner}/${repo}/pages/builds/latest`,{headers});
@@ -1219,9 +1248,11 @@ function startDeployPolling(){
 }
 
 async function ghGetSha(token, path){
+  const repo=getSaveRepo();
+  const branch=getSaveBranch();
   // Use cached SHA if available — avoids stale SHA on rapid saves
   if(shaCache[path]) return shaCache[path];
-  const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`,{
+  const r=await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`,{
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
   });
   if(r.status===404) return null;
@@ -1230,9 +1261,11 @@ async function ghGetSha(token, path){
 }
 
 async function ghPutFile(token, path, content, sha, message){
-  const body={message, content:btoa(unescape(encodeURIComponent(content))), branch:BRANCH};
+  const repo=getSaveRepo();
+  const branch=getSaveBranch();
+  const body={message, content:btoa(unescape(encodeURIComponent(content))), branch};
   if(sha) body.sha=sha;
-  const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`,{
+  const r=await fetch(`https://api.github.com/repos/${repo}/contents/${path}`,{
     method:'PUT',
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
     body:JSON.stringify(body)
@@ -1245,14 +1278,17 @@ async function ghPutFile(token, path, content, sha, message){
 }
 
 async function ghCommitFiles(token, filesMap, message){
-  const refRes=await fetch(`https://api.github.com/repos/${REPO}/git/ref/heads/${BRANCH}`,{
+  const repo=getSaveRepo();
+  const branch=getSaveBranch();
+
+  const refRes=await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${branch}`,{
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
   });
   if(!refRes.ok){ const e=await refRes.json().catch(()=>({})); throw new Error(e.message||refRes.status); }
   const refData=await refRes.json();
   const parentCommitSha=refData.object.sha;
 
-  const parentRes=await fetch(`https://api.github.com/repos/${REPO}/git/commits/${parentCommitSha}`,{
+  const parentRes=await fetch(`https://api.github.com/repos/${repo}/git/commits/${parentCommitSha}`,{
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json'}
   });
   if(!parentRes.ok){ const e=await parentRes.json().catch(()=>({})); throw new Error(e.message||parentRes.status); }
@@ -1266,7 +1302,7 @@ async function ghCommitFiles(token, filesMap, message){
     content
   }));
 
-  const treeRes=await fetch(`https://api.github.com/repos/${REPO}/git/trees`,{
+  const treeRes=await fetch(`https://api.github.com/repos/${repo}/git/trees`,{
     method:'POST',
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
     body:JSON.stringify({base_tree:baseTreeSha, tree:treeEntries})
@@ -1274,7 +1310,7 @@ async function ghCommitFiles(token, filesMap, message){
   if(!treeRes.ok){ const e=await treeRes.json().catch(()=>({})); throw new Error(e.message||treeRes.status); }
   const treeData=await treeRes.json();
 
-  const commitRes=await fetch(`https://api.github.com/repos/${REPO}/git/commits`,{
+  const commitRes=await fetch(`https://api.github.com/repos/${repo}/git/commits`,{
     method:'POST',
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
     body:JSON.stringify({message, tree:treeData.sha, parents:[parentCommitSha]})
@@ -1282,7 +1318,7 @@ async function ghCommitFiles(token, filesMap, message){
   if(!commitRes.ok){ const e=await commitRes.json().catch(()=>({})); throw new Error(e.message||commitRes.status); }
   const commitData=await commitRes.json();
 
-  const updateRefRes=await fetch(`https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}`,{
+  const updateRefRes=await fetch(`https://api.github.com/repos/${repo}/git/refs/heads/${branch}`,{
     method:'PATCH',
     headers:{Authorization:'token '+token, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json'},
     body:JSON.stringify({sha:commitData.sha, force:false})
@@ -1348,6 +1384,51 @@ function clearToken(){
     if(t){ setToken(t); updateTokenBtn(); toast('Token saved'); }
   }
 }
+
+function configureSaveTarget(){
+  const currentRepo=getSaveRepo();
+  const currentBranch=getSaveBranch();
+  const repo=prompt('GitHub repo (owner/name):', currentRepo);
+  if(repo===null) return;
+  const repoVal=repo.trim();
+  if(!isValidRepoName(repoVal)){
+    toast('Repo must look like owner/name', true);
+    return;
+  }
+
+  const branch=prompt('Branch name:', currentBranch);
+  if(branch===null) return;
+  const branchVal=branch.trim();
+  if(!branchVal){
+    toast('Branch cannot be empty', true);
+    return;
+  }
+
+  setSaveTarget(repoVal, branchVal);
+  Object.keys(shaCache).forEach(k => delete shaCache[k]);
+  updateTargetBtn();
+  setDeployStatus('idle');
+  toast('Save target updated');
+}
+
+function updateTargetBtn(){
+  const btn=document.getElementById('target-btn');
+  if(!btn) return;
+  const repo=getSaveRepo();
+  const branch=getSaveBranch();
+  btn.textContent='Target: '+repo+' @ '+branch;
+}
+
+function resetSaveTarget(){
+  if(confirm('Reset save target to defaults?')){
+    clearSaveTarget();
+    Object.keys(shaCache).forEach(k => delete shaCache[k]);
+    updateTargetBtn();
+    setDeployStatus('idle');
+    toast('Save target reset');
+  }
+}
+
 function updateTokenBtn(){
   const btn=document.getElementById('token-btn');
   if(!btn) return;
@@ -1429,6 +1510,7 @@ function importMarkdown(scope){
           'OK = Replace all existing blocks\n' +
           'Cancel = Append to the end'
         );
+
         if(mode){
           setBlocks(scope, parsed);
         } else {
