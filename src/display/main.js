@@ -16,6 +16,7 @@ import {
 } from './displayRenderer.js';
 import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
+import { pool, scheduleIdle } from '../utils/text.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
@@ -432,26 +433,134 @@ async function loadLogStack() {
   try {
     const response = await fetch('log.json?v=' + Date.now());
     if (!response.ok) throw new Error('Failed to load log.json');
-
     const entries = await response.json();
+
     if (!Array.isArray(entries) || entries.length === 0) {
       inner.innerHTML = '';
       stack.style.height = '0px';
       return;
     }
 
-    const recent = entries.slice(-8).reverse();
-    inner.innerHTML = recent
-      .map((entry, i) => {
-        const opacity = 1 - i * 0.12;
-        const text = (entry && entry.text) || '';
-        return `<span class="ls-entry show" style="opacity:${Math.max(opacity, 0.3)}">${text}</span>`;
-      })
-      .join('');
+    inner.innerHTML = '';
 
-    requestAnimationFrame(() => {
-      stack.style.height = inner.offsetHeight + 'px';
+    const SHOW = 8;
+    let rotateIdx = entries.length - 1;
+    const recent = entries.slice(-SHOW);
+    const logSpanGroups = [];
+
+    function buildEntry(text, opacity) {
+      const span = document.createElement('span');
+      span.className = 'ls-entry';
+      span.dataset.opacity = opacity;
+      span.innerHTML = String(text || '')
+        .split('')
+        .map(ch =>
+          ch === ' '
+            ? '<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>'
+            : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
+        )
+        .join('');
+      return span;
+    }
+
+    function scrambleEntry(entry, delay) {
+      const spans = Array.from(entry.querySelectorAll('.sc-char'));
+      logSpanGroups.push(spans);
+
+      spans.forEach((span, j) => {
+        const ch = span.dataset.ch;
+        const isSpace = ch === ' ';
+        const charPool = isSpace ? [' '] : pool(ch);
+        let tick = 0;
+        const cycles = 6;
+
+        setTimeout(() => {
+          span.style.opacity = '1';
+          if (isSpace) {
+            span.innerHTML = '&nbsp;';
+            return;
+          }
+
+          function cycle() {
+            if (tick < cycles) {
+              const overshoot = Math.max(0, tick - (cycles - 3));
+              span.textContent = charPool[tick % charPool.length];
+              tick++;
+              setTimeout(cycle, 90 * (1 + overshoot * 1.4));
+            } else {
+              span.textContent = ch;
+            }
+          }
+
+          cycle();
+        }, delay + j * 55);
+      });
+
+      return spans;
+    }
+
+    recent.forEach((entry, i) => {
+      const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
+      const row = buildEntry(entry.text, opacity);
+      inner.appendChild(row);
+      const delay = 1400 + i * 120;
+      setTimeout(() => {
+        row.style.opacity = opacity;
+        scrambleEntry(row, 0);
+      }, delay);
     });
+
+    setTimeout(() => {
+      stack.style.height = inner.offsetHeight + 'px';
+    }, 1400 + recent.length * 120 + 500);
+
+    const logIdleStart = 1400 + recent.length * 120 + 2000;
+    setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
+
+    if (entries.length > 1) {
+      function rotateStack() {
+        rotateIdx = (rotateIdx + 1) % entries.length;
+        const newEntry = buildEntry(entries[rotateIdx].text, 0);
+        newEntry.style.opacity = '0';
+        inner.appendChild(newEntry);
+
+        requestAnimationFrame(() => {
+          const topEntry = inner.querySelector('.ls-entry');
+          const actualH = topEntry ? topEntry.offsetHeight + 5 : 18;
+          inner.style.transform = `translateY(-${actualH}px)`;
+
+          setTimeout(() => {
+            newEntry.style.opacity = '1';
+            const allEntries = Array.from(inner.querySelectorAll('.ls-entry'));
+            const top = allEntries[0];
+            if (top) top.style.opacity = '0';
+
+            allEntries.slice(1).forEach((item, i) => {
+              item.dataset.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
+              item.style.opacity = item.dataset.opacity;
+            });
+
+            const spans = scrambleEntry(newEntry, 0);
+            logSpanGroups.push(spans);
+            if (logSpanGroups.length > SHOW) logSpanGroups.shift();
+          }, 600);
+
+          setTimeout(() => {
+            const top = inner.querySelector('.ls-entry');
+            if (top) top.remove();
+            inner.style.transition = 'none';
+            inner.style.transform = 'translateY(0)';
+            requestAnimationFrame(() => {
+              inner.style.transition = '';
+            });
+          }, 1250);
+        });
+
+        setTimeout(rotateStack, 12000);
+      }
+
+      setTimeout(rotateStack, logIdleStart + 12000);
+    }
   } catch (error) {
     console.warn('Could not load log stack:', error);
   }
