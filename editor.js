@@ -400,11 +400,10 @@ function renderMediaPage(){
       <div class="sh" onclick="toggleSection(this)"><h3>Media Library</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
         <div class="media-page-tools">
-          <input id="media-page-folder" type="text" value="media" placeholder="Upload folder (example: media/projects)">
           <label class="media-upload-trigger">+ Upload File
             <input type="file" id="media-page-upload" accept="image/*,video/*">
           </label>
-          <input id="media-page-search" type="text" placeholder="Filter files..." oninput="filterMediaPage(this.value)">
+          <input id="media-page-search" type="text" placeholder="Filter files (name or path)..." oninput="filterMediaPage(this.value)">
         </div>
         <div id="media-page-grid" class="media-page-grid">
           <div class="media-page-empty">Loading...</div>
@@ -417,12 +416,10 @@ function renderMediaPage(){
     uploadInput.addEventListener('change', async e=>{
       const file = e.target.files && e.target.files[0];
       if(!file) return;
-      const folderInput = document.getElementById('media-page-folder');
-      const folder = normalizeMediaFolder(folderInput ? folderInput.value : 'media');
       try{
         uploadInput.disabled = true;
         toast('Uploading ' + file.name + '...');
-        const path = await uploadMedia(file, folder);
+          const path = await uploadMedia(file, 'media');
         await refreshMediaViews();
         toast('Uploaded: ' + path);
       }catch(err){
@@ -453,12 +450,12 @@ function renderMediaPageGrid(files){
     const thumb = imgExts.test(f.name)
       ? `<img src="${f.url}" loading="lazy">`
       : `<span class="media-ext">${ext}</span>`;
-    return `<div class="media-item" title="${safePath}">
+    return `<div class="media-item" title="${safePath}" onclick="openMediaPreview(decodeURIComponent('${encodedPath}'))">
       <div class="media-thumb">${thumb}</div>
       <div class="media-name">${safeName}</div>
       <div class="media-meta">${formatBytes(f.size)}</div>
       <div class="media-actions">
-        <button class="media-del-btn" type="button" onclick="deleteMedia(decodeURIComponent('${encodedPath}')).catch(e=>toast('Delete error: '+e.message,true))">Delete</button>
+        <button class="media-del-btn" type="button" onclick="event.stopPropagation();deleteMedia(decodeURIComponent('${encodedPath}')).catch(e=>toast('Delete error: '+e.message,true))">Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -466,7 +463,10 @@ function renderMediaPageGrid(files){
 
 function filterMediaPage(query){
   const q = (query || '').toLowerCase();
-  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  const filtered = q ? mediaFiles.filter(f=>
+    (f.path || '').toLowerCase().includes(q) ||
+    (f.name || '').toLowerCase().includes(q)
+  ) : mediaFiles;
   renderMediaPageGrid(filtered);
 }
 
@@ -476,7 +476,10 @@ async function refreshMediaPage(){
   grid.innerHTML = '<div class="media-page-empty">Loading...</div>';
   mediaFiles = await fetchMediaFiles();
   const q = document.getElementById('media-page-search')?.value?.trim().toLowerCase() || '';
-  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  const filtered = q ? mediaFiles.filter(f=>
+    (f.path || '').toLowerCase().includes(q) ||
+    (f.name || '').toLowerCase().includes(q)
+  ) : mediaFiles;
   renderMediaPageGrid(filtered);
 }
 
@@ -1713,6 +1716,14 @@ function formatBytes(bytes){
   return value.toFixed(value >= 100 ? 0 : 1) + ' ' + units[idx];
 }
 
+function isImageFile(name){
+  return /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(name || '');
+}
+
+function isVideoFile(name){
+  return /\.(mp4|webm|ogg|mov)$/i.test(name || '');
+}
+
 function escapeHtml(value){
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -1720,12 +1731,6 @@ function escapeHtml(value){
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function normalizeMediaFolder(raw){
-  const folder = (raw || 'media').trim().replace(/^\/+|\/+$/g, '');
-  if(!folder) return 'media';
-  return folder;
 }
 
 function collectMediaUsage(value, path, hits){
@@ -1785,13 +1790,11 @@ async function refreshMediaGrid(){
 
 async function uploadMediaFromLibrary(file){
   if(!file) return;
-  const folderInput = document.getElementById('media-folder');
-  const folder = normalizeMediaFolder(folderInput ? folderInput.value : 'media');
   const uploadInput = document.getElementById('media-upload-input');
   try{
     if(uploadInput) uploadInput.disabled = true;
     toast('Uploading ' + file.name + '…');
-    const path = await uploadMedia(file, folder);
+    const path = await uploadMedia(file, 'media');
     await refreshMediaViews();
     if(uploadInput) uploadInput.value = '';
     toast('Uploaded: ' + path);
@@ -1860,8 +1863,46 @@ function renderMediaGrid(files){
 
 function filterMedia(query){
   const q = query.toLowerCase();
-  const filtered = q ? mediaFiles.filter(f=>f.path.toLowerCase().includes(q)) : mediaFiles;
+  const filtered = q ? mediaFiles.filter(f=>
+    (f.path || '').toLowerCase().includes(q) ||
+    (f.name || '').toLowerCase().includes(q)
+  ) : mediaFiles;
   renderMediaGrid(filtered);
+}
+
+function openMediaPreview(path){
+  const item = mediaFiles.find(f=>f.path===path);
+  if(!item) return;
+
+  const modal = document.getElementById('media-preview-modal');
+  const nameEl = document.getElementById('media-preview-name');
+  const body = document.getElementById('media-preview-body');
+  if(!modal || !nameEl || !body) return;
+
+  nameEl.textContent = item.path;
+  if(isImageFile(item.name)){
+    body.innerHTML = `<img src="${item.url}" alt="${escapeHtml(item.name)}" loading="lazy">`;
+  } else if(isVideoFile(item.name)){
+    body.innerHTML = `<video src="${item.url}" controls autoplay muted playsinline></video>`;
+  } else {
+    body.innerHTML = '<div class="media-preview-empty">Preview not available for this file type.</div>';
+  }
+
+  modal.classList.add('open');
+}
+
+function closeMediaPreview(){
+  const modal = document.getElementById('media-preview-modal');
+  const body = document.getElementById('media-preview-body');
+  if(!modal || !body) return;
+  const vid = body.querySelector('video');
+  if(vid){
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load();
+  }
+  body.innerHTML = '';
+  modal.classList.remove('open');
 }
 
 function insertMedia(path){
@@ -1903,6 +1944,13 @@ if(mediaUploadInput){
   mediaUploadInput.addEventListener('change', e=>{
     const file = e.target.files && e.target.files[0];
     uploadMediaFromLibrary(file);
+  });
+}
+
+const mediaPreviewModal = document.getElementById('media-preview-modal');
+if(mediaPreviewModal){
+  mediaPreviewModal.addEventListener('click', e=>{
+    if(e.target===mediaPreviewModal) closeMediaPreview();
   });
 }
 

@@ -65,13 +65,22 @@
       <button id="media-close" onclick="closeMediaLibrary()">&#x2715;</button>
     </div>
     <div id="media-tools">
-      <input type="text" id="media-folder" value="media" placeholder="media" title="Upload folder path">
       <label id="media-upload-btn">+ Upload File
         <input type="file" id="media-upload-input" accept="image/*,video/*">
       </label>
     </div>
     <div id="media-search"><input type="text" placeholder="Filter files…" oninput="filterMedia(this.value)"></div>
     <div id="media-grid"></div>
+  </div>
+</div>
+
+<div id="media-preview-modal">
+  <div id="media-preview-inner">
+    <div id="media-preview-head">
+      <span id="media-preview-name"></span>
+      <button id="media-preview-close" onclick="closeMediaPreview()">&#x2715;</button>
+    </div>
+    <div id="media-preview-body"></div>
   </div>
 </div>
 
