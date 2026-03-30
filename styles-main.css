@@ -161,8 +161,8 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 /* Longform mode: same blocks, centered reading panel that slides up */
 #pp.longform{
    width:min(880px,84vw);
-   max-height:88vh;
-   top:6vh;
+   max-height:calc(100vh - 120px);
+   top:90px;
    right:auto;
    left:50%;
    bottom:auto;
