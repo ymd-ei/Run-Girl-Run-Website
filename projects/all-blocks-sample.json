@@ -202,5 +202,6 @@
       "title": "Parser Test",
       "content": "Try importing and exporting this project as markdown to verify round-trip behavior."
     }
-  ]
+  ],
+  "published": false
 }
