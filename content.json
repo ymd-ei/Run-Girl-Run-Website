@@ -133,8 +133,8 @@
   "favicon": "media/rgr_fav.png",
   "contactPanel": {
     "video": {
-      "type": "youtube",
-      "url": "https://www.youtube.com/embed/KM3biRbDjVc?autoplay=1&mute=1&loop=1&playlist=KM3biRbDjVc&controls=0&rel=0"
+      "type": "placeholder",
+      "url": ""
     },
     "titleAccent": "on something!",
     "tickerMid": [
