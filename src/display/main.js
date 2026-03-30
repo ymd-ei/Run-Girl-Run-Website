@@ -893,7 +893,7 @@ function setupEventListeners() {
       const projectPanel = document.getElementById('pp');
       suspendMediaIn(aboutPanel);
       suspendMediaIn(workPanel);
-      suspendMediaIn(contactPanel);
+      // Contact background video runs continuously — never suspend it.
       suspendMediaIn(projectPanel);
 
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
