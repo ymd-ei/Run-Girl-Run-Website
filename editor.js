@@ -1225,7 +1225,7 @@ function updateP(id,key,val){
 function addProject(){
   const title=prompt('Project title:');if(!title)return;
   const id=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',longform:false,blocks:[
+  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',longform:false,published:false,blocks:[
     {id:'b1',type:'text-lg',content:title,align:'left'},
     {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
   ]};
