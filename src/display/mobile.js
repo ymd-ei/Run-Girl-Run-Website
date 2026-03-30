@@ -145,6 +145,12 @@ function renderContact() {
   const contact = data.contact || {};
   const panel = data.contactPanel || {};
 
+  // Background video
+  const bgVideo = document.getElementById('ct-bg-video');
+  if (bgVideo && panel.video && panel.video.url) {
+    bgVideo.innerHTML = `<video src="${panel.video.url}" autoplay muted loop playsinline></video>`;
+  }
+
   const titleEl = document.getElementById('ct-title');
   if (titleEl) {
     const ctTitle = panel.title || "Let's";
@@ -244,33 +250,6 @@ function setupEvents() {
     });
   });
 
-  // Sticky section bar
-  const sectionBar = document.getElementById('section-bar');
-  const sectionLabel = document.getElementById('section-label');
-  const workSection = document.getElementById('work');
-  const aboutSection = document.getElementById('about');
-  if (sectionBar && sectionLabel && workSection && aboutSection) {
-    const updateSectionBar = () => {
-      const scrollY = window.scrollY;
-      const workTop = workSection.offsetTop - 60;
-      const workBottom = workTop + workSection.offsetHeight;
-      const aboutTop = aboutSection.offsetTop - 60;
-      const aboutBottom = aboutTop + aboutSection.offsetHeight;
-
-      if (scrollY >= workTop && scrollY < workBottom) {
-        sectionLabel.textContent = 'Work';
-        sectionBar.classList.add('visible');
-      } else if (scrollY >= aboutTop && scrollY < aboutBottom) {
-        sectionLabel.textContent = 'About';
-        sectionBar.classList.add('visible');
-      } else {
-        sectionBar.classList.remove('visible');
-      }
-    };
-    window.addEventListener('scroll', updateSectionBar, { passive: true });
-    updateSectionBar();
-  }
-
   // Back to top button
   const topBtn = document.getElementById('back-to-top');
   if (topBtn) {
@@ -290,10 +269,25 @@ function setupEvents() {
     if (!container) return;
 
     const frame = container.querySelector('[data-before-after-frame]') || container;
+    let startX = e.touches[0].clientX;
+    let startY = e.touches[0].clientY;
+    let locked = false;
+    let dismissed = false;
 
     function onMove(ev) {
+      if (dismissed) return;
       const touch = ev.touches[0];
       if (!touch) return;
+
+      if (!locked) {
+        const dx = Math.abs(touch.clientX - startX);
+        const dy = Math.abs(touch.clientY - startY);
+        if (dy > dx) { dismissed = true; return; }
+        if (dx > 6) locked = true;
+        else return;
+      }
+
+      ev.preventDefault();
       const rect = frame.getBoundingClientRect();
       if (!rect.width) return;
       const pos = ((touch.clientX - rect.left) / rect.width) * 100;
@@ -307,7 +301,7 @@ function setupEvents() {
       document.removeEventListener('touchend', onEnd);
     }
 
-    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', onEnd);
   }, { passive: true });
 }

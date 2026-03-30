@@ -70,6 +70,19 @@ section{padding:2rem 1.5rem}
   font-family:var(--font-s);font-size:1.8rem;font-weight:400;
   letter-spacing:.04em;color:var(--paper);margin-bottom:1.5rem;
 }
+#work .section-title,
+#about .section-title{
+  position:sticky;top:0;z-index:80;
+  padding:.6rem 0;margin:-2rem -1.5rem 1.5rem;
+  padding-left:1.5rem;padding-right:1.5rem;
+  backdrop-filter:blur(8px);
+}
+#work .section-title{
+  background:rgba(26,23,20,0.88);
+}
+#about .section-title{
+  background:rgba(247,243,236,0.88);
+}
 
 /* ─────────────────────────────────────────
    WORK GRID + FILTERS
@@ -177,7 +190,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .bl-cta-body{font-size:.88rem;line-height:1.7;color:rgba(26,23,20,0.72);margin:0}
 .bl-cta-link{display:inline-flex;align-items:center;justify-content:center;padding:.6rem .9rem;border:1px solid var(--accent);background:var(--accent);color:var(--paper);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;align-self:flex-start}
 .bl-before-after{width:100%;display:flex;flex-direction:column;gap:.4rem}
-.bl-before-after-frame{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--surface);border:1px solid var(--border);touch-action:none;user-select:none}
+.bl-before-after-frame{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--surface);border:1px solid var(--border);touch-action:pan-y;user-select:none}
 .bl-before-after-base,.bl-before-after-top{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .bl-before-after-overlay{position:absolute;inset:0;overflow:hidden;clip-path:inset(0 calc(100% - var(--before-after-pos)) 0 0)}
 .bl-before-after-handle{position:absolute;top:50%;left:var(--before-after-pos);transform:translate(-50%,-50%);width:44px;height:120px;border:none;background:none;padding:0;z-index:2}
@@ -201,7 +214,21 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 /* ─────────────────────────────────────────
    CONTACT
 ───────────────────────────────────────── */
-#contact{background:var(--ct-bg);color:var(--ct-hi);padding:2.5rem 1.5rem}
+#contact{background:var(--ct-bg);color:var(--ct-hi);padding:2.5rem 1.5rem;position:relative;overflow:hidden}
+.ct-bg-video{
+  position:absolute;inset:0;z-index:0;
+  overflow:hidden;
+}
+.ct-bg-video video{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  min-width:100%;min-height:100%;width:auto;height:auto;
+  object-fit:cover;
+}
+.ct-bg-video::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(8,8,8,0.92) 0%,rgba(8,8,8,0.6) 40%,rgba(8,8,8,0.75) 100%);
+}
+.ct-content{position:relative;z-index:1}
 .contact-title{
   font-family:var(--font-hero);font-size:clamp(2rem,10vw,3.5rem);
   text-transform:uppercase;color:var(--ct-hi);line-height:.9;
