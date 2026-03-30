@@ -4,6 +4,19 @@
 let C={}, projects=[], currentPage='global', currentProjectId=null, dirty=false;
 let openBlocks = new Set();
 let dirtyFiles = new Set(); // tracks which files actually need saving
+let sharedBlockManager = null;
+
+import('./src/modules/blocks/blockManager.js')
+  .then(mod => {
+    sharedBlockManager = mod;
+  })
+  .catch(err => {
+    console.warn('Shared block manager unavailable in legacy editor', err);
+  });
+
+function getBlockState(){
+  return { globalState: C, projects };
+}
 
 // Undo/redo history
 let history=[], historyIdx=-1;
@@ -697,10 +710,49 @@ function blockEditorHTML(scope, b, i, total){
       </div>
       <div class="field"><label>Title</label><input value="${b.title||''}" oninput="updateBlock('${scope}','${b.id}','title',this.value)"></div>
       <div class="field"><label>Body</label><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>`;
+  } else if(b.type==='cta'){
+    body=`
+      <div class="field"><label>Headline</label><input value="${b.headline||''}" placeholder="Start the conversation" oninput="updateBlock('${scope}','${b.id}','headline',this.value)"></div>
+      <div class="field"><label>Body</label><textarea placeholder="Short supporting copy" oninput="updateBlock('${scope}','${b.id}','body',this.value)">${b.body||''}</textarea></div>
+      <div class="row2">
+        <div class="field"><label>Button Label</label><input value="${b.buttonLabel||''}" placeholder="Get in touch" oninput="updateBlock('${scope}','${b.id}','buttonLabel',this.value)"></div>
+        <div class="field"><label>Button URL</label><input value="${b.buttonUrl||''}" placeholder="mailto:hello@example.com" oninput="updateBlock('${scope}','${b.id}','buttonUrl',this.value)"></div>
+      </div>`;
+  } else if(b.type==='beforeafter'){
+    const beforeDzId = 'baf_before_'+b.id;
+    const afterDzId = 'baf_after_'+b.id;
+    body=`
+      <div class="field"><label>Before Image</label>
+        ${makeDropzone(b.beforeSrc||'', v=>{ updateBlock(scope,b.id,'beforeSrc',v); }, 'media', 'before.jpg', beforeDzId)}
+        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','beforeSrc',v),'${beforeDzId}_p')">&#x1F5C2; Browse Media</button>
+      </div>
+      <div class="field"><label>Before Alt</label><input value="${b.beforeAlt||''}" oninput="updateBlock('${scope}','${b.id}','beforeAlt',this.value)"></div>
+      <div class="field"><label>After Image</label>
+        ${makeDropzone(b.afterSrc||'', v=>{ updateBlock(scope,b.id,'afterSrc',v); }, 'media', 'after.jpg', afterDzId)}
+        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','afterSrc',v),'${afterDzId}_p')">&#x1F5C2; Browse Media</button>
+      </div>
+      <div class="field"><label>After Alt</label><input value="${b.afterAlt||''}" oninput="updateBlock('${scope}','${b.id}','afterAlt',this.value)"></div>
+      <div class="field"><label>Caption (optional)</label><input value="${b.caption||''}" oninput="updateBlock('${scope}','${b.id}','caption',this.value)"></div>
+      <p class="hint">Best results come from similar framing or aspect ratios. Different resolutions are fine.</p>`;
+  } else if(b.type==='faq'){
+    body=`<div style="display:flex;flex-direction:column;gap:.6rem" id="faq-${b.id}">
+      ${(b.items||[]).map((item,fi)=>`<div class="bk" style="border:1px solid var(--border)">
+        <div class="bk-body" style="display:flex;gap:.55rem;flex-direction:column">
+          <div class="row2">
+            <div class="field"><label>Question</label><input value="${item.question||''}" oninput="updateFaqItem('${scope}','${b.id}',${fi},'question',this.value)"></div>
+            <div class="field"><label>Open By Default</label><select onchange="updateFaqItem('${scope}','${b.id}',${fi},'open',this.value==='true')"><option value="false" ${item.open?'':'selected'}>Collapsed</option><option value="true" ${item.open?'selected':''}>Open</option></select></div>
+          </div>
+          <div class="field"><label>Answer</label><textarea oninput="updateFaqItem('${scope}','${b.id}',${fi},'answer',this.value)">${item.answer||''}</textarea></div>
+          <button class="del-btn" onclick="removeFaqItem('${scope}','${b.id}',${fi})" style="align-self:flex-end">&#x2715;</button>
+        </div>
+      </div>`).join('')}
+    </div>
+    <button class="add-btn" onclick="addFaqItem('${scope}','${b.id}')">+ Add FAQ Item</button>`;
   } else if(b.type==='process'){
     body=`<div style="display:flex;flex-direction:column;gap:.6rem" id="proc-${b.id}">
       ${(b.steps||[]).map((s,si)=>`<div class="bk" style="border:1px solid var(--border)">
         <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+          <div class="field"><label>Date (optional)</label><input value="${s.date||''}" placeholder="Jan 2026" oninput="updateProcessStep('${scope}','${b.id}',${si},'date',this.value)"></div>
           <div class="field"><label>Step ${si+1} Title</label><input value="${s.title||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'title',this.value)"></div>
           <div class="field"><label>Description</label><textarea oninput="updateProcessStep('${scope}','${b.id}',${si},'content',this.value)">${s.content||''}</textarea></div>
           <div class="field"><label>Image Path (optional)</label><input value="${s.image||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'image',this.value)"></div>
@@ -776,6 +828,9 @@ function blockPreview(b){
   if(b.type==='stats') return (b.items||[]).map(s=>s.num).join(' · ');
   if(b.type==='skills') return (b.items||[]).map(s=>s.name).join(', ');
   if(b.type==='callout') return (b.title||'Callout') + ' · ' + (b.tone||'note');
+  if(b.type==='cta') return b.headline || b.buttonLabel || 'CTA banner';
+  if(b.type==='beforeafter') return `Before/After · ${b.caption||'comparison'}`;
+  if(b.type==='faq') return `${(b.items||[]).length} question${(b.items||[]).length===1?'':'s'}`;
   if(b.type==='process') return `${(b.steps||[]).length} step${(b.steps||[]).length===1?'':'s'}`;
   if(b.type==='gallery') return `${(b.items||[]).length} image${(b.items||[]).length===1?'':'s'} · ${(b.columns||2)} cols`;
   if(b.type==='image') return b.src||b.alt||'(empty)';
@@ -783,32 +838,22 @@ function blockPreview(b){
   return (b.content||'').slice(0,60);
 }
 
-function blockMenuHTML(scope){
-  const types=[
+function blockMenuTypes(){
+  return [
     ['text-md','T','Text'],['image','&#x1F5BC;','Image'],['twocol','&#x25A6;','Two Col'],
     ['quote','"','Quote'],['video','&#x25B6;','Video'],['stats','#','Stats'],
     ['skills','%','Skills'],['callout','!','Callout'],['gallery','&#x1F5BC;','Gallery'],
-    ['process','1.','Process'],['divider','&#x2015;','Divider']
+    ['process','1.','Process'],['cta','&#x2192;','CTA'],['beforeafter','&#x21C4;','Before/After'],
+    ['faq','?','FAQ'],['divider','&#x2015;','Divider']
   ];
-  return types.map(([t,icon,label])=>`<button class="bm-item" onclick="addBlock('${scope}','${t}')"><div class="bm-icon">${icon}</div>${label}</button>`).join('');
 }
 
-// ─────────────────────────────────────────
-// BLOCK OPERATIONS
-// ─────────────────────────────────────────
-function getBlocks(scope){
-  if(scope==='about') return C.about;
-  const id=scope.replace('proj-',''); const p=projects.find(x=>x.id===id); return p?p.blocks:[];
-}
-function setBlocks(scope,blocks){
-  if(scope==='about'){C.about=blocks;}
-  else{const id=scope.replace('proj-','');const p=projects.find(x=>x.id===id);if(p)p.blocks=blocks;}
+function blockMenuHTML(scope){
+  return blockMenuTypes().map(([t,icon,label])=>`<button class="bm-item" onclick="addBlock('${scope}','${t}')"><div class="bm-icon">${icon}</div>${label}</button>`).join('');
 }
 
-function addBlock(scope, type){
-  const blocks=getBlocks(scope)||[];
-  const id='b'+Date.now();
-  const defaults={
+function getLegacyBlockDefaults(id){
+  return {
     'text-sm':{id,type:'text-sm',content:'',align:'left'},
     'text-md':{id,type:'text-md',content:'',align:'left'},
     'text-lg':{id,type:'text-lg',content:'',align:'left'},
@@ -820,11 +865,42 @@ function addBlock(scope, type){
     'skills':{id,type:'skills',items:[{name:'',pct:80}]},
     'callout':{id,type:'callout',tone:'note',title:'',content:''},
     'gallery':{id,type:'gallery',columns:2,items:[{src:'',alt:'',caption:''}]},
-    'process':{id,type:'process',steps:[{title:'',content:'',image:'',imageAlt:''}]},
+    'process':{id,type:'process',steps:[{title:'',date:'',content:'',image:'',imageAlt:''}]},
+    'cta':{id,type:'cta',headline:'',body:'',buttonLabel:'',buttonUrl:'',tone:'default'},
+    'beforeafter':{id,type:'beforeafter',beforeSrc:'',beforeAlt:'',afterSrc:'',afterAlt:'',caption:'',position:67},
+    'faq':{id,type:'faq',items:[{question:'',answer:'',open:true}]},
     'divider':{id,type:'divider'}
   };
-  blocks.push(defaults[type]||{id,type,content:''});
-  setBlocks(scope,blocks);
+}
+
+// ─────────────────────────────────────────
+// BLOCK OPERATIONS
+// ─────────────────────────────────────────
+function getBlocks(scope){
+  if(sharedBlockManager) return sharedBlockManager.getBlocks(getBlockState(), scope);
+  if(scope==='about') return C.about;
+  const id=scope.replace('proj-',''); const p=projects.find(x=>x.id===id); return p?p.blocks:[];
+}
+function setBlocks(scope,blocks){
+  if(sharedBlockManager) return sharedBlockManager.setBlocks(getBlockState(), scope, blocks);
+  if(scope==='about'){C.about=blocks;}
+  else{const id=scope.replace('proj-','');const p=projects.find(x=>x.id===id);if(p)p.blocks=blocks;}
+}
+
+function addBlock(scope, type){
+  let id = null;
+
+  if(sharedBlockManager){
+    id = sharedBlockManager.addBlock(getBlockState(), scope, type);
+  }else{
+    const blocks=getBlocks(scope)||[];
+    id='b'+Date.now();
+    const defaults=getLegacyBlockDefaults(id);
+    blocks.push(defaults[type]||{id,type,content:''});
+    setBlocks(scope,blocks);
+  }
+
+  if(!id) return;
   markDirty('add block');
   rerenderBlocks(scope);
   openBlocks.add(id);
@@ -838,15 +914,27 @@ function addBlock(scope, type){
 
 function removeBlock(scope,blockId){
   openBlocks.delete(blockId);
-  const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
-  setBlocks(scope,blocks);markDirty('delete block');rerenderBlocks(scope);
+  if(sharedBlockManager){
+    sharedBlockManager.removeBlock(getBlockState(), scope, blockId);
+  }else{
+    const blocks=(getBlocks(scope)||[]).filter(b=>b.id!==blockId);
+    setBlocks(scope,blocks);
+  }
+  markDirty('delete block');rerenderBlocks(scope);
 }
 
 function updateBlock(scope,blockId,key,val){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){
-    b[key]=val;
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateBlock(getBlockState(), scope, blockId, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b[key]=val;
+        return true;
+      })();
+
+  if(didUpdate){
     if(scope==='about') dirtyFiles.add('content.json');
     else dirtyFiles.add('projects/'+scope.replace('proj-','')+'.json');
     dirty=true;
@@ -856,94 +944,244 @@ function updateBlock(scope,blockId,key,val){
 }
 
 function changeBlockType(scope,blockId,newType){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){
+  const didChange = sharedBlockManager
+    ? sharedBlockManager.changeBlockType(getBlockState(), scope, blockId, newType)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.type=newType;
+        return true;
+      })();
+
+  if(didChange){
     // keep the block open after type change
     openBlocks.add(blockId);
-    b.type=newType;markDirty();rerenderBlocks(scope);
+    markDirty();rerenderBlocks(scope);
   }
 }
 
 function updateColType(scope,blockId,side,type){
+  if(sharedBlockManager){
+    if(sharedBlockManager.updateColumnType(getBlockState(), scope, blockId, side, type)) markDirty();
+    return;
+  }
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b[side]=b[side]||{};b[side].type=type;markDirty();}
 }
 function updateColField(scope,blockId,side,key,val){
+  if(sharedBlockManager){
+    if(sharedBlockManager.updateColumnField(getBlockState(), scope, blockId, side, key, val)) markDirty();
+    return;
+  }
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b[side]=b[side]||{};b[side][key]=val;markDirty();}
 }
 function updateStatItem(scope,blockId,idx,key,val){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateItemProperty(getBlockState(), scope, blockId, idx, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!(b&&b.items&&b.items[idx])) return false;
+        b.items[idx][key]=val;
+        return true;
+      })();
+  if(didUpdate) markDirty();
 }
 function addStatItem(scope,blockId){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){b.items=b.items||[];b.items.push({num:'',label:''});markDirty();rerenderBlocks(scope);}
+  const didAdd = sharedBlockManager
+    ? sharedBlockManager.addItemToBlock(getBlockState(), scope, blockId, 'stats')
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items=b.items||[];b.items.push({num:'',label:''});
+        return true;
+      })();
+  if(didAdd){markDirty();rerenderBlocks(scope);}
 }
 function removeStatItem(scope,blockId,idx){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
+  const didRemove = sharedBlockManager
+    ? sharedBlockManager.removeItemFromBlock(getBlockState(), scope, blockId, idx)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items.splice(idx,1);
+        return true;
+      })();
+  if(didRemove){markDirty();rerenderBlocks(scope);}
 }
 function updateSkillItem(scope,blockId,idx,key,val){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b&&b.items&&b.items[idx]){b.items[idx][key]=val;markDirty();}
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateItemProperty(getBlockState(), scope, blockId, idx, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!(b&&b.items&&b.items[idx])) return false;
+        b.items[idx][key]=val;
+        return true;
+      })();
+  if(didUpdate) markDirty();
 }
 function addSkillItem(scope,blockId){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){b.items=b.items||[];b.items.push({name:'',pct:80});markDirty();rerenderBlocks(scope);}
+  const didAdd = sharedBlockManager
+    ? sharedBlockManager.addItemToBlock(getBlockState(), scope, blockId, 'skills')
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items=b.items||[];b.items.push({name:'',pct:80});
+        return true;
+      })();
+  if(didAdd){markDirty();rerenderBlocks(scope);}
 }
 function removeSkillItem(scope,blockId,idx){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
+  const didRemove = sharedBlockManager
+    ? sharedBlockManager.removeItemFromBlock(getBlockState(), scope, blockId, idx)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items.splice(idx,1);
+        return true;
+      })();
+  if(didRemove){markDirty();rerenderBlocks(scope);}
 }
 
 function updateProcessStep(scope, blockId, idx, key, val){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b && b.steps && b.steps[idx]){ b.steps[idx][key]=val; markDirty(); }
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateStepProperty(getBlockState(), scope, blockId, idx, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!(b && b.steps && b.steps[idx])) return false;
+        b.steps[idx][key]=val;
+        return true;
+      })();
+  if(didUpdate) markDirty();
 }
 function addProcessStep(scope, blockId){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){ b.steps=b.steps||[]; b.steps.push({title:'',content:'',image:'',imageAlt:''}); markDirty(); rerenderBlocks(scope); }
+  const didAdd = sharedBlockManager
+    ? sharedBlockManager.addStepToBlock(getBlockState(), scope, blockId)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.steps=b.steps||[]; b.steps.push({title:'',date:'',content:'',image:'',imageAlt:''});
+        return true;
+      })();
+  if(didAdd){ markDirty(); rerenderBlocks(scope); }
 }
 function removeProcessStep(scope, blockId, idx){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){ b.steps.splice(idx,1); markDirty(); rerenderBlocks(scope); }
+  const didRemove = sharedBlockManager
+    ? sharedBlockManager.removeStepFromBlock(getBlockState(), scope, blockId, idx)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.steps.splice(idx,1);
+        return true;
+      })();
+  if(didRemove){ markDirty(); rerenderBlocks(scope); }
 }
 
 function updateGalleryItem(scope, blockId, idx, key, val){
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b && b.items && b.items[idx]){ b.items[idx][key]=val; markDirty(); }
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateItemProperty(getBlockState(), scope, blockId, idx, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!(b && b.items && b.items[idx])) return false;
+        b.items[idx][key]=val;
+        return true;
+      })();
+  if(didUpdate) markDirty();
 }
 function addGalleryItem(scope, blockId){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){ b.items=b.items||[]; b.items.push({src:'',alt:'',caption:''}); markDirty(); rerenderBlocks(scope); }
+  const didAdd = sharedBlockManager
+    ? sharedBlockManager.addItemToBlock(getBlockState(), scope, blockId, 'gallery')
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items=b.items||[]; b.items.push({src:'',alt:'',caption:''});
+        return true;
+      })();
+  if(didAdd){ markDirty(); rerenderBlocks(scope); }
 }
 function removeGalleryItem(scope, blockId, idx){
   openBlocks.add(blockId);
-  const blocks=getBlocks(scope)||[];
-  const b=blocks.find(x=>x.id===blockId);
-  if(b){ b.items.splice(idx,1); markDirty(); rerenderBlocks(scope); }
+  const didRemove = sharedBlockManager
+    ? sharedBlockManager.removeItemFromBlock(getBlockState(), scope, blockId, idx)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items.splice(idx,1);
+        return true;
+      })();
+  if(didRemove){ markDirty(); rerenderBlocks(scope); }
+}
+
+function updateFaqItem(scope, blockId, idx, key, val){
+  const didUpdate = sharedBlockManager
+    ? sharedBlockManager.updateItemProperty(getBlockState(), scope, blockId, idx, key, val)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!(b && b.items && b.items[idx])) return false;
+        if(key==='open' && val){
+          (b.items||[]).forEach((item, itemIndex)=>{ item.open = itemIndex===idx; });
+        } else {
+          b.items[idx][key]=val;
+        }
+        return true;
+      })();
+  if(didUpdate){
+    markDirty();
+    if(key==='open') rerenderBlocks(scope);
+  }
+}
+
+function addFaqItem(scope, blockId){
+  openBlocks.add(blockId);
+  const didAdd = sharedBlockManager
+    ? sharedBlockManager.addItemToBlock(getBlockState(), scope, blockId, 'faq')
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        (b.items||[]).forEach(item=>{ item.open=false; });
+        b.items=b.items||[]; b.items.push({question:'',answer:'',open:true});
+        return true;
+      })();
+  if(didAdd){ markDirty(); rerenderBlocks(scope); }
+}
+
+function removeFaqItem(scope, blockId, idx){
+  openBlocks.add(blockId);
+  const didRemove = sharedBlockManager
+    ? sharedBlockManager.removeItemFromBlock(getBlockState(), scope, blockId, idx)
+    : (()=>{
+        const blocks=getBlocks(scope)||[];
+        const b=blocks.find(x=>x.id===blockId);
+        if(!b) return false;
+        b.items.splice(idx,1);
+        if(b.items[0] && !b.items.some(item=>item.open)) b.items[0].open = true;
+        return true;
+      })();
+  if(didRemove){ markDirty(); rerenderBlocks(scope); }
 }
 
 // ─────────────────────────────────────────
@@ -1168,7 +1406,8 @@ function initPreview(){
     document.getElementById('pb-dot').classList.add('live');
     pushPreview();
   };
-  frame.src='index.html?preview=1';
+  const cacheBust=Date.now();
+  frame.src=`index.html?preview=1&v=${cacheBust}`;
 }
 
 function markDirty(label, projectId){
@@ -1763,6 +2002,28 @@ function blocksToMarkdown(blocks){
       if((b.content||'').trim()) out.push(markdownInlineFromHtml(b.content));
       return;
     }
+    if(b.type==='cta'){
+      out.push(':::cta');
+      out.push(`${markdownInlineFromHtml(b.headline||'').trim()} | ${markdownInlineFromHtml(b.body||'').trim()} | ${(b.buttonLabel||'').trim()} | ${(b.buttonUrl||'').trim()}`);
+      out.push(':::');
+      return;
+    }
+    if(b.type==='beforeafter'){
+      out.push(':::beforeafter');
+      out.push(`before: ![${b.beforeAlt||''}](${b.beforeSrc||''})`);
+      out.push(`after: ![${b.afterAlt||''}](${b.afterSrc||''})`);
+      if((b.caption||'').trim()) out.push(`caption: ${markdownInlineFromHtml(b.caption).trim()}`);
+      out.push(':::');
+      return;
+    }
+    if(b.type==='faq'){
+      out.push(':::faq');
+      (b.items||[]).forEach(item=>{
+        out.push(`- ${(item.question||'').trim()} | ${markdownInlineFromHtml(item.answer||'').trim()}${item.open ? ' | open' : ''}`);
+      });
+      out.push(':::');
+      return;
+    }
     if(b.type==='gallery'){
       out.push(`:::gallery cols=${b.columns||2}`);
       (b.items||[]).forEach(it=>{
@@ -1775,14 +2036,16 @@ function blocksToMarkdown(blocks){
     if(b.type==='process'){
       out.push(':::process');
       (b.steps||[]).forEach((s,idx)=>{
+        const date = (s.date||'').trim();
         const title = (s.title||'').trim();
         const content = markdownInlineFromHtml(s.content||'').trim();
         const img = (s.image||'').trim();
         const alt = (s.imageAlt||'').trim();
+        const lead = date ? `@${date} :: ${title}` : title;
         if(img){
-          out.push(`${idx+1}. ${title} | ${content} | ![${alt}](${img})`.trim());
+          out.push(`${idx+1}. ${lead} | ${content} | ![${alt}](${img})`.trim());
         } else {
-          out.push(`${idx+1}. ${title} | ${content}`.trim());
+          out.push(`${idx+1}. ${lead} | ${content}`.trim());
         }
       });
       out.push(':::');
@@ -1836,6 +2099,67 @@ function parseMarkdownToBlocks(md){
       continue;
     }
 
+    // CTA block
+    if(/^:::cta\s*$/i.test(line)){
+      i++;
+      const payload = (i < lines.length ? lines[i].trim() : '');
+      const parts = payload.split('|').map(part => part.trim());
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())) i++;
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push({
+        id: uid(),
+        type:'cta',
+        headline: inlineFormat(parts[0] || ''),
+        body: inlineFormat(parts[1] || ''),
+        buttonLabel: parts[2] || '',
+        buttonUrl: parts[3] || '',
+        tone: 'default'
+      });
+      continue;
+    }
+
+    // Before/After block
+    if(/^:::beforeafter\s*$/i.test(line)){
+      const block = { id: uid(), type:'beforeafter', beforeSrc:'', beforeAlt:'', afterSrc:'', afterAlt:'', caption:'', position:67 };
+      i++;
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
+        const current = lines[i].trim();
+        const beforeMatch = current.match(/^before:\s*!\[([^\]]*)\]\(([^)]+)\)\s*$/i);
+        const afterMatch = current.match(/^after:\s*!\[([^\]]*)\]\(([^)]+)\)\s*$/i);
+        const captionMatch = current.match(/^caption:\s*(.+)$/i);
+        if(beforeMatch){
+          block.beforeAlt = beforeMatch[1] || '';
+          block.beforeSrc = beforeMatch[2] || '';
+        } else if(afterMatch){
+          block.afterAlt = afterMatch[1] || '';
+          block.afterSrc = afterMatch[2] || '';
+        } else if(captionMatch){
+          block.caption = inlineFormat((captionMatch[1] || '').trim());
+        }
+        i++;
+      }
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push(block);
+      continue;
+    }
+
+    // FAQ block
+    if(/^:::faq\s*$/i.test(line)){
+      const items = [];
+      i++;
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
+        const faqMatch = lines[i].trim().match(/^-\s*(.*?)\s*\|\s*(.*?)(?:\s*\|\s*(open))?\s*$/i);
+        if(faqMatch){
+          items.push({ question: faqMatch[1] || '', answer: inlineFormat(faqMatch[2] || ''), open: Boolean(faqMatch[3]) });
+        }
+        i++;
+      }
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      if(items.length && !items.some(item=>item.open)) items[0].open = true;
+      blocks.push({ id: uid(), type:'faq', items: items.length ? items : [{question:'',answer:'',open:true}] });
+      continue;
+    }
+
     // Process block
     if(/^:::process\s*$/i.test(line)){
       const steps = [];
@@ -1843,8 +2167,11 @@ function parseMarkdownToBlocks(md){
       while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
         const pm = lines[i].trim().match(/^\d+\.\s*(.*?)\s*(?:\|\s*(.*?))?\s*(?:\|\s*!\[([^\]]*)\]\(([^)]+)\))?\s*$/);
         if(pm){
+          const lead = (pm[1] || '').trim();
+          const datedLead = lead.match(/^@(.+?)\s*::\s*(.+)$/);
           steps.push({
-            title: (pm[1] || '').trim(),
+            title: datedLead ? datedLead[2].trim() : lead,
+            date: datedLead ? datedLead[1].trim() : '',
             content: inlineFormat((pm[2] || '').trim()),
             imageAlt: (pm[3] || '').trim(),
             image: (pm[4] || '').trim()
@@ -1853,7 +2180,7 @@ function parseMarkdownToBlocks(md){
         i++;
       }
       if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
-      blocks.push({ id: uid(), type:'process', steps: steps.length ? steps : [{title:'',content:'',image:'',imageAlt:''}] });
+      blocks.push({ id: uid(), type:'process', steps: steps.length ? steps : [{title:'',date:'',content:'',image:'',imageAlt:''}] });
       continue;
     }
 

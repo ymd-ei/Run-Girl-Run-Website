@@ -28,6 +28,24 @@ export function getBlockPreview(block) {
   if (block.type === 'twocol') {
     return 'Two columns';
   }
+  if (block.type === 'callout') {
+    return (block.title || 'Callout') + ' · ' + (block.tone || 'note');
+  }
+  if (block.type === 'process') {
+    return `${(block.steps || []).length} step${(block.steps || []).length === 1 ? '' : 's'}`;
+  }
+  if (block.type === 'gallery') {
+    return `${(block.items || []).length} image${(block.items || []).length === 1 ? '' : 's'} · ${block.columns || 2} cols`;
+  }
+  if (block.type === 'cta') {
+    return block.headline || block.buttonLabel || 'CTA banner';
+  }
+  if (block.type === 'beforeafter') {
+    return `Before/After · ${block.caption || 'comparison'}`;
+  }
+  if (block.type === 'faq') {
+    return `${(block.items || []).length} question${(block.items || []).length === 1 ? '' : 's'}`;
+  }
   return (block.content || '').slice(0, 60);
 }
 
@@ -47,6 +65,12 @@ export function getBlockTypeLabel(type) {
     video: 'Video',
     stats: 'Statistics',
     skills: 'Skills',
+    callout: 'Callout',
+    gallery: 'Gallery',
+    process: 'Process',
+    cta: 'CTA Banner',
+    beforeafter: 'Before / After',
+    faq: 'FAQ',
     divider: 'Divider'
   };
   return labels[type] || type;
@@ -66,6 +90,12 @@ export function getBlockMenuHTML(scope) {
     ['video', '▶', 'Video'],
     ['stats', '#', 'Stats'],
     ['skills', '%', 'Skills'],
+    ['callout', '!', 'Callout'],
+    ['gallery', '🖼', 'Gallery'],
+    ['process', '1.', 'Process'],
+    ['cta', '→', 'CTA'],
+    ['beforeafter', '⇄', 'Before/After'],
+    ['faq', '?', 'FAQ'],
     ['divider', '—', 'Divider']
   ];
 
@@ -251,6 +281,89 @@ export function getBlockBodyHTML(block, scope) {
   // Divider block
   if (type === 'divider') {
     return `<p style="font-size:.72rem;color:var(--muted)">Horizontal rule divider.</p>`;
+  }
+
+  if (type === 'callout') {
+    return `
+      <div class="field"><label>Tone</label>
+        <select onchange="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'tone', this.value)">
+          ${['note', 'highlight', 'warning'].map(t => `<option value="${t}" ${(block.tone || 'note') === t ? 'selected' : ''}>${t[0].toUpperCase() + t.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Title</label><input value="${block.title || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'title', this.value)"></div>
+      <div class="field"><label>Body</label><textarea oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'content', this.value)">${block.content || ''}</textarea></div>`;
+  }
+
+  if (type === 'process') {
+    return `
+      <div style="display:flex;flex-direction:column;gap:.6rem" id="proc-${block.id}">
+        ${(block.steps || []).map((step, index) => `<div class="bk" style="border:1px solid var(--border)">
+          <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+            <div class="field"><label>Date (optional)</label><input value="${step.date || ''}" oninput="window.events?.onUpdateProcessStep?.('${scope}', '${block.id}', ${index}, 'date', this.value)"></div>
+            <div class="field"><label>Step ${index + 1} Title</label><input value="${step.title || ''}" oninput="window.events?.onUpdateProcessStep?.('${scope}', '${block.id}', ${index}, 'title', this.value)"></div>
+            <div class="field"><label>Description</label><textarea oninput="window.events?.onUpdateProcessStep?.('${scope}', '${block.id}', ${index}, 'content', this.value)">${step.content || ''}</textarea></div>
+            <div class="field"><label>Image Path (optional)</label><input value="${step.image || ''}" oninput="window.events?.onUpdateProcessStep?.('${scope}', '${block.id}', ${index}, 'image', this.value)"></div>
+            <div class="field"><label>Image Alt (optional)</label><input value="${step.imageAlt || ''}" oninput="window.events?.onUpdateProcessStep?.('${scope}', '${block.id}', ${index}, 'imageAlt', this.value)"></div>
+            <button class="del-btn" onclick="window.events?.onRemoveProcessStep?.('${scope}', '${block.id}', ${index})" style="align-self:flex-end">✕</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="window.events?.onAddProcessStep?.('${scope}', '${block.id}')">+ Add Step</button>`;
+  }
+
+  if (type === 'gallery') {
+    return `
+      <div class="field"><label>Columns</label>
+        <select onchange="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'columns', parseInt(this.value, 10))">
+          <option value="2" ${(block.columns || 2) === 2 ? 'selected' : ''}>2</option>
+          <option value="3" ${(block.columns || 2) === 3 ? 'selected' : ''}>3</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${(block.items || []).map((item, index) => `<div class="bk" style="border:1px solid var(--border)">
+          <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+            <div class="field"><label>Image Path</label><input value="${item.src || ''}" oninput="window.events?.onUpdateGalleryItem?.('${scope}', '${block.id}', ${index}, 'src', this.value)"></div>
+            <div class="field"><label>Alt Text</label><input value="${item.alt || ''}" oninput="window.events?.onUpdateGalleryItem?.('${scope}', '${block.id}', ${index}, 'alt', this.value)"></div>
+            <div class="field"><label>Caption</label><input value="${item.caption || ''}" oninput="window.events?.onUpdateGalleryItem?.('${scope}', '${block.id}', ${index}, 'caption', this.value)"></div>
+            <button class="del-btn" onclick="window.events?.onRemoveGalleryItem?.('${scope}', '${block.id}', ${index})" style="align-self:flex-end">✕</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="window.events?.onAddGalleryItem?.('${scope}', '${block.id}')">+ Add Image</button>`;
+  }
+
+  if (type === 'cta') {
+    return `
+      <div class="field"><label>Headline</label><input value="${block.headline || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'headline', this.value)"></div>
+      <div class="field"><label>Body</label><textarea oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'body', this.value)">${block.body || ''}</textarea></div>
+      <div class="row2">
+        <div class="field"><label>Button Label</label><input value="${block.buttonLabel || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'buttonLabel', this.value)"></div>
+        <div class="field"><label>Button URL</label><input value="${block.buttonUrl || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'buttonUrl', this.value)"></div>
+      </div>`;
+  }
+
+  if (type === 'beforeafter') {
+    return `
+      <div class="field"><label>Before Image</label><input value="${block.beforeSrc || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'beforeSrc', this.value)"></div>
+      <div class="field"><label>Before Alt</label><input value="${block.beforeAlt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'beforeAlt', this.value)"></div>
+      <div class="field"><label>After Image</label><input value="${block.afterSrc || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'afterSrc', this.value)"></div>
+      <div class="field"><label>After Alt</label><input value="${block.afterAlt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'afterAlt', this.value)"></div>
+      <div class="field"><label>Caption</label><input value="${block.caption || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'caption', this.value)"></div>`;
+  }
+
+  if (type === 'faq') {
+    return `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${(block.items || []).map((item, index) => `<div class="bk" style="border:1px solid var(--border)">
+          <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+            <div class="field"><label>Question</label><input value="${item.question || ''}" oninput="window.events?.onUpdateFaqItem?.('${scope}', '${block.id}', ${index}, 'question', this.value)"></div>
+            <div class="field"><label>Answer</label><textarea oninput="window.events?.onUpdateFaqItem?.('${scope}', '${block.id}', ${index}, 'answer', this.value)">${item.answer || ''}</textarea></div>
+            <div class="field"><label>Open By Default</label><select onchange="window.events?.onUpdateFaqItem?.('${scope}', '${block.id}', ${index}, 'open', this.value === 'true')"><option value="false" ${item.open ? '' : 'selected'}>Collapsed</option><option value="true" ${item.open ? 'selected' : ''}>Open</option></select></div>
+            <button class="del-btn" onclick="window.events?.onRemoveFaqItem?.('${scope}', '${block.id}', ${index})" style="align-self:flex-end">✕</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="window.events?.onAddFaqItem?.('${scope}', '${block.id}')">+ Add FAQ Item</button>`;
   }
 
   return '';

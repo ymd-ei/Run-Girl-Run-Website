@@ -18,6 +18,7 @@ import {
 import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { pool, scheduleIdle } from '../utils/text.js';
+import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
@@ -26,6 +27,52 @@ let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
 let lightboxMode = 'reel';
 const projectCache = new Map();
+let activeBeforeAfter = null;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function setBeforeAfterPosition(container, position) {
+  if (!container) return;
+
+  const next = clamp(position, 0, 100);
+  container.style.setProperty('--before-after-pos', `${next}%`);
+
+  const handle = container.querySelector('[data-before-after-handle]');
+  if (handle) {
+    handle.setAttribute('aria-valuenow', String(Math.round(next)));
+  }
+}
+
+function getBeforeAfterPosition(container, clientX) {
+  const frame = container.querySelector('[data-before-after-frame]') || container;
+  const rect = frame.getBoundingClientRect();
+  if (!rect.width) return 67;
+  return ((clientX - rect.left) / rect.width) * 100;
+}
+
+function syncFaqItem(item, open) {
+  if (!item) return;
+
+  item.classList.toggle('open', open);
+
+  const trigger = item.querySelector('[data-faq-trigger]');
+  const panel = item.querySelector('[data-faq-panel]');
+
+  if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (panel) panel.hidden = !open;
+}
+
+function toggleFaqItem(item) {
+  const root = item?.closest('[data-faq]');
+  if (!root) return;
+
+  const shouldOpen = !item.classList.contains('open');
+  root.querySelectorAll('[data-faq-item]').forEach(entry => {
+    syncFaqItem(entry, shouldOpen && entry === item);
+  });
+}
 
 function replayContactHeroScramble() {
   if (contactHeroIdleController && typeof contactHeroIdleController.cancel === 'function') {
@@ -446,7 +493,7 @@ function renderWorkSection() {
 function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
-    aboutEl.innerHTML = renderDisplayBlocks(globalState.about || []);
+    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []));
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -788,7 +835,7 @@ function setupEventListeners() {
         return;
       }
 
-      if (ppb) ppb.innerHTML = renderDisplayBlocks(project.blocks || []);
+      if (ppb) ppb.innerHTML = renderDisplayBlocks(normalizeBlocks(project.blocks || []));
 
       const pp = document.getElementById('pp');
       if (pp) {
@@ -993,6 +1040,55 @@ function setupEventListeners() {
     if (!img) return;
     e.preventDefault();
     window.display?.openImageLightbox?.(img.dataset.fullSrc || img.src, img.dataset.fullAlt || img.alt || '');
+  });
+
+  document.addEventListener('click', e => {
+    const trigger = e.target.closest('[data-faq-trigger]');
+    if (!trigger) return;
+    toggleFaqItem(trigger.closest('[data-faq-item]'));
+  });
+
+  document.addEventListener('pointerdown', e => {
+    const handle = e.target.closest('[data-before-after-handle]');
+    if (!handle) return;
+    const container = handle.closest('[data-before-after]');
+    if (!container) return;
+    activeBeforeAfter = container;
+    setBeforeAfterPosition(container, getBeforeAfterPosition(container, e.clientX));
+  });
+
+  document.addEventListener('pointermove', e => {
+    if (!activeBeforeAfter) return;
+    setBeforeAfterPosition(activeBeforeAfter, getBeforeAfterPosition(activeBeforeAfter, e.clientX));
+  });
+
+  document.addEventListener('pointerup', () => {
+    activeBeforeAfter = null;
+  });
+
+  document.addEventListener('pointercancel', () => {
+    activeBeforeAfter = null;
+  });
+
+  document.addEventListener('keydown', e => {
+    const handle = e.target.closest('[data-before-after-handle]');
+    if (!handle) return;
+
+    const container = handle.closest('[data-before-after]');
+    if (!container) return;
+
+    const current = parseFloat(container.style.getPropertyValue('--before-after-pos')) || 67;
+    let next = current;
+
+    if (e.key === 'ArrowLeft') next = current - 2;
+    if (e.key === 'ArrowRight') next = current + 2;
+    if (e.key === 'Home') next = 0;
+    if (e.key === 'End') next = 100;
+
+    if (next !== current) {
+      e.preventDefault();
+      setBeforeAfterPosition(container, next);
+    }
   });
 }
 

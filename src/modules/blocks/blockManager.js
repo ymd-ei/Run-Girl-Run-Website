@@ -6,6 +6,29 @@
 
 import { uid } from '../../utils/validation.js';
 
+function deepCopy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function getDefaultItem(blockType) {
+  switch (blockType) {
+    case 'stats':
+      return { num: '', label: '' };
+    case 'skills':
+      return { name: '', pct: 80 };
+    case 'gallery':
+      return { src: '', alt: '', caption: '' };
+    case 'faq':
+      return { question: '', answer: '', open: false };
+    default:
+      return null;
+  }
+}
+
+function getDefaultStep() {
+  return { title: '', date: '', content: '', image: '', imageAlt: '' };
+}
+
 /**
  * Block type defaults (templates for new blocks)
  */
@@ -23,8 +46,93 @@ const BLOCK_DEFAULTS = {
   'video': { type: 'video', src: '' },
   'stats': { type: 'stats', items: [{ num: '', label: '' }] },
   'skills': { type: 'skills', items: [{ name: '', pct: 80 }] },
+  'callout': { type: 'callout', tone: 'note', title: '', content: '' },
+  'gallery': { type: 'gallery', columns: 2, items: [{ src: '', alt: '', caption: '' }] },
+  'process': { type: 'process', steps: [getDefaultStep()] },
+  'cta': {
+    type: 'cta',
+    headline: '',
+    body: '',
+    buttonLabel: '',
+    buttonUrl: '',
+    tone: 'default'
+  },
+  'beforeafter': {
+    type: 'beforeafter',
+    beforeSrc: '',
+    beforeAlt: '',
+    afterSrc: '',
+    afterAlt: '',
+    caption: '',
+    position: 67
+  },
+  'faq': { type: 'faq', items: [{ question: '', answer: '', open: true }] },
   'divider': { type: 'divider' }
 };
+
+export function normalizeBlock(block) {
+  if (!block || !block.type) return block;
+
+  const template = BLOCK_DEFAULTS[block.type];
+  if (!template) return block;
+
+  const normalized = {
+    id: block.id,
+    ...deepCopy(template),
+    ...block
+  };
+
+  if (normalized.type === 'process') {
+    normalized.steps = (normalized.steps || []).map(step => ({
+      ...getDefaultStep(),
+      ...step
+    }));
+  }
+
+  if (normalized.type === 'faq') {
+    let foundOpen = false;
+    normalized.items = (normalized.items || []).map((item, index) => ({
+      ...getDefaultItem('faq'),
+      ...item,
+      open: (() => {
+        if (item?.open && !foundOpen) {
+          foundOpen = true;
+          return true;
+        }
+        return false;
+      })()
+    }));
+
+    if (normalized.items[0] && !normalized.items.some(item => item.open)) {
+      normalized.items[0].open = true;
+    }
+  }
+
+  if (normalized.type === 'gallery') {
+    normalized.items = (normalized.items || []).map(item => ({
+      ...getDefaultItem('gallery'),
+      ...item
+    }));
+  }
+
+  if (normalized.type === 'stats' || normalized.type === 'skills') {
+    normalized.items = (normalized.items || []).map(item => ({
+      ...getDefaultItem(normalized.type),
+      ...item
+    }));
+  }
+
+  if (normalized.type === 'beforeafter') {
+    const position = Number(normalized.position);
+    normalized.position = Number.isFinite(position) ? Math.max(0, Math.min(100, position)) : 67;
+  }
+
+  return normalized;
+}
+
+export function normalizeBlocks(blocks) {
+  return (blocks || []).map(normalizeBlock);
+}
 
 /**
  * Get blocks for a scope (either 'about' or project ID)
@@ -91,7 +199,7 @@ export function addBlock(state, scope, type) {
 
   const newBlock = {
     id: blockId,
-    ...JSON.parse(JSON.stringify(template)) // Deep copy to avoid mutating defaults
+    ...deepCopy(template)
   };
 
   blocks.push(newBlock);
@@ -153,7 +261,7 @@ export function changeBlockType(state, scope, blockId, newType) {
   block.type = newType;
 
   // Merge in new type's defaults (but keep existing id)
-  const defaults = JSON.parse(JSON.stringify(template));
+  const defaults = deepCopy(template);
   Object.keys(defaults).forEach(key => {
     if (key !== 'type') {
       block[key] = defaults[key];
@@ -214,6 +322,13 @@ export function updateItemProperty(state, scope, blockId, itemIndex, key, value)
   const block = findBlock(state, scope, blockId);
   if (!block || !block.items || !block.items[itemIndex]) return false;
 
+  if (block.type === 'faq' && key === 'open' && value) {
+    block.items.forEach((item, index) => {
+      item.open = index === itemIndex;
+    });
+    return true;
+  }
+
   block.items[itemIndex][key] = value;
   return true;
 }
@@ -232,13 +347,18 @@ export function addItemToBlock(state, scope, blockId, blockType) {
 
   if (!block.items) block.items = [];
 
-  if (blockType === 'stats') {
-    block.items.push({ num: '', label: '' });
-  } else if (blockType === 'skills') {
-    block.items.push({ name: '', pct: 80 });
-  } else {
+  const item = getDefaultItem(blockType);
+  if (!item) {
     return false;
   }
+
+  if (blockType === 'faq') {
+    block.items.forEach(entry => {
+      entry.open = false;
+    });
+  }
+
+  block.items.push(item);
 
   return true;
 }
@@ -258,6 +378,38 @@ export function removeItemFromBlock(state, scope, blockId, itemIndex) {
   }
 
   block.items.splice(itemIndex, 1);
+
+  if (block.type === 'faq' && block.items[0] && !block.items.some(item => item.open)) {
+    block.items[0].open = true;
+  }
+
+  return true;
+}
+
+export function updateStepProperty(state, scope, blockId, stepIndex, key, value) {
+  const block = findBlock(state, scope, blockId);
+  if (!block || !block.steps || !block.steps[stepIndex]) return false;
+
+  block.steps[stepIndex][key] = value;
+  return true;
+}
+
+export function addStepToBlock(state, scope, blockId) {
+  const block = findBlock(state, scope, blockId);
+  if (!block) return false;
+
+  if (!block.steps) block.steps = [];
+  block.steps.push(getDefaultStep());
+  return true;
+}
+
+export function removeStepFromBlock(state, scope, blockId, stepIndex) {
+  const block = findBlock(state, scope, blockId);
+  if (!block || !block.steps || stepIndex < 0 || stepIndex >= block.steps.length) {
+    return false;
+  }
+
+  block.steps.splice(stepIndex, 1);
   return true;
 }
 

@@ -73,18 +73,21 @@
       "type": "process",
       "steps": [
         {
+          "date": "Jan 2026",
           "title": "Discovery",
           "content": "Collect references, define constraints, and lock messaging.",
           "image": "media/woke-up_hero.webp",
           "imageAlt": "Discovery moodboard"
         },
         {
+          "date": "Feb 2026",
           "title": "Design",
           "content": "Build visual direction, motion language, and typography tests.",
           "image": "media/rgr_fav.png",
           "imageAlt": "Design exploration artifact"
         },
         {
+          "date": "",
           "title": "Polish",
           "content": "Refine timing, spacing, and final QA before release.",
           "image": "",
@@ -113,16 +116,42 @@
       "align": "left"
     },
     {
+      "id": "b9a",
+      "type": "faq",
+      "items": [
+        {
+          "question": "Why add sample blocks at all?",
+          "answer": "They give you one place to visually QA spacing, interaction, and import/export round-tripping.",
+          "open": true
+        },
+        {
+          "question": "Do all Process steps need dates?",
+          "answer": "No. Leaving the date empty keeps the step in process mode while dated entries read more like a timeline.",
+          "open": false
+        }
+      ]
+    },
+    {
       "id": "b10",
       "type": "video",
       "src": "https://www.youtube.com/embed/F7V800bxczU"
+    },
+    {
+      "id": "b10a",
+      "type": "beforeafter",
+      "beforeSrc": "media/woke-up_hero.webp",
+      "beforeAlt": "Work in progress frame",
+      "afterSrc": "media/galaxy (2).jpg",
+      "afterAlt": "Final art frame",
+      "caption": "WIP versus polished final frame",
+      "position": 67
     },
     {
       "id": "b11",
       "type": "stats",
       "items": [
         {
-          "num": "11",
+          "num": "17",
           "label": "Block Types"
         },
         {
@@ -156,6 +185,15 @@
     {
       "id": "b13",
       "type": "divider"
+    },
+    {
+      "id": "b13a",
+      "type": "cta",
+      "headline": "Want the implementation handoff?",
+      "body": "Use this sample project to sanity check the new block system before shipping it into live case studies.",
+      "buttonLabel": "Open Editor",
+      "buttonUrl": "editor.html",
+      "tone": "default"
     },
     {
       "id": "b14",

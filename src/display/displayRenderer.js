@@ -6,12 +6,7 @@
 import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { phosphorIcon } from '../utils/icons.js';
-import { renderBlocks } from '../modules/blocks/blockRenderer.js';
-
-function isDirectVideoSource(src) {
-  const clean = String(src || '').split('?')[0].toLowerCase();
-  return /\.(mp4|webm|ogg|mov|m4v)$/.test(clean);
-}
+import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
 
 /**
  * Apply theme colors to CSS variables
@@ -54,57 +49,7 @@ export function getProjectThumbnail(type, accentColor, bgColor) {
  * @returns {string} HTML
  */
 export function renderDisplayBlock(block) {
-  const align = block.align === 'center' ? 'ac' : block.align === 'right' ? 'ar' : '';
-
-  switch (block.type) {
-    case 'text-sm':
-      return `<p class="bl-text-sm ${align}">${block.content}</p>`;
-    case 'text-md':
-      return `<p class="bl-text-md ${align}">${block.content}</p>`;
-    case 'text-lg':
-      return `<p class="bl-text-lg ${align}">${block.content}</p>`;
-    case 'image':
-      if (block.src) {
-        return `<div class="bl-image"><img src="${block.src}" alt="${block.alt || ''}"></div>`;
-      }
-      return `<div class="bl-image empty">${block.alt || 'Image'}</div>`;
-    case 'twocol':
-      return `<div class="bl-twocol"><div>${renderDisplayBlock(block.left)}</div><div>${renderDisplayBlock(block.right)}</div></div>`;
-    case 'quote':
-      return `<div class="bl-quote ${align}"><p>${block.content}</p></div>`;
-    case 'video':
-      if (block.src) {
-        if (isDirectVideoSource(block.src)) {
-          return `<div class="bl-video"><video src="${block.src}" controls playsinline preload="metadata"></video></div>`;
-        }
-        return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
-      }
-      return `<div class="bl-video empty">Video embed</div>`;
-    case 'stats':
-      const statsCols = (block.items || []).length;
-      return `<div class="bl-stats" style="grid-template-columns:repeat(${statsCols},1fr)">${(block.items || [])
-        .map(s => `<div class="sc"><div class="sn" data-target="${s.num}">${s.num}</div><div class="sl">${s.label}</div></div>`)
-        .join('')}</div>`;
-    case 'skills':
-      return `<div class="bl-skills" id="skl">${(block.items || [])
-        .map(s => `<div class="skr"><div class="skn"><span>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${s.pct / 100}"></div></div></div>`)
-        .join('')}</div>`;
-    case 'divider':
-      return `<div class="bl-divider"></div>`;
-    case 'callout':
-      return `<div class="bl-callout ${block.tone || 'note'}"><div class="bl-callout-title">${block.title || ''}</div><div class="bl-callout-body">${block.content || ''}</div></div>`;
-    case 'gallery':
-      const galleryCols = block.columns === 3 ? 3 : 2;
-      return `<div class="bl-gallery cols-${galleryCols}">${(block.items || [])
-        .map(it => `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${it.src || ''}" alt="${it.alt || ''}" data-full-src="${it.src || ''}" data-full-alt="${it.alt || ''}">${it.caption ? `<figcaption>${it.caption}</figcaption>` : ''}</figure>`)
-        .join('')}</div>`;
-    case 'process':
-      return `<div class="bl-process">${(block.steps || [])
-        .map((s, idx) => `<div class="bl-process-step"><div class="bl-process-num">${idx + 1}</div><div class="bl-process-copy"><h4>${s.title || ''}</h4><p>${s.content || ''}</p>${s.image ? `<img class="bl-process-step-image" src="${s.image}" alt="${s.imageAlt || s.title || ''}">` : ''}</div></div>`)
-        .join('')}</div>`;
-    default:
-      return '';
-  }
+  return renderBlock(block);
 }
 
 /**
@@ -113,7 +58,7 @@ export function renderDisplayBlock(block) {
  * @returns {string} HTML
  */
 export function renderDisplayBlocks(blocks) {
-  return `<div class="block-canvas">${(blocks || []).map(renderDisplayBlock).join('')}</div>`;
+  return renderBlocks(blocks || []);
 }
 
 /**
