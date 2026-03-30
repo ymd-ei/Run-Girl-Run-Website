@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="styles-main.css">
+<link rel="preload" href="styles-main.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="styles-main.css"></noscript>
 <link rel="modulepreload" href="src/display/main.js">
 <link rel="modulepreload" href="src/display/displayRenderer.js">
 <link rel="modulepreload" href="src/state/globalState.js">
@@ -19,6 +20,33 @@
 <link rel="modulepreload" href="src/utils/icons.js">
 <link rel="modulepreload" href="src/utils/text.js">
 <link rel="modulepreload" href="src/modules/blocks/blockRenderer.js">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
+  :root{
+    --ink:#1a1714;--paper:#f2ede4;--accent:#5e30eb;--accent-rgb:94,48,235;
+    --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;
+  }
+  html,body{width:100%;height:100%;overflow:hidden}
+  body{font-family:var(--font-b);font-weight:300;background:var(--ink);color:var(--paper)}
+
+  #stage{position:fixed;inset:0;z-index:0;background:var(--ink);overflow:hidden}
+  #reel{position:absolute;inset:0;overflow:hidden}
+  #reel iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none}
+  #reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:none}
+
+  #nav{position:fixed;z-index:100;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2.5rem;pointer-events:none}
+  .nl,.nls{opacity:0}
+
+  #ht{position:fixed;z-index:10;bottom:3rem;left:2.5rem;pointer-events:none}
+  .hname{font-family:var(--font-s);font-size:clamp(4rem,8vw,9rem);font-weight:700;line-height:.88}
+  #watch-reel-wrap{position:fixed;z-index:10;top:66.666%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0}
+
+  #loader{position:fixed;inset:0;z-index:1000;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem}
+  #loader-name{font-family:var(--font-s);font-size:1.1rem;letter-spacing:.35em;color:var(--paper)}
+  #loader-bar-wrap{width:min(300px,70vw);height:1px;background:rgba(242,237,228,0.22);overflow:hidden}
+  #loader-bar{height:100%;width:0;background:var(--accent)}
+  #loader.done{pointer-events:none;opacity:0;transition:opacity .45s ease}
+</style>
 <style id="theme-vars"></style>
 <style id="pattern-styles"></style>
 </head>
