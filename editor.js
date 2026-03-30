@@ -288,6 +288,35 @@ function parseContactVideo(raw){
 }
 function updateContactVideoHint(msg){ const el=document.getElementById('ct-video-hint'); if(el)el.innerHTML=msg; }
 
+// ─────────────────────────────────────────
+// VIDEO URL PARSER (for project blocks)
+// ─────────────────────────────────────────
+function parseVideoBlockInput(scope, blockId, raw) {
+  const val = raw.trim();
+  if (!val) {
+    updateBlock(scope, blockId, 'src', '');
+    return;
+  }
+
+  // Extract src from iframe HTML if present
+  const srcMatch = val.match(/src=["']([^"']+)["']/);
+  const url = srcMatch ? srcMatch[1] : val;
+
+  // Keep YouTube auto-formatting for watch/share/embed URLs
+  const ytEmbed = url.match(/youtube\.com\/embed\/([\w-]+)/);
+  const ytShort = url.match(/youtu\.be\/([\w-]+)/);
+  const ytWatch = url.match(/youtube\.com\/watch\?v=([\w-]+)/);
+  const ytId = (ytEmbed && ytEmbed[1]) || (ytShort && ytShort[1]) || (ytWatch && ytWatch[1]);
+
+  if (ytId) {
+    updateBlock(scope, blockId, 'src', `https://www.youtube.com/embed/${ytId}`);
+    return;
+  }
+
+  // Otherwise store whatever src/link was provided
+  updateBlock(scope, blockId, 'src', url);
+}
+
 function renderContact(){
   if(!C.contact.links) C.contact.links=[];
   const cp=getCP();
@@ -629,7 +658,7 @@ function blockEditorHTML(scope, b, i, total){
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
   } else if(b.type==='video'){
-    body=`<div class="field"><label>Video URL</label><input value="${b.src||''}" placeholder="Embed URL or media/video.mp4" oninput="updateBlock('${scope}','${b.id}','src',this.value)"></div>`;
+    body=`<div class="field"><label>Video URL</label><input value="${b.src||''}" placeholder="Embed URL or media/video.mp4" oninput="parseVideoBlockInput('${scope}','${b.id}',this.value)"></div>`;
   } else if(b.type==='stats'){
     body=`<div style="display:flex;flex-direction:column;gap:.5rem" id="stats-${b.id}">
       ${(b.items||[]).map((s,si)=>`<div class="stat-item">
