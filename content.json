@@ -78,13 +78,13 @@
     {
       "id": "b1774470306468",
       "type": "text-md",
-      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work — with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
+      "content": "The studio is led by an animator and generalist with production experience at the National Film Board of Canada. That background informs how we work \u2014 with an understanding of pipelines, collaboration, and general creativeness that comes with it.",
       "align": "left"
     },
     {
       "id": "b1774473102333",
       "type": "text-md",
-      "content": "Independently developed and released character assets — rigged, textured, and animation-ready — for a <i>AAA game title</i>, shipped publicly and used actively by players with a combined total of: ",
+      "content": "Independently developed and released character assets \u2014 rigged, textured, and animation-ready \u2014 for a <i>AAA game title</i>, shipped publicly and used actively by players with a combined total of: ",
       "align": "left"
     },
     {
@@ -137,7 +137,7 @@
       "type": "video",
       "url": "media/Feb Anim Challenge.mp4"
     },
-    "titleAccent": "— At your service",
+    "titleAccent": "\u2014 At your service",
     "tickerMid": [
       "3D Animation",
       "2D Animation",
@@ -156,7 +156,7 @@
       "Independent Films",
       "Game Cinematics"
     ],
-    "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention — not handed off.<br><br> Whether you've got something fully formed or just an early idea, reach out anytime.",
+    "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention \u2014 not handed off.<br><br> Whether you've got something fully formed or just an early idea, reach out anytime.",
     "emailLabel": "Hit us up",
     "socialLabel": "Here we are",
     "title": "Character almost there?"
@@ -179,7 +179,7 @@
       "typeLabel": "Design",
       "year": "2026",
       "thumbnail": "media/woke-up_hero.webp",
-      "published": true,
+      "published": false,
       "sensitive": false,
       "sensitiveLabel": "",
       "sensitiveColor": "",
@@ -192,7 +192,7 @@
       "typeLabel": "3D",
       "year": "2026",
       "thumbnail": "media/woke-up_thumbnail.webp",
-      "published": true,
+      "published": false,
       "sensitive": false,
       "sensitiveLabel": "18+ NSFW",
       "sensitiveColor": "",
@@ -205,7 +205,7 @@
       "typeLabel": "2D",
       "year": "2026",
       "thumbnail": "media/rgr_favicon.png",
-      "published": true,
+      "published": false,
       "sensitive": false,
       "sensitiveLabel": "",
       "sensitiveColor": "",
@@ -218,7 +218,7 @@
       "typeLabel": "Motion",
       "year": "2026",
       "thumbnail": "media/galaxy (2).jpg",
-      "published": true,
+      "published": false,
       "sensitive": false,
       "sensitiveLabel": "",
       "sensitiveColor": "",
@@ -257,7 +257,7 @@
       "typeLabel": "Motion",
       "year": "2026",
       "thumbnail": "",
-      "published": true,
+      "published": false,
       "sensitive": false,
       "sensitiveLabel": "",
       "sensitiveColor": "",
