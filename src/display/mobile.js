@@ -244,6 +244,33 @@ function setupEvents() {
     });
   });
 
+  // Sticky section bar
+  const sectionBar = document.getElementById('section-bar');
+  const sectionLabel = document.getElementById('section-label');
+  const workSection = document.getElementById('work');
+  const aboutSection = document.getElementById('about');
+  if (sectionBar && sectionLabel && workSection && aboutSection) {
+    const updateSectionBar = () => {
+      const scrollY = window.scrollY;
+      const workTop = workSection.offsetTop - 60;
+      const workBottom = workTop + workSection.offsetHeight;
+      const aboutTop = aboutSection.offsetTop - 60;
+      const aboutBottom = aboutTop + aboutSection.offsetHeight;
+
+      if (scrollY >= workTop && scrollY < workBottom) {
+        sectionLabel.textContent = 'Work';
+        sectionBar.classList.add('visible');
+      } else if (scrollY >= aboutTop && scrollY < aboutBottom) {
+        sectionLabel.textContent = 'About';
+        sectionBar.classList.add('visible');
+      } else {
+        sectionBar.classList.remove('visible');
+      }
+    };
+    window.addEventListener('scroll', updateSectionBar, { passive: true });
+    updateSectionBar();
+  }
+
   // Back to top button
   const topBtn = document.getElementById('back-to-top');
   if (topBtn) {

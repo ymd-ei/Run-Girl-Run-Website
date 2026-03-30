@@ -25,6 +25,22 @@ body{
 #hero{
   padding:3rem 1.5rem 2rem;
 }
+
+/* ─────────────────────────────────────────
+   STICKY SECTION BAR
+───────────────────────────────────────── */
+.section-bar{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  padding:.6rem 1.5rem;
+  background:rgba(26,23,20,0.88);backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(242,237,228,0.08);
+  font-family:var(--font-b);font-size:.58rem;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(242,237,228,0.5);
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+.section-bar.visible{opacity:1}
 .hero-role{
   font-family:var(--font-b);font-size:.6rem;letter-spacing:.22em;
   text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;font-weight:500;
