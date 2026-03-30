@@ -7,7 +7,7 @@ import { globalState, projects, pageState, uiState, createSnapshot, restoreSnaps
 import { HistoryManager } from './state/history.js';
 
 // UI and page management
-import { showPage, showProject, buildNav, markPageStale, isPageRendered } from './modules/ui/pageManager.js';
+import { showPage, showProject, buildNav, isPageRendered } from './modules/ui/pageManager.js';
 import { getBlockPreview, getBlockMenuHTML, getColorFieldHTML, getBlockBodyHTML } from './modules/ui/formHelpers.js';
 import { initializeDragDropHandlers } from './modules/ui/dragDrop.js';
 

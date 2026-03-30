@@ -3,7 +3,7 @@
  * HTML generation for forms, fields, and editors
  */
 
-import { getCustomizableColors, getColorDisplayName } from '../../utils/colors.js';
+import { getCustomizableColors, getColorDisplayName } from '../themes/themeManager.js';
 
 /**
  * Get a short preview of a block for the block list header

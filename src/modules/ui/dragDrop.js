@@ -167,14 +167,3 @@ export function getBlockDragAttrs(blockId, scope) {
     'ondrop': `window.dragDropState.onBlockDrop(event, '${blockId}', '${scope}')`
   };
 }
-
-/**
- * Helper to convert attrs object to HTML string
- * @param {Object} attrs - Attributes object
- * @returns {string} HTML attribute string
- */
-export function attrsToString(attrs) {
-  return Object.entries(attrs)
-    .map(([key, val]) => `${key}="${val}"`)
-    .join(' ');
-}
