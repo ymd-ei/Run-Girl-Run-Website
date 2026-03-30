@@ -210,11 +210,16 @@ export function scrambleHero(role, line1, line2) {
           .join('')
       : '');
 
-  function animateSpans(spans, startDelay, charDelay, cycleMs, cycles) {
-    spans.forEach((span, i) => {
+  function animateSpans(spans, startDelay, revealWindowMs, cycleMs, cycles) {
+    const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
+    const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
+    let revealIndex = 0;
+
+    spans.forEach(span => {
       const ch = span.dataset.ch;
       const isSpace = ch === ' ';
-      const delay = startDelay + i * charDelay;
+      const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
+      const delay = startDelay + staggerDelay;
 
       setTimeout(() => {
         span.style.opacity = '1';
@@ -245,18 +250,20 @@ export function scrambleHero(role, line1, line2) {
   }
 
   const START = 600;
+  const roleRevealWindowMs = 540;
+  const nameRevealWindowMs = 840;
+  const accentRevealWindowMs = 700;
   const roleSpans = Array.from(roleEl.querySelectorAll('.sc-char'));
   const nameSpans = Array.from(nameEl.querySelectorAll('.sc-char:not(.sc-em)'));
   const emSpans = Array.from(nameEl.querySelectorAll('.sc-em'));
 
-  const roleDuration = roleSpans.length * 60;
-  animateSpans(roleSpans, START, 60, 90, 7);
+  animateSpans(roleSpans, START, roleRevealWindowMs, 90, 7);
 
-  const nameLine1Start = START + roleDuration * 0.55;
-  animateSpans(nameSpans, nameLine1Start, 90, 100, 8);
+  const nameLine1Start = START + roleRevealWindowMs * 0.55;
+  animateSpans(nameSpans, nameLine1Start, nameRevealWindowMs, 100, 8);
 
-  const nameLine2Start = nameLine1Start + nameSpans.length * 90 * 0.4;
-  animateSpans(emSpans, nameLine2Start, 90, 100, 8);
+  const nameLine2Start = nameLine1Start + nameRevealWindowMs * 0.4;
+  animateSpans(emSpans, nameLine2Start, accentRevealWindowMs, 100, 8);
 
   scheduleIdle([roleSpans, nameSpans, emSpans]);
 }
@@ -295,11 +302,16 @@ export function scrambleContactHero(title, accent, idleOptions = {}) {
       .join('') +
     '</span>';
 
-  function animateSpans(spans, startDelay, charDelay, cycleMs, cycles) {
-    spans.forEach((span, i) => {
+  function animateSpans(spans, startDelay, revealWindowMs, cycleMs, cycles) {
+    const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
+    const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
+    let revealIndex = 0;
+
+    spans.forEach(span => {
       const ch = span.dataset.ch;
       const isSpace = ch === ' ';
-      const delay = startDelay + i * charDelay;
+      const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
+      const delay = startDelay + staggerDelay;
 
       setTimeout(() => {
         span.style.opacity = '1';
@@ -330,13 +342,15 @@ export function scrambleContactHero(title, accent, idleOptions = {}) {
   }
 
   const START = 160;
+  const titleRevealWindowMs = 900;
+  const accentRevealWindowMs = 760;
   const titleSpans = Array.from(heroEl.querySelectorAll('.sc-char.ct-line-1'));
   const accentSpans = Array.from(heroEl.querySelectorAll('.sc-char.ct-line-2'));
 
-  animateSpans(titleSpans, START, 85, 90, 7);
+  animateSpans(titleSpans, START, titleRevealWindowMs, 90, 7);
 
-  const accentStart = START + titleSpans.length * 85 * 0.55;
-  animateSpans(accentSpans, accentStart, 95, 100, 8);
+  const accentStart = START + titleRevealWindowMs * 0.55;
+  animateSpans(accentSpans, accentStart, accentRevealWindowMs, 100, 8);
 
   return scheduleIdle([titleSpans, accentSpans], idleOptions);
 }
