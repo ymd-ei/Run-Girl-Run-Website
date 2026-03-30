@@ -23,6 +23,17 @@ const ALLOWED_GITHUB_USER = 'ymd-ei'; // Only allow YOUR username
  * Main request handler
  */
 async function handleRequest(request, env) {
+  try {
+    return await handleRequestInner(request, env);
+  } catch (err) {
+    return corsResponse(new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }), request, env);
+  }
+}
+
+async function handleRequestInner(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -305,22 +316,18 @@ async function handleMedia(request, env) {
   }
 
   if (request.method === 'POST') {
-    // Upload media file
+    // Upload media file — base64 is encoded by the browser to avoid Worker CPU limits.
     try {
-      const formData = await request.formData();
-      const file = formData.get('file');
-      const folder = formData.get('folder') || 'media';
+      const { name, folder = 'media', base64 } = await request.json();
 
-      if (!file) {
+      if (!name || !base64) {
         return corsResponse(new Response(JSON.stringify({ error: 'No file provided' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
         }), request, env);
       }
 
-      const buffer = await file.arrayBuffer();
-      const base64 = arrayBufferToBase64(buffer);
-      const path = `${folder}/${file.name}`;
+      const path = `${folder}/${name}`;
 
       const uploadResult = await uploadFileToGitHub(session.token, path, base64, env);
 
@@ -375,7 +382,7 @@ async function handleMedia(request, env) {
     }
   }
 
-  return new Response('Method not allowed', { status: 405 });
+  return corsResponse(new Response('Method not allowed', { status: 405 }), request, env);
 }
 
 /**
@@ -491,31 +498,70 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
  * Helper: Upload file to GitHub
  */
 async function uploadFileToGitHub(token, path, base64Content, env) {
-  const response = await fetch(
-    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'rgr-editor-backend'
-      },
-      body: JSON.stringify({
-        message: `Upload: ${path}`,
-        content: base64Content,
-        branch: GITHUB_BRANCH
-      })
-    }
-  );
+  const headers = {
+    'Authorization': `token ${token}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+    'User-Agent': 'rgr-editor-backend'
+  };
+  const baseUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Upload failed');
+  // 1. Create a blob (no file-size limit unlike Contents API)
+  const blobRes = await fetch(`${baseUrl}/git/blobs`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ content: base64Content, encoding: 'base64' })
+  });
+  if (!blobRes.ok) {
+    const err = await blobRes.json().catch(() => ({}));
+    throw new Error(err.message || 'Failed to create blob');
   }
+  const { sha: blobSha } = await blobRes.json();
 
-  const data = await response.json();
-  return { path: data.content.path };
+  // 2. Get current commit SHA for the branch
+  const refRes = await fetch(`${baseUrl}/git/ref/heads/${GITHUB_BRANCH}`, { headers });
+  if (!refRes.ok) throw new Error('Failed to fetch branch ref');
+  const { object: { sha: commitSha } } = await refRes.json();
+
+  // 3. Get current tree SHA
+  const commitRes = await fetch(`${baseUrl}/git/commits/${commitSha}`, { headers });
+  if (!commitRes.ok) throw new Error('Failed to fetch commit');
+  const { tree: { sha: treeSha } } = await commitRes.json();
+
+  // 4. Create a new tree with this file
+  const treeRes = await fetch(`${baseUrl}/git/trees`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      base_tree: treeSha,
+      tree: [{ path, mode: '100644', type: 'blob', sha: blobSha }]
+    })
+  });
+  if (!treeRes.ok) throw new Error('Failed to create tree');
+  const { sha: newTreeSha } = await treeRes.json();
+
+  // 5. Create a commit
+  const newCommitRes = await fetch(`${baseUrl}/git/commits`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      message: `Upload: ${path}`,
+      tree: newTreeSha,
+      parents: [commitSha]
+    })
+  });
+  if (!newCommitRes.ok) throw new Error('Failed to create commit');
+  const { sha: newCommitSha } = await newCommitRes.json();
+
+  // 6. Update branch ref
+  const updateRefRes = await fetch(`${baseUrl}/git/refs/heads/${GITHUB_BRANCH}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ sha: newCommitSha })
+  });
+  if (!updateRefRes.ok) throw new Error('Failed to update branch ref');
+
+  return { path };
 }
 
 /**

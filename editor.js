@@ -1223,11 +1223,19 @@ function refreshPreview(){
 // MEDIA UPLOADER
 // ─────────────────────────────────────────
 async function uploadMedia(file, folder){
-  const form = new FormData();
-  form.append('file', file);
-  form.append('folder', folder);
+  // Encode in the browser to avoid Cloudflare Worker CPU timeout on large files.
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
-  const r = await fetch(MEDIA_URL, getAuthFetchOptions({ method: 'POST', body: form }));
+  const r = await fetch(MEDIA_URL, getAuthFetchOptions({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: file.name, folder, base64 })
+  }));
 
   const data = await r.json().catch(() => ({}));
   if(!r.ok){
