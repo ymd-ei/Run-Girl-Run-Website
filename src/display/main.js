@@ -10,6 +10,7 @@ import {
   initSensitiveTapes,
   renderContactPanel,
   scrambleHero,
+  scrambleContactHero,
   initCountUps,
   updateContactPanelBackground,
   renderDisplayBlocks
@@ -20,9 +21,27 @@ import { pool, scheduleIdle } from '../utils/text.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
+let contactHeroIdleController = null;
+let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
 let lightboxMode = 'reel';
 const projectCache = new Map();
+
+function replayContactHeroScramble() {
+  if (contactHeroIdleController && typeof contactHeroIdleController.cancel === 'function') {
+    contactHeroIdleController.cancel();
+  }
+
+  contactHeroIdleController = scrambleContactHero(contactHeroText.title, contactHeroText.accent, {
+    // Intentionally varied cadence vs main hero while keeping the same visual language.
+    initialDelay: 3600,
+    minDelay: 3000,
+    maxDelay: 7600,
+    minRunLen: 2,
+    maxRunLen: 5,
+    staggerMs: 70
+  });
+}
 
 function suspendMediaIn(root) {
   if (!root) return;
@@ -441,6 +460,11 @@ function renderAboutPanel() {
 function renderContactSection() {
   const ctData = renderContactPanel(globalState);
 
+  contactHeroText = {
+    title: ctData.heroTitle || "Let's",
+    accent: ctData.heroAccent || 'work.'
+  };
+
   // Update hero text
   const ctHero = document.querySelector('.ct-hero');
   if (ctHero) ctHero.innerHTML = ctData.hero;
@@ -525,6 +549,11 @@ function renderContactSection() {
   document.documentElement.style.setProperty('--ct-muted', 'rgba(255,255,255,0.6)');
 
   startContactTickers();
+
+  const contactWrapper = document.getElementById('contact-wrapper');
+  if (contactWrapper && contactWrapper.classList.contains('open')) {
+    replayContactHeroScramble();
+  }
 }
 
 function startContactTickers() {
@@ -876,6 +905,7 @@ function setupEventListeners() {
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
         if (bd) bd.classList.add('open');
+        replayContactHeroScramble();
         if (!contactTickersStarted) startContactTickers();
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
@@ -906,6 +936,11 @@ function setupEventListeners() {
       if (bd) {
         bd.classList.remove('open');
         bd.classList.remove('project-open');
+      }
+
+      if (contactHeroIdleController && typeof contactHeroIdleController.cancel === 'function') {
+        contactHeroIdleController.cancel();
+        contactHeroIdleController = null;
       }
     },
 

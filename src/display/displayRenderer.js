@@ -262,6 +262,86 @@ export function scrambleHero(role, line1, line2) {
 }
 
 /**
+ * Animate contact hero text with character scrambling
+ * @param {string} title - Main contact hero line
+ * @param {string} accent - Accent line text
+ * @param {Object} idleOptions - Optional idle schedule overrides
+ * @returns {{cancel: Function}|null} Controller to stop idle scrambling
+ */
+export function scrambleContactHero(title, accent, idleOptions = {}) {
+  const heroEl = document.querySelector('.ct-hero');
+  if (!heroEl) return null;
+
+  const mainLine = String(title || '').trim() || "Let's";
+  const accentLine = String(accent || '').trim() || 'work.';
+
+  heroEl.innerHTML =
+    mainLine
+      .split('')
+      .map(ch =>
+        ch === ' '
+          ? '<span class="sc-char ct-line-1" data-ch=" " style="opacity:0">&nbsp;</span>'
+          : `<span class="sc-char ct-line-1" data-ch="${ch}" style="opacity:0">${ch}</span>`
+      )
+      .join('') +
+    '<br><span class="accent-word">' +
+    accentLine
+      .split('')
+      .map(ch =>
+        ch === ' '
+          ? '<span class="sc-char ct-line-2" data-ch=" " style="opacity:0">&nbsp;</span>'
+          : `<span class="sc-char ct-line-2" data-ch="${ch}" style="opacity:0">${ch}</span>`
+      )
+      .join('') +
+    '</span>';
+
+  function animateSpans(spans, startDelay, charDelay, cycleMs, cycles) {
+    spans.forEach((span, i) => {
+      const ch = span.dataset.ch;
+      const isSpace = ch === ' ';
+      const delay = startDelay + i * charDelay;
+
+      setTimeout(() => {
+        span.style.opacity = '1';
+
+        if (isSpace) {
+          span.innerHTML = '&nbsp;';
+          return;
+        }
+
+        const p = pool(ch);
+        let tick = 0;
+
+        function cycle() {
+          if (tick < cycles) {
+            const overshoot = Math.max(0, tick - (cycles - 4));
+            const speed = cycleMs * (1 + overshoot * 1.4);
+            span.textContent = p[tick % p.length];
+            tick++;
+            setTimeout(cycle, speed);
+          } else {
+            span.textContent = ch;
+          }
+        }
+
+        cycle();
+      }, delay);
+    });
+  }
+
+  const START = 160;
+  const titleSpans = Array.from(heroEl.querySelectorAll('.sc-char.ct-line-1'));
+  const accentSpans = Array.from(heroEl.querySelectorAll('.sc-char.ct-line-2'));
+
+  animateSpans(titleSpans, START, 85, 90, 7);
+
+  const accentStart = START + titleSpans.length * 85 * 0.55;
+  animateSpans(accentSpans, accentStart, 95, 100, 8);
+
+  return scheduleIdle([titleSpans, accentSpans], idleOptions);
+}
+
+/**
  * Render work grid with project cards
  * @param {Array} projects - Array of projects
  * @param {Object} theme - Theme object for thumbnails
@@ -335,7 +415,7 @@ export function initSensitiveTapes(projects) {
 /**
  * Render contact panel content
  * @param {Object} globalState - Global state with contactPanel data
- * @returns {{hero: string, sub: string, tickerTop: string, tickerMid: string, icons: string}}
+ * @returns {{hero: string, heroTitle: string, heroAccent: string, sub: string, tickerTop: string, tickerMid: string, icons: string}}
  */
 export function renderContactPanel(globalState) {
   const cp = globalState.contactPanel || {};
@@ -380,6 +460,8 @@ export function renderContactPanel(globalState) {
 
   return {
     hero,
+    heroTitle: ctTitle,
+    heroAccent: ctAccent,
     sub,
     emailLabel: cp.emailLabel || 'Drop us a line',
     socialLabel: cp.socialLabel || 'Find us',

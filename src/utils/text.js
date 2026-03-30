@@ -57,28 +57,58 @@ export function rescrambleSpan(span) {
 /**
  * Schedule idle text scrambling animations
  * @param {Array<Array<Element>>} allSpanGroups - Groups of span elements
+ * @param {Object} options - Idle timing options
+ * @returns {{cancel: Function}|null} Controller to stop scheduled idle cycles
  */
-export function scheduleIdle(allSpanGroups) {
+export function scheduleIdle(allSpanGroups, options = {}) {
   if (!allSpanGroups || allSpanGroups.length === 0) return;
 
+  const initialDelay = Number.isFinite(options.initialDelay) ? options.initialDelay : 5500;
+  const minDelay = Number.isFinite(options.minDelay) ? options.minDelay : 4000;
+  const maxDelay = Number.isFinite(options.maxDelay) ? options.maxDelay : 9000;
+  const minRunLen = Number.isFinite(options.minRunLen) ? options.minRunLen : 2;
+  const maxRunLen = Number.isFinite(options.maxRunLen) ? options.maxRunLen : 5;
+  const staggerMs = Number.isFinite(options.staggerMs) ? options.staggerMs : 80;
+
+  let cancelled = false;
+  const timers = new Set();
+
+  function queue(task, delay) {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      if (!cancelled) task();
+    }, delay);
+    timers.add(id);
+    return id;
+  }
+
+  function cancel() {
+    cancelled = true;
+    timers.forEach(id => clearTimeout(id));
+    timers.clear();
+  }
+
   function runIdle() {
+    if (cancelled) return;
+
     const group = allSpanGroups[Math.floor(Math.random() * allSpanGroups.length)];
     const nonSpace = group.filter(s => s.dataset.ch !== ' ');
 
     if (!nonSpace.length) {
-      setTimeout(runIdle, 4000);
+      queue(runIdle, minDelay);
       return;
     }
 
-    const runLen = Math.min(nonSpace.length, 2 + Math.floor(Math.random() * 4));
+    const runLen = Math.min(nonSpace.length, minRunLen + Math.floor(Math.random() * Math.max(1, maxRunLen - minRunLen + 1)));
     const startIdx = Math.floor(Math.random() * (nonSpace.length - runLen + 1));
     const run = nonSpace.slice(startIdx, startIdx + runLen);
 
-    run.forEach((span, i) => setTimeout(() => rescrambleSpan(span), i * 80));
+    run.forEach((span, i) => queue(() => rescrambleSpan(span), i * staggerMs));
 
-    const nextDelay = 4000 + Math.random() * 5000;
-    setTimeout(runIdle, nextDelay);
+    const nextDelay = minDelay + Math.random() * Math.max(0, maxDelay - minDelay);
+    queue(runIdle, nextDelay);
   }
 
-  setTimeout(runIdle, 5500);
+  queue(runIdle, initialDelay);
+  return { cancel };
 }
