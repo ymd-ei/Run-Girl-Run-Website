@@ -101,7 +101,7 @@
       "align": "left"
     }
   ],
-  "published": false,
+  "published": true,
   "sensitive": true,
   "sensitiveLabel": "Non disclosure agreement",
   "sensitiveColor": "#f5ec00"
