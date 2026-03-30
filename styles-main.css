@@ -290,11 +290,11 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #ct-bg-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,8,8,0.97) 0%,rgba(8,8,8,0.5) 35%,rgba(8,8,8,0.1) 65%),linear-gradient(to bottom,rgba(8,8,8,0.7) 0%,transparent 30%)}
 #ct-bg-dark{position:absolute;inset:0;background:rgba(8,8,8,0);transition:background .2s ease}
 #ct-bg-grain{position:absolute;inset:0;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:128px 128px}
-#ct-content{position:relative;z-index:1}
+#ct-content{position:relative;z-index:1;isolation:isolate}
 #ct-splash{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:3rem 3.5rem 4rem;position:relative}
 .ct-tag{font-family:var(--font-ui);font-size:.62rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--ct-accent);display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;opacity:0;transform:translateY(10px);transition:opacity .6s .2s var(--ease),transform .6s .2s var(--ease)}
 #contact-wrapper.open .ct-tag{opacity:1;transform:translateY(0)}
-.ct-hero{font-family:var(--font-hero);font-size:clamp(5rem,13vw,14rem);line-height:.88;letter-spacing:.01em;color:var(--ct-hi);text-transform:uppercase;max-width:100%;overflow-wrap:anywhere;word-break:break-word;opacity:0;transform:translateY(40px);transition:opacity .85s .05s var(--ease),transform .85s .05s var(--ease)}
+.ct-hero{font-family:var(--font-hero);font-size:clamp(5rem,13vw,14rem);line-height:.88;letter-spacing:.01em;color:var(--ct-hi);mix-blend-mode:exclusion;text-transform:uppercase;max-width:100%;overflow-wrap:anywhere;word-break:break-word;text-shadow:0 0 1px rgba(0,0,0,0.45);opacity:0;transform:translateY(40px);transition:opacity .85s .05s var(--ease),transform .85s .05s var(--ease)}
 .ct-hero .accent-word{color:var(--ct-accent)}
 #contact-wrapper.open .ct-hero{opacity:1;transform:translateY(0)}
 .ct-sub{font-family:var(--font-ui);font-weight:300;font-size:.9rem;color:var(--ct-muted);line-height:1.8;max-width:480px;margin-top:1.75rem;opacity:0;transform:translateY(16px);transition:opacity .7s .35s var(--ease),transform .7s .35s var(--ease)}
