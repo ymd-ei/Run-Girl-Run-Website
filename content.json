@@ -128,6 +128,10 @@
     {
       "value": "Pipeline",
       "label": "Pipeline"
+    },
+    {
+      "value": "RFB",
+      "label": "Riftbound"
     }
   ],
   "favicon": "media/rgr_fav.png",
