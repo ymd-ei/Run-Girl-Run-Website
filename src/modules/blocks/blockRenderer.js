@@ -60,7 +60,7 @@ export function renderBlock(block, theme = {}) {
 
     case 'video':
       if (block.src) {
-        return `<div class="bl-video"><iframe src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+        return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       }
       return `<div class="bl-video empty">Video embed</div>`;
 

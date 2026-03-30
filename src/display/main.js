@@ -340,9 +340,9 @@ function renderHero() {
   if (globalState.reel && globalState.reel.url) {
     const url = globalState.reel.url;
     if (globalState.reel.type === 'youtube') {
-      reelEl.innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
     } else if (globalState.reel.type === 'vimeo') {
-      reelEl.innerHTML = `<iframe id="bg-reel-iframe" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
       // Try to initialize Vimeo player if available
       if (window.Vimeo) {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
@@ -472,7 +472,7 @@ function renderContactSection() {
 
     if (vid && vid.url) {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
-        ctBgVideo.innerHTML = `<iframe src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
         ctBgVideo.innerHTML = `<video autoplay muted loop playsinline src="${vid.url}"></video>`;
       }
@@ -773,7 +773,7 @@ function setupEventListeners() {
       const lbFrame = document.getElementById('lb-frame');
       const lbLabel = document.getElementById('lb-label');
       if (lbFrame) {
-        lbFrame.innerHTML = `<iframe id="lb-iframe" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       }
       if (lbLabel) lbLabel.textContent = 'Demo Reel';
       lightboxMode = 'reel';
