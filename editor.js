@@ -1762,6 +1762,9 @@ async function saveAll(){
     longform: !!p.longform
   }));
 
+  // Always include content.json when saving (projectCards must stay in sync)
+  if (!toSave.includes('content.json')) toSave.push('content.json');
+
   // Build data map
   const dataMap = {
     'content.json': JSON.stringify(C,null,2),
