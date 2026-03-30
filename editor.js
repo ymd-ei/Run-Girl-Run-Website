@@ -1415,7 +1415,13 @@ function markDirty(label, projectId){
   dirty=true;
   // Track which file was touched
   if(projectId) dirtyFiles.add('projects/'+projectId+'.json');
-  else dirtyFiles.add('content.json'); // default — most changes touch content.json
+  else {
+    dirtyFiles.add('content.json');
+    // Also mark the current project file if editing a project
+    if(currentPage==='project' && currentProjectId){
+      dirtyFiles.add('projects/'+currentProjectId+'.json');
+    }
+  }
   document.getElementById('save-btn').textContent='Save All Changes *';
   document.getElementById('pb-dot').classList.remove('live');
   clearTimeout(previewTimer);
