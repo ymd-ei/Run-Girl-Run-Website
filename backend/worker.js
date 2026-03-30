@@ -18,6 +18,7 @@ const GITHUB_OWNER = 'ymd-ei';
 const GITHUB_REPO = 'Run-Girl-Run-Website';
 const GITHUB_BRANCH = 'main';
 const ALLOWED_GITHUB_USER = 'ymd-ei'; // Only allow YOUR username
+const MAX_DIRECT_MEDIA_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 /**
  * Main request handler
@@ -316,18 +317,31 @@ async function handleMedia(request, env) {
   }
 
   if (request.method === 'POST') {
-    // Upload media file — base64 is encoded by the browser to avoid Worker CPU limits.
+    // Upload media file
     try {
-      const { name, folder = 'media', base64 } = await request.json();
+      const formData = await request.formData();
+      const file = formData.get('file');
+      const folder = formData.get('folder') || 'media';
 
-      if (!name || !base64) {
+      if (!file) {
         return corsResponse(new Response(JSON.stringify({ error: 'No file provided' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
         }), request, env);
       }
 
-      const path = `${folder}/${name}`;
+      if (typeof file.size === 'number' && file.size > MAX_DIRECT_MEDIA_UPLOAD_BYTES) {
+        return corsResponse(new Response(JSON.stringify({
+          error: `File too large for editor upload. Limit is ${Math.round(MAX_DIRECT_MEDIA_UPLOAD_BYTES / (1024 * 1024))}MB. Add it to media/ locally and git push.`
+        }), {
+          status: 413,
+          headers: { 'Content-Type': 'application/json' }
+        }), request, env);
+      }
+
+      const buffer = await file.arrayBuffer();
+      const base64 = arrayBufferToBase64(buffer);
+      const path = `${folder}/${file.name}`;
 
       const uploadResult = await uploadFileToGitHub(session.token, path, base64, env);
 
@@ -498,70 +512,31 @@ async function commitFilesToGitHub(token, filesMap, message, env) {
  * Helper: Upload file to GitHub
  */
 async function uploadFileToGitHub(token, path, base64Content, env) {
-  const headers = {
-    'Authorization': `token ${token}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json',
-    'User-Agent': 'rgr-editor-backend'
-  };
-  const baseUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
+  const response = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'rgr-editor-backend'
+      },
+      body: JSON.stringify({
+        message: `Upload: ${path}`,
+        content: base64Content,
+        branch: GITHUB_BRANCH
+      })
+    }
+  );
 
-  // 1. Create a blob (no file-size limit unlike Contents API)
-  const blobRes = await fetch(`${baseUrl}/git/blobs`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ content: base64Content, encoding: 'base64' })
-  });
-  if (!blobRes.ok) {
-    const err = await blobRes.json().catch(() => ({}));
-    throw new Error(err.message || 'Failed to create blob');
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Upload failed');
   }
-  const { sha: blobSha } = await blobRes.json();
 
-  // 2. Get current commit SHA for the branch
-  const refRes = await fetch(`${baseUrl}/git/ref/heads/${GITHUB_BRANCH}`, { headers });
-  if (!refRes.ok) throw new Error('Failed to fetch branch ref');
-  const { object: { sha: commitSha } } = await refRes.json();
-
-  // 3. Get current tree SHA
-  const commitRes = await fetch(`${baseUrl}/git/commits/${commitSha}`, { headers });
-  if (!commitRes.ok) throw new Error('Failed to fetch commit');
-  const { tree: { sha: treeSha } } = await commitRes.json();
-
-  // 4. Create a new tree with this file
-  const treeRes = await fetch(`${baseUrl}/git/trees`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      base_tree: treeSha,
-      tree: [{ path, mode: '100644', type: 'blob', sha: blobSha }]
-    })
-  });
-  if (!treeRes.ok) throw new Error('Failed to create tree');
-  const { sha: newTreeSha } = await treeRes.json();
-
-  // 5. Create a commit
-  const newCommitRes = await fetch(`${baseUrl}/git/commits`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      message: `Upload: ${path}`,
-      tree: newTreeSha,
-      parents: [commitSha]
-    })
-  });
-  if (!newCommitRes.ok) throw new Error('Failed to create commit');
-  const { sha: newCommitSha } = await newCommitRes.json();
-
-  // 6. Update branch ref
-  const updateRefRes = await fetch(`${baseUrl}/git/refs/heads/${GITHUB_BRANCH}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify({ sha: newCommitSha })
-  });
-  if (!updateRefRes.ok) throw new Error('Failed to update branch ref');
-
-  return { path };
+  const data = await response.json();
+  return { path: data.content.path };
 }
 
 /**

@@ -1222,20 +1222,22 @@ function refreshPreview(){
 // ─────────────────────────────────────────
 // MEDIA UPLOADER
 // ─────────────────────────────────────────
-async function uploadMedia(file, folder){
-  // Encode in the browser to avoid Cloudflare Worker CPU timeout on large files.
-  const base64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+const MAX_DIRECT_MEDIA_UPLOAD_BYTES = 20 * 1024 * 1024;
 
-  const r = await fetch(MEDIA_URL, getAuthFetchOptions({
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: file.name, folder, base64 })
-  }));
+async function uploadMedia(file, folder){
+  if (file.size > MAX_DIRECT_MEDIA_UPLOAD_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    const maxMb = (MAX_DIRECT_MEDIA_UPLOAD_BYTES / (1024 * 1024)).toFixed(0);
+    throw new Error(
+      `This file is ${sizeMb}MB. Editor upload limit is ${maxMb}MB. Add it to media/ locally and git push.`
+    );
+  }
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', folder);
+
+  const r = await fetch(MEDIA_URL, getAuthFetchOptions({ method: 'POST', body: form }));
 
   const data = await r.json().catch(() => ({}));
   if(!r.ok){
