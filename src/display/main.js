@@ -675,11 +675,20 @@ function setupEventListeners() {
         pp.classList.toggle('longform', !!project.longform);
         pp.classList.add('open');
       }
+
+      const bd = document.getElementById('bd');
+      if (bd) {
+        bd.classList.add('open');
+        bd.classList.add('project-open');
+      }
     },
 
     closeProject() {
       const pp = document.getElementById('pp');
       if (pp) pp.classList.remove('open');
+
+      const bd = document.getElementById('bd');
+      if (bd) bd.classList.remove('project-open');
     },
 
     openLightbox() {
@@ -748,7 +757,10 @@ function setupEventListeners() {
       const bd = document.getElementById('bd');
       if (contact) contact.classList.remove('open');
       if (stage) stage.classList.remove('contact-open');
-      if (bd) bd.classList.remove('open');
+      if (bd) {
+        bd.classList.remove('open');
+        bd.classList.remove('project-open');
+      }
     },
 
     smartClose() {

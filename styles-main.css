@@ -96,6 +96,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 ───────────────────────────────────────── */
 #bd{position:fixed;inset:0;z-index:200;background:rgba(26,23,20,0.45);opacity:0;pointer-events:none;transition:opacity .4s ease}
 #bd.open{opacity:1;pointer-events:all}
+#bd.project-open{z-index:350}
 
 .panel{position:fixed;z-index:300;top:0;right:0;bottom:0;width:min(540px,92vw);background:rgba(247,243,236,0.97);backdrop-filter:blur(12px);border-left:1px solid var(--panel-border);transform:translateX(110%);transition:transform .6s var(--ease);display:flex;flex-direction:column;overflow:hidden}
 .panel.wide{width:min(740px,96vw)}
@@ -169,7 +170,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
    border:1px solid var(--panel-border);
    border-radius:12px;
    box-shadow:0 26px 70px rgba(10,8,6,0.45);
-   transform:translate(-50%,115%);
+   transform:translate(-50%,calc(100vh + 3rem));
    opacity:0;
    transition:transform .62s var(--ease),opacity .32s ease;
 }
