@@ -294,7 +294,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #ct-splash{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:3rem 3.5rem 4rem;position:relative}
 .ct-tag{font-family:var(--font-ui);font-size:.62rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--ct-accent);display:flex;align-items:center;gap:.6rem;margin-bottom:1.5rem;opacity:0;transform:translateY(10px);transition:opacity .6s .2s var(--ease),transform .6s .2s var(--ease)}
 #contact-wrapper.open .ct-tag{opacity:1;transform:translateY(0)}
-.ct-hero{font-family:var(--font-hero);font-size:clamp(5rem,13vw,14rem);line-height:.88;letter-spacing:.01em;color:var(--ct-hi);text-transform:uppercase;opacity:0;transform:translateY(40px);transition:opacity .85s .05s var(--ease),transform .85s .05s var(--ease)}
+.ct-hero{font-family:var(--font-hero);font-size:clamp(5rem,13vw,14rem);line-height:.88;letter-spacing:.01em;color:var(--ct-hi);text-transform:uppercase;max-width:100%;overflow-wrap:anywhere;word-break:break-word;opacity:0;transform:translateY(40px);transition:opacity .85s .05s var(--ease),transform .85s .05s var(--ease)}
 .ct-hero .accent-word{color:var(--ct-accent)}
 #contact-wrapper.open .ct-hero{opacity:1;transform:translateY(0)}
 .ct-sub{font-family:var(--font-ui);font-weight:300;font-size:.9rem;color:var(--ct-muted);line-height:1.8;max-width:480px;margin-top:1.75rem;opacity:0;transform:translateY(16px);transition:opacity .7s .35s var(--ease),transform .7s .35s var(--ease)}
@@ -335,7 +335,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #ct-close:hover{border-color:var(--ct-accent);color:var(--ct-accent);background:rgba(255,120,40,0.08);transform:rotate(90deg)}
 #ct-sliver{position:fixed;top:0;left:0;bottom:0;width:var(--ct-sliver);z-index:299;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .4s .3s}
 #ct-sliver.open{opacity:1;pointer-events:all}
-@media(max-width:600px){#contact-wrapper{width:100vw}#ct-splash,#ct-links{padding:2rem 1.5rem}.ct-footer{padding:1.5rem}}
+@media(max-width:600px){#contact-wrapper{width:100vw}#ct-splash,#ct-links{padding:2rem 1.5rem}.ct-hero{font-size:clamp(3.4rem,20vw,6.5rem);line-height:.9}.ct-footer{padding:1.5rem}}
 
 /* ─────────────────────────────────────────
    ANIMATIONS & CONTACT-OPEN STATE
