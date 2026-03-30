@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  if (!/desktop=true/.test(location.search)) {
+    if (!sessionStorage.getItem('forceDesktop')) {
+      if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0) {
+        location.replace('mobile.html');
+      }
+    }
+  } else {
+    sessionStorage.setItem('forceDesktop', '1');
+  }
+</script>
 <title>Portfolio</title>
 <link rel="icon" id="favicon" href="media/rgr_fav.png">
 <link rel="apple-touch-icon" id="favicon-apple" href="media/rgr_fav.png">

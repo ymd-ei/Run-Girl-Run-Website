@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio</title>
+<link rel="icon" id="favicon" href="media/rgr_fav.png">
+<link rel="apple-touch-icon" href="media/rgr_fav.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+<link rel="stylesheet" href="styles-mobile.css">
+</head>
+<body>
+
+<header id="hero">
+  <p class="hero-role" id="hero-role"></p>
+  <h1 class="hero-name" id="hero-name"></h1>
+</header>
+
+<nav id="mobile-nav">
+  <a href="#work">Work</a>
+  <a href="#about">About</a>
+  <a href="#contact">Contact</a>
+</nav>
+
+<!-- REEL -->
+<section id="reel-section">
+  <div id="reel-embed"></div>
+</section>
+
+<!-- WORK -->
+<section id="work">
+  <h2 class="section-title">Work</h2>
+  <div class="filters" id="work-filters"></div>
+  <div class="work-grid" id="work-grid"></div>
+</section>
+
+<!-- PROJECT DETAIL -->
+<section id="project-detail" style="display:none">
+  <button id="project-back" class="back-btn">&larr; Back to Work</button>
+  <div id="project-blocks"></div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <h2 class="section-title">About</h2>
+  <div id="about-blocks"></div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <h2 class="section-title contact-title" id="ct-title"></h2>
+  <p class="contact-sub" id="ct-sub"></p>
+  <div class="contact-email-block">
+    <p class="contact-label" id="ct-email-label"></p>
+    <a id="ct-email-link" href="#" class="contact-email"></a>
+  </div>
+  <div class="contact-social-block">
+    <p class="contact-label" id="ct-social-label"></p>
+    <div class="contact-icons" id="ct-icons"></div>
+  </div>
+  <div id="ct-resume-wrap" class="contact-resume-block" style="display:none">
+    <p class="contact-label">Credentials</p>
+    <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="contact-resume-link">
+      <i class="ph-fill ph-file-pdf"></i>
+      View Resume
+      <i class="ph-fill ph-arrow-right"></i>
+    </a>
+  </div>
+</section>
+
+<footer id="footer">
+  <span id="footer-name"></span>
+  <span class="footer-dot"></span>
+  <span id="footer-loc"></span>
+  <a href="index.html?desktop=true" class="desktop-link">View Desktop Site</a>
+</footer>
+
+<script type="module" src="src/display/mobile.js"></script>
+</body>
+</html>
