@@ -178,7 +178,10 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
    opacity:1;
 }
 #pp.longform .ppbody{
-   padding:2.2rem 2.5rem 2.8rem;
+   padding:2.6rem 2.5rem 2.8rem;
+}
+#pp.longform .ph{
+   display:none;
 }
 #pp.longform .block-canvas{
    max-width:72ch;
