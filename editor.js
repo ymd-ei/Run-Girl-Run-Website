@@ -666,6 +666,9 @@ function blockEditorHTML(scope, b, i, total){
         <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
           <div class="field"><label>Step ${si+1} Title</label><input value="${s.title||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'title',this.value)"></div>
           <div class="field"><label>Description</label><textarea oninput="updateProcessStep('${scope}','${b.id}',${si},'content',this.value)">${s.content||''}</textarea></div>
+          <div class="field"><label>Image Path (optional)</label><input value="${s.image||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'image',this.value)"></div>
+          <button class="add-btn" onclick="openMediaLibrary(v=>updateProcessStep('${scope}','${b.id}',${si},'image',v))" style="margin-top:-.25rem">&#x1F5C2; Browse Media</button>
+          <div class="field"><label>Image Alt (optional)</label><input value="${s.imageAlt||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'imageAlt',this.value)"></div>
           <button class="del-btn" onclick="removeProcessStep('${scope}','${b.id}',${si})" style="align-self:flex-end">&#x2715;</button>
         </div>
       </div>`).join('')}
@@ -779,7 +782,7 @@ function addBlock(scope, type){
     'skills':{id,type:'skills',items:[{name:'',pct:80}]},
     'callout':{id,type:'callout',tone:'note',title:'',content:''},
     'gallery':{id,type:'gallery',columns:2,items:[{src:'',alt:'',caption:''}]},
-    'process':{id,type:'process',steps:[{title:'',content:''}]},
+    'process':{id,type:'process',steps:[{title:'',content:'',image:'',imageAlt:''}]},
     'divider':{id,type:'divider'}
   };
   blocks.push(defaults[type]||{id,type,content:''});
@@ -878,7 +881,7 @@ function addProcessStep(scope, blockId){
   openBlocks.add(blockId);
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
-  if(b){ b.steps=b.steps||[]; b.steps.push({title:'',content:''}); markDirty(); rerenderBlocks(scope); }
+  if(b){ b.steps=b.steps||[]; b.steps.push({title:'',content:'',image:'',imageAlt:''}); markDirty(); rerenderBlocks(scope); }
 }
 function removeProcessStep(scope, blockId, idx){
   openBlocks.add(blockId);
@@ -1679,7 +1682,15 @@ function blocksToMarkdown(blocks){
     if(b.type==='process'){
       out.push(':::process');
       (b.steps||[]).forEach((s,idx)=>{
-        out.push(`${idx+1}. ${(s.title||'').trim()} | ${markdownInlineFromHtml(s.content||'').trim()}`.trim());
+        const title = (s.title||'').trim();
+        const content = markdownInlineFromHtml(s.content||'').trim();
+        const img = (s.image||'').trim();
+        const alt = (s.imageAlt||'').trim();
+        if(img){
+          out.push(`${idx+1}. ${title} | ${content} | ![${alt}](${img})`.trim());
+        } else {
+          out.push(`${idx+1}. ${title} | ${content}`.trim());
+        }
       });
       out.push(':::');
       return;
@@ -1737,14 +1748,19 @@ function parseMarkdownToBlocks(md){
       const steps = [];
       i++;
       while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
-        const pm = lines[i].trim().match(/^\d+\.\s*(.*?)\s*(?:\|\s*(.*))?$/);
+        const pm = lines[i].trim().match(/^\d+\.\s*(.*?)\s*(?:\|\s*(.*?))?\s*(?:\|\s*!\[([^\]]*)\]\(([^)]+)\))?\s*$/);
         if(pm){
-          steps.push({ title: (pm[1] || '').trim(), content: inlineFormat((pm[2] || '').trim()) });
+          steps.push({
+            title: (pm[1] || '').trim(),
+            content: inlineFormat((pm[2] || '').trim()),
+            imageAlt: (pm[3] || '').trim(),
+            image: (pm[4] || '').trim()
+          });
         }
         i++;
       }
       if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
-      blocks.push({ id: uid(), type:'process', steps: steps.length ? steps : [{title:'',content:''}] });
+      blocks.push({ id: uid(), type:'process', steps: steps.length ? steps : [{title:'',content:'',image:'',imageAlt:''}] });
       continue;
     }
 

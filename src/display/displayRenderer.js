@@ -88,11 +88,11 @@ export function renderDisplayBlock(block) {
     case 'gallery':
       const galleryCols = block.columns === 3 ? 3 : 2;
       return `<div class="bl-gallery cols-${galleryCols}">${(block.items || [])
-        .map(it => `<figure class="bl-gallery-item"><img src="${it.src || ''}" alt="${it.alt || ''}">${it.caption ? `<figcaption>${it.caption}</figcaption>` : ''}</figure>`)
+        .map(it => `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${it.src || ''}" alt="${it.alt || ''}" data-full-src="${it.src || ''}" data-full-alt="${it.alt || ''}">${it.caption ? `<figcaption>${it.caption}</figcaption>` : ''}</figure>`)
         .join('')}</div>`;
     case 'process':
       return `<div class="bl-process">${(block.steps || [])
-        .map((s, idx) => `<div class="bl-process-step"><div class="bl-process-num">${idx + 1}</div><div class="bl-process-copy"><h4>${s.title || ''}</h4><p>${s.content || ''}</p></div></div>`)
+        .map((s, idx) => `<div class="bl-process-step"><div class="bl-process-num">${idx + 1}</div><div class="bl-process-copy"><h4>${s.title || ''}</h4><p>${s.content || ''}</p>${s.image ? `<img class="bl-process-step-image" src="${s.image}" alt="${s.imageAlt || s.title || ''}">` : ''}</div></div>`)
         .join('')}</div>`;
     default:
       return '';

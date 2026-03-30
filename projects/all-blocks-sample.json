@@ -74,15 +74,21 @@
       "steps": [
         {
           "title": "Discovery",
-          "content": "Collect references, define constraints, and lock messaging."
+          "content": "Collect references, define constraints, and lock messaging.",
+          "image": "media/woke-up_hero.webp",
+          "imageAlt": "Discovery moodboard"
         },
         {
           "title": "Design",
-          "content": "Build visual direction, motion language, and typography tests."
+          "content": "Build visual direction, motion language, and typography tests.",
+          "image": "media/rgr_fav.png",
+          "imageAlt": "Design exploration artifact"
         },
         {
           "title": "Polish",
-          "content": "Refine timing, spacing, and final QA before release."
+          "content": "Refine timing, spacing, and final QA before release.",
+          "image": "",
+          "imageAlt": ""
         }
       ]
     },

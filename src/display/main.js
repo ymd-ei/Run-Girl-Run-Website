@@ -21,6 +21,7 @@ import { pool, scheduleIdle } from '../utils/text.js';
 let bgPlayer = null;
 let contactTickersStarted = false;
 let pendingPreviewNav = null;
+let lightboxMode = 'reel';
 
 /**
  * Run the loader animation with randomized percentage stops.
@@ -718,9 +719,12 @@ function setupEventListeners() {
       }
 
       const lbFrame = document.getElementById('lb-frame');
+      const lbLabel = document.getElementById('lb-label');
       if (lbFrame) {
         lbFrame.innerHTML = `<iframe id="lb-iframe" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       }
+      if (lbLabel) lbLabel.textContent = 'Demo Reel';
+      lightboxMode = 'reel';
 
       const lightbox = document.getElementById('lightbox');
       if (lightbox) lightbox.classList.add('open');
@@ -737,9 +741,25 @@ function setupEventListeners() {
 
       setTimeout(() => {
         const lbFrame = document.getElementById('lb-frame');
+        const lbLabel = document.getElementById('lb-label');
         if (lbFrame) lbFrame.innerHTML = '';
-        if (bgPlayer) bgPlayer.play().catch(() => {});
+        if (lbLabel) lbLabel.textContent = 'Demo Reel';
+        if (lightboxMode === 'reel' && bgPlayer) bgPlayer.play().catch(() => {});
+        lightboxMode = 'reel';
       }, 400);
+    },
+
+    openImageLightbox(src, alt) {
+      if (!src) return;
+      const lbFrame = document.getElementById('lb-frame');
+      const lbLabel = document.getElementById('lb-label');
+      const lightbox = document.getElementById('lightbox');
+      if (!lbFrame || !lightbox) return;
+
+      lbFrame.innerHTML = `<img id="lb-image" src="${src}" alt="${alt || ''}">`;
+      if (lbLabel) lbLabel.textContent = 'Gallery Image';
+      lightboxMode = 'image';
+      lightbox.classList.add('open');
     },
 
     openPanel(name) {
@@ -815,6 +835,14 @@ function setupEventListeners() {
       cur.style.top = e.clientY + 'px';
     }, { passive: true });
   }
+
+  // Open gallery items from project content in the shared lightbox.
+  document.addEventListener('click', e => {
+    const img = e.target.closest('.bl-gallery-open');
+    if (!img) return;
+    e.preventDefault();
+    window.display?.openImageLightbox?.(img.dataset.fullSrc || img.src, img.dataset.fullAlt || img.alt || '');
+  });
 }
 
 /**
