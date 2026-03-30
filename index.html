@@ -7,33 +7,6 @@
 <link rel="icon" id="favicon" href="media/rgr_fav.png">
 <link rel="apple-touch-icon" id="favicon-apple" href="media/rgr_fav.png">
 <link rel="mask-icon" id="favicon-mask" href="media/rgr_fav.png" color="#5e30eb">
-<script>
-  (function () {
-    const fallback = 'media/rgr_fav.png';
-
-    function applyFavicon(src) {
-      const favicon = document.getElementById('favicon');
-      const apple = document.getElementById('favicon-apple');
-      const mask = document.getElementById('favicon-mask');
-      if (favicon) favicon.href = src;
-      if (apple) apple.href = src;
-      if (mask) mask.href = src;
-    }
-
-    // Immediate fallback prevents browser /favicon.ico 404 noise.
-    applyFavicon(fallback);
-
-    // Then upgrade to configured favicon from content.json when available.
-    fetch('content.json?v=' + Date.now())
-      .then(r => (r.ok ? r.json() : null))
-      .then(data => {
-        if (!data || !data.favicon) return;
-        const src = data.favicon + '?v=' + Date.now();
-        applyFavicon(src);
-      })
-      .catch(() => {});
-  })();
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
