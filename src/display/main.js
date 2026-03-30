@@ -47,7 +47,7 @@ function runLoaderAnimation() {
   nameEl.innerHTML = '';
 
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const nameText = 'RUN GIRL RUN';
+  const nameText = 'Run Girl Run';
 
   function runLoaderName() {
     nameEl.innerHTML = nameText
