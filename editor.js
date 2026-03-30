@@ -258,7 +258,8 @@ function renderAbout(){
     <div class="block-list" id="about-blocks"></div>
     <button class="add-block-btn" onclick="toggleBlockMenu('about-menu')">+ Add Block</button>
     <div class="block-menu hidden" id="about-menu">${blockMenuHTML('about')}</div>
-    <button class="md-import-btn" onclick="importMarkdown('about')" style="margin-top:.5rem">&#x1F4C4; Import from .md file</button>`;
+    <button class="md-import-btn" onclick="importMarkdown('about')" style="margin-top:.5rem">&#x1F4C4; Import from .md file</button>
+    <button class="md-import-btn" onclick="exportMarkdown('about')" style="margin-top:.45rem">&#x2B73; Export to .md file</button>`;
   renderBlockList('about', C.about);
 }
 
@@ -563,6 +564,7 @@ function renderProject(id){
         <button class="add-block-btn" onclick="toggleBlockMenu('proj-menu-${id}')">+ Add Block</button>
         <div class="block-menu hidden" id="proj-menu-${id}">${blockMenuHTML('proj-'+id)}</div>
         <button class="md-import-btn" onclick="importMarkdown('proj-${id}')">&#x1F4C4; Import from .md file</button>
+        <button class="md-import-btn" onclick="exportMarkdown('proj-${id}')" style="margin-top:.45rem">&#x2B73; Export to .md file</button>
       </div>
     </div>
     <div class="danger-zone" style="display:flex;align-items:center;justify-content:space-between">
@@ -649,6 +651,46 @@ function blockEditorHTML(scope, b, i, total){
     <button class="add-btn" onclick="addSkillItem('${scope}','${b.id}')">+ Add Skill</button>`;
   } else if(b.type==='divider'){
     body=`<p style="font-size:.72rem;color:var(--muted)">Horizontal rule divider.</p>`;
+  } else if(b.type==='callout'){
+    body=`
+      <div class="field"><label>Tone</label>
+        <select onchange="updateBlock('${scope}','${b.id}','tone',this.value)">
+          ${['note','highlight','warning'].map(t=>`<option value="${t}" ${(b.tone||'note')===t?'selected':''}>${t[0].toUpperCase()+t.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Title</label><input value="${b.title||''}" oninput="updateBlock('${scope}','${b.id}','title',this.value)"></div>
+      <div class="field"><label>Body</label><textarea oninput="updateBlock('${scope}','${b.id}','content',this.value)">${b.content||''}</textarea></div>`;
+  } else if(b.type==='process'){
+    body=`<div style="display:flex;flex-direction:column;gap:.6rem" id="proc-${b.id}">
+      ${(b.steps||[]).map((s,si)=>`<div class="bk" style="border:1px solid var(--border)">
+        <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+          <div class="field"><label>Step ${si+1} Title</label><input value="${s.title||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'title',this.value)"></div>
+          <div class="field"><label>Description</label><textarea oninput="updateProcessStep('${scope}','${b.id}',${si},'content',this.value)">${s.content||''}</textarea></div>
+          <button class="del-btn" onclick="removeProcessStep('${scope}','${b.id}',${si})" style="align-self:flex-end">&#x2715;</button>
+        </div>
+      </div>`).join('')}
+    </div>
+    <button class="add-btn" onclick="addProcessStep('${scope}','${b.id}')">+ Add Step</button>`;
+  } else if(b.type==='gallery'){
+    body=`
+      <div class="field"><label>Columns</label>
+        <select onchange="updateBlock('${scope}','${b.id}','columns',parseInt(this.value,10))">
+          <option value="2" ${(b.columns||2)===2?'selected':''}>2</option>
+          <option value="3" ${(b.columns||2)===3?'selected':''}>3</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem" id="gal-${b.id}">
+        ${(b.items||[]).map((it,gi)=>`<div class="bk" style="border:1px solid var(--border)">
+          <div class="bk-body" style="display:flex;gap:.5rem;flex-direction:column">
+            <div class="field"><label>Image Path</label><input value="${it.src||''}" oninput="updateGalleryItem('${scope}','${b.id}',${gi},'src',this.value)"></div>
+            <button class="add-btn" onclick="openMediaLibrary(v=>updateGalleryItem('${scope}','${b.id}',${gi},'src',v))" style="margin-top:-.25rem">&#x1F5C2; Browse Media</button>
+            <div class="field"><label>Alt Text</label><input value="${it.alt||''}" oninput="updateGalleryItem('${scope}','${b.id}',${gi},'alt',this.value)"></div>
+            <div class="field"><label>Caption</label><input value="${it.caption||''}" oninput="updateGalleryItem('${scope}','${b.id}',${gi},'caption',this.value)"></div>
+            <button class="del-btn" onclick="removeGalleryItem('${scope}','${b.id}',${gi})" style="align-self:flex-end">&#x2715;</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <button class="add-btn" onclick="addGalleryItem('${scope}','${b.id}')">+ Add Image</button>`;
   }
 
   return`<div class="bk" id="bk-${b.id}" draggable="true" data-scope="${scope}" data-bid="${b.id}"
@@ -692,6 +734,9 @@ function blockPreview(b){
   if(b.type==='divider') return '---';
   if(b.type==='stats') return (b.items||[]).map(s=>s.num).join(' · ');
   if(b.type==='skills') return (b.items||[]).map(s=>s.name).join(', ');
+  if(b.type==='callout') return (b.title||'Callout') + ' · ' + (b.tone||'note');
+  if(b.type==='process') return `${(b.steps||[]).length} step${(b.steps||[]).length===1?'':'s'}`;
+  if(b.type==='gallery') return `${(b.items||[]).length} image${(b.items||[]).length===1?'':'s'} · ${(b.columns||2)} cols`;
   if(b.type==='image') return b.src||b.alt||'(empty)';
   if(b.type==='twocol') return 'Two columns';
   return (b.content||'').slice(0,60);
@@ -701,7 +746,8 @@ function blockMenuHTML(scope){
   const types=[
     ['text-md','T','Text'],['image','&#x1F5BC;','Image'],['twocol','&#x25A6;','Two Col'],
     ['quote','"','Quote'],['video','&#x25B6;','Video'],['stats','#','Stats'],
-    ['skills','%','Skills'],['divider','&#x2015;','Divider']
+    ['skills','%','Skills'],['callout','!','Callout'],['gallery','&#x1F5BC;','Gallery'],
+    ['process','1.','Process'],['divider','&#x2015;','Divider']
   ];
   return types.map(([t,icon,label])=>`<button class="bm-item" onclick="addBlock('${scope}','${t}')"><div class="bm-icon">${icon}</div>${label}</button>`).join('');
 }
@@ -731,6 +777,9 @@ function addBlock(scope, type){
     'video':{id,type:'video',src:''},
     'stats':{id,type:'stats',items:[{num:'',label:''}]},
     'skills':{id,type:'skills',items:[{name:'',pct:80}]},
+    'callout':{id,type:'callout',tone:'note',title:'',content:''},
+    'gallery':{id,type:'gallery',columns:2,items:[{src:'',alt:'',caption:''}]},
+    'process':{id,type:'process',steps:[{title:'',content:''}]},
     'divider':{id,type:'divider'}
   };
   blocks.push(defaults[type]||{id,type,content:''});
@@ -818,6 +867,42 @@ function removeSkillItem(scope,blockId,idx){
   const blocks=getBlocks(scope)||[];
   const b=blocks.find(x=>x.id===blockId);
   if(b){b.items.splice(idx,1);markDirty();rerenderBlocks(scope);}
+}
+
+function updateProcessStep(scope, blockId, idx, key, val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b && b.steps && b.steps[idx]){ b.steps[idx][key]=val; markDirty(); }
+}
+function addProcessStep(scope, blockId){
+  openBlocks.add(blockId);
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){ b.steps=b.steps||[]; b.steps.push({title:'',content:''}); markDirty(); rerenderBlocks(scope); }
+}
+function removeProcessStep(scope, blockId, idx){
+  openBlocks.add(blockId);
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){ b.steps.splice(idx,1); markDirty(); rerenderBlocks(scope); }
+}
+
+function updateGalleryItem(scope, blockId, idx, key, val){
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b && b.items && b.items[idx]){ b.items[idx][key]=val; markDirty(); }
+}
+function addGalleryItem(scope, blockId){
+  openBlocks.add(blockId);
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){ b.items=b.items||[]; b.items.push({src:'',alt:'',caption:''}); markDirty(); rerenderBlocks(scope); }
+}
+function removeGalleryItem(scope, blockId, idx){
+  openBlocks.add(blockId);
+  const blocks=getBlocks(scope)||[];
+  const b=blocks.find(x=>x.id===blockId);
+  if(b){ b.items.splice(idx,1); markDirty(); rerenderBlocks(scope); }
 }
 
 // ─────────────────────────────────────────
@@ -1510,6 +1595,102 @@ function importMarkdown(scope){
   input.click();
 }
 
+function exportMarkdown(scope){
+  const blocks = getBlocks(scope) || [];
+  if(!blocks.length){
+    toast('No blocks to export', true);
+    return;
+  }
+
+  const md = blocksToMarkdown(blocks);
+  const name = scope === 'about' ? 'about.md' : `${scope.replace('proj-','')}.md`;
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast(`Exported ${name}`);
+}
+
+function markdownInlineFromHtml(text){
+  return String(text || '')
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<b>(.*?)<\/b>/gi, '**$1**')
+    .replace(/<i>(.*?)<\/i>/gi, '*$1*')
+    .replace(/<u>(.*?)<\/u>/gi, '$1')
+    .replace(/<rgr>(.*?)<\/rgr>/gi, '`$1`')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+}
+
+function blocksToMarkdown(blocks){
+  const out = [];
+  blocks.forEach(b=>{
+    if(b.type==='text-lg'){
+      out.push(`# ${markdownInlineFromHtml(b.content)}`);
+      return;
+    }
+    if(b.type==='text-sm'){
+      out.push(`### ${markdownInlineFromHtml(b.content)}`);
+      return;
+    }
+    if(b.type==='text-md'){
+      out.push(markdownInlineFromHtml(b.content));
+      return;
+    }
+    if(b.type==='quote'){
+      const lines = markdownInlineFromHtml(b.content).split('\n').filter(Boolean);
+      out.push(lines.map(l=>`> ${l}`).join('\n'));
+      return;
+    }
+    if(b.type==='image'){
+      out.push(`![${b.alt||''}](${b.src||''})`);
+      return;
+    }
+    if(b.type==='video'){
+      out.push(`!video(${b.src||''})`);
+      return;
+    }
+    if(b.type==='stats'){
+      out.push((b.items||[]).map(s=>`${s.num||''} | ${s.label||''}`).join('\n'));
+      return;
+    }
+    if(b.type==='skills'){
+      out.push((b.items||[]).map(s=>`- ${s.name||''} | ${s.pct||0}%`).join('\n'));
+      return;
+    }
+    if(b.type==='callout'){
+      out.push(`!!! ${(b.tone||'note')} ${markdownInlineFromHtml(b.title||'').trim()}`.trim());
+      if((b.content||'').trim()) out.push(markdownInlineFromHtml(b.content));
+      return;
+    }
+    if(b.type==='gallery'){
+      out.push(`:::gallery cols=${b.columns||2}`);
+      (b.items||[]).forEach(it=>{
+        const cap = (it.caption||'').trim();
+        out.push(`- ![${it.alt||''}](${it.src||''})${cap ? ' | '+cap : ''}`);
+      });
+      out.push(':::');
+      return;
+    }
+    if(b.type==='process'){
+      out.push(':::process');
+      (b.steps||[]).forEach((s,idx)=>{
+        out.push(`${idx+1}. ${(s.title||'').trim()} | ${markdownInlineFromHtml(s.content||'').trim()}`.trim());
+      });
+      out.push(':::');
+      return;
+    }
+    if(b.type==='divider'){
+      out.push('---');
+    }
+  });
+  return out.join('\n\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
 function uid(){ return 'b'+Date.now()+Math.random().toString(36).slice(2,6); }
 
 function parseMarkdownToBlocks(md){
@@ -1531,6 +1712,56 @@ function parseMarkdownToBlocks(md){
 
     // Skip blank lines
     if(!line.trim()){ i++; continue; }
+
+    // Gallery block
+    const galleryStart = line.match(/^:::gallery(?:\s+cols=(2|3))?\s*$/i);
+    if(galleryStart){
+      const cols = parseInt(galleryStart[1] || '2', 10);
+      const items = [];
+      i++;
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
+        const rawItem = lines[i].trim();
+        const gm = rawItem.match(/^-\s*!\[([^\]]*)\]\(([^)]+)\)(?:\s*\|\s*(.+))?$/);
+        if(gm){
+          items.push({ alt: gm[1] || '', src: gm[2] || '', caption: (gm[3] || '').trim() });
+        }
+        i++;
+      }
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push({ id: uid(), type:'gallery', columns: (cols===3?3:2), items: items.length ? items : [{src:'',alt:'',caption:''}] });
+      continue;
+    }
+
+    // Process block
+    if(/^:::process\s*$/i.test(line)){
+      const steps = [];
+      i++;
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
+        const pm = lines[i].trim().match(/^\d+\.\s*(.*?)\s*(?:\|\s*(.*))?$/);
+        if(pm){
+          steps.push({ title: (pm[1] || '').trim(), content: inlineFormat((pm[2] || '').trim()) });
+        }
+        i++;
+      }
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push({ id: uid(), type:'process', steps: steps.length ? steps : [{title:'',content:''}] });
+      continue;
+    }
+
+    // Callout block
+    const calloutMatch = line.match(/^!!!\s*(note|highlight|warning)?\s*(.*)$/i);
+    if(calloutMatch){
+      const tone = (calloutMatch[1] || 'note').toLowerCase();
+      const title = inlineFormat((calloutMatch[2] || '').trim());
+      i++;
+      const bodyLines = [];
+      while(i < lines.length && lines[i].trim()){
+        bodyLines.push(lines[i].trim());
+        i++;
+      }
+      blocks.push({ id: uid(), type:'callout', tone, title, content: inlineFormat(bodyLines.join('<br>')) });
+      continue;
+    }
 
     // H1 → text-lg (accent large heading)
     if(/^# /.test(line)){
@@ -1574,6 +1805,13 @@ function parseMarkdownToBlocks(md){
       i++; continue;
     }
 
+    // Video: !video(url)
+    const videoMatch = line.match(/^!video\(([^)]+)\)$/i);
+    if(videoMatch){
+      blocks.push({id:uid(), type:'video', src:videoMatch[1].trim()});
+      i++; continue;
+    }
+
     // Stats shorthand: lines like "148,000 | Combined Views"
     const statMatch = line.match(/^([\d,]+\+?)\s*\|\s*(.+)$/);
     if(statMatch){
@@ -1600,7 +1838,10 @@ function parseMarkdownToBlocks(md){
       i++;
     }
     if(paraLines.length){
-      const content = inlineFormat(paraLines.join(' '));
+      const isList = paraLines.every(x=>/^[-*]\s+/.test(x));
+      const content = isList
+        ? inlineFormat(paraLines.map(x=>'• '+x.replace(/^[-*]\s+/, '')).join('<br>'))
+        : inlineFormat(paraLines.join('<br>'));
       blocks.push({id:uid(), type:'text-md', content, align:'left'});
     }
   }

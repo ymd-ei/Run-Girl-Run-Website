@@ -83,6 +83,17 @@ export function renderDisplayBlock(block) {
         .join('')}</div>`;
     case 'divider':
       return `<div class="bl-divider"></div>`;
+    case 'callout':
+      return `<div class="bl-callout ${block.tone || 'note'}"><div class="bl-callout-title">${block.title || ''}</div><div class="bl-callout-body">${block.content || ''}</div></div>`;
+    case 'gallery':
+      const cols = block.columns === 3 ? 3 : 2;
+      return `<div class="bl-gallery cols-${cols}">${(block.items || [])
+        .map(it => `<figure class="bl-gallery-item"><img src="${it.src || ''}" alt="${it.alt || ''}">${it.caption ? `<figcaption>${it.caption}</figcaption>` : ''}</figure>`)
+        .join('')}</div>`;
+    case 'process':
+      return `<div class="bl-process">${(block.steps || [])
+        .map((s, idx) => `<div class="bl-process-step"><div class="bl-process-num">${idx + 1}</div><div class="bl-process-copy"><h4>${s.title || ''}</h4><p>${s.content || ''}</p></div></div>`)
+        .join('')}</div>`;
     default:
       return '';
   }
