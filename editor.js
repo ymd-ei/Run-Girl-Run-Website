@@ -1747,6 +1747,21 @@ async function saveAll(){
     ...projects.map(p=>`projects/${p.id}.json`)
   ];
 
+  // Sync projectCards in content.json from current project state
+  C.projectCards = projects.map(p => ({
+    id: p.id,
+    title: p.title,
+    type: p.type,
+    typeLabel: p.typeLabel,
+    year: p.year,
+    thumbnail: p.thumbnail,
+    published: !!p.published,
+    sensitive: !!p.sensitive,
+    sensitiveLabel: p.sensitiveLabel || '',
+    sensitiveColor: p.sensitiveColor || '',
+    longform: !!p.longform
+  }));
+
   // Build data map
   const dataMap = {
     'content.json': JSON.stringify(C,null,2),
