@@ -265,7 +265,34 @@ export async function bootstrap() {
     renderHero();
 
     // 5. Render work grid with filters
-    renderWorkSection();
+    // If the path is /amy, show all projects (ignore published state)
+    const isAmyRoute = window.location.pathname === '/amy' || window.location.hash === '#amy';
+    if (isAmyRoute) {
+      // Temporarily override the projects array to include all projects, even unpublished
+      // (Assumes all projects are loaded into the projects array already)
+      // Optionally, you could add a visual indicator here
+      renderWorkSection();
+      // Optionally, add a banner or indicator for "Amy's Draft View"
+      const filtersEl = document.getElementById('work-filters');
+      if (filtersEl) {
+        const banner = document.createElement('div');
+        banner.textContent = "Amy's Draft View: Showing ALL projects (published and drafts)";
+        banner.style = 'background: #ffe6f7; color: #a1006b; padding: 0.5em 1em; margin-bottom: 1em; border-radius: 6px; font-size: 1rem; text-align: center;';
+        filtersEl.parentNode.insertBefore(banner, filtersEl);
+      }
+    } else {
+      // Default: filter to only published projects
+      // Remove any unpublished projects from the array for display
+      const publishedProjects = projects.filter(p => p.published);
+      // Save original
+      const origProjects = [...projects];
+      projects.length = 0;
+      projects.push(...publishedProjects);
+      renderWorkSection();
+      // Restore original
+      projects.length = 0;
+      projects.push(...origProjects);
+    }
 
     // 5b. Render lower-right updates stack from log.json without blocking first paint.
     void loadLogStack();
