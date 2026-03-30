@@ -866,7 +866,7 @@ function setupEventListeners() {
       const contactPanel = document.getElementById('contact-wrapper');
       suspendMediaIn(aboutPanel);
       suspendMediaIn(workPanel);
-      suspendMediaIn(contactPanel);
+      // Contact background video runs continuously; only suspend on close, not on panel switches.
 
       if (name === 'contact') {
         const contact = document.getElementById('contact-wrapper');
@@ -875,7 +875,6 @@ function setupEventListeners() {
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
         if (bd) bd.classList.add('open');
-        resumeMediaIn(contact);
         if (!contactTickersStarted) startContactTickers();
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
