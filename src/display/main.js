@@ -796,17 +796,18 @@ function setupEventListeners() {
     },
 
     openLightbox() {
-      if (!globalState.reel || !globalState.reel.url) {
+      const lightboxReel = globalState.watchReel && globalState.watchReel.url ? globalState.watchReel : globalState.reel;
+      if (!lightboxReel || !lightboxReel.url) {
         alert('Add your reel URL to content.json first!');
         return;
       }
 
-      let src = globalState.reel.url;
+      let src = lightboxReel.url;
 
-      if (globalState.reel.type === 'youtube') {
+      if (lightboxReel.type === 'youtube') {
         src = src.replace('&controls=0', '').replace('&mute=1', '');
         if (!src.includes('controls=1')) src += '&controls=1';
-      } else if (globalState.reel.type === 'vimeo') {
+      } else if (lightboxReel.type === 'vimeo') {
         src = src.replace('background=1', 'background=0').replace('&muted=1', '').replace('autoplay=1', 'autoplay=0');
         if (!src.includes('autoplay')) src += '&autoplay=1';
       }
@@ -822,7 +823,7 @@ function setupEventListeners() {
       const lightbox = document.getElementById('lightbox');
       if (lightbox) lightbox.classList.add('open');
 
-      if (globalState.reel.type === 'vimeo' && window.Vimeo) {
+      if (lightboxReel.type === 'vimeo' && window.Vimeo) {
         const lbPlayer = new window.Vimeo.Player(document.getElementById('lb-iframe'));
         lbPlayer.ready().then(() => lbPlayer.play().catch(() => {}));
       }

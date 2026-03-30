@@ -173,10 +173,16 @@ function renderGlobal(){
       <div class="sh" onclick="toggleSection(this)"><h3>Demo Reel</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
         <div class="field">
-          <label>Paste YouTube / Vimeo embed code or URL</label>
+          <label>Main Background Reel (homepage)</label>
           <textarea id="reel-video-input" placeholder="Paste anything — full iframe code, share URL, or embed URL" oninput="parseReelInput(this.value)" style="min-height:60px">${C.reel.url||''}</textarea>
           <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>parseReelInput(v),'reel-video-input')">&#x1F5C2; Browse Media</button>
           <span class="hint" id="reel-hint">${reelHint()}</span>
+        </div>
+        <div class="field">
+          <label>Watch Reel Lightbox (optional, separate from background)</label>
+          <textarea id="watch-reel-video-input" placeholder="Optional. Leave blank to reuse Main Background Reel." oninput="parseWatchReelInput(this.value)" style="min-height:60px">${(C.watchReel&&C.watchReel.url)||''}</textarea>
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>parseWatchReelInput(v),'watch-reel-video-input')">&#x1F5C2; Browse Media</button>
+          <span class="hint" id="watch-reel-hint">${watchReelHint()}</span>
         </div>
       </div>
     </div>
@@ -1564,6 +1570,14 @@ function reelHint(){
   return '';
 }
 
+function watchReelHint(){
+  if(!C.watchReel||!C.watchReel.url) return 'Optional. If empty, the Watch Reel button uses the main background reel.';
+  if(C.watchReel.type==='youtube') return '&#x2713; YouTube detected';
+  if(C.watchReel.type==='vimeo') return '&#x2713; Vimeo detected';
+  if(C.watchReel.type==='video') return '&#x2713; Local video';
+  return '';
+}
+
 function parseReelInput(raw){
   const val=raw.trim();
   if(!val){ C.reel={type:'placeholder',url:''};markDirty();updateReelHint('No reel set');return; }
@@ -1598,6 +1612,43 @@ function parseReelInput(raw){
 
 function updateReelHint(msg){
   const el=document.getElementById('reel-hint');
+  if(el) el.innerHTML=msg;
+}
+
+function parseWatchReelInput(raw){
+  const val=raw.trim();
+  if(!val){ C.watchReel={type:'placeholder',url:''};markDirty();updateWatchReelHint('Will reuse main background reel');return; }
+
+  const srcMatch=val.match(/src=["']([^"']+)["']/);
+  const url=srcMatch?srcMatch[1]:val;
+
+  const ytEmbed=url.match(/youtube\.com\/embed\/([\w-]+)/);
+  const ytShort=url.match(/youtu\.be\/([\w-]+)/);
+  const ytWatch=url.match(/youtube\.com\/watch\?v=([\w-]+)/);
+  const ytId=(ytEmbed&&ytEmbed[1])||(ytShort&&ytShort[1])||(ytWatch&&ytWatch[1]);
+  if(ytId){
+    C.watchReel={type:'youtube',url:`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&rel=0`};
+    markDirty();updateWatchReelHint('&#x2713; YouTube detected — parameters added automatically');return;
+  }
+
+  const vimeoEmbed=url.match(/player\.vimeo\.com\/video\/([\d]+)/);
+  const vimeoWatch=url.match(/vimeo\.com\/([\d]+)/);
+  const vimeoId=(vimeoEmbed&&vimeoEmbed[1])||(vimeoWatch&&vimeoWatch[1]);
+  if(vimeoId){
+    C.watchReel={type:'vimeo',url:`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&background=1&muted=1`};
+    markDirty();updateWatchReelHint('&#x2713; Vimeo detected — parameters added automatically');return;
+  }
+
+  if(url.match(/\.(mp4|webm|ogg)$/i)){
+    C.watchReel={type:'video',url};
+    markDirty();updateWatchReelHint('&#x2713; Local video file');return;
+  }
+
+  updateWatchReelHint('Could not detect type — paste a YouTube or Vimeo iframe or URL');
+}
+
+function updateWatchReelHint(msg){
+  const el=document.getElementById('watch-reel-hint');
   if(el) el.innerHTML=msg;
 }
 

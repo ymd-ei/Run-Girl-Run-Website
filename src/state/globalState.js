@@ -14,6 +14,12 @@ export const globalState = {
     type: "", // 'youtube', 'vimeo', etc.
     url: ""
   },
+
+  // Optional separate source for Watch Reel lightbox
+  watchReel: {
+    type: "",
+    url: ""
+  },
   
   // Contact panel
   contactPanel: {
