@@ -1,0 +1,162 @@
+{
+  "id": "all-blocks-sample",
+  "title": "All Blocks Sample",
+  "type": "Design",
+  "typeLabel": "Design",
+  "year": "2026",
+  "client": "Internal Demo",
+  "duration": "Case Study",
+  "tags": [
+    "Sample",
+    "Editor",
+    "Markdown"
+  ],
+  "thumbnail": "media/woke-up_hero.webp",
+  "videoUrl": "",
+  "longform": true,
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "text-lg",
+      "content": "All Blocks Sample",
+      "align": "left"
+    },
+    {
+      "id": "b2",
+      "type": "text-sm",
+      "content": "Design | Editor Demo | 2026",
+      "align": "left"
+    },
+    {
+      "id": "b3",
+      "type": "text-md",
+      "content": "This sample project showcases every currently supported block type so you can test layout, spacing, and markdown round-tripping in one place.",
+      "align": "left"
+    },
+    {
+      "id": "b4",
+      "type": "callout",
+      "tone": "highlight",
+      "title": "What This Is For",
+      "content": "Use this page as a quick visual QA pass whenever new block styles or parser logic are introduced."
+    },
+    {
+      "id": "b5",
+      "type": "image",
+      "src": "media/woke-up_hero.webp",
+      "alt": "Sample hero frame"
+    },
+    {
+      "id": "b6",
+      "type": "gallery",
+      "columns": 3,
+      "items": [
+        {
+          "src": "media/woke-up_hero.webp",
+          "alt": "Gallery sample 1",
+          "caption": "Wide frame"
+        },
+        {
+          "src": "media/rgr_fav.png",
+          "alt": "Gallery sample 2",
+          "caption": "Icon frame"
+        },
+        {
+          "src": "media/woke-up_hero.webp",
+          "alt": "Gallery sample 3",
+          "caption": "Repeat source test"
+        }
+      ]
+    },
+    {
+      "id": "b7",
+      "type": "process",
+      "steps": [
+        {
+          "title": "Discovery",
+          "content": "Collect references, define constraints, and lock messaging."
+        },
+        {
+          "title": "Design",
+          "content": "Build visual direction, motion language, and typography tests."
+        },
+        {
+          "title": "Polish",
+          "content": "Refine timing, spacing, and final QA before release."
+        }
+      ]
+    },
+    {
+      "id": "b8",
+      "type": "twocol",
+      "left": {
+        "type": "text-md",
+        "content": "Left column text to verify split layouts in both panel and longform modes.",
+        "align": "left"
+      },
+      "right": {
+        "type": "image",
+        "src": "media/rgr_fav.png",
+        "alt": "Right column image"
+      }
+    },
+    {
+      "id": "b9",
+      "type": "quote",
+      "content": "Good defaults make experimentation fast.",
+      "align": "left"
+    },
+    {
+      "id": "b10",
+      "type": "video",
+      "src": ""
+    },
+    {
+      "id": "b11",
+      "type": "stats",
+      "items": [
+        {
+          "num": "11",
+          "label": "Block Types"
+        },
+        {
+          "num": "1",
+          "label": "Sample Project"
+        },
+        {
+          "num": "2026",
+          "label": "Updated"
+        }
+      ]
+    },
+    {
+      "id": "b12",
+      "type": "skills",
+      "items": [
+        {
+          "name": "Story Structure",
+          "pct": 92
+        },
+        {
+          "name": "Motion Design",
+          "pct": 88
+        },
+        {
+          "name": "Pipeline Thinking",
+          "pct": 84
+        }
+      ]
+    },
+    {
+      "id": "b13",
+      "type": "divider"
+    },
+    {
+      "id": "b14",
+      "type": "callout",
+      "tone": "warning",
+      "title": "Parser Test",
+      "content": "Try importing and exporting this project as markdown to verify round-trip behavior."
+    }
+  ]
+}
