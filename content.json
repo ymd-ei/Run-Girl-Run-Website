@@ -133,8 +133,8 @@
   "favicon": "media/rgr_fav.png",
   "contactPanel": {
     "video": {
-      "type": "placeholder",
-      "url": ""
+      "type": "video",
+      "url": "media/Feb Anim Challenge.mp4"
     },
     "titleAccent": "on something!",
     "tickerMid": [
