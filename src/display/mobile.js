@@ -146,7 +146,11 @@ function renderContact() {
   const panel = data.contactPanel || {};
 
   const titleEl = document.getElementById('ct-title');
-  if (titleEl) titleEl.textContent = panel.title || "Let's work.";
+  if (titleEl) {
+    const ctTitle = panel.title || "Let's";
+    const ctAccent = panel.titleAccent || 'work.';
+    titleEl.innerHTML = ctTitle + '<br><span class="accent-word">' + ctAccent + '</span>';
+  }
 
   const subEl = document.getElementById('ct-sub');
   if (subEl) subEl.innerHTML = panel.sub || '';
