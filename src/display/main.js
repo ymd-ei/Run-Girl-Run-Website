@@ -219,7 +219,7 @@ async function fetchProjectById(id) {
   if (cached && Array.isArray(cached.blocks)) return cached;
 
   try {
-    const res = await fetch('projects/' + id + '.json?v=' + Date.now());
+    const res = await fetch('projects/' + id + '.json');
     if (!res.ok) throw new Error('Failed to load ' + id);
     const full = await res.json();
     rememberProject(full);
@@ -248,7 +248,7 @@ async function loadAllData() {
     }
 
     // Load global content
-    const contentRes = await fetch('content.json?v=' + Date.now());
+    const contentRes = await fetch('content.json');
     if (!contentRes.ok) throw new Error('Failed to load content.json');
     const contentData = await contentRes.json();
 
@@ -276,7 +276,7 @@ async function loadAllData() {
     // Backward-compatible fallback: no projectCards metadata yet, so load all.
     const loadedProjects = await Promise.all(
       projectIds.map(id =>
-        fetch('projects/' + id + '.json?v=' + Date.now())
+        fetch('projects/' + id + '.json')
           .then(r => {
             if (!r.ok) throw new Error('Failed to load ' + id);
             return r.json();
@@ -307,7 +307,7 @@ function updateDocumentMeta() {
   document.title = globalState.siteTitle || globalState.name || 'Portfolio';
 
   if (globalState.favicon) {
-    const src = globalState.favicon + '?v=' + Date.now();
+    const src = globalState.favicon;
     const favicon = document.getElementById('favicon');
     const faviconApple = document.getElementById('favicon-apple');
     const faviconMask = document.getElementById('favicon-mask');
@@ -525,7 +525,7 @@ async function loadLogStack() {
   if (!inner || !stack) return;
 
   try {
-    const response = await fetch('log.json?v=' + Date.now());
+    const response = await fetch('log.json');
     if (!response.ok) throw new Error('Failed to load log.json');
     const entries = await response.json();
 

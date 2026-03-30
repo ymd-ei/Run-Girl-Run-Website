@@ -149,8 +149,7 @@
 <script src="https://player.vimeo.com/api/player.js" defer></script>
 
 <script type="module">
-  const moduleVersion = Date.now();
-  import(`./src/display/main.js?v=${moduleVersion}`)
+  import('./src/display/main.js')
     .then(({ bootstrap }) => {
       const start = () => {
         bootstrap().catch(err => {
