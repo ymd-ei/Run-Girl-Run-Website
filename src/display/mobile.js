@@ -42,6 +42,11 @@ async function init() {
   renderContact();
   renderFooter();
   setupEvents();
+
+  // Deep-link: open a project if ?project=id is in the URL
+  const params = new URLSearchParams(window.location.search);
+  const projectParam = params.get('project');
+  if (projectParam) openProject(projectParam);
 }
 
 function applyTheme(theme) {
@@ -230,6 +235,22 @@ function setupEvents() {
   if (backBtn) backBtn.addEventListener('click', goBack);
   if (backBtnBottom) backBtnBottom.addEventListener('click', goBack);
 
+  // Share button
+  const shareBtn = document.getElementById('project-share');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('project');
+      if (!id) return;
+      const shareUrl = `https://rungirlrun.studio/p/${id}/`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        const orig = shareBtn.innerHTML;
+        shareBtn.innerHTML = '&#x2713; Copied!';
+        setTimeout(() => { shareBtn.innerHTML = orig; }, 2000);
+      });
+    });
+  }
+
   // FAQ toggle delegation
   document.addEventListener('click', (e) => {
     const trigger = e.target.closest('[data-faq-trigger]');
@@ -327,6 +348,11 @@ async function openProject(id) {
   if (work) work.style.display = 'none';
   detail.scrollIntoView({ behavior: 'smooth' });
 
+  // Update URL bar so the link is shareable
+  const url = new URL(window.location);
+  url.searchParams.set('project', id);
+  history.pushState({ project: id }, '', url);
+
   try {
     const res = await fetch(`projects/${encodeURIComponent(id)}.json`);
     if (!res.ok) throw new Error('Not found');
@@ -346,6 +372,11 @@ function closeProject() {
     work.style.display = '';
     work.scrollIntoView({ behavior: 'smooth' });
   }
+
+  // Clear project from URL bar
+  const url = new URL(window.location);
+  url.searchParams.delete('project');
+  history.pushState({}, '', url);
 }
 
 if (document.readyState === 'loading') {

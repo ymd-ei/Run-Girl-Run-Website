@@ -306,6 +306,12 @@ export async function bootstrap() {
       pendingPreviewNav = null;
     }
 
+    // 9. Deep-link: open a project if ?project=id is in the URL
+    const projectParam = params.get('project');
+    if (projectParam) {
+      window.display?.openProject?.(projectParam);
+    }
+
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
     console.error('✗ Display bootstrap failed:', error);
@@ -879,6 +885,11 @@ function setupEventListeners() {
         bd.classList.add('open');
         bd.classList.add('project-open');
       }
+
+      // Update URL bar so the link is shareable
+      const url = new URL(window.location);
+      url.searchParams.set('project', id);
+      history.pushState({ project: id }, '', url);
     },
 
     closeProject() {
@@ -890,6 +901,26 @@ function setupEventListeners() {
 
       const bd = document.getElementById('bd');
       if (bd) bd.classList.remove('project-open');
+
+      // Clear project from URL bar
+      const url = new URL(window.location);
+      url.searchParams.delete('project');
+      history.pushState({}, '', url);
+    },
+
+    copyShareLink() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('project');
+      if (!id) return;
+      const shareUrl = `https://rungirlrun.studio/p/${id}/`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        const btn = document.getElementById('pp-share');
+        if (btn) {
+          const orig = btn.innerHTML;
+          btn.innerHTML = '&#x2713; Copied!';
+          setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }
+      });
     },
 
     openLightbox() {

@@ -182,6 +182,19 @@ function renderGlobal(){
       </div>
     </div>
     <div class="section">
+      <div class="sh" onclick="toggleSection(this)"><h3>Link Preview</h3><span class="chev">&#x25BE;</span></div>
+      <div class="sb">
+        <p class="hint" style="margin-bottom:.75rem">Controls how your site appears when shared in Discord, iMessage, Twitter, Slack, etc.</p>
+        <div class="field"><label>Preview Title</label><input value="${C.ogTitle||''}" placeholder="${C.name||'Run Girl Run'}" oninput="C.ogTitle=this.value;markDirty()"><p class="hint">Defaults to your site name if left empty.</p></div>
+        <div class="field"><label>Preview Description</label><input value="${C.ogDescription||''}" placeholder="${C.role||'Animator'} — ${C.location||''}" oninput="C.ogDescription=this.value;markDirty()"><p class="hint">Short tagline shown under the title. Defaults to role + location.</p></div>
+        <div class="field"><label>Preview Image</label>
+          ${makeDropzone(C.ogImage||'', v=>{ C.ogImage=v; markDirty(); }, 'media', 'og-image.jpg', 'og_img_dz')}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>{ C.ogImage=v; markDirty(); },'og_img_dz_p')">&#x1F5C2; Browse Media</button>
+          <p class="hint">Recommended: 1200×630px. This is the big image shown in the preview card.</p>
+        </div>
+      </div>
+    </div>
+    <div class="section">
       <div class="sh" onclick="toggleSection(this)"><h3>Demo Reel</h3><span class="chev">&#x25BE;</span></div>
       <div class="sb">
         <div class="field">
@@ -574,6 +587,10 @@ function renderProject(id){
         </div>
         <div class="field"><label>Tags (comma separated)</label>
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
+        </div>
+        <div class="field"><label>Share Description</label>
+          <input value="${p.description||''}" placeholder="Auto-generated from first text block" oninput="updateP('${id}','description',this.value)">
+          <p class="hint">Shown when sharing this project's link. Leave blank to auto-generate.</p>
         </div>
         <div class="field"><label>Project Video URL</label>
           <input value="${p.videoUrl||''}" placeholder="Embed URL or media/video.mp4" oninput="updateP('${id}','videoUrl',this.value)">
@@ -1703,6 +1720,50 @@ function startDeployPolling(){
   deployPollTimer=setInterval(poll,10000);
 }
 
+// ─────────────────────────────────────────
+// SHARE PAGE GENERATION
+// ─────────────────────────────────────────
+function getProjectDescription(project) {
+  if (project.description) return project.description;
+  const blocks = project.blocks || [];
+  for (const b of blocks) {
+    if ((b.type === 'text-md' || b.type === 'text-sm') && b.content) {
+      const plain = b.content.replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ').trim();
+      if (plain.length > 0) return plain.length > 160 ? plain.slice(0, 157) + '…' : plain;
+    }
+  }
+  return `${project.typeLabel || project.type || 'Project'} by ${C.name || 'Run Girl Run'}`;
+}
+
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildSharePage(title, description, imageUrl, canonicalUrl, redirectUrl) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escHtml(title)} — ${escHtml(C.name || 'Run Girl Run')}</title>
+<meta property="og:type" content="article">
+<meta property="og:url" content="${escHtml(canonicalUrl)}">
+<meta property="og:site_name" content="${escHtml(C.name || 'Run Girl Run')}">
+<meta property="og:title" content="${escHtml(title)}">
+<meta property="og:description" content="${escHtml(description)}">
+<meta property="og:image" content="${escHtml(imageUrl)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escHtml(title)}">
+<meta name="twitter:description" content="${escHtml(description)}">
+<meta name="twitter:image" content="${escHtml(imageUrl)}">
+<script>window.location.replace("${redirectUrl}");<\/script>
+</head>
+<body>
+<noscript><p>Redirecting to <a href="${escHtml(redirectUrl)}">${escHtml(title)}</a>…</p></noscript>
+</body>
+</html>`;
+}
+
 async function saveAll(){
   if(!currentUser){
     toast('You must be logged in to save', true);
@@ -1728,13 +1789,31 @@ async function saveAll(){
   }));
 
   // Always save all files
-  const toSave = ['content.json', ...projects.map(p=>`projects/${p.id}.json`)];
+  const toSave = ['content.json', ...projects.map(p=>`projects/${p.id}.json`), ...projects.filter(p=>p.published).map(p=>`p/${p.id}/index.html`)];
 
   // Build data map
   const dataMap = {
     'content.json': JSON.stringify(C,null,2),
     ...Object.fromEntries(projects.map(p=>[`projects/${p.id}.json`, JSON.stringify(p,null,2)]))
   };
+
+  // Generate share pages for published projects
+  const siteUrl = 'https://rungirlrun.studio';
+  projects.forEach(p => {
+    if (!p.published) return;
+    const ogTitle = p.title || 'Project';
+    const ogDesc = getProjectDescription(p);
+    const ogImage = p.thumbnail ? `${siteUrl}/${p.thumbnail}` : `${siteUrl}/media/rgr_fav.png`;
+    const ogUrl = `${siteUrl}/p/${p.id}/`;
+    const redirectUrl = `${siteUrl}/?project=${encodeURIComponent(p.id)}`;
+    dataMap[`p/${p.id}/index.html`] = buildSharePage(ogTitle, ogDesc, ogImage, ogUrl, redirectUrl);
+  });
+
+  // Generate homepage share page (index-level OG tags are static,
+  // but we also update them in the HTML if user set custom values)
+  const homeOgTitle = C.ogTitle || C.name || 'Run Girl Run';
+  const homeOgDesc = C.ogDescription || `${C.role||'Animator'} — ${C.location||''}`.trim();
+  const homeOgImage = C.ogImage ? `${siteUrl}/${C.ogImage}` : `${siteUrl}/media/rgr_fav.png`;
 
   try{
     const filesToCommit = Object.fromEntries(toSave.filter(path=>!!dataMap[path]).map(path=>[path, dataMap[path]]));

@@ -15,6 +15,18 @@
   }
 </script>
 <title>Portfolio</title>
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rungirlrun.studio/">
+<meta property="og:site_name" content="Run Girl Run">
+<meta property="og:title" id="og-title" content="Run Girl Run">
+<meta property="og:description" id="og-desc" content="Animator — Toronto, Canada">
+<meta property="og:image" id="og-image" content="https://rungirlrun.studio/media/rgr_fav.png">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" id="tw-title" content="Run Girl Run">
+<meta name="twitter:description" id="tw-desc" content="Animator — Toronto, Canada">
+<meta name="twitter:image" id="tw-image" content="https://rungirlrun.studio/media/rgr_fav.png">
 <link rel="icon" id="favicon" href="media/rgr_fav.png">
 <link rel="apple-touch-icon" id="favicon-apple" href="media/rgr_fav.png">
 <link rel="mask-icon" id="favicon-mask" href="media/rgr_fav.png" color="#5e30eb">
@@ -125,6 +137,7 @@
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       Back
     </button>
+    <button class="share-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link" style="background:none;border:1px solid var(--paper,.85);color:var(--paper);font-size:.65rem;padding:.3rem .6rem;cursor:pointer;letter-spacing:.06em;opacity:.7;transition:opacity .2s" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#x1F517; Share</button>
     <button class="pc" onclick="window.display?.closeProject?.()">&#x2715;</button>
   </div>
   <div class="ppbody" id="ppb"></div>
