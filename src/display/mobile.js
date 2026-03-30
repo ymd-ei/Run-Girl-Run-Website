@@ -223,13 +223,12 @@ function setupEvents() {
     });
   }
 
-  // Back button
+  // Back buttons
   const backBtn = document.getElementById('project-back');
-  if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      closeProject();
-    });
-  }
+  const backBtnBottom = document.getElementById('project-back-bottom');
+  const goBack = () => closeProject();
+  if (backBtn) backBtn.addEventListener('click', goBack);
+  if (backBtnBottom) backBtnBottom.addEventListener('click', goBack);
 
   // FAQ toggle delegation
   document.addEventListener('click', (e) => {
