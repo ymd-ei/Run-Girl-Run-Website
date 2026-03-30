@@ -8,6 +8,11 @@ import { pool, scheduleIdle } from '../utils/text.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { renderBlocks } from '../modules/blocks/blockRenderer.js';
 
+function isDirectVideoSource(src) {
+  const clean = String(src || '').split('?')[0].toLowerCase();
+  return /\.(mp4|webm|ogg|mov|m4v)$/.test(clean);
+}
+
 /**
  * Apply theme colors to CSS variables
  * @param {Object} theme - Theme object
@@ -69,6 +74,9 @@ export function renderDisplayBlock(block) {
       return `<div class="bl-quote ${align}"><p>${block.content}</p></div>`;
     case 'video':
       if (block.src) {
+        if (isDirectVideoSource(block.src)) {
+          return `<div class="bl-video"><video src="${block.src}" controls playsinline preload="metadata"></video></div>`;
+        }
         return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       }
       return `<div class="bl-video empty">Video embed</div>`;

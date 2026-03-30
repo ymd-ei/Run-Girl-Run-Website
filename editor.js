@@ -527,7 +527,7 @@ function renderProject(id){
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
         </div>
         <div class="field"><label>Project Video URL</label>
-          <input value="${p.videoUrl||''}" placeholder="Vimeo or YouTube embed URL" oninput="updateP('${id}','videoUrl',this.value)">
+          <input value="${p.videoUrl||''}" placeholder="Embed URL or media/video.mp4" oninput="updateP('${id}','videoUrl',this.value)">
         </div>
         <div class="field" style="flex-direction:row;align-items:center;gap:.75rem;padding:.65rem;background:var(--bg);border:1px solid var(--border)">
           <input type="checkbox" id="sensitive-${id}" ${p.sensitive?'checked':''} onchange="updateP('${id}','sensitive',this.checked)" style="width:auto;accent-color:var(--accent)">
@@ -629,7 +629,7 @@ function blockEditorHTML(scope, b, i, total){
         ${['left','center','right'].map(a=>`<button class="al-btn ${(b.align||'left')===a?'active':''}" onclick="updateBlock('${scope}','${b.id}','align','${a}');rerenderBlocks('${scope}')">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}
       </div></div>`;
   } else if(b.type==='video'){
-    body=`<div class="field"><label>Embed URL</label><input value="${b.src||''}" placeholder="Vimeo or YouTube embed URL" oninput="updateBlock('${scope}','${b.id}','src',this.value)"></div>`;
+    body=`<div class="field"><label>Video URL</label><input value="${b.src||''}" placeholder="Embed URL or media/video.mp4" oninput="updateBlock('${scope}','${b.id}','src',this.value)"></div>`;
   } else if(b.type==='stats'){
     body=`<div style="display:flex;flex-direction:column;gap:.5rem" id="stats-${b.id}">
       ${(b.items||[]).map((s,si)=>`<div class="stat-item">
@@ -668,6 +668,7 @@ function blockEditorHTML(scope, b, i, total){
           <div class="field"><label>Description</label><textarea oninput="updateProcessStep('${scope}','${b.id}',${si},'content',this.value)">${s.content||''}</textarea></div>
           <div class="field"><label>Image Path (optional)</label><input value="${s.image||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'image',this.value)"></div>
           <button class="add-btn" onclick="openMediaLibrary(v=>updateProcessStep('${scope}','${b.id}',${si},'image',v))" style="margin-top:-.25rem">&#x1F5C2; Browse Media</button>
+          <button class="add-btn" onclick="previewMediaPath(decodeURIComponent('${encodeURIComponent(s.image||'')}'))" style="margin-top:-.25rem">Preview Image</button>
           <div class="field"><label>Image Alt (optional)</label><input value="${s.imageAlt||''}" oninput="updateProcessStep('${scope}','${b.id}',${si},'imageAlt',this.value)"></div>
           <button class="del-btn" onclick="removeProcessStep('${scope}','${b.id}',${si})" style="align-self:flex-end">&#x2715;</button>
         </div>
@@ -2145,6 +2146,30 @@ function openMediaPreview(path){
     body.innerHTML = `<img src="${item.url}" alt="${escapeHtml(item.name)}" loading="lazy">`;
   } else if(isVideoFile(item.name)){
     body.innerHTML = `<video src="${item.url}" controls autoplay muted playsinline></video>`;
+  } else {
+    body.innerHTML = '<div class="media-preview-empty">Preview not available for this file type.</div>';
+  }
+
+  modal.classList.add('open');
+}
+
+function previewMediaPath(path){
+  const cleanPath = String(path || '').trim();
+  if(!cleanPath){
+    toast('No media path to preview', true);
+    return;
+  }
+
+  const modal = document.getElementById('media-preview-modal');
+  const nameEl = document.getElementById('media-preview-name');
+  const body = document.getElementById('media-preview-body');
+  if(!modal || !nameEl || !body) return;
+
+  nameEl.textContent = cleanPath;
+  if(isImageFile(cleanPath)){
+    body.innerHTML = `<img src="${cleanPath}" alt="${escapeHtml(cleanPath)}" loading="lazy">`;
+  } else if(isVideoFile(cleanPath)){
+    body.innerHTML = `<video src="${cleanPath}" controls autoplay muted playsinline></video>`;
   } else {
     body.innerHTML = '<div class="media-preview-empty">Preview not available for this file type.</div>';
   }

@@ -5,6 +5,11 @@
 
 import { generateThumbSVG } from '../../utils/svg.js';
 
+function isDirectVideoSource(src) {
+  const clean = String(src || '').split('?')[0].toLowerCase();
+  return /\.(mp4|webm|ogg|mov|m4v)$/.test(clean);
+}
+
 /**
  * Generate thumbnail HTML for block preview
  * @param {string} type - Block type
@@ -60,6 +65,9 @@ export function renderBlock(block, theme = {}) {
 
     case 'video':
       if (block.src) {
+        if (isDirectVideoSource(block.src)) {
+          return `<div class="bl-video"><video src="${block.src}" controls playsinline preload="metadata"></video></div>`;
+        }
         return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       }
       return `<div class="bl-video empty">Video embed</div>`;
