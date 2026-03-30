@@ -676,10 +676,14 @@ function setupEventListeners() {
         // Reset to base state so the next open animation always starts from
         // the correct origin (bottom for longform, right side for default).
         pp.classList.remove('open');
+        pp.classList.add('no-transition');
         pp.classList.toggle('longform', isLongform);
         // Force style flush before re-opening so CSS transitions reliably run.
         void pp.offsetWidth;
-        pp.classList.add('open');
+        pp.classList.remove('no-transition');
+        requestAnimationFrame(() => {
+          pp.classList.add('open');
+        });
       }
 
       const bd = document.getElementById('bd');
