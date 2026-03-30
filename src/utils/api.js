@@ -4,7 +4,7 @@
  */
 
 // Configuration (these should match your original setup)
-const REPO = 'ymd_ei/Run-Girl-Run-Website'; // Update to your repo
+const REPO = 'ymd-ei/Run-Girl-Run-Website';
 const BRANCH = 'main'; // Update if using different branch
 
 // Cache for SHAs to avoid conflicts on rapid saves

@@ -5,7 +5,7 @@
 
 import { getToken } from '../../utils/api.js';
 
-const REPO = 'ymd/Run-Girl-Run-Website';
+const REPO = 'ymd-ei/Run-Girl-Run-Website';
 const BRANCH = 'main';
 
 let mediaLibraryState = {
