@@ -55,5 +55,6 @@
   ],
   "published": true,
   "sensitive": false,
-  "sensitiveLabel": "18+ NSFW"
+  "sensitiveLabel": "18+ NSFW",
+  "longform": true
 }
