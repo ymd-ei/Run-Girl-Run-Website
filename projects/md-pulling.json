@@ -125,6 +125,11 @@
       "type": "text-sm",
       "content": "CREDITS",
       "align": "left"
+    },
+    {
+      "id": "b1774837769602",
+      "type": "video",
+      "src": "https://www.youtube.com/embed/kyAodjWvq4E"
     }
   ]
 }
