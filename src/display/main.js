@@ -163,8 +163,8 @@ export async function bootstrap() {
     // 5. Render work grid with filters
     renderWorkSection();
 
-    // 5b. Render lower-right updates stack from log.json
-    await loadLogStack();
+    // 5b. Render lower-right updates stack from log.json without blocking first paint.
+    void loadLogStack();
 
     // 6. Render about panel
     renderAboutPanel();
