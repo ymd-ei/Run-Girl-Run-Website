@@ -239,9 +239,9 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .bl-stats .sn{font-family:var(--font-s);font-size:2.2rem;font-weight:300;color:var(--accent);line-height:1;margin-bottom:.2rem}
 .bl-stats .sl{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .bl-divider{height:1px;background:var(--border);margin:.25rem 0}
-.bl-skills{display:flex;flex-direction:column;gap:.85rem}
-.skr{display:flex;flex-direction:column;gap:.35rem}
-.skn{display:flex;justify-content:space-between;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,23,20,0.5)}
+.bl-skills{display:flex;flex-direction:column;gap:.85rem;max-width:520px;width:100%;margin:0 auto;padding-left:0.5rem;padding-right:0.5rem}
+.skr{display:flex;flex-direction:column;gap:.35rem;width:100%;min-width:0;flex:1}
+.skn{display:flex;justify-content:space-between;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,23,20,0.5);width:100%;min-width:0;flex:1}
 .skb{height:1px;background:rgba(26,23,20,0.1);position:relative;overflow:hidden}
 .skf{position:absolute;top:0;left:0;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform 1.2s var(--ease)}
 .skf.go{transform:scaleX(var(--pct))}
@@ -294,13 +294,13 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .bl-before-after-handle:focus-visible .bl-before-after-pill{border-color:var(--accent);box-shadow:0 0 0 2px rgba(var(--accent-rgb),0.18)}
 .bl-before-after-caption{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .bl-before-after-fallback{width:min(100%,780px)}
-.bl-faq{display:flex;flex-direction:column;border-top:1px solid var(--border)}
-.bl-faq-item{border-bottom:1px solid var(--border)}
+.bl-faq{display:flex;flex-direction:column;border-top:1px solid var(--border);max-width:520px;width:100%;margin:0 auto;padding-left:0.5rem;padding-right:0.5rem}
+.bl-faq-item{border-bottom:1px solid var(--border);width:100%;box-sizing:border-box}
 .bl-faq-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.9rem 0;background:none;border:none;color:var(--ink);font-family:var(--font);font-size:.8rem;letter-spacing:.06em;text-align:left;cursor:pointer}
 .bl-faq-icon{font-size:1rem;color:var(--accent);transition:transform .2s ease}
 .bl-faq-item.open .bl-faq-icon{transform:rotate(45deg)}
-.bl-faq-panel{padding:0 0 .9rem}
-.bl-faq-panel p{font-size:.92rem;line-height:1.7;color:rgba(26,23,20,0.72);margin:0;max-width:72ch}
+.bl-faq-panel{padding:0 0 .9rem;width:100%;box-sizing:border-box}
+.bl-faq-panel p{font-size:.92rem;line-height:1.7;color:rgba(26,23,20,0.72);margin:0;word-break:break-word;overflow-wrap:anywhere}
 
 /* ─────────────────────────────────────────
    CONTACT PANEL
