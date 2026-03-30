@@ -672,7 +672,13 @@ function setupEventListeners() {
 
       const pp = document.getElementById('pp');
       if (pp) {
-        pp.classList.toggle('longform', !!project.longform);
+        const isLongform = project.longform === true;
+        // Reset to base state so the next open animation always starts from
+        // the correct origin (bottom for longform, right side for default).
+        pp.classList.remove('open');
+        pp.classList.toggle('longform', isLongform);
+        // Force style flush before re-opening so CSS transitions reliably run.
+        void pp.offsetWidth;
         pp.classList.add('open');
       }
 

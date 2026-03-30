@@ -168,7 +168,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
    left:50%;
    bottom:auto;
    border:1px solid var(--panel-border);
-   border-radius:12px;
+   border-radius:5px;
    box-shadow:0 26px 70px rgba(10,8,6,0.45);
    transform:translate(-50%,calc(100vh + 3rem));
    opacity:0;
