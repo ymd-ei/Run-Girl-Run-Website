@@ -129,7 +129,10 @@ function runLoaderAnimation() {
 
   function dismiss() {
     loader.classList.add('done');
-    document.body.classList.remove('page-loading');
+    // Let the loader fade begin before revealing the full page state.
+    setTimeout(() => {
+      document.body.classList.remove('page-loading');
+    }, 220);
   }
 
   setTimeout(animateBar, 120);
