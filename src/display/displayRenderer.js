@@ -314,12 +314,12 @@ export function scrambleContactHero(title, accent, idleOptions = {}) {
  * @param {Object} theme - Theme object for thumbnails
  * @returns {string} HTML
  */
-export function renderWorkGrid(projects, theme) {
+export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
   const accentColor = theme?.accent || '#5e30eb';
   const bgColor = theme?.paper || '#e8e3da';
 
   return projects
-    .filter(p => p.published !== false)
+    .filter(p => showAll || p.published !== false)
     .map(p => {
       const isSensitive = p.sensitive;
       const label = p.sensitiveLabel || 'MATURE';
@@ -356,8 +356,8 @@ export function renderWorkGrid(projects, theme) {
  * Initialize sensitive tape animations
  * @param {Array} projects - Projects with sensitive flag
  */
-export function initSensitiveTapes(projects) {
-  projects.filter(p => p.published !== false && p.sensitive).forEach(p => {
+export function initSensitiveTapes(projects, { showAll = false } = {}) {
+  projects.filter(p => (showAll || p.published !== false) && p.sensitive).forEach(p => {
     const tape = document.querySelector(`#st-${p.id} .wci-tape-track`);
     if (!tape) return;
 

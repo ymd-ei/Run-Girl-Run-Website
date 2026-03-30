@@ -268,10 +268,7 @@ export async function bootstrap() {
     // If the path is /amy, show all projects (ignore published state)
     const isAmyRoute = window.location.pathname === '/amy' || window.location.hash === '#amy';
     if (isAmyRoute) {
-      // Temporarily override the projects array to include all projects, even unpublished
-      // (Assumes all projects are loaded into the projects array already)
-      // Optionally, you could add a visual indicator here
-      renderWorkSection();
+      renderWorkSection({ showAll: true });
       // Optionally, add a banner or indicator for "Amy's Draft View"
       const filtersEl = document.getElementById('work-filters');
       if (filtersEl) {
@@ -489,7 +486,7 @@ function renderHero() {
 /**
  * Render work section with project grid and filters
  */
-function renderWorkSection() {
+function renderWorkSection({ showAll = false } = {}) {
   const filtersEl = document.getElementById('work-filters');
   const gridEl = document.getElementById('wg');
 
@@ -505,10 +502,10 @@ function renderWorkSection() {
     `<button class="fb active" onclick="window.display?.filterWork?.(this, 'all')">All</button>` +
     filters.map(f => `<button class="fb" onclick="window.display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
 
-  gridEl.innerHTML = renderWorkGrid(projects, globalState.theme);
+  gridEl.innerHTML = renderWorkGrid(projects, globalState.theme, { showAll });
 
   // Initialize sensitive tapes
-  initSensitiveTapes(projects);
+  initSensitiveTapes(projects, { showAll });
 
   // Initialize countup animations (lazy)
   setTimeout(initCountUps, 100);
