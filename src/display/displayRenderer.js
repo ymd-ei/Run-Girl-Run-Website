@@ -297,6 +297,14 @@ export function scrambleContactHero(title, accent, idleOptions = {}) {
   const accentStart = START + titleRevealWindowMs * 0.55;
   animateSpans(accentSpans, accentStart, accentRevealWindowMs, 100, 8);
 
+  // Safari blend mode bug workaround: force repaint after scramble
+  setTimeout(() => {
+    // Toggle a dummy class to force Safari to reapply blend mode
+    heroEl.classList.add('safari-blend-nudge');
+    // Remove after a tick
+    setTimeout(() => heroEl.classList.remove('safari-blend-nudge'), 32);
+  }, START + titleRevealWindowMs + accentRevealWindowMs + 100);
+
   return scheduleIdle([titleSpans, accentSpans], idleOptions);
 }
 
