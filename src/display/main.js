@@ -24,6 +24,41 @@ let pendingPreviewNav = null;
 let lightboxMode = 'reel';
 const projectCache = new Map();
 
+function suspendMediaIn(root) {
+  if (!root) return;
+
+  root.querySelectorAll('video').forEach(video => {
+    try {
+      video.pause();
+      video.currentTime = 0;
+    } catch (_) {
+      // Ignore media pause errors from transient or detached nodes.
+    }
+  });
+
+  root.querySelectorAll('iframe').forEach(frame => {
+    const src = frame.getAttribute('src');
+    if (!src || src === 'about:blank') return;
+    frame.dataset.savedSrc = src;
+    frame.setAttribute('src', 'about:blank');
+  });
+}
+
+function resumeMediaIn(root) {
+  if (!root) return;
+
+  root.querySelectorAll('iframe[data-saved-src]').forEach(frame => {
+    const savedSrc = frame.dataset.savedSrc;
+    if (!savedSrc) return;
+    frame.setAttribute('src', savedSrc);
+    delete frame.dataset.savedSrc;
+  });
+
+  root.querySelectorAll('video[autoplay]').forEach(video => {
+    video.play().catch(() => {});
+  });
+}
+
 /**
  * Run the loader animation with randomized percentage stops.
  */
@@ -751,7 +786,10 @@ function setupEventListeners() {
 
     closeProject() {
       const pp = document.getElementById('pp');
-      if (pp) pp.classList.remove('open');
+      if (pp) {
+        suspendMediaIn(pp);
+        pp.classList.remove('open');
+      }
 
       const bd = document.getElementById('bd');
       if (bd) bd.classList.remove('project-open');
@@ -818,6 +856,18 @@ function setupEventListeners() {
     },
 
     openPanel(name) {
+      const projectPanel = document.getElementById('pp');
+      if (projectPanel && projectPanel.classList.contains('open')) {
+        this.closeProject();
+      }
+
+      const aboutPanel = document.getElementById('panel-about');
+      const workPanel = document.getElementById('panel-work');
+      const contactPanel = document.getElementById('contact-wrapper');
+      suspendMediaIn(aboutPanel);
+      suspendMediaIn(workPanel);
+      suspendMediaIn(contactPanel);
+
       if (name === 'contact') {
         const contact = document.getElementById('contact-wrapper');
         const stage = document.getElementById('stage');
@@ -825,6 +875,7 @@ function setupEventListeners() {
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
         if (bd) bd.classList.add('open');
+        resumeMediaIn(contact);
         if (!contactTickersStarted) startContactTickers();
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
@@ -832,10 +883,20 @@ function setupEventListeners() {
         const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
         if (bd) bd.classList.add('open');
+        resumeMediaIn(panel);
       }
     },
 
     closeToRoot() {
+      const aboutPanel = document.getElementById('panel-about');
+      const workPanel = document.getElementById('panel-work');
+      const contactPanel = document.getElementById('contact-wrapper');
+      const projectPanel = document.getElementById('pp');
+      suspendMediaIn(aboutPanel);
+      suspendMediaIn(workPanel);
+      suspendMediaIn(contactPanel);
+      suspendMediaIn(projectPanel);
+
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
       const contact = document.getElementById('contact-wrapper');
       const stage = document.getElementById('stage');
