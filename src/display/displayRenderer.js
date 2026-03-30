@@ -73,8 +73,8 @@ export function renderDisplayBlock(block) {
       }
       return `<div class="bl-video empty">Video embed</div>`;
     case 'stats':
-      const cols = (block.items || []).length;
-      return `<div class="bl-stats" style="grid-template-columns:repeat(${cols},1fr)">${(block.items || [])
+      const statsCols = (block.items || []).length;
+      return `<div class="bl-stats" style="grid-template-columns:repeat(${statsCols},1fr)">${(block.items || [])
         .map(s => `<div class="sc"><div class="sn" data-target="${s.num}">${s.num}</div><div class="sl">${s.label}</div></div>`)
         .join('')}</div>`;
     case 'skills':
@@ -86,8 +86,8 @@ export function renderDisplayBlock(block) {
     case 'callout':
       return `<div class="bl-callout ${block.tone || 'note'}"><div class="bl-callout-title">${block.title || ''}</div><div class="bl-callout-body">${block.content || ''}</div></div>`;
     case 'gallery':
-      const cols = block.columns === 3 ? 3 : 2;
-      return `<div class="bl-gallery cols-${cols}">${(block.items || [])
+      const galleryCols = block.columns === 3 ? 3 : 2;
+      return `<div class="bl-gallery cols-${galleryCols}">${(block.items || [])
         .map(it => `<figure class="bl-gallery-item"><img src="${it.src || ''}" alt="${it.alt || ''}">${it.caption ? `<figcaption>${it.caption}</figcaption>` : ''}</figure>`)
         .join('')}</div>`;
     case 'process':
