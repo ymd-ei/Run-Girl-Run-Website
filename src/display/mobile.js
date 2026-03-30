@@ -240,6 +240,17 @@ function setupEvents() {
     });
   });
 
+  // Back to top button
+  const topBtn = document.getElementById('back-to-top');
+  if (topBtn) {
+    window.addEventListener('scroll', () => {
+      topBtn.classList.toggle('visible', window.scrollY > 400);
+    }, { passive: true });
+    topBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   // Before/after slider touch support
   document.addEventListener('touchstart', (e) => {
     const handle = e.target.closest('[data-before-after-handle]');
