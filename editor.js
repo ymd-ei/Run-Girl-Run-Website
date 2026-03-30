@@ -174,7 +174,8 @@ function renderGlobal(){
       <div class="sb">
         <div class="field">
           <label>Paste YouTube / Vimeo embed code or URL</label>
-          <textarea placeholder="Paste anything — full iframe code, share URL, or embed URL" oninput="parseReelInput(this.value)" style="min-height:60px">${C.reel.url||''}</textarea>
+          <textarea id="reel-video-input" placeholder="Paste anything — full iframe code, share URL, or embed URL" oninput="parseReelInput(this.value)" style="min-height:60px">${C.reel.url||''}</textarea>
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>parseReelInput(v),'reel-video-input')">&#x1F5C2; Browse Media</button>
           <span class="hint" id="reel-hint">${reelHint()}</span>
         </div>
       </div>
@@ -361,7 +362,8 @@ function renderContact(){
       <div class="sb">
         <div class="field">
           <label>Vimeo / YouTube URL</label>
-          <textarea placeholder="Paste embed URL or share link" oninput="parseContactVideo(this.value)" style="min-height:55px">${(cp.video&&cp.video.url)||''}</textarea>
+          <textarea id="contact-video-input" placeholder="Paste embed URL or share link" oninput="parseContactVideo(this.value)" style="min-height:55px">${(cp.video&&cp.video.url)||''}</textarea>
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>parseContactVideo(v),'contact-video-input')">&#x1F5C2; Browse Media</button>
           <span class="hint" id="ct-video-hint">${(cp.video&&cp.video.type&&cp.video.type!=='placeholder')?'&#x2713; '+cp.video.type+' detected':'Separate from your main reel — leave blank to reuse reel.'}</span>
         </div>
       </div>
