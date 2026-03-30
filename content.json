@@ -253,5 +253,8 @@
   "watchReel": {
     "type": "video",
     "url": "media/Feb Anim Challenge.mp4"
-  }
+  },
+  "ogTitle": "Run Girl Run",
+  "ogDescription": "I move things around",
+  "ogImage": "media/woke-up_thumbnail.webp"
 }
