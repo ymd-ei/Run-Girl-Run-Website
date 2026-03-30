@@ -249,5 +249,9 @@
       "sensitiveColor": "#f5ec00",
       "longform": false
     }
-  ]
+  ],
+  "watchReel": {
+    "type": "video",
+    "url": "media/Feb Anim Challenge.mp4"
+  }
 }
