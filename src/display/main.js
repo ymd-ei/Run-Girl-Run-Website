@@ -265,10 +265,10 @@ export async function bootstrap() {
     renderHero();
 
     // 5. Render work grid with filters
-    // Preview mode: ?preview=all shows all projects including drafts
+    // Draft viewing mode: ?drafts=all shows all projects including drafts
     // Persists for the session so navigation doesn't lose it
     const params = new URLSearchParams(window.location.search);
-    if (params.has('preview')) sessionStorage.setItem('rgr_preview', params.get('preview'));
+    if (params.has('drafts')) sessionStorage.setItem('rgr_preview', params.get('drafts'));
     const previewMode = sessionStorage.getItem('rgr_preview') === 'all';
 
     if (previewMode) {
