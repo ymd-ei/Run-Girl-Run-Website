@@ -10,7 +10,7 @@
   "thumbnail": "",
   "videoUrl": "",
   "longform": false,
-  "published": false,
+  "published": true,
   "blocks": [
     {
       "id": "b1",
