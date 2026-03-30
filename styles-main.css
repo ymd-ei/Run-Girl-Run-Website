@@ -158,6 +158,42 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .backbtn{display:flex;align-items:center;gap:.6rem;border:none;background:none;color:var(--muted);font-family:var(--font-b);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;transition:color .2s;padding:0;margin-right:auto}
 .backbtn:hover{color:var(--ink)}
 
+/* Longform mode: same blocks, centered reading panel that slides up */
+#pp.longform{
+   width:min(880px,84vw);
+   max-height:88vh;
+   top:6vh;
+   right:auto;
+   left:50%;
+   bottom:auto;
+   border:1px solid var(--panel-border);
+   border-radius:10px;
+   box-shadow:0 26px 70px rgba(10,8,6,0.45);
+   transform:translate(-50%,115%);
+   opacity:0;
+   transition:transform .62s var(--ease),opacity .32s ease;
+}
+#pp.longform.open{
+   transform:translate(-50%,0);
+   opacity:1;
+}
+#pp.longform .ppbody{
+   padding:2.2rem 2.5rem 2.8rem;
+}
+#pp.longform .block-canvas{
+   max-width:72ch;
+   margin:0 auto;
+   gap:1.6rem;
+}
+#pp.longform .bl-text-md{
+   font-size:1.03rem;
+   line-height:1.95;
+}
+#pp.longform .bl-text-lg{
+   font-size:clamp(2.2rem,3.6vw,3.25rem);
+   line-height:1.06;
+}
+
 /* ─────────────────────────────────────────
    BLOCK RENDERER
 ───────────────────────────────────────── */
@@ -295,4 +331,4 @@ body.page-loading #ht,
 body.page-loading #sh,
 body.page-loading #log-stack,
 body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
-@media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}}
+@media(max-width:600px){.panel,#pp{width:100vw!important;border-left:none}.wg{grid-template-columns:1fr}.bl-twocol{grid-template-columns:1fr}#ht{bottom:2rem;left:1.5rem}#sh{display:none}#nav{padding:1.2rem 1.5rem}#pp.longform{top:0;left:0;right:0;bottom:0;max-height:none;border-radius:0;border-left:none;transform:translateX(110%);opacity:1}#pp.longform.open{transform:translateX(0)}}

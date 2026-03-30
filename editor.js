@@ -532,6 +532,10 @@ function renderProject(id){
           <input type="checkbox" id="sensitive-${id}" ${p.sensitive?'checked':''} onchange="updateP('${id}','sensitive',this.checked)" style="width:auto;accent-color:var(--accent)">
           <label for="sensitive-${id}" style="font-size:.72rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer">Mark as sensitive — blurs thumbnail with tape overlay</label>
         </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:.75rem;padding:.65rem;background:var(--bg);border:1px solid var(--border)">
+          <input type="checkbox" id="longform-${id}" ${p.longform?'checked':''} onchange="updateP('${id}','longform',this.checked)" style="width:auto;accent-color:var(--accent)">
+          <label for="longform-${id}" style="font-size:.72rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer">Open project detail as centered longform panel</label>
+        </div>
         <div id="sensitive-opts-${id}" style="display:${p.sensitive?'block':'none'}">
           <div class="row2">
             <div class="field"><label>Tape Label</label>
@@ -857,7 +861,7 @@ function updateP(id,key,val){
 function addProject(){
   const title=prompt('Project title:');if(!title)return;
   const id=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',blocks:[
+  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',longform:false,blocks:[
     {id:'b1',type:'text-lg',content:title,align:'left'},
     {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
   ]};

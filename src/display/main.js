@@ -671,7 +671,10 @@ function setupEventListeners() {
       }
 
       const pp = document.getElementById('pp');
-      if (pp) pp.classList.add('open');
+      if (pp) {
+        pp.classList.toggle('longform', !!project.longform);
+        pp.classList.add('open');
+      }
     },
 
     closeProject() {
