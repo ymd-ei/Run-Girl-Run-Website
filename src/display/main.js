@@ -22,6 +22,7 @@ let bgPlayer = null;
 let contactTickersStarted = false;
 let pendingPreviewNav = null;
 let lightboxMode = 'reel';
+const projectCache = new Map();
 
 /**
  * Run the loader animation with randomized percentage stops.
@@ -209,6 +210,31 @@ function applyPreviewNavigation(message) {
   }
 }
 
+function rememberProject(project) {
+  if (project && project.id) projectCache.set(project.id, project);
+}
+
+async function fetchProjectById(id) {
+  const cached = projectCache.get(id);
+  if (cached && Array.isArray(cached.blocks)) return cached;
+
+  try {
+    const res = await fetch('projects/' + id + '.json?v=' + Date.now());
+    if (!res.ok) throw new Error('Failed to load ' + id);
+    const full = await res.json();
+    rememberProject(full);
+
+    const idx = projects.findIndex(p => p.id === id);
+    if (idx >= 0) projects[idx] = full;
+    else projects.push(full);
+
+    return full;
+  } catch (error) {
+    console.warn('Could not load project ' + id, error);
+    return null;
+  }
+}
+
 /**
  * Load all data from JSON files
  */
@@ -227,9 +253,27 @@ async function loadAllData() {
     const contentData = await contentRes.json();
 
     Object.assign(globalState, contentData);
+    projectCache.clear();
 
-    // Load projects
+    // Load project cards if available. This keeps initial payload light and
+    // defers full block bodies until openProject is called.
     const projectIds = globalState.projects || [];
+    const projectCards = Array.isArray(globalState.projectCards) ? globalState.projectCards : [];
+
+    if (projectCards.length) {
+      const cardById = new Map(projectCards.map(card => [card.id, card]));
+      const orderedCards = projectIds
+        .map(id => cardById.get(id))
+        .filter(card => card && card.id);
+
+      projects.length = 0;
+      projects.push(...orderedCards);
+
+      console.log(`Loaded ${projects.length} project cards`);
+      return;
+    }
+
+    // Backward-compatible fallback: no projectCards metadata yet, so load all.
     const loadedProjects = await Promise.all(
       projectIds.map(id =>
         fetch('projects/' + id + '.json?v=' + Date.now())
@@ -244,8 +288,11 @@ async function loadAllData() {
       )
     );
 
+    const fullProjects = loadedProjects.filter(p => p !== null);
+    fullProjects.forEach(rememberProject);
+
     projects.length = 0;
-    projects.push(...loadedProjects.filter(p => p !== null));
+    projects.push(...fullProjects);
 
     console.log(`Loaded ${projects.length} projects`);
   } catch (error) {
@@ -661,15 +708,20 @@ function setupEventListeners() {
       });
     },
 
-    openProject(id) {
-      const project = projects.find(p => p.id === id);
-      if (!project) return;
-
+    async openProject(id) {
       const ppb = document.getElementById('ppb');
       if (ppb) {
-        ppb.innerHTML = renderDisplayBlocks(project.blocks || []);
+        ppb.innerHTML = '<p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em">Loading project...</p>';
         ppb.scrollTop = 0;
       }
+
+      const project = await fetchProjectById(id);
+      if (!project) {
+        if (ppb) ppb.innerHTML = '<p style="font-size:.75rem;color:var(--muted)">Unable to load this project right now.</p>';
+        return;
+      }
+
+      if (ppb) ppb.innerHTML = renderDisplayBlocks(project.blocks || []);
 
       const pp = document.getElementById('pp');
       if (pp) {
@@ -856,8 +908,10 @@ function setupEditorPreviewBridge() {
   window.addEventListener('message', e => {
     if (e.data.type === 'preview-data') {
       Object.assign(globalState, e.data.content);
+      projectCache.clear();
       projects.length = 0;
       projects.push(...(e.data.projects || []));
+      projects.forEach(rememberProject);
 
       // Re-render everything
       applyTheme(globalState.theme);

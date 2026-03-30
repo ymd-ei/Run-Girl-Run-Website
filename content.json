@@ -169,5 +169,85 @@
     "ctBg": "#080808",
     "ctHi": "#ffffff",
     "sensitiveColor": "#e03030"
-  }
+  },
+  "projectCards": [
+    {
+      "id": "all-blocks-sample",
+      "title": "All Blocks Sample",
+      "type": "Design",
+      "typeLabel": "Design",
+      "year": "2026",
+      "thumbnail": "media/woke-up_hero.webp",
+      "published": true,
+      "sensitive": false,
+      "sensitiveLabel": "",
+      "sensitiveColor": "",
+      "longform": true
+    },
+    {
+      "id": "woke-up-dance-exercise",
+      "title": "Woke Up - Dance Exercise",
+      "type": "3d",
+      "typeLabel": "3D",
+      "year": "2026",
+      "thumbnail": "media/woke-up_thumbnail.webp",
+      "published": true,
+      "sensitive": false,
+      "sensitiveLabel": "18+ NSFW",
+      "sensitiveColor": "",
+      "longform": true
+    },
+    {
+      "id": "md-pulling",
+      "title": "MD pulling",
+      "type": "2d",
+      "typeLabel": "2D",
+      "year": "2026",
+      "thumbnail": "media/rgr_favicon.png",
+      "published": true,
+      "sensitive": false,
+      "sensitiveLabel": "",
+      "sensitiveColor": "",
+      "longform": false
+    },
+    {
+      "id": "final-fantasy-modding",
+      "title": "Final Fantasy Modding",
+      "type": "motion",
+      "typeLabel": "Motion",
+      "year": "2026",
+      "thumbnail": "media/projects/ffxiv_10302024_213434_019.png",
+      "published": true,
+      "sensitive": false,
+      "sensitiveLabel": "",
+      "sensitiveColor": "",
+      "longform": true
+    },
+    {
+      "id": "orbital-loop",
+      "title": "Orbital Loop",
+      "type": "2d",
+      "typeLabel": "2D",
+      "year": "2024",
+      "thumbnail": "media/woke-up_thumbnail.webp",
+      "published": true,
+      "sensitive": true,
+      "sensitiveLabel": "",
+      "sensitiveColor": "#874efe",
+      "longform": false
+    },
+    {
+      "id": "cosmic-drift",
+      "title": "Data in Motion",
+      "type": "2d",
+      "typeLabel": "2D",
+      "year": "2023",
+      "thumbnail": "media/rgr_favicon.png",
+      "published": true,
+      "sensitive": true,
+      "sensitiveLabel": "Non disclosure agreement",
+      "sensitiveColor": "#f5ec00",
+      "longform": false
+    }
+  ]
 }
