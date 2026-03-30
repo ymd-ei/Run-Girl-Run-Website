@@ -1364,7 +1364,7 @@ function togglePublished(id){
   const p = projects.find(x=>x.id===id);
   if(!p) return;
   p.published = p.published===false ? true : false;
-  markDirty(p.published===false?'set draft':'set published');
+  markProjectDirty(id, p.published===false?'set draft':'set published');
   markPageStale('global');
   renderProject(id); showProject(id);
 }
