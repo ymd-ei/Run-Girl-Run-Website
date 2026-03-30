@@ -1789,7 +1789,7 @@ async function saveAll(){
   }));
 
   // Always save all files
-  const toSave = ['content.json', ...projects.map(p=>`projects/${p.id}.json`), ...projects.filter(p=>p.published).map(p=>`p/${p.id}/index.html`)];
+  const toSave = ['content.json', 'index.html', 'mobile.html', ...projects.map(p=>`projects/${p.id}.json`), ...projects.filter(p=>p.published).map(p=>`p/${p.id}/index.html`)];
 
   // Build data map
   const dataMap = {
@@ -1814,6 +1814,22 @@ async function saveAll(){
   const homeOgTitle = C.ogTitle || C.name || 'Run Girl Run';
   const homeOgDesc = C.ogDescription || `${C.role||'Animator'} — ${C.location||''}`.trim();
   const homeOgImage = C.ogImage ? `${siteUrl}/${C.ogImage}` : `${siteUrl}/media/rgr_fav.png`;
+
+  // Update OG meta tags in index.html and mobile.html
+  try {
+    for (const htmlFile of ['index.html', 'mobile.html']) {
+      const res = await fetch(htmlFile + '?v=' + Date.now());
+      if (!res.ok) continue;
+      let html = await res.text();
+      html = html.replace(/(<meta property="og:title"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgTitle)}$2`);
+      html = html.replace(/(<meta property="og:description"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgDesc)}$2`);
+      html = html.replace(/(<meta property="og:image"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgImage)}$2`);
+      html = html.replace(/(<meta name="twitter:title"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgTitle)}$2`);
+      html = html.replace(/(<meta name="twitter:description"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgDesc)}$2`);
+      html = html.replace(/(<meta name="twitter:image"[^>]*content=")[^"]*(")/,  `$1${escHtml(homeOgImage)}$2`);
+      dataMap[htmlFile] = html;
+    }
+  } catch(e) { console.warn('Could not update HTML meta tags:', e); }
 
   try{
     const filesToCommit = Object.fromEntries(toSave.filter(path=>!!dataMap[path]).map(path=>[path, dataMap[path]]));
