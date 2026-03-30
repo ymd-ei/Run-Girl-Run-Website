@@ -160,17 +160,12 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .backbtn{display:flex;align-items:center;gap:.6rem;border:none;background:none;color:var(--muted);font-family:var(--font-b);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;transition:color .2s;padding:0;margin-right:auto}
 .backbtn:hover{color:var(--ink)}
 
-#pp .ppbody{position:relative;isolation:isolate}
-#pp .ppbody::before{
-   content:'';
-   position:absolute;
-   inset:0;
-   pointer-events:none;
-   z-index:1;
-   background:repeating-linear-gradient(-55deg,transparent,transparent 16px,rgba(var(--accent-rgb),0.18) 16px,rgba(var(--accent-rgb),0.18) 17px);
-   opacity:.35;
+#pp .ppbody{
+   position:relative;
+   isolation:isolate;
+   --pp-stripe-alpha:0.18;
+   background-image:repeating-linear-gradient(-55deg,transparent,transparent 16px,rgba(var(--accent-rgb),var(--pp-stripe-alpha)) 16px,rgba(var(--accent-rgb),var(--pp-stripe-alpha)) 17px);
 }
-#pp .ppbody>*{position:relative;z-index:2}
 
 /* Longform mode: same blocks, centered reading panel that slides up */
 #pp.longform{
@@ -192,9 +187,9 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
    opacity:1;
 }
 #pp.longform .ppbody{
+   --pp-stripe-alpha:0.22;
    padding:clamp(1.8rem,3.4vw,2.7rem) clamp(1.4rem,3.8vw,3rem) clamp(2rem,4.2vw,3.2rem);
 }
-#pp.longform .ppbody::before{opacity:.34}
 #pp.longform .ph{
    display:none;
 }
