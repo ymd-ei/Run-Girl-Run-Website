@@ -266,7 +266,8 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .bl-process-step{display:grid;grid-template-columns:38px 1fr;gap:.7rem;align-items:start;padding:.8rem .85rem;border:1px solid var(--border);background:rgba(var(--accent-rgb),0.1);position:relative;overflow:hidden}
 .bl-process-step.has-image{min-height:340px;align-items:end;padding:1.2rem}
 .bl-process-step.has-image .bl-process-step-image{position:absolute;inset:0;width:100%;height:100%;margin:0;aspect-ratio:auto;border:none;z-index:0}
-.bl-process-step.has-image .bl-process-step-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.2) 100%);z-index:1}
+.bl-process-step.has-image .bl-process-step-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.2) 100%);z-index:1;transition:opacity .4s ease}
+.bl-process-step.has-image:hover .bl-process-step-overlay{opacity:0}
 .bl-process-step.has-image .bl-process-num{z-index:2;color:#fff;border-color:rgba(255,255,255,0.4)}
 .bl-process-step.has-image .bl-process-copy{z-index:2}
 .bl-process-step.has-image .bl-process-copy h4{color:#fff}
