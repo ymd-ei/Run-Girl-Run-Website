@@ -186,6 +186,140 @@ const resolvedExpanded = new Set();
 // Browser-selected folder handle for web mode.
 let browserFolderHandle = null;
 
+function isHostedRelayMode() {
+    return !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+}
+
+function _qsParam(endpoint, key) {
+    const q = endpoint.split('?')[1] || '';
+    return new URLSearchParams(q).get(key) || '';
+}
+
+function _inferTypeFromPath(relPath) {
+    const parts = relPath.split('/');
+    if (parts.length > 1) {
+        const top = parts[0].toUpperCase();
+        if (top.includes('ANIM')) return 'ANIM';
+        if (top.includes('COMP')) return 'COMP';
+        if (top.includes('FX')) return 'FX';
+        if (top.includes('LIT')) return 'LIT';
+        if (top.includes('EDIT')) return 'EDIT';
+    }
+    const ext = relPath.split('.').pop().toLowerCase();
+    if (['mp4','mov','avi','mkv','webm'].includes(ext)) return 'EDIT';
+    if (['exr','dpx'].includes(ext)) return 'COMP';
+    if (['abc','usd','usda','usdc'].includes(ext)) return 'ANIM';
+    return 'FILE';
+}
+
+async function _scanBrowserFiles(rootHandle, maxItems = 12000) {
+    const files = [];
+    const queue = [{ handle: rootHandle, rel: '' }];
+    let visited = 0;
+    while (queue.length > 0 && visited < maxItems) {
+        const current = queue.shift();
+        for await (const entry of current.handle.values()) {
+            visited += 1;
+            const relPath = current.rel ? `${current.rel}/${entry.name}` : entry.name;
+            if (entry.kind === 'directory') queue.push({ handle: entry, rel: relPath });
+            else files.push(relPath);
+            if (visited >= maxItems) break;
+        }
+    }
+    return files;
+}
+
+async function _buildBrowserDashboardData(displayPath) {
+    if (!browserFolderHandle) return { error: 'Choose a folder first.' };
+    const relFiles = await _scanBrowserFiles(browserFolderHandle);
+    const assets = relFiles.map((relPath, idx) => {
+        const base = relPath.split('/').pop() || relPath;
+        const stem = base.replace(/\.[^./\\]+$/, '');
+        return {
+            name: stem || `File_${idx + 1}`,
+            type: _inferTypeFromPath(relPath),
+            version: '1',
+            has_master: false,
+            status: 'WIP',
+            difficulty: '',
+            completion: 0,
+            due_date: '',
+            last_published: '',
+            last_user: '',
+            starred: false,
+            done: false,
+            excluded: false,
+            assignee: '',
+            notes: '',
+            comments: [],
+            manual_media: relPath,
+        };
+    });
+    const root = displayPath || `[Browser Folder] ${browserFolderHandle.name}`;
+    return {
+        root_path: root,
+        assets,
+        custom_statuses: [
+            { name: 'WIP', color: '#6366f1' },
+            { name: 'Review', color: '#f59e0b' },
+            { name: 'Approved', color: '#22c55e' },
+        ],
+        custom_difficulties: [
+            { name: 'Low', color: '#22c55e' },
+            { name: 'Medium', color: '#f59e0b' },
+            { name: 'High', color: '#ef4444' },
+        ],
+        auto_status_rules: [],
+        auto_status_enabled: false,
+        project_complete: false,
+        completed_date: '',
+        final_media: '',
+        current_edit: '',
+        project_reflection: '',
+        scan_folders: [],
+        excluded_extensions: [],
+        project_info: { description: '', credits: [], start_date: '', end_date: '' },
+    };
+}
+
+async function _browserApiFallback(endpoint, body) {
+    const path = endpoint.split('?')[0];
+    if (path === '/api/scan') {
+        const reqPath = _qsParam(endpoint, 'path');
+        return _buildBrowserDashboardData(reqPath);
+    }
+    if (path === '/api/list_projects') return { studio_root: '', projects: [] };
+    if (path === '/api/get_config') return { studio_root: '', launch_on_startup: false };
+    if (path === '/api/get_studio_config') return { cloud_sharing: {} };
+    if (path === '/api/playlists') return { playlists: [] };
+    if (path === '/api/activity_log') return { entries: [] };
+    if (path === '/api/snapshot/list') return { snapshots: [] };
+    if (path === '/api/list_dir') return { error: 'Folder browser is unavailable in hosted mode. Use Browse on the splash screen.' };
+
+    if (
+        path === '/api/save_meta' ||
+        path === '/api/save_settings' ||
+        path === '/api/save_project_info' ||
+        path === '/api/playlist/save' ||
+        path === '/api/playlist/create' ||
+        path === '/api/set_startup' ||
+        path === '/api/set_studio_root' ||
+        path === '/api/save_studio_config'
+    ) {
+        return { ok: true, hosted_mode: true };
+    }
+
+    if (path === '/api/open_file') {
+        return { ok: false, error: 'Open File needs the helper app in hosted mode.' };
+    }
+
+    if (path === '/api/shutdown') return { ok: false, error: 'Shutdown unavailable in hosted mode.' };
+    if (path === '/api/export_html') return { error: 'Export unavailable in hosted mode.' };
+    if (path === '/api/create_project' || path === '/api/create_studio') return { error: 'Create actions require desktop mode.' };
+
+    return { ok: true, hosted_mode: true };
+}
+
 // ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
@@ -197,9 +331,20 @@ function showToast(msg) {
 }
 
 async function api(endpoint, body = null) {
+    if (isHostedRelayMode() && endpoint.startsWith('/api/')) {
+        return _browserApiFallback(endpoint, body);
+    }
     const opts = body ? { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) } : {};
     const r = await fetch(endpoint, opts);
-    return r.json();
+    const text = await r.text();
+    let data = {};
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (err) {
+        throw new Error(`Invalid JSON from ${endpoint} (${r.status})`);
+    }
+    if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
+    return data;
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -403,6 +548,8 @@ async function browseProject() {
             const displayPath = `[Browser Folder] ${handle.name}`;
             document.getElementById('projectPath').value = displayPath;
             showToast(`Selected folder: ${handle.name}`);
+            // Mirror local flow: begin loading immediately after a successful pick.
+            await loadProject();
             return;
         } catch (err) {
             // User cancel should be silent; other errors should not break fallback.
@@ -967,7 +1114,7 @@ async function addProjectTab() {
 }
 
 async function openTabPicker() {
-    const data = await fetch('/api/list_projects').then(r => r.json());
+    const data = await api('/api/list_projects');
     const noStudio = document.getElementById('tpNoStudio');
     const listWrap = document.getElementById('tpProjectList');
     const items    = document.getElementById('tpItems');
@@ -3084,7 +3231,7 @@ async function submitNewStudio() {
 // Project Picker (splash screen)
 // ---------------------------------------------------------------------------
 async function refreshPicker() {
-    const data = await fetch('/api/list_projects').then(r => r.json());
+    const data = await api('/api/list_projects');
     const noStudio   = document.getElementById('pickerNoStudio');
     const listWrap   = document.getElementById('pickerProjectList');
     const items      = document.getElementById('pickerItems');
@@ -3132,7 +3279,7 @@ async function loadPickerProject(path) {
 let _npStudioRoot = '';
 
 async function openNewProject() {
-    const cfg = await fetch('/api/get_config').then(r => r.json());
+    const cfg = await api('/api/get_config');
     _npStudioRoot = cfg.studio_root || '';
     document.getElementById('npProjectName').value = '';
     document.getElementById('npIsOneOff').checked = false;
@@ -3244,6 +3391,12 @@ async function saveSettings() {
 }
 
 document.getElementById('projectPath').addEventListener('keydown', e => { if (e.key==='Enter') loadProject(); });
+
+if (isHostedRelayMode()) {
+    projectTabs = [];
+    activeTabIndex = 0;
+    saveTabs();
+}
 
 if (projectTabs.length > 0 && projectTabs[activeTabIndex]) {
     loadTabProject(projectTabs[activeTabIndex].path);
