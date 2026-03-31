@@ -913,12 +913,7 @@ function setupEventListeners() {
               ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
             </div>
           </div>
-          <div class="pp-hero-actions">
-            <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">
-              <i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span>
-            </button>
-            <button class="pp-hero-btn" onclick="window.display?.copyShareLink?.()"><i class="ph-fill ph-share-network"></i> Share</button>
-          </div>
+
         </div>
       </div>`;
 

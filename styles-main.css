@@ -103,7 +103,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .panel.wide{width:min(740px,96vw)}
 .panel.open{transform:translateX(0)}
 .panel.no-transition{transition:none !important}
-.ph{display:flex;align-items:center;justify-content:space-between;padding:1.75rem 0 1.25rem;border-bottom:1px solid var(--panel-border);flex-shrink:0;padding-left:2rem;padding-right:2rem}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:1.75rem 0 1.25rem;border-bottom:1px solid var(--panel-border);flex-shrink:0;padding-left:2rem;padding-right:2rem;gap:.75rem}
 .pt2{font-family:var(--font-s);font-size:2.2rem;font-weight:400;letter-spacing:.04em;color:var(--ink)}
 .pc{width:34px;height:34px;border:1px solid var(--border);background:none;color:rgba(26,23,20,0.4);font-size:.85rem;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s,color .2s,width .28s var(--ease),height .28s var(--ease),transform .25s}
 .pc:hover{border-color:transparent;color:var(--accent);width:24px;height:24px;transform:rotate(90deg)}
@@ -445,15 +445,11 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 .pp-hero-title{font-family:var(--font-hero);font-size:clamp(2.2rem,5vw,4rem);font-weight:400;color:#fff;letter-spacing:.02em;text-transform:uppercase;margin:0 0 .45rem;line-height:.95;text-shadow:0 1px 6px rgba(0,0,0,.4)}
 .pp-hero-meta{display:flex;flex-wrap:wrap;gap:.4rem}
 .pp-hero-tag{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);background:rgba(var(--accent-rgb),.18);border:1px solid rgba(var(--accent-rgb),.35);padding:.35rem .9rem;border-radius:2px;display:inline-flex;align-items:center}
-.pp-hero-actions{position:absolute;top:2rem;right:2.5rem;z-index:2;display:flex;gap:.75rem;align-items:center}
-.pp-hero-btn{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;background:rgba(var(--accent-rgb),.18);color:rgba(255,255,255,.9);border:1px solid rgba(var(--accent-rgb),.35);padding:.35rem .9rem;border-radius:2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;display:inline-flex;align-items:center;gap:.35rem}
-.pp-hero-btn:hover{background:rgba(var(--accent-rgb),.35);color:#fff;border-color:rgba(var(--accent-rgb),.5)}
-.pp-like-btn{background:none;border:none;padding:0;color:rgba(255,255,255,.75);gap:.3rem;cursor:pointer}
-.pp-like-btn:hover{background:none;color:#fff}
-.pp-like-btn.liked{background:none;border:none;color:#ff6b6b}
-.pp-like-btn.liked:hover{background:none}
+.ph-action-btn{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;background:none;color:var(--muted);border:1px solid var(--border);padding:.35rem .9rem;border-radius:2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;display:inline-flex;align-items:center;gap:.35rem}
+.ph-action-btn:hover{color:var(--ink);border-color:var(--ink)}
+.ph-action-btn i{font-size:.85rem;vertical-align:-.1em}
+.ph-action-btn.liked{color:#ff6b6b;border-color:#ff6b6b}
+.ph-action-btn.liked:hover{color:#ff3b3b}
 #pp-like-icon{font-size:1rem;line-height:1;transition:transform .2s}
-.pp-like-btn:hover #pp-like-icon{transform:scale(1.15)}
-.pp-like-btn.liked #pp-like-icon{color:#ff6b6b}
+.ph-action-btn:hover #pp-like-icon{transform:scale(1.15)}
 #pp-like-count{font-size:.6rem;letter-spacing:.08em}
-.pp-hero-btn i{font-size:.85rem;vertical-align:-.1em}

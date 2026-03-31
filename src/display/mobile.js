@@ -379,12 +379,7 @@ async function openProject(id) {
           <h2 class="pp-hero-title">${(title || '').replace(/ /, '<br>')}</h2>
           ${tags ? `<div class="pp-hero-meta">${tags}</div>` : ''}
         </div>
-        <div class="pp-hero-actions">
-          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.mobileToggleLike?.()">
-            <i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count"></span>
-          </button>
-          <button class="pp-hero-btn" onclick="window.mobileShareLink?.()"><i class="ph-fill ph-share-network"></i> Share</button>
-        </div>
+
       </div>
     </div>`;
 
