@@ -445,7 +445,7 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 .pp-hero-title{font-family:var(--font-hero);font-size:clamp(2.2rem,5vw,4rem);font-weight:400;color:#fff;letter-spacing:.02em;text-transform:uppercase;margin:0 0 .45rem;line-height:.95;text-shadow:0 1px 6px rgba(0,0,0,.4)}
 .pp-hero-meta{display:flex;flex-wrap:wrap;gap:.4rem}
 .pp-hero-tag{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);background:rgba(var(--accent-rgb),.18);border:1px solid rgba(var(--accent-rgb),.35);padding:.35rem .9rem;border-radius:2px;display:inline-flex;align-items:center}
-.pp-hero-actions{display:flex;gap:.75rem;align-items:center;flex-shrink:0}
+.pp-hero-actions{position:absolute;top:2rem;right:2.5rem;z-index:2;display:flex;gap:.75rem;align-items:center}
 .pp-hero-btn{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;background:rgba(var(--accent-rgb),.18);color:rgba(255,255,255,.9);border:1px solid rgba(var(--accent-rgb),.35);padding:.35rem .9rem;border-radius:2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;display:inline-flex;align-items:center;gap:.35rem}
 .pp-hero-btn:hover{background:rgba(var(--accent-rgb),.35);color:#fff;border-color:rgba(var(--accent-rgb),.5)}
 .pp-like-btn{background:none;border:none;padding:0;color:rgba(255,255,255,.75);gap:.3rem;cursor:pointer}
