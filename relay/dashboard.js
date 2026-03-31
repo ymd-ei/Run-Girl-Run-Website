@@ -918,6 +918,42 @@ let _fbCallback = null;
 let _fbInitialDir = '';
 
 async function openFileBrowser(mode, initialDir, callback) {
+    // In web/hosted mode, use native browser pickers instead of /api/list_dir modal.
+    if (browserFolderHandle || typeof window.showDirectoryPicker === 'function') {
+        try {
+            if (mode === 'folder') {
+                const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                browserFolderHandle = handle;
+                const displayPath = `[Browser Folder] ${handle.name}`;
+                if (callback) callback(displayPath);
+                return;
+            } else {
+                // Media mode: pick files from browser
+                const pickerOpts = {
+                    types: [{
+                        description: 'Media Files',
+                        accept: {
+                            'video/*': ['.mp4', '.avi', '.mov', '.webm'],
+                            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff']
+                        }
+                    }],
+                    multiple: false
+                };
+                const [fileHandle] = await window.showOpenFilePicker(pickerOpts);
+                const file = await fileHandle.getFile();
+                const blobUrl = URL.createObjectURL(file);
+                // Store handle for later use; callback receives blob URL usable as src
+                window._relayMediaHandles = window._relayMediaHandles || {};
+                window._relayMediaHandles[fileHandle.name] = { handle: fileHandle, blobUrl };
+                if (callback) callback(blobUrl);
+                return;
+            }
+        } catch (err) {
+            if (err && err.name === 'AbortError') { if (callback) callback(''); return; }
+            // Fall through to legacy modal if native picker fails
+        }
+    }
+
     _fbMode = mode;
     _fbCallback = callback;
     _fbSelectedPath = '';
