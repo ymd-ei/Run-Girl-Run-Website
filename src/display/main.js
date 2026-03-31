@@ -963,7 +963,12 @@ function setupEventListeners() {
       }
 
       const bd = document.getElementById('bd');
-      if (bd) bd.classList.remove('project-open');
+      if (bd) {
+        bd.classList.remove('project-open');
+        // If no panel is open behind the project, also remove the backdrop
+        const anyPanelOpen = document.querySelector('.panel.open') || document.querySelector('#contact-wrapper.open');
+        if (!anyPanelOpen) bd.classList.remove('open');
+      }
 
       // Clear project from URL bar
       const url = new URL(window.location);
