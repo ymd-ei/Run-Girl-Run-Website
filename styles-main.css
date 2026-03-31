@@ -428,7 +428,7 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 .pp-hero-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 50%,rgba(0,0,0,.05) 100%)}
 .pp-hero-content{position:relative;z-index:1;width:100%;padding:2rem 2.5rem 1.8rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem}
 .pp-hero-left{flex:1;min-width:0}
-.pp-hero-title{font-family:var(--font-s);font-size:clamp(1.4rem,3vw,2.2rem);font-weight:400;color:#fff;letter-spacing:.06em;margin:0 0 .45rem;line-height:1.15}
+.pp-hero-title{font-family:var(--font-s);font-size:clamp(1.8rem,4vw,3rem);font-weight:400;color:#fff;letter-spacing:.06em;margin:0 0 .45rem;line-height:1.15}
 .pp-hero-meta{display:flex;flex-wrap:wrap;gap:.4rem}
 .pp-hero-tag{font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.65);background:rgba(255,255,255,.12);padding:.15rem .55rem;border-radius:2px}
 .pp-hero-actions{display:flex;gap:.75rem;align-items:center;flex-shrink:0}
