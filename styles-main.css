@@ -103,7 +103,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 .panel.wide{width:min(740px,96vw)}
 .panel.open{transform:translateX(0)}
 .panel.no-transition{transition:none !important}
-.ph{display:flex;align-items:center;justify-content:space-between;padding:1.75rem 2rem 1.25rem;border-bottom:1px solid var(--panel-border);flex-shrink:0}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:1.75rem 2rem 1.25rem;border-bottom:1px solid var(--panel-border);flex-shrink:0;width:calc(100% + 4rem);margin:0 -2rem}
 .pt2{font-family:var(--font-s);font-size:2.2rem;font-weight:400;letter-spacing:.04em;color:var(--ink)}
 .pc{width:34px;height:34px;border:1px solid var(--border);background:none;color:rgba(26,23,20,0.4);font-size:.85rem;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s,color .2s,width .28s var(--ease),height .28s var(--ease),transform .25s}
 .pc:hover{border-color:transparent;color:var(--accent);width:24px;height:24px;transform:rotate(90deg)}
@@ -424,7 +424,7 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 /* ─────────────────────────────────────────
    PROJECT HERO HEADER
 ───────────────────────────────────────── */
-.pp-hero{position:relative;width:calc(100% + 4rem);margin:-3rem -2rem 2rem;min-height:320px;background-size:cover;background-position:center;display:flex;align-items:flex-end;overflow:hidden}
+.pp-hero{position:relative;width:calc(100% + 4rem);margin:0 -2rem 2rem;min-height:320px;background-size:cover;background-position:center;display:flex;align-items:flex-end;overflow:hidden}
 .pp-hero-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 50%,rgba(0,0,0,.05) 100%)}
 .pp-hero-content{position:relative;z-index:1;width:100%;padding:2rem 2.5rem 1.8rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem}
 .pp-hero-left{flex:1;min-width:0}
