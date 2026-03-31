@@ -23,6 +23,17 @@ Quick reference for image/video dimensions used across the site. Export at the *
 | **Video Block** (`.bl-video`) | 16:9 | up to ~640px wide | 100vw | **1280 × 720** or embed URL |
 | **Contact Background** (`#ct-bg-video`) | 16:9 | panel width × 100vh | 100vw × 100vh | **1920 × 1080** |
 
+## Social / Rich Link Preview
+
+| Slot | Aspect Ratio | Recommended Export | Notes |
+|---|---|---|---|
+| **OG Image** (`og:image`) | ~1.91:1 | **1200 × 630** | Used by Facebook, LinkedIn, Discord, iMessage, etc. |
+| **Twitter Image** (`twitter:image`) | ~1.91:1 | **1200 × 628** | `summary_large_image` card. Same file as OG works fine. |
+
+- Export as **JPEG** or **PNG** (WebP has inconsistent support in link previews).
+- Keep key content within the center **1000 × 500** safe zone — some platforms crop edges.
+- File size should be **under 5 MB** (under 1 MB is ideal for fast unfurling).
+
 ## Notes
 
 - **GIFs** work in any `<img>` slot (image block, gallery, process step) — the browser animates them natively.
