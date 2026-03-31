@@ -76,6 +76,12 @@ async function handleRequestInner(request, env) {
     return handleMedia(request, env);
   }
 
+  // Public API routes (no auth required)
+  const likesMatch = path.match(/^\/api\/likes\/([a-zA-Z0-9_-]+)$/);
+  if (likesMatch) {
+    return handleLikes(request, env, likesMatch[1]);
+  }
+
   return new Response('Not found', { status: 404 });
 }
 
@@ -803,6 +809,52 @@ async function parseJsonOrText(response) {
 /**
  * Helper: Add CORS headers
  */
+function likesResponse(data, status, request, env) {
+  return corsResponse(new Response(JSON.stringify(data), {
+    status, headers: { 'Content-Type': 'application/json' }
+  }), request, env);
+}
+
+/**
+ * /api/likes/:projectId - Get or toggle likes (public, no auth)
+ */
+async function handleLikes(request, env, projectId) {
+  if (!env.LIKES) {
+    return likesResponse({ error: 'Likes not configured' }, 503, request, env);
+  }
+
+  if (request.method === 'GET') {
+    const data = await env.LIKES.get(`likes:${projectId}`, 'json') || { count: 0, visitors: [] };
+    const visitorId = new URL(request.url).searchParams.get('vid') || '';
+    const liked = visitorId ? data.visitors.includes(visitorId) : false;
+    return likesResponse({ count: data.count, liked }, 200, request, env);
+  }
+
+  if (request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const visitorId = body.vid;
+    if (!visitorId || typeof visitorId !== 'string' || visitorId.length > 64) {
+      return likesResponse({ error: 'Invalid visitor ID' }, 400, request, env);
+    }
+
+    const data = await env.LIKES.get(`likes:${projectId}`, 'json') || { count: 0, visitors: [] };
+    const alreadyLiked = data.visitors.includes(visitorId);
+
+    if (alreadyLiked) {
+      data.visitors = data.visitors.filter(v => v !== visitorId);
+      data.count = Math.max(0, data.count - 1);
+    } else {
+      data.visitors.push(visitorId);
+      data.count = data.count + 1;
+    }
+
+    await env.LIKES.put(`likes:${projectId}`, JSON.stringify(data));
+    return likesResponse({ count: data.count, liked: !alreadyLiked }, 200, request, env);
+  }
+
+  return corsResponse(new Response('Method not allowed', { status: 405 }), request, env);
+}
+
 function corsResponse(response, request, env) {
   const headers = new Headers(response.headers);
   const origin = request.headers.get('Origin');

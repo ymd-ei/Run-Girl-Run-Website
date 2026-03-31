@@ -15,6 +15,14 @@ const SOCIAL_ICON_MAP = {
   'dribbble': 'ph-dribbble-logo',
 };
 
+const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
+
+function getVisitorId() {
+  let vid = localStorage.getItem('rgr_vid');
+  if (!vid) { vid = crypto.randomUUID(); localStorage.setItem('rgr_vid', vid); }
+  return vid;
+}
+
 let data = null;
 let activeFilter = 'all';
 
@@ -357,12 +365,83 @@ async function openProject(id) {
     const res = await fetch(`projects/${encodeURIComponent(id)}.json`);
     if (!res.ok) throw new Error('Not found');
     const project = await res.json();
+
+    // Find project meta from content.json
+    const meta = (data.projects || []).find(p => p.id === id) || {};
+    const bgImg = project.heroImage || meta.heroImage || project.thumbnail || meta.thumbnail || '';
+    const title = project.title || meta.title || id;
+    const tags = (project.tags || meta.tags || []).map(t => `<span class="pp-hero-tag">${t}</span>`).join('');
+
+    const heroHtml = `<div class="pp-hero" style="background-image:url('${bgImg}')">
+      <div class="pp-hero-overlay"></div>
+      <div class="pp-hero-content">
+        <h2 class="pp-hero-title">${title}</h2>
+        ${tags ? `<div class="pp-hero-meta">${tags}</div>` : ''}
+        <div class="pp-hero-actions">
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.mobileToggleLike?.()">
+            <span id="pp-like-icon">&#9825;</span> <span id="pp-like-count"></span>
+          </button>
+          <button class="pp-hero-btn" onclick="window.mobileShareLink?.()">Share Link</button>
+        </div>
+      </div>
+    </div>`;
+
     const html = (project.blocks || []).map(b => renderBlock(b, data.theme || {})).join('');
-    blocks.innerHTML = html;
+    blocks.innerHTML = heroHtml + html;
+
+    fetchLikeCount(id);
   } catch {
     blocks.innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:1rem 0">Project not found.</p>';
   }
 }
+
+function updateLikeUI(count, liked) {
+  const icon = document.getElementById('pp-like-icon');
+  const countEl = document.getElementById('pp-like-count');
+  const btn = document.getElementById('pp-like-btn');
+  if (icon) icon.textContent = liked ? '\u2665' : '\u2661';
+  if (countEl) countEl.textContent = count > 0 ? count : '';
+  if (btn) btn.classList.toggle('liked', !!liked);
+}
+
+async function fetchLikeCount(id) {
+  try {
+    const vid = getVisitorId();
+    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}?vid=${encodeURIComponent(vid)}`);
+    const d = await res.json();
+    updateLikeUI(d.count, d.liked);
+  } catch (e) { console.warn('Failed to fetch likes:', e); }
+}
+
+window.mobileToggleLike = async function() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('project');
+  if (!id) return;
+  try {
+    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vid: getVisitorId() })
+    });
+    const d = await res.json();
+    updateLikeUI(d.count, d.liked);
+  } catch (e) { console.warn('Like failed:', e); }
+};
+
+window.mobileShareLink = function() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('project');
+  if (!id) return;
+  const shareUrl = `https://rungirlrun.studio/p/${id}/`;
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    const btn = document.querySelector('.pp-hero-btn:last-child');
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '&#x2713; Copied!';
+      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    }
+  });
+};
 
 function closeProject() {
   const detail = document.getElementById('project-detail');

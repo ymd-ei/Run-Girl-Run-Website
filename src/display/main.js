@@ -29,6 +29,17 @@ let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
 
+const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
+
+function getVisitorId() {
+  let vid = localStorage.getItem('rgr_vid');
+  if (!vid) {
+    vid = crypto.randomUUID();
+    localStorage.setItem('rgr_vid', vid);
+  }
+  return vid;
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
@@ -833,6 +844,32 @@ async function loadLogStack() {
 }
 
 /**
+ * Update like button UI
+ */
+function updateLikeUI(count, liked) {
+  const icon = document.getElementById('pp-like-icon');
+  const countEl = document.getElementById('pp-like-count');
+  const btn = document.getElementById('pp-like-btn');
+  if (icon) icon.textContent = liked ? '\u2665' : '\u2661';
+  if (countEl) countEl.textContent = count > 0 ? count : '';
+  if (btn) btn.classList.toggle('liked', !!liked);
+}
+
+/**
+ * Fetch like count for a project
+ */
+async function fetchLikeCount(id) {
+  try {
+    const vid = getVisitorId();
+    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}?vid=${encodeURIComponent(vid)}`);
+    const data = await res.json();
+    updateLikeUI(data.count, data.liked);
+  } catch (e) {
+    console.warn('Failed to fetch likes:', e);
+  }
+}
+
+/**
  * Set up UI event listeners
  */
 function setupEventListeners() {
@@ -862,7 +899,31 @@ function setupEventListeners() {
         return;
       }
 
-      if (ppb) ppb.innerHTML = renderDisplayBlocks(normalizeBlocks(project.blocks || []));
+      // Build hero header
+      const heroImg = project.heroImage || project.thumbnail || '';
+      const heroStyle = heroImg ? `background-image:url('${heroImg}')` : '';
+      const heroHTML = `<div class="pp-hero" style="${heroStyle}">
+        <div class="pp-hero-overlay"></div>
+        <div class="pp-hero-content">
+          <h2 class="pp-hero-title">${project.title || ''}</h2>
+          <div class="pp-hero-meta">
+            ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+            ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
+            ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+          </div>
+          <div class="pp-hero-actions">
+            <button class="pp-hero-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">
+              <span id="pp-like-icon">&#x2661;</span> <span id="pp-like-count">—</span>
+            </button>
+            <button class="pp-hero-btn" onclick="window.display?.copyShareLink?.()">&#x1F517; Share</button>
+          </div>
+        </div>
+      </div>`;
+
+      if (ppb) ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []));
+
+      // Fetch like count
+      fetchLikeCount(id);
 
       const pp = document.getElementById('pp');
       if (pp) {
@@ -914,13 +975,31 @@ function setupEventListeners() {
       if (!id) return;
       const shareUrl = `https://rungirlrun.studio/p/${id}/`;
       navigator.clipboard.writeText(shareUrl).then(() => {
-        const btn = document.getElementById('pp-share');
+        const btn = document.querySelector('.pp-hero-btn:last-child') || document.getElementById('pp-share');
         if (btn) {
           const orig = btn.innerHTML;
           btn.innerHTML = '&#x2713; Copied!';
           setTimeout(() => { btn.innerHTML = orig; }, 2000);
         }
       });
+    },
+
+    async toggleLike() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('project');
+      if (!id) return;
+      const vid = getVisitorId();
+      try {
+        const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vid })
+        });
+        const data = await res.json();
+        updateLikeUI(data.count, data.liked);
+      } catch (e) {
+        console.warn('Like failed:', e);
+      }
     },
 
     openLightbox() {

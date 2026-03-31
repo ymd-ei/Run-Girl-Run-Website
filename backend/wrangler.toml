@@ -6,3 +6,9 @@ workers_dev = true
 [vars]
 FRONTEND_HOST = "rungirlrun.studio"
 FRONTEND_URL = "https://rungirlrun.studio/editor.html?api=https://rgr-editor-backend.rungirlrun.workers.dev"
+
+# KV Namespace for likes — run: npx wrangler kv:namespace create "LIKES"
+# Then replace the id below with the one from the output
+[[kv_namespaces]]
+binding = "LIKES"
+id = "ec4858a98e0a40828026fe00a7ebd904"

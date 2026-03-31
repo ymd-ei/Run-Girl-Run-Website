@@ -585,6 +585,11 @@ function renderProject(id){
           ${makeDropzone(p.thumbnail||'', v=>{ updateP(id,'thumbnail',v); }, 'media/projects', 'thumbnail.jpg', 'thdz_'+id)}
           <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateP('${id}','thumbnail',v),'thdz_${id}_p')">&#x1F5C2; Browse Media</button>
         </div>
+        <div class="field"><label>Hero Background Image</label>
+          ${makeDropzone(p.heroImage||'', v=>{ updateP(id,'heroImage',v); }, 'media/projects', 'hero.jpg', 'herodz_'+id)}
+          <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateP('${id}','heroImage',v),'herodz_${id}_p')">&#x1F5C2; Browse Media</button>
+          <p class="hint">Background image for the project hero header. Falls back to thumbnail if empty.</p>
+        </div>
         <div class="field"><label>Tags (comma separated)</label>
           <input value="${(p.tags||[]).join(', ')}" oninput="updateP('${id}','tags',this.value.split(',').map(t=>t.trim()).filter(Boolean))">
         </div>
