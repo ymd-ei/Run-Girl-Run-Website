@@ -100,6 +100,12 @@ h1 span {
   line-height: 1.65;
 }
 
+.status {
+  margin: 0.9rem 0 0;
+  color: #f7e6cc;
+  min-height: 1.2rem;
+}
+
 .actions {
   margin-top: 1.65rem;
   display: flex;
@@ -115,6 +121,7 @@ h1 span {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  cursor: pointer;
 }
 
 .btn:hover {
@@ -137,6 +144,12 @@ h1 span {
 
 .btn.ghost:hover {
   background-color: rgba(255, 255, 255, 0.06);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .grid {
@@ -165,6 +178,37 @@ h1 span {
   color: #eadfcd;
   line-height: 1.6;
   font-size: 0.95rem;
+}
+
+.list-wrap {
+  margin-top: 1.25rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+}
+
+.list-wrap h2 {
+  margin: 0;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--signal-2);
+}
+
+.file-list {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  max-height: 380px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+
+.file-list li {
+  padding: 0.6rem 0.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #eee3d1;
+  font-size: 0.92rem;
 }
 
 @media (max-width: 840px) {

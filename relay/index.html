@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Relay | Run Girl Run Studio</title>
-  <meta name="description" content="Relay by Run Girl Run: a folder-first, ShotGrid-lite production tracker for shots, assets, notes, and review.">
+  <meta name="description" content="Relay browser mode. Choose a folder, scan locally, and work inside that selected directory.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://rungirlrun.studio/relay">
   <meta property="og:title" content="Relay | Run Girl Run Studio">
-  <meta property="og:description" content="Folder-first production tracking and review for small animation teams.">
+  <meta property="og:description" content="Choose a local folder and run Relay in browser mode.">
   <meta property="og:image" content="https://rungirlrun.studio/media/woke-up_hero.webp">
   <link rel="icon" href="/media/rgr_fav.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,35 +21,42 @@
   <main class="page">
     <header class="top">
       <a class="brand" href="/">Run Girl Run Studio</a>
-      <span class="badge">Relay Beta Route</span>
+      <span class="badge">Browser Relay</span>
     </header>
 
     <section class="hero">
-      <p class="kicker">Production Tracking</p>
-      <h1>Relay at <span>/relay</span></h1>
+      <p class="kicker">Folder-First</p>
+      <h1>Relay <span>Browser Mode</span></h1>
       <p class="sub">
-        Folder-first pipeline tracking for shots and assets. This route is now live and ready for
-        phased rollout.
+        Choose a folder on your computer. Relay will read and write only inside the folder you
+        explicitly pick.
       </p>
       <div class="actions">
-        <a class="btn primary" href="http://localhost:8000" target="_blank" rel="noopener">Open Local Relay</a>
-        <a class="btn ghost" href="mailto:hello@rungirlrun.studio?subject=Relay%20Access">Request Invited Access</a>
+        <button id="choose-folder" class="btn primary" type="button">Choose Folder</button>
+        <button id="rescan" class="btn ghost" type="button" disabled>Rescan</button>
+        <button id="open-file" class="btn ghost" type="button">Open File</button>
       </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
-    <section class="grid" aria-label="roadmap">
+    <section class="grid" aria-label="relay summary">
       <article class="card">
-        <h2>Now</h2>
-        <p>Path is reserved and public entry point is active.</p>
+        <h2>Selected Folder</h2>
+        <p id="folder-name">No folder selected.</p>
       </article>
       <article class="card">
-        <h2>Next</h2>
-        <p>Enable authenticated comments and status sync for invited collaborators.</p>
+        <h2>Scan Summary</h2>
+        <p id="scan-summary">Pick a folder to begin.</p>
       </article>
       <article class="card">
-        <h2>Then</h2>
-        <p>Ship full browser tracker powered by the same Relay project metadata model.</p>
+        <h2>Write Scope</h2>
+        <p>Relay will write only inside the selected folder path.</p>
       </article>
+    </section>
+
+    <section class="list-wrap" aria-label="files">
+      <h2>Files</h2>
+      <ul id="file-list" class="file-list"></ul>
     </section>
   </main>
   <script src="/relay/relay.js" defer></script>
