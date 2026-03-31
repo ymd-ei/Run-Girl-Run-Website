@@ -1,222 +1,40 @@
+/* ============================================================
+   Relay — Shared Design Tokens
+   Run Girl Run Studio
+   Loaded by dashboard.html and review.html
+   ============================================================ */
+
 :root {
-  --ink: #11110f;
-  --paper: #f7f1e7;
-  --sand: #d6cbb8;
-  --line: rgba(247, 241, 231, 0.2);
-  --signal: #ff5a2a;
-  --signal-2: #ffd75e;
+    --bg-primary:   #08080a;
+    --bg-secondary: #131316;
+    --bg-tertiary:  #1a1a1f;
+    --bg-hover:     #222228;
+    --border:       #2a2a32;
+    --border-light: #3a3a44;
+    --text-primary:   #e8e8ed;
+    --text-secondary: #8888a0;
+    --text-muted:     #555566;
+    --accent:     #6366f1;
+    --accent-dim: #6366f122;
+    --green:     #22c55e;
+    --green-dim: #22c55e22;
+    --yellow:     #eab308;
+    --yellow-dim: #eab30822;
+    --red:     #ef4444;
+    --red-dim: #ef444422;
+    --blue:     #3b82f6;
+    --blue-dim: #3b82f622;
+    --purple:     #a855f7;
+    --purple-dim: #a855f722;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --display: 'Syne', sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-}
-
-body {
-  font-family: "Space Grotesk", sans-serif;
-  color: var(--paper);
-  background: radial-gradient(circle at 20% 10%, #2d2017 0%, transparent 32%),
-    radial-gradient(circle at 80% 90%, #2b1313 0%, transparent 28%),
-    linear-gradient(140deg, #090909, #16120f 55%, #1e1a16);
-}
-
-.noise {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.06;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.7) 0.4px, transparent 0.4px);
-  background-size: 3px 3px;
-}
-
-.page {
-  position: relative;
-  z-index: 1;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
-}
-
-.top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.brand {
-  color: var(--sand);
-  text-decoration: none;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-}
-
-.badge {
-  border: 1px solid var(--line);
-  padding: 0.45rem 0.65rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--sand);
-}
-
-.hero {
-  margin-top: 4.8rem;
-}
-
-.kicker {
-  display: inline-block;
-  margin: 0;
-  border: 1px solid rgba(255, 90, 42, 0.4);
-  color: var(--signal-2);
-  padding: 0.4rem 0.6rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-}
-
-h1 {
-  margin: 1rem 0 0;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: clamp(3rem, 14vw, 8rem);
-  line-height: 0.9;
-  letter-spacing: 0.02em;
-}
-
-h1 span {
-  color: var(--signal);
-}
-
-.sub {
-  margin: 1.1rem 0 0;
-  max-width: 58ch;
-  color: #e6dcc9;
-  line-height: 1.65;
-}
-
-.status {
-  margin: 0.9rem 0 0;
-  color: #f7e6cc;
-  min-height: 1.2rem;
-}
-
-.actions {
-  margin-top: 1.65rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-}
-
-.btn {
-  border: 1px solid transparent;
-  padding: 0.75rem 1rem;
-  text-decoration: none;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
-  cursor: pointer;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.btn.primary {
-  background: linear-gradient(135deg, var(--signal), #f36d41);
-  color: #1a0f0b;
-}
-
-.btn.primary:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.btn.ghost {
-  border-color: var(--line);
-  color: var(--paper);
-}
-
-.btn.ghost:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.grid {
-  margin-top: 2.8rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
-}
-
-.card {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 1rem;
-}
-
-.card h2 {
-  margin: 0;
-  font-size: 0.84rem;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--signal-2);
-}
-
-.card p {
-  margin: 0.65rem 0 0;
-  color: #eadfcd;
-  line-height: 1.6;
-  font-size: 0.95rem;
-}
-
-.list-wrap {
-  margin-top: 1.25rem;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 1rem;
-}
-
-.list-wrap h2 {
-  margin: 0;
-  font-size: 0.84rem;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--signal-2);
-}
-
-.file-list {
-  list-style: none;
-  margin: 0.8rem 0 0;
-  padding: 0;
-  max-height: 380px;
-  overflow: auto;
-  border-top: 1px solid var(--line);
-}
-
-.file-list li {
-  padding: 0.6rem 0.15rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: #eee3d1;
-  font-size: 0.92rem;
-}
-
-@media (max-width: 840px) {
-  .hero {
-    margin-top: 3.5rem;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
+.relay-brand {
+    font-family: var(--mono); font-size: 0.8rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase;
+    flex-shrink: 0;
 }
