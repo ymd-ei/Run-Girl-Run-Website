@@ -914,7 +914,7 @@ function setupEventListeners() {
             </div>
           </div>
           <div class="pp-hero-actions">
-            <button class="pp-hero-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">
+            <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">
               <span id="pp-like-icon">&#x2661;</span> <span id="pp-like-count">—</span>
             </button>
             <button class="pp-hero-btn" onclick="window.display?.copyShareLink?.()">&#x1F517; Share</button>
