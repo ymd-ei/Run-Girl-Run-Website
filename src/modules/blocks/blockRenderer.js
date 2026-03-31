@@ -130,17 +130,17 @@ export function renderBlock(block, theme = {}) {
     case 'process':
       return `<div class="bl-process">${(block.steps || [])
         .map(
-          (step, index) => `<div class="bl-process-step"><div class="bl-process-num">${
-            index + 1
-          }</div><div class="bl-process-copy">${
-            step.date ? `<div class="bl-process-meta"><span class="bl-process-date">${step.date}</span></div>` : ''
-          }<h4>${step.title || ''}</h4><p>${step.content || ''}</p>${
+          (step, index) => `<div class="bl-process-step${step.image ? ' has-image' : ''}">${
             step.image
               ? `<img class="bl-process-step-image" src="${step.image}" alt="${
                   step.imageAlt || step.title || ''
-                }">`
+                }"><div class="bl-process-step-overlay"></div>`
               : ''
-          }</div></div>`
+          }<div class="bl-process-num">${
+            index + 1
+          }</div><div class="bl-process-copy">${
+            step.date ? `<div class="bl-process-meta"><span class="bl-process-date">${step.date}</span></div>` : ''
+          }<h4>${step.title || ''}</h4><p>${step.content || ''}</p></div></div>`
         )
         .join('')}</div>`;
 
