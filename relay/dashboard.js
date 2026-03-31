@@ -183,6 +183,9 @@ let projectInfoOpen = false;
 let dashboardPlaylists = [];
 const resolvedExpanded = new Set();
 
+// Browser-selected folder handle for web mode.
+let browserFolderHandle = null;
+
 // ---------------------------------------------------------------------------
 // Utility
 // ---------------------------------------------------------------------------
@@ -392,8 +395,27 @@ function _initProjectUI() {
 }
 
 async function browseProject() {
+    // Prefer native browser folder picker for hosted /relay usage.
+    if (typeof window.showDirectoryPicker === 'function') {
+        try {
+            const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            browserFolderHandle = handle;
+            const displayPath = `[Browser Folder] ${handle.name}`;
+            document.getElementById('projectPath').value = displayPath;
+            showToast(`Selected folder: ${handle.name}`);
+            return;
+        } catch (err) {
+            // User cancel should be silent; other errors should not break fallback.
+            if (err && err.name && err.name !== 'AbortError') {
+                showToast('Browser folder picker unavailable, using legacy browser.');
+            }
+        }
+    }
+
+    // Fallback for local desktop-backed mode.
     openFileBrowser('folder', '', path => {
         if (!path) return;
+        browserFolderHandle = null;
         document.getElementById('projectPath').value = path;
         loadProject();
     });
