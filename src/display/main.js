@@ -905,11 +905,13 @@ function setupEventListeners() {
       const heroHTML = `<div class="pp-hero" style="${heroStyle}">
         <div class="pp-hero-overlay"></div>
         <div class="pp-hero-content">
-          <h2 class="pp-hero-title">${project.title || ''}</h2>
-          <div class="pp-hero-meta">
-            ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
-            ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
-            ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+          <div class="pp-hero-left">
+            <h2 class="pp-hero-title">${project.title || ''}</h2>
+            <div class="pp-hero-meta">
+              ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+              ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
+              ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+            </div>
           </div>
           <div class="pp-hero-actions">
             <button class="pp-hero-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">

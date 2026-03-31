@@ -375,8 +375,10 @@ async function openProject(id) {
     const heroHtml = `<div class="pp-hero" style="background-image:url('${bgImg}')">
       <div class="pp-hero-overlay"></div>
       <div class="pp-hero-content">
-        <h2 class="pp-hero-title">${title}</h2>
-        ${tags ? `<div class="pp-hero-meta">${tags}</div>` : ''}
+        <div class="pp-hero-left">
+          <h2 class="pp-hero-title">${title}</h2>
+          ${tags ? `<div class="pp-hero-meta">${tags}</div>` : ''}
+        </div>
         <div class="pp-hero-actions">
           <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.mobileToggleLike?.()">
             <span id="pp-like-icon">&#9825;</span> <span id="pp-like-count"></span>
