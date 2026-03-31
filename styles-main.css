@@ -438,5 +438,8 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 .pp-like-btn:hover{background:none;color:#fff}
 .pp-like-btn.liked{background:none;border:none;color:#ff6b6b}
 .pp-like-btn.liked:hover{background:none}
-#pp-like-icon{font-size:1.1rem;line-height:1}
+#pp-like-icon{font-size:1rem;line-height:1;transition:transform .2s}
+.pp-like-btn:hover #pp-like-icon{transform:scale(1.15)}
+.pp-like-btn.liked #pp-like-icon{color:#ff6b6b}
 #pp-like-count{font-size:.6rem;letter-spacing:.08em}
+.pp-hero-btn i{font-size:.85rem;vertical-align:-.1em}

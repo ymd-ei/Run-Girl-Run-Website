@@ -850,7 +850,7 @@ function updateLikeUI(count, liked) {
   const icon = document.getElementById('pp-like-icon');
   const countEl = document.getElementById('pp-like-count');
   const btn = document.getElementById('pp-like-btn');
-  if (icon) icon.textContent = liked ? '\u2665' : '\u2661';
+  if (icon) icon.className = liked ? 'ph-fill ph-heart' : 'ph-fill ph-heart';
   if (countEl) countEl.textContent = count > 0 ? count : '';
   if (btn) btn.classList.toggle('liked', !!liked);
 }
@@ -915,9 +915,9 @@ function setupEventListeners() {
           </div>
           <div class="pp-hero-actions">
             <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()">
-              <span id="pp-like-icon">&#x2661;</span> <span id="pp-like-count">—</span>
+              <i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span>
             </button>
-            <button class="pp-hero-btn" onclick="window.display?.copyShareLink?.()">&#x1F517; Share</button>
+            <button class="pp-hero-btn" onclick="window.display?.copyShareLink?.()"><i class="ph-fill ph-share-network"></i> Share</button>
           </div>
         </div>
       </div>`;

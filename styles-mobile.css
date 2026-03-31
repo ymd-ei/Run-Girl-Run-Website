@@ -323,5 +323,9 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .pp-like-btn{background:none;border:none;padding:0;color:rgba(255,255,255,.75);gap:.25rem;cursor:pointer}
 .pp-like-btn:hover{background:none;color:#fff}
 .pp-like-btn.liked{background:none;border:none;color:#ff6b6b}
-#pp-like-icon{font-size:1rem;line-height:1}
+#pp-like-icon{font-size:.9rem;line-height:1;transition:transform .2s}
+.pp-like-btn:hover #pp-like-icon{transform:scale(1.15)}
+.pp-like-btn.liked #pp-like-icon{color:#ff6b6b}
+#pp-like-count{font-size:.55rem;letter-spacing:.08em}
+.pp-hero-btn i{font-size:.75rem;vertical-align:-.1em}
 #pp-like-count{font-size:.55rem;letter-spacing:.08em}
