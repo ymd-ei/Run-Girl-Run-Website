@@ -376,7 +376,7 @@ async function openProject(id) {
       <div class="pp-hero-overlay"></div>
       <div class="pp-hero-content">
         <div class="pp-hero-left">
-          <h2 class="pp-hero-title">${title}</h2>
+          <h2 class="pp-hero-title">${(title || '').replace(/ /, '<br>')}</h2>
           ${tags ? `<div class="pp-hero-meta">${tags}</div>` : ''}
         </div>
         <div class="pp-hero-actions">

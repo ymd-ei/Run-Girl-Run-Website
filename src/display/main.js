@@ -906,7 +906,7 @@ function setupEventListeners() {
         <div class="pp-hero-overlay"></div>
         <div class="pp-hero-content">
           <div class="pp-hero-left">
-            <h2 class="pp-hero-title">${project.title || ''}</h2>
+            <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
             <div class="pp-hero-meta">
               ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
               ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
