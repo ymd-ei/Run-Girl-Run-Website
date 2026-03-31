@@ -326,3 +326,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .pp-hero-title{font-family:var(--font-hero);font-size:clamp(1.8rem,7vw,2.8rem);font-weight:400;color:#fff;letter-spacing:.02em;text-transform:uppercase;margin:0 0 .35rem;line-height:.95}
 .pp-hero-meta{display:flex;flex-wrap:wrap;gap:.35rem}
 .pp-hero-tag{font-family:var(--font-b);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);background:rgba(var(--accent-rgb),.18);border:1px solid rgba(var(--accent-rgb),.35);padding:.3rem .7rem;border-radius:2px;display:inline-flex;align-items:center}
+.pp-hero-actions{position:absolute;top:1rem;right:1.25rem;z-index:2;display:flex;gap:.4rem}
+.pp-hero-btn{font-family:var(--font-b);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;background:rgba(0,0,0,.35);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);padding:.3rem .7rem;border-radius:2px;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pp-hero-btn i{font-size:.8rem}
+.pp-hero-btn.liked{color:#ff6b6b;border-color:#ff6b6b}

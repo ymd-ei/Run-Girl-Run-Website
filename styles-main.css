@@ -445,11 +445,12 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 .pp-hero-title{font-family:var(--font-hero);font-size:clamp(2.2rem,5vw,4rem);font-weight:400;color:#fff;letter-spacing:.02em;text-transform:uppercase;margin:0 0 .45rem;line-height:.95;text-shadow:0 1px 6px rgba(0,0,0,.4)}
 .pp-hero-meta{display:flex;flex-wrap:wrap;gap:.4rem}
 .pp-hero-tag{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);background:rgba(var(--accent-rgb),.18);border:1px solid rgba(var(--accent-rgb),.35);padding:.35rem .9rem;border-radius:2px;display:inline-flex;align-items:center}
-.ph-action-btn{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;background:none;color:var(--muted);border:1px solid var(--border);padding:.35rem .9rem;border-radius:2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;display:inline-flex;align-items:center;gap:.35rem}
-.ph-action-btn:hover{color:var(--ink);border-color:var(--ink)}
-.ph-action-btn i{font-size:.85rem;vertical-align:-.1em}
-.ph-action-btn.liked{color:#ff6b6b;border-color:#ff6b6b}
-.ph-action-btn.liked:hover{color:#ff3b3b}
+.pp-hero-actions{position:absolute;top:1.2rem;right:1.5rem;z-index:2;display:flex;gap:.5rem}
+.pp-hero-btn{font-family:var(--font-b);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.35);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2);padding:.35rem .9rem;border-radius:2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;display:inline-flex;align-items:center;gap:.35rem;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pp-hero-btn:hover{background:rgba(var(--accent-rgb),.45);color:#fff;border-color:rgba(var(--accent-rgb),.6)}
+.pp-hero-btn i{font-size:.85rem;vertical-align:-.1em}
+.pp-hero-btn.liked{color:#ff6b6b;border-color:#ff6b6b}
+.pp-hero-btn.liked:hover{color:#ff3b3b}
 #pp-like-icon{font-size:1rem;line-height:1;transition:transform .2s}
-.ph-action-btn:hover #pp-like-icon{transform:scale(1.15)}
+.pp-hero-btn:hover #pp-like-icon{transform:scale(1.15)}
 #pp-like-count{font-size:.6rem;letter-spacing:.08em}
