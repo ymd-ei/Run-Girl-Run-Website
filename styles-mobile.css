@@ -60,10 +60,46 @@ body{
   padding:0 1.5rem 2rem;display:none;
 }
 #reel-embed{
-  width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;
+  display:flex;justify-content:center;
 }
-#reel-embed iframe{width:100%;height:100%;border:none;display:block}
+.watch-reel-btn{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-family:var(--font-b);font-size:var(--fs-sm);font-weight:500;
+  letter-spacing:var(--ls-wide);text-transform:uppercase;
+  color:var(--paper);background:none;
+  border:1px solid rgba(var(--paper-rgb),0.25);
+  padding:.65rem 1.4rem;border-radius:2px;cursor:pointer;
+  transition:border-color .2s,color .2s;
+}
+.watch-reel-btn:active{border-color:var(--accent);color:var(--accent)}
+.wr-play{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:1.4rem;height:1.4rem;border-radius:50%;
+  border:1px solid rgba(var(--paper-rgb),0.4);
+}
+.wr-tri{
+  display:block;width:0;height:0;
+  border-top:4px solid transparent;border-bottom:4px solid transparent;
+  border-left:6px solid var(--paper);margin-left:2px;
+}
 #reel-section.has-reel{display:block}
+
+/* ─────────────────────────────────────────
+   REEL LIGHTBOX
+───────────────────────────────────────── */
+.reel-lightbox{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.reel-lightbox.open{opacity:1;pointer-events:auto}
+.rl-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.92)}
+.rl-inner{position:relative;z-index:1;width:94%;max-width:640px}
+.rl-top{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;margin-bottom:.35rem}
+.rl-label{font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:rgba(255,255,255,.5)}
+.rl-close{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:.25rem}
+.rl-frame{width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+.rl-frame iframe,.rl-frame video{width:100%;height:100%;border:none;display:block;object-fit:contain}
 
 /* ─────────────────────────────────────────
    SECTIONS

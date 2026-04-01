@@ -88,14 +88,47 @@ function renderHero() {
 function renderReel() {
   const section = document.getElementById('reel-section');
   const embed = document.getElementById('reel-embed');
-  if (!section || !embed || !data.reel || !data.reel.url) return;
+  const reelData = (data.watchReel && data.watchReel.url) ? data.watchReel : data.reel;
+  if (!section || !embed || !reelData || !reelData.url) return;
 
-  // Strip autoplay from the URL for mobile — let users tap to play
-  let url = data.reel.url;
-  url = url.replace(/autoplay=1/g, 'autoplay=0').replace(/mute=1/g, 'mute=0');
-
-  embed.innerHTML = `<iframe src="${encodeURI(url)}" allow="fullscreen" allowfullscreen title="Demo Reel"></iframe>`;
+  embed.innerHTML = `<button class="watch-reel-btn" id="watch-reel-btn">
+    <span class="wr-play"><span class="wr-tri"></span></span>
+    Watch Reel
+  </button>`;
   section.classList.add('has-reel');
+
+  document.getElementById('watch-reel-btn').addEventListener('click', () => openReelLightbox(reelData));
+}
+
+function openReelLightbox(reelData) {
+  const lightbox = document.getElementById('reel-lightbox');
+  const frame = document.getElementById('rl-frame');
+  if (!lightbox || !frame) return;
+
+  let src = reelData.url;
+  if (reelData.type === 'youtube') {
+    src = src.replace('&controls=0', '').replace('&mute=1', '');
+    if (!src.includes('controls=1')) src += '&controls=1';
+    frame.innerHTML = `<iframe title="Demo reel" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  } else if (reelData.type === 'vimeo') {
+    src = src.replace('background=1', 'background=0').replace('&muted=1', '').replace('autoplay=1', 'autoplay=0');
+    if (!src.includes('autoplay')) src += '&autoplay=1';
+    frame.innerHTML = `<iframe title="Demo reel" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  } else {
+    frame.innerHTML = `<video src="${src}" controls autoplay playsinline></video>`;
+  }
+
+  lightbox.classList.add('open');
+}
+
+function closeReelLightbox() {
+  const lightbox = document.getElementById('reel-lightbox');
+  if (!lightbox) return;
+  lightbox.classList.remove('open');
+  setTimeout(() => {
+    const frame = document.getElementById('rl-frame');
+    if (frame) frame.innerHTML = '';
+  }, 300);
 }
 
 function renderFilters() {
@@ -279,6 +312,12 @@ function setupEvents() {
       if (trig) trig.setAttribute('aria-expanded', isTarget ? 'true' : 'false');
     });
   });
+
+  // Reel lightbox close
+  const rlBackdrop = document.getElementById('rl-backdrop');
+  const rlClose = document.getElementById('rl-close');
+  if (rlBackdrop) rlBackdrop.addEventListener('click', closeReelLightbox);
+  if (rlClose) rlClose.addEventListener('click', closeReelLightbox);
 
   // Back to top button
   const topBtn = document.getElementById('back-to-top');
