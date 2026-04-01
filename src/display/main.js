@@ -905,7 +905,7 @@ function setupEventListeners() {
       const heroHTML = `<div class="pp-hero" style="${heroStyle}">
         <div class="pp-hero-overlay"></div>
         <div class="pp-hero-actions">
-          <button class="pp-hero-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
           <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
         </div>
         <div class="pp-hero-content">
