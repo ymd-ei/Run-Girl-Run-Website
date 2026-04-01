@@ -467,7 +467,7 @@ function renderHero() {
   const navName = document.getElementById('nav-name');
   if (navName) {
     if (globalState.logo) {
-      navName.innerHTML = `<img src="${globalState.logo}" alt="${globalState.name || ''}" style="height:1.6em;max-width:40vw;object-fit:contain;vertical-align:middle">`;
+      navName.innerHTML = `<img src="${globalState.logo}" alt="${globalState.name || ''}" style="height:2em;max-width:40vw;object-fit:contain;vertical-align:middle">`;
     } else {
       navName.textContent = globalState.name;
     }
