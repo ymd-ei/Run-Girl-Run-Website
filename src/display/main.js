@@ -1169,6 +1169,15 @@ function setupEventListeners() {
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
     }, { passive: true });
+
+    const isInteractive = el =>
+      el.closest('a, button, [onclick], [role="button"], label[for], .pp-hero-btn, .pp-like-btn, .nav-dot, .ct-scroll-cue, #watch-reel, .proj-card, .back-to-top, .faq-q');
+    document.addEventListener('mouseover', e => {
+      if (isInteractive(e.target)) document.body.classList.add('ch');
+    }, { passive: true });
+    document.addEventListener('mouseout', e => {
+      if (isInteractive(e.target)) document.body.classList.remove('ch');
+    }, { passive: true });
   }
 
   // Open gallery items from project content in the shared lightbox.
