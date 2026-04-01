@@ -8,6 +8,7 @@ export const globalState = {
   name: "",
   role: "",
   location: "",
+  logo: "",  // media path for nav logo image (empty = show text name)
   
   // Reel/video embed
   reel: {

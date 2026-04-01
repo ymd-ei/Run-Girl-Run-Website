@@ -423,7 +423,7 @@ body.contact-open #log-stack{opacity:0 !important;pointer-events:none;transition
 /* ── LOADER ── */
 #loader{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;background:var(--ink);opacity:1;transition:opacity .6s ease}
 #loader.done{opacity:0;pointer-events:none}
-#loader-img{width:min(120px,25vw);height:auto;margin-bottom:.5rem}
+#loader-img{width:min(120px,25vw);height:auto;margin-bottom:.25rem}
 #loader-name{font-family:var(--font-b);font-size:clamp(.65rem,1.2vw,.85rem);font-weight:400;letter-spacing:.35em;color:rgba(242,237,228,0.6);display:flex;gap:0;justify-content:center}
 #loader-name span{opacity:0;transition:opacity .06s}
 #loader-bar-wrap{width:min(260px,50vw);height:1px;background:rgba(242,237,228,0.1);position:relative;overflow:hidden}

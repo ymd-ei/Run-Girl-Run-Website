@@ -141,6 +141,7 @@ function renderEditorGlobal() {
   if (!pageEl) return;
 
   // Build the global settings page
+  const logoSrc = globalState.logo || '';
   pageEl.innerHTML = `
     <div class="page-title">Site Settings</div>
     <div class="page-sub">Name, role, and demo reel.</div>
@@ -158,6 +159,16 @@ function renderEditorGlobal() {
             <input value="${globalState.role || ''}" 
               oninput="window.events?.onChangeGlobalField?.('role', this.value)">
           </div>
+        </div>
+        <div class="field" style="margin-top:.75rem">
+          <label>Nav Logo <span style="opacity:.5;font-size:.85em">(replaces name in top-left)</span></label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input id="logo-path" value="${logoSrc}" placeholder="No logo — showing site name"
+              oninput="window.events?.onChangeGlobalField?.('logo', this.value)" style="flex:1">
+            <button class="btn-sm" onclick="window.events?.onBrowseLogo?.()">Browse</button>
+            ${logoSrc ? '<button class="btn-sm" onclick="document.getElementById(\'logo-path\').value=\'\';window.events?.onChangeGlobalField?.(\'logo\',\'\')">Clear</button>' : ''}
+          </div>
+          ${logoSrc ? '<img src="' + logoSrc + '" style="max-height:40px;margin-top:.5rem;border-radius:4px;background:var(--ink,#1a1714)">' : ''}
         </div>
       </div>
     </div>
@@ -337,6 +348,16 @@ window.events = {
 
   onMediaSelect(path) {
     handleMediaSelect(path, uiState, pageState.currentPage, pageState.currentProjectId);
+  },
+
+  onBrowseLogo() {
+    openMediaLibrary((path) => {
+      globalState.logo = path;
+      uiState.dirtyFiles.add('content.json');
+      const input = document.getElementById('logo-path');
+      if (input) { input.value = path; input.dispatchEvent(new Event('input')); }
+      renderEditorGlobal();
+    }, 'logo-path');
   }
 };
 

@@ -466,7 +466,11 @@ function updateDocumentMeta() {
 function renderHero() {
   const navName = document.getElementById('nav-name');
   if (navName) {
-    navName.textContent = globalState.name;
+    if (globalState.logo) {
+      navName.innerHTML = `<img src="${globalState.logo}" alt="${globalState.name || ''}" style="height:1.6em;vertical-align:middle">`;
+    } else {
+      navName.textContent = globalState.name;
+    }
   }
 
   const parts = (globalState.name || '').split(' ');
