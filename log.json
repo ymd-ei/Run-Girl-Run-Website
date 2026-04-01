@@ -1,10 +1,5 @@
 [
   {
-    "id": "1774487335968",
-    "date": "2026-03-26",
-    "text": "This is a test of the logging feature on my website. It should show a line stack that fades as it goes up"
-  },
-  {
     "id": "1774489049146",
     "date": "2026-03-26",
     "text": "Logs"
@@ -48,5 +43,10 @@
     "id": "1774763404995",
     "date": "2026-03-29",
     "text": "You did not miss your chance, you missed a chance"
+  },
+  {
+    "id": "1775002995239",
+    "date": "2026-04-01",
+    "text": "About to go on vacation, so excited!"
   }
 ]
