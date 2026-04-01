@@ -179,6 +179,16 @@ function renderGlobal(){
           <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>{ C.favicon=v; markDirty(); },'favicon_dz_p')">&#x1F5C2; Browse Media</button>
           <p class="hint">Recommended: square PNG or ICO, at least 32×32px</p>
         </div>
+        <div class="field"><label>Nav Logo <span style="opacity:.5;font-size:.85em">(replaces name in top-left)</span></label>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <input id="logo-path" value="${C.logo||''}" placeholder="No logo — showing site name"
+              oninput="C.logo=this.value;markDirty()" style="flex:1">
+            <button class="add-btn" onclick="openMediaLibrary(v=>{C.logo=v;markDirty();document.getElementById('logo-path').value=v;renderGlobal();},'logo-path')">&#x1F5C2; Browse</button>
+            ${C.logo ? '<button class="add-btn" onclick="C.logo=\\'\\';markDirty();renderGlobal();">Clear</button>' : ''}
+          </div>
+          ${C.logo ? '<img src="'+C.logo+'" style="max-height:40px;margin-top:.5rem;border-radius:4px;background:var(--ink,#1a1714)">' : ''}
+          <p class="hint">Optional image to replace the text name in the nav bar.</p>
+        </div>
       </div>
     </div>
     <div class="section">
