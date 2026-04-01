@@ -166,7 +166,7 @@ function renderEditorGlobal() {
             <input id="logo-path" value="${logoSrc}" placeholder="No logo — showing site name"
               oninput="window.events?.onChangeGlobalField?.('logo', this.value)" style="flex:1">
             <button class="btn-sm" onclick="window.events?.onBrowseLogo?.()">Browse</button>
-            ${logoSrc ? '<button class="btn-sm" onclick="document.getElementById(\'logo-path\').value=\'\';window.events?.onChangeGlobalField?.(\'logo\',\'\')">Clear</button>' : ''}
+            ${logoSrc ? '<button class="btn-sm" onclick="document.getElementById(&#39;logo-path&#39;).value=&#39;&#39;;window.events?.onChangeGlobalField?.(&#39;logo&#39;,&#39;&#39;)">Clear</button>' : ''}
           </div>
           ${logoSrc ? '<img src="' + logoSrc + '" style="max-height:40px;margin-top:.5rem;border-radius:4px;background:var(--ink,#1a1714)">' : ''}
         </div>
