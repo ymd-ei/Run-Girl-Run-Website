@@ -1,34 +1,17 @@
 # Media Dimensions Guide
 
-Quick reference for image/video dimensions used across the site. Export at the **Recommended** size for sharp results on retina displays.
+Quick reference for image/video dimensions. Pick the template that matches your slot and export at that size.
 
-## Image Slots
+## Export Templates
 
-| Slot | Aspect Ratio | Desktop Display | Mobile Display | Fit | Recommended Export |
-|---|---|---|---|---|---|
-| **Project Hero** (`.pp-hero`) | Free | 680px wide × min 320px tall | 100vw × min 260px tall | `cover` | **1400 × 800** |
-| **Longform Hero** (`#pp.longform .pp-hero`) | Free | ~900px wide × min 320px tall | 100vw × min 260px tall | `cover` | **1800 × 800** |
-| **Project Card Thumbnail** (`.wci`) | 16:9 | ~300–340px wide | 100vw | `cover` | **800 × 450** |
-| **Image Block** (`.bl-image`) | 16:9 | up to ~640px wide | ~100vw | `cover` | **1280 × 720** |
-| **Gallery Item** (`.bl-gallery-item img`) | 4:3 | ~300px wide (2-col grid) | ~50vw | `cover` | **800 × 600** |
-| **Before / After** (`.bl-before-after-frame`) | 16:9 | up to 780px wide | 100vw | `cover` | **1560 × 878** |
-| **Process Step w/ Image** (`.bl-process-step.has-image`) | Free | min 340px tall | min 280px tall | `cover` | **800 × 500** |
-| **Lightbox** (`#lb-frame`) | 16:9 | up to 900px wide | 92vw | `contain` | **1800 × 1012** |
-
-## Video Slots
-
-| Slot | Aspect Ratio | Desktop Display | Mobile Display | Recommended |
-|---|---|---|---|---|
-| **Hero Showreel** (`#reel video`) | 16:9 | 100vw × 100vh | 100vw × 100vh | **1920 × 1080** |
-| **Video Block** (`.bl-video`) | 16:9 | up to ~640px wide | 100vw | **1280 × 720** or embed URL |
-| **Contact Background** (`#ct-bg-video`) | 16:9 | panel width × 100vh | 100vw × 100vh | **1920 × 1080** |
-
-## Social / Rich Link Preview
-
-| Slot | Aspect Ratio | Recommended Export | Notes |
+| Template | Ratio | Export Size | Slots |
 |---|---|---|---|
-| **OG Image** (`og:image`) | ~1.91:1 | **1200 × 630** | Used by Facebook, LinkedIn, Discord, iMessage, etc. |
-| **Twitter Image** (`twitter:image`) | ~1.91:1 | **1200 × 628** | `summary_large_image` card. Same file as OG works fine. |
+| **16:9** | 16:9 | **1920 × 1080** | Card Thumbnails (`.wci`), Image Blocks (`.bl-image`), Video Blocks (`.bl-video`), Before / After (`.bl-before-after-frame`), Lightbox (`#lb-frame`), Hero Showreel (`#reel`), Contact Background (`#ct-bg-video`) |
+| **4:3** | 4:3 | **1200 × 900** | Gallery Items (`.bl-gallery-item img`), Process Steps (`.bl-process-step`) |
+| **Project Header** | ~2.25:1 | **1800 × 800** | Project Hero (`.pp-hero`), Longform Hero (`#pp.longform .pp-hero`) |
+| **Socials** | ~1.91:1 | **1200 × 630** | OG Image (`og:image`), Twitter Image (`twitter:image`) |
+
+### Socials notes
 
 - Export as **JPEG** or **PNG** (WebP has inconsistent support in link previews).
 - Keep key content within the center **1000 × 500** safe zone — some platforms crop edges.
