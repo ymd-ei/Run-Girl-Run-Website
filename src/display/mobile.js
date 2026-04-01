@@ -88,16 +88,29 @@ function renderHero() {
 function renderReel() {
   const section = document.getElementById('reel-section');
   const embed = document.getElementById('reel-embed');
-  const reelData = (data.watchReel && data.watchReel.url) ? data.watchReel : data.reel;
-  if (!section || !embed || !reelData || !reelData.url) return;
+  const inlineReel = (data.watchReel && data.watchReel.url) ? data.watchReel : data.reel;
+  if (!section || !embed || !inlineReel || !inlineReel.url) return;
 
-  embed.innerHTML = `<button class="watch-reel-btn" id="watch-reel-btn">
-    <span class="wr-play"><span class="wr-tri"></span></span>
-    Watch Reel
-  </button>`;
+  // Inline embed uses watchReel (the actual demo reel)
+  let url = inlineReel.url;
+  if (inlineReel.type === 'youtube' || inlineReel.type === 'vimeo') {
+    url = url.replace(/autoplay=1/g, 'autoplay=0').replace(/mute=1/g, 'mute=0');
+    embed.innerHTML = `<iframe src="${encodeURI(url)}" allow="fullscreen" allowfullscreen title="Demo Reel"></iframe>`;
+  } else {
+    embed.innerHTML = `<video src="${url}" controls playsinline preload="metadata"></video>`;
+  }
   section.classList.add('has-reel');
 
-  document.getElementById('watch-reel-btn').addEventListener('click', () => openReelLightbox(reelData));
+  // Lightbox uses reel (the bg/hero video) if available
+  const lightboxReel = (data.reel && data.reel.url && data.watchReel && data.watchReel.url) ? data.reel : null;
+  if (lightboxReel) {
+    const btn = document.createElement('button');
+    btn.className = 'watch-reel-btn';
+    btn.id = 'watch-reel-btn';
+    btn.innerHTML = '<span class="wr-play"><span class="wr-tri"></span></span> Watch BG Reel';
+    embed.appendChild(btn);
+    btn.addEventListener('click', () => openReelLightbox(lightboxReel));
+  }
 }
 
 function openReelLightbox(reelData) {
