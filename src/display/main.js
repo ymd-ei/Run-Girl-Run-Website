@@ -518,9 +518,13 @@ function renderWorkSection({ showAll = false } = {}) {
     { value: 'motion', label: 'Motion' }
   ];
 
+  const visibleProjects = projects.filter(p => showAll || p.published !== false);
+  const activeTypes = new Set(visibleProjects.map(p => p.type));
+  const visibleFilters = filters.filter(f => activeTypes.has(f.value));
+
   filtersEl.innerHTML =
     `<button class="fb active" onclick="window.display?.filterWork?.(this, 'all')">All</button>` +
-    filters.map(f => `<button class="fb" onclick="window.display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
+    visibleFilters.map(f => `<button class="fb" onclick="window.display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
 
   gridEl.innerHTML = renderWorkGrid(projects, globalState.theme, { showAll });
 

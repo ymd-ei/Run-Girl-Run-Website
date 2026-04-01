@@ -148,8 +148,13 @@ function renderFilters() {
   const wrap = document.getElementById('work-filters');
   if (!wrap || !data.filters) return;
 
+  const drafts = new URLSearchParams(location.search).get('drafts') === 'all';
+  const visibleCards = (data.projectCards || []).filter(c => c.published || drafts);
+  const activeTypes = new Set(visibleCards.map(c => (c.type || '').toLowerCase()));
+
   let html = '<button class="filter-btn active" data-filter="all">All</button>';
   for (const f of data.filters) {
+    if (!activeTypes.has(f.value)) continue;
     html += `<button class="filter-btn" data-filter="${f.value}">${f.label}</button>`;
   }
   wrap.innerHTML = html;
