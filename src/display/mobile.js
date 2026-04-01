@@ -377,8 +377,8 @@ async function openProject(id) {
     const heroHtml = `<div class="pp-hero" style="background-image:url('${bgImg}')">
       <div class="pp-hero-overlay"></div>
       <div class="pp-hero-actions">
-        <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
-        <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+        <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.mobileToggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count"></span></button>
+        <button class="pp-hero-btn" id="pp-share" onclick="window.mobileShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
       </div>
       <div class="pp-hero-content">
         <div class="pp-hero-left">
@@ -437,7 +437,7 @@ window.mobileShareLink = function() {
   if (!id) return;
   const shareUrl = `https://rungirlrun.studio/p/${id}/`;
   navigator.clipboard.writeText(shareUrl).then(() => {
-    const btn = document.querySelector('.pp-hero-btn:last-child');
+    const btn = document.getElementById('pp-share');
     if (btn) {
       const orig = btn.innerHTML;
       btn.innerHTML = '&#x2713; Copied!';

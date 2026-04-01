@@ -140,8 +140,17 @@ section{padding:2rem 1.5rem}
   background:rgba(247,243,236,0.92);backdrop-filter:blur(8px);
   margin:-1.5rem -1.5rem 1.25rem;padding:.6rem 1.5rem;
   border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
 }
 .project-back-bar .back-btn{margin:0;padding:0}
+.project-back-bar-actions{
+  margin-left:auto;display:flex;align-items:center;gap:.75rem;
+}
+.bar-action-btn{
+  font-size:var(--fs-xs) !important;color:var(--accent) !important;opacity:1 !important;
+  display:inline-flex;align-items:center;gap:.25rem;
+}
+.bar-action-btn.liked{color:#ff6b6b !important}
 .back-btn-bottom{
   margin-top:1.5rem;padding-top:.75rem;
   border-top:1px solid var(--border);
