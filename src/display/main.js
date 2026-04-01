@@ -491,6 +491,8 @@ function renderHero() {
       }
     } else if (globalState.reel.type === 'video') {
       reelEl.innerHTML = `<video autoplay muted loop playsinline src="${url}"></video><div id="reel-block"></div>`;
+      const v = reelEl.querySelector('video');
+      if (v) v.play().catch(() => {});
     }
   } else {
     reelEl.innerHTML = `<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
@@ -622,6 +624,8 @@ function renderContactSection() {
         ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
         ctBgVideo.innerHTML = `<video autoplay muted loop playsinline src="${vid.url}"></video>`;
+        const v = ctBgVideo.querySelector('video');
+        if (v) v.play().catch(() => {});
       }
     }
   }

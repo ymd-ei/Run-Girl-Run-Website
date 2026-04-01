@@ -162,6 +162,8 @@ function renderContact() {
   const bgVideo = document.getElementById('ct-bg-video');
   if (bgVideo && panel.video && panel.video.url) {
     bgVideo.innerHTML = `<video src="${panel.video.url}" autoplay muted loop playsinline></video>`;
+    const v = bgVideo.querySelector('video');
+    if (v) v.play().catch(() => {});
   }
 
   const titleEl = document.getElementById('ct-title');
