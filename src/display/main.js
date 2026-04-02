@@ -1109,6 +1109,10 @@ function setupEventListeners() {
         if (!contactTickersStarted) startContactTickers();
       } else {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+        const contact = document.getElementById('contact-wrapper');
+        const stage = document.getElementById('stage');
+        if (contact) contact.classList.remove('open');
+        if (stage) stage.classList.remove('contact-open');
         const panel = document.getElementById('panel-' + name);
         const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
