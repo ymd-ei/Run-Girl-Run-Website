@@ -14,9 +14,7 @@ function applyCanvasMode(enabled) {
   setCanvasButtons(enabled);
 }
 
-window.__editorV2SetMode = applyCanvasMode;
-
-function waitForLegacyEditorReady(attempts = 160) {
+function waitForLegacyEditorReady(attempts = 80) {
   if (typeof window.setCanvasEditMode === 'function') {
     applyCanvasMode(true);
     return;
@@ -30,7 +28,7 @@ function waitForLegacyEditorReady(attempts = 160) {
   setTimeout(() => waitForLegacyEditorReady(attempts - 1), 50);
 }
 
-function wireModeButtons() {
+window.addEventListener('DOMContentLoaded', () => {
   const onBtn = document.getElementById('canvas-mode-on');
   const offBtn = document.getElementById('canvas-mode-off');
 
@@ -41,16 +39,5 @@ function wireModeButtons() {
     offBtn.addEventListener('click', () => applyCanvasMode(false));
   }
 
-  setCanvasButtons(true);
-}
-
-function initEditorV2() {
-  wireModeButtons();
   waitForLegacyEditorReady();
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initEditorV2, { once: true });
-} else {
-  initEditorV2();
-}
+});
