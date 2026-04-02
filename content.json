@@ -257,8 +257,8 @@
     {
       "id": "welcome-message",
       "title": "Welcome Message",
-      "type": "motion",
-      "typeLabel": "Motion",
+      "type": "Pipeline",
+      "typeLabel": "Pipeline",
       "year": "2026",
       "thumbnail": "media/woke-up_thumbnail.webp",
       "published": true,

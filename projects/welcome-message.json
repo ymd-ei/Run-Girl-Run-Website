@@ -1,10 +1,10 @@
 {
   "id": "welcome-message",
   "title": "Welcome Message",
-  "type": "motion",
-  "typeLabel": "Motion",
+  "type": "Pipeline",
+  "typeLabel": "Pipeline",
   "year": "2026",
-  "client": "Self",
+  "client": "",
   "duration": "",
   "tags": [],
   "thumbnail": "media/woke-up_thumbnail.webp",
@@ -21,39 +21,49 @@
     {
       "id": "b1775147114935p4ab",
       "type": "text-md",
-      "content": "Welcome to <rgr>Run Girl Run </rgr>",
+      "content": "Welcome to <rgr>Run Girl Run </rgr> We are happy you're here!<br>\nWe would like to thank you for taking the time looking through this website.",
       "align": "left"
     },
     {
       "id": "b1775147114935jjog",
       "type": "text-md",
-      "content": "This is an online portfolio that documents all the work we have done. <br> Now, I will admit is't still a little sparse with content.",
+      "content": "This is an online portfolio that documents all the work we have done. <br> Now, we will admit it's still a little sparse with content at the moment...",
       "align": "left"
     },
     {
-      "id": "b1775147114935w8pg",
-      "type": "quote",
-      "content": "But it is intentional",
-      "align": "left"
+      "id": "b17751719360484jfo",
+      "type": "text-sm",
+      "content": "<b>But it is intentional... at least, for now </b>",
+      "align": "center"
     },
     {
       "id": "b17751471149351oup",
-      "type": "text-sm",
-      "content": "CONTENT ROLLOUT",
+      "type": "text-lg",
+      "content": "Content Rollout",
+      "align": "left"
+    },
+    {
+      "id": "b1775172389129r3t7",
+      "type": "quote",
+      "content": "We have a lot of content to show! ",
       "align": "left"
     },
     {
       "id": "b177514711493604pj",
       "type": "text-md",
-      "content": "We are currently in the process of formatting all the different projects we have done, gathering the necessary media assets and creating the writeup for them.<br>But this process takes a while to do.",
+      "content": "But they're not quite ready just yet. We are currently in the process of formatting all the different projects we have done, gathering the necessary media assets and creating the write up for each of them. But this process takes a while to do.",
       "align": "left"
     },
     {
       "id": "b17751471149365eri",
       "type": "callout",
       "tone": "warning",
-      "title": "As such we will be doing them in stages.",
-      "content": ""
+      "title": "",
+      "content": "<b>As such we will be doing them in stages.</b>"
+    },
+    {
+      "id": "b1775171462503n1rn",
+      "type": "divider"
     },
     {
       "id": "b1775147114936ujqu",
@@ -85,30 +95,50 @@
           "date": "",
           "content": "After grabbing all of the assets, while working on the rough copy in tandem, a project is now ready to be published on the site",
           "imageAlt": "",
-          "image": ""
+          "image": "media/woke-up_hero.webp"
         }
       ]
     },
     {
       "id": "b1775147114936tdj5",
-      "type": "text-md",
-      "content": "Seeing as there are a lot of steps required to deliver all of this, there will be a huge backlog to go through.",
+      "type": "text-sm",
+      "content": "<b>Seeing as there are a lot of steps required to deliver all of this, there will be a huge backlog to go through.</b>",
       "align": "left"
     },
     {
       "id": "b1775147114936ngoa",
       "type": "quote",
-      "content": "Which means there will be plenty to look forward to!!!",
+      "content": "<rgr>Which means there will be plenty more stuff to look forward to <br>—and we are excited to be able to show them off in due time!",
+      "align": "center"
+    },
+    {
+      "id": "b1775171640891ta34",
+      "type": "divider"
+    },
+    {
+      "id": "b17751716564616moj",
+      "type": "text-md",
+      "content": "We hope you enjoyed taking a look at the first steps in showcasing what we can do and what we hope to provide in the future. <br>",
       "align": "left"
     },
     {
       "id": "b1775147114936syc0",
       "type": "cta",
-      "headline": "Ready for more?",
-      "body": "In the meantime if you are interested in us and want to learn more, you can visit out instagram page where we will be more active. <br> Enjoy your stay!",
+      "headline": "",
+      "body": "In the meantime if you are interested in us and want to learn more, you can visit our <rgr>Instagram</rgr> page where we will be more active. ",
       "buttonLabel": "Instagram",
       "buttonUrl": "https://instagram.com/me_are_jei",
       "tone": "default"
+    },
+    {
+      "id": "b17751725740886llw",
+      "type": "divider"
+    },
+    {
+      "id": "b1775172551514pzig",
+      "type": "text-md",
+      "content": "<rgr> Enjoy your stay! </rgr>",
+      "align": "center"
     }
   ]
 }
