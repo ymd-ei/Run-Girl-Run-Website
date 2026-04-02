@@ -1446,6 +1446,16 @@ window.addEventListener('message', e=>{
     applyCanvasAddBlock(e.data.payload||{});
     return;
   }
+
+  if(e.data&&e.data.type==='canvas-block-mutate'){
+    applyCanvasBlockMutation(e.data.payload||{});
+    return;
+  }
+
+  if(e.data&&e.data.type==='canvas-open-media-picker'){
+    openCanvasMediaPicker(e.data.payload||{});
+    return;
+  }
 });
 
 window.setCanvasEditMode = function setCanvasEditMode(enabled){
@@ -1523,6 +1533,75 @@ function applyCanvasAddBlock(payload){
 
   syncCanvasSelectionToEditor(payload);
   addBlock(scope, blockType);
+}
+
+function applyCanvasBlockMutation(payload){
+  const scope = payload.scope || '';
+  const blockId = payload.blockId || '';
+  if(!scope || !blockId) return;
+
+  let didUpdate = false;
+  if(payload.kind==='change-block-type'){
+    const nextType = payload.blockType || '';
+    if(!nextType) return;
+
+    if(sharedBlockManager){
+      didUpdate = sharedBlockManager.changeBlockType(getBlockState(), scope, blockId, nextType);
+    }else{
+      const blocks=getBlocks(scope)||[];
+      const block=blocks.find(item=>item.id===blockId);
+      if(block){ block.type=nextType; didUpdate=true; }
+    }
+
+    if(didUpdate) openBlocks.add(blockId);
+  } else {
+    const key = payload.key || '';
+    if(!key) return;
+    didUpdate = sharedBlockManager
+      ? sharedBlockManager.updateBlock(getBlockState(), scope, blockId, key, payload.value)
+      : (()=>{
+          const blocks=getBlocks(scope)||[];
+          const block=blocks.find(item=>item.id===blockId);
+          if(!block) return false;
+          block[key]=payload.value;
+          return true;
+        })();
+  }
+
+  if(!didUpdate) return;
+
+  markDirty('canvas block settings', { skipPreviewRefresh: true });
+
+  if(scope==='about'){
+    markPageStale('about');
+    if(currentPage==='about') rerenderBlocks('about');
+    return;
+  }
+
+  if(scope.startsWith('proj-')){
+    const projectId = payload.projectId || scope.replace('proj-','');
+    if(currentPage==='project' && currentProjectId===projectId) rerenderBlocks(scope);
+  }
+}
+
+function openCanvasMediaPicker(payload){
+  const frame=document.getElementById('preview-frame');
+  if(!frame || !payload?.scope || !payload?.blockId || !payload?.key) return;
+
+  openMediaLibrary(path => {
+    try{
+      frame.contentWindow.postMessage({
+        type:'canvas-media-selected',
+        payload:{
+          scope: payload.scope,
+          blockId: payload.blockId,
+          projectId: payload.projectId || '',
+          key: payload.key,
+          path
+        }
+      }, '*');
+    }catch(e){}
+  }, null, { skipPreviewRefresh: true });
 }
 
 function initPreview(){
@@ -2589,6 +2668,7 @@ function rtInsert(textareaId, text){
 let mediaCallback = null;
 let mediaFiles = [];
 let mediaPathInputId = null; // direct reference to the path input to update
+let mediaInsertOptions = {};
 
 function formatBytes(bytes){
   const size = Number(bytes);
@@ -2646,9 +2726,10 @@ function getMediaUsageCount(path){
   return hits.length;
 }
 
-async function openMediaLibrary(onInsert, pathInputId){
+async function openMediaLibrary(onInsert, pathInputId, options){
   mediaCallback = onInsert;
   mediaPathInputId = pathInputId || null;
+  mediaInsertOptions = options || {};
   document.getElementById('media-modal').classList.add('open');
   document.getElementById('media-search').querySelector('input').value = '';
   const grid = document.getElementById('media-grid');
@@ -2664,6 +2745,7 @@ async function openMediaLibrary(onInsert, pathInputId){
 function closeMediaLibrary(){
   document.getElementById('media-modal').classList.remove('open');
   mediaCallback = null;
+  mediaInsertOptions = {};
 }
 
 async function refreshMediaGrid(){
@@ -2824,7 +2906,7 @@ function insertMedia(path){
     const input = document.getElementById(mediaPathInputId);
     if(input){ input.value = path; input.dispatchEvent(new Event('input')); }
   }
-  markDirty();
+  markDirty(undefined, { skipPreviewRefresh: !!mediaInsertOptions.skipPreviewRefresh });
   closeMediaLibrary();
   toast('Inserted: '+path);
 }

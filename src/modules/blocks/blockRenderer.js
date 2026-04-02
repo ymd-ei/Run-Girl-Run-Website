@@ -215,7 +215,19 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
 export function renderBlocks(blocks, theme = {}, renderOptions = {}) {
   if (!Array.isArray(blocks)) return '';
 
-  const blocksHTML = blocks.map(b => renderBlock(b, theme, renderOptions)).join('');
+  const blocksHTML = blocks
+    .map(b => {
+      const blockHtml = renderBlock(b, theme, renderOptions);
+      if (!renderOptions.canvasScope || !b?.id) return blockHtml;
+
+      const projectIdAttr = renderOptions.canvasProjectId
+        ? ` data-canvas-project-id="${renderOptions.canvasProjectId}"`
+        : '';
+
+      return `<div class="canvas-block-shell" data-canvas-block-shell="true" data-canvas-scope="${renderOptions.canvasScope}" data-canvas-block-id="${b.id}" data-canvas-block-type="${b.type || ''}"${projectIdAttr}>${blockHtml}</div>`;
+    })
+    .join('');
+
   return `<div class="block-canvas">${blocksHTML}</div>`;
 }
 

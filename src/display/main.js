@@ -18,7 +18,7 @@ import {
 import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { pool, scheduleIdle } from '../utils/text.js';
-import { normalizeBlocks } from '../modules/blocks/blockManager.js';
+import * as blockManager from '../modules/blocks/blockManager.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
@@ -29,6 +29,8 @@ let canvasEditEnabled = false;
 let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
+let canvasSelectedBlock = null;
+let canvasPendingMediaTarget = null;
 
 const CANVAS_ADD_BLOCK_TYPES = [
   ['text-md', 'Text'],
@@ -65,6 +67,152 @@ function ensureCanvasEditStyles() {
     .canvas-edit-active {
       outline: 1px solid rgba(255, 255, 255, 0.95) !important;
       background: rgba(255, 255, 255, 0.08);
+    }
+
+    body.canvas-edit-enabled .canvas-block-shell {
+      position: relative;
+      transition: box-shadow 0.18s ease, outline-color 0.18s ease;
+    }
+
+    body.canvas-edit-enabled .canvas-block-shell:hover {
+      outline: 1px dashed rgba(255, 255, 255, 0.35);
+      outline-offset: 6px;
+    }
+
+    body.canvas-edit-enabled .canvas-block-shell.canvas-block-selected {
+      outline: 1px solid rgba(255, 255, 255, 0.9);
+      outline-offset: 6px;
+      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    #canvas-block-inspector {
+      display: none;
+      position: fixed;
+      right: 1rem;
+      top: 1rem;
+      width: min(360px, calc(100vw - 2rem));
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      padding: 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      background: rgba(247, 243, 236, 0.96);
+      color: #17130f;
+      z-index: 1200;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+    }
+
+    body.canvas-edit-enabled #canvas-block-inspector.has-selection {
+      display: block;
+    }
+
+    .canvas-inspector-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .canvas-inspector-kicker {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(23, 19, 15, 0.55);
+      margin-bottom: 0.25rem;
+    }
+
+    .canvas-inspector-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .canvas-inspector-close,
+    .canvas-inspector-seg button,
+    .canvas-inspector-browse,
+    .canvas-inspector-select,
+    .canvas-inspector-action {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .canvas-inspector-close {
+      border: none;
+      background: none;
+      color: rgba(23, 19, 15, 0.55);
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .canvas-inspector-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .canvas-inspector-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .canvas-inspector-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(23, 19, 15, 0.55);
+    }
+
+    .canvas-inspector-input,
+    .canvas-inspector-textarea,
+    .canvas-inspector-select {
+      width: 100%;
+      border: 1px solid rgba(23, 19, 15, 0.15);
+      background: rgba(255, 255, 255, 0.82);
+      color: #17130f;
+      padding: 0.6rem 0.7rem;
+      font-size: 0.86rem;
+    }
+
+    .canvas-inspector-textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .canvas-inspector-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .canvas-inspector-seg {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .canvas-inspector-seg button,
+    .canvas-inspector-browse,
+    .canvas-inspector-action {
+      border: 1px solid rgba(23, 19, 15, 0.16);
+      background: rgba(255, 255, 255, 0.86);
+      color: rgba(23, 19, 15, 0.82);
+      padding: 0.45rem 0.62rem;
+      font-size: 0.74rem;
+    }
+
+    .canvas-inspector-seg button.active,
+    .canvas-inspector-action.active {
+      border-color: rgba(23, 19, 15, 0.5);
+      background: rgba(23, 19, 15, 0.08);
+      color: #17130f;
+    }
+
+    .canvas-inspector-hint {
+      font-size: 0.72rem;
+      color: rgba(23, 19, 15, 0.55);
+      line-height: 1.45;
     }
 
     .canvas-add-dock {
@@ -639,8 +787,10 @@ function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
     aboutEl.innerHTML =
-      renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' }) +
+      renderDisplayBlocks(blockManager.normalizeBlocks(globalState.about || []), { scope: 'about' }) +
       renderCanvasAddDock('about');
+    syncCanvasBlockSelectionUI();
+    renderCanvasBlockInspector();
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -1025,36 +1175,10 @@ function setupEventListeners() {
         return;
       }
 
-      // Build hero header
-      const heroImg = project.heroImage || project.thumbnail || '';
-      const heroStyle = heroImg ? `background-image:url('${heroImg}')` : '';
-      const heroHTML = `<div class="pp-hero" style="${heroStyle}">
-        <div class="pp-hero-overlay"></div>
-        <div class="pp-hero-actions">
-          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
-          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
-        </div>
-        <div class="pp-hero-content">
-          <div class="pp-hero-left">
-            <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
-            <div class="pp-hero-meta">
-              ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
-              ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
-              ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
-            </div>
-          </div>
-
-        </div>
-      </div>`;
-
       if (ppb) {
-        ppb.innerHTML =
-          heroHTML +
-          renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
-            scope: 'proj-' + id,
-            projectId: id
-          }) +
-          renderCanvasAddDock('proj-' + id, id);
+        ppb.innerHTML = buildProjectPanelHTML(project);
+        syncCanvasBlockSelectionUI();
+        renderCanvasBlockInspector();
       }
 
       // Fetch like count
@@ -1415,6 +1539,25 @@ function setupEditorPreviewBridge() {
       if (!canvasEditEnabled && canvasEditActiveElement) {
         finishCanvasEdit(false);
       }
+      if (!canvasEditEnabled) {
+        clearCanvasBlockSelection();
+      }
+    } else if (e.data.type === 'canvas-media-selected') {
+      const payload = e.data.payload || {};
+      if (!canvasPendingMediaTarget || payload.key !== canvasPendingMediaTarget.key) return;
+
+      const mutation = {
+        kind: 'update-block',
+        scope: canvasPendingMediaTarget.scope,
+        blockId: canvasPendingMediaTarget.blockId,
+        key: canvasPendingMediaTarget.key,
+        value: payload.path || ''
+      };
+
+      applyCanvasBlockMutationLocal(mutation);
+      window.parent.postMessage({ type: 'canvas-block-mutate', payload: mutation }, '*');
+
+      canvasPendingMediaTarget = null;
     }
   });
 }
@@ -1442,6 +1585,193 @@ function renderCanvasAddDock(scope, projectId = '') {
   ).join('');
 
   return `<div class="canvas-add-dock" data-canvas-add-dock data-canvas-scope="${scope}"${projectAttr}><button class="canvas-add-toggle" type="button" data-canvas-add-toggle>+ Add block</button><div class="canvas-add-menu">${items}</div></div>`;
+}
+
+function getCanvasState() {
+  return { globalState, projects };
+}
+
+function getCanvasBlock(scope, blockId) {
+  return blockManager.findBlock(getCanvasState(), scope, blockId);
+}
+
+function getCanvasProject(scope, projectId = '') {
+  const resolvedId = projectId || scope.replace('proj-', '');
+  return projects.find(project => project.id === resolvedId) || null;
+}
+
+function ensureCanvasBlockInspector() {
+  let inspector = document.getElementById('canvas-block-inspector');
+  if (inspector) return inspector;
+
+  inspector = document.createElement('div');
+  inspector.id = 'canvas-block-inspector';
+  document.body.appendChild(inspector);
+  return inspector;
+}
+
+function syncCanvasBlockSelectionUI() {
+  document.querySelectorAll('[data-canvas-block-shell="true"]').forEach(shell => {
+    const isSelected =
+      !!canvasSelectedBlock &&
+      shell.getAttribute('data-canvas-scope') === canvasSelectedBlock.scope &&
+      shell.getAttribute('data-canvas-block-id') === canvasSelectedBlock.blockId;
+    shell.classList.toggle('canvas-block-selected', isSelected);
+  });
+}
+
+function buildProjectPanelHTML(project) {
+  if (!project) return '';
+
+  const heroImg = project.heroImage || project.thumbnail || '';
+  const heroStyle = heroImg ? `background-image:url('${heroImg}')` : '';
+  const heroHTML = `<div class="pp-hero" style="${heroStyle}">
+    <div class="pp-hero-overlay"></div>
+    <div class="pp-hero-actions">
+      <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
+      <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+    </div>
+    <div class="pp-hero-content">
+      <div class="pp-hero-left">
+        <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
+        <div class="pp-hero-meta">
+          ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+          ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
+          ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  return (
+    heroHTML +
+    renderDisplayBlocks(blockManager.normalizeBlocks(project.blocks || []), {
+      scope: 'proj-' + project.id,
+      projectId: project.id
+    }) +
+    renderCanvasAddDock('proj-' + project.id, project.id)
+  );
+}
+
+function rerenderCanvasScope(scope) {
+  if (scope === 'about') {
+    const aboutEl = document.getElementById('about-body');
+    const scrollTop = aboutEl ? aboutEl.scrollTop : 0;
+    renderAboutPanel();
+    if (aboutEl) aboutEl.scrollTop = scrollTop;
+    return;
+  }
+
+  if (scope.startsWith('proj-')) {
+    const project = getCanvasProject(scope);
+    const ppb = document.getElementById('ppb');
+    if (!project || !ppb) return;
+    const scrollTop = ppb.scrollTop;
+    ppb.innerHTML = buildProjectPanelHTML(project);
+    ppb.scrollTop = scrollTop;
+    syncCanvasBlockSelectionUI();
+    renderCanvasBlockInspector();
+  }
+}
+
+function selectCanvasBlock(selection) {
+  if (!selection?.scope || !selection?.blockId) return;
+
+  canvasSelectedBlock = {
+    scope: selection.scope,
+    blockId: selection.blockId,
+    projectId: selection.projectId || ''
+  };
+
+  syncCanvasBlockSelectionUI();
+  renderCanvasBlockInspector();
+  window.parent.postMessage({ type: 'canvas-start-edit', payload: canvasSelectedBlock }, '*');
+}
+
+function clearCanvasBlockSelection() {
+  canvasSelectedBlock = null;
+  syncCanvasBlockSelectionUI();
+  renderCanvasBlockInspector();
+}
+
+function renderCanvasBlockInspector() {
+  const inspector = ensureCanvasBlockInspector();
+  const block = canvasSelectedBlock ? getCanvasBlock(canvasSelectedBlock.scope, canvasSelectedBlock.blockId) : null;
+
+  inspector.classList.toggle('has-selection', !!block && canvasEditEnabled);
+  if (!block || !canvasEditEnabled) {
+    inspector.innerHTML = '';
+    return;
+  }
+
+  const blockTypeButtons = ['text-sm', 'text-md', 'text-lg', 'quote', 'image', 'video', 'callout', 'cta', 'beforeafter', 'divider']
+    .map(type => `<button type="button" class="${block.type === type ? 'active' : ''}" data-canvas-change-type="${type}">${type}</button>`)
+    .join('');
+
+  let body = `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Block Type</div><div class="canvas-inspector-seg">${blockTypeButtons}</div></div>`;
+
+  if (block.type === 'text-sm' || block.type === 'text-md' || block.type === 'text-lg' || block.type === 'quote') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Alignment</div><div class="canvas-inspector-seg">${['left', 'center', 'right']
+      .map(align => `<button type="button" class="${(block.align || 'left') === align ? 'active' : ''}" data-canvas-update-key="align" data-canvas-update-value="${align}">${align}</button>`)
+      .join('')}</div></div>`;
+    body += `<div class="canvas-inspector-hint">Text content is editable directly on the page. These controls handle layout settings.</div>`;
+  } else if (block.type === 'image') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Image Path</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="src" value="${block.src || ''}" placeholder="media/image.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="src">Browse Media</button></div></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Alt Text</div><input class="canvas-inspector-input" data-canvas-input-key="alt" value="${block.alt || ''}" placeholder="Describe the image"></div>`;
+  } else if (block.type === 'video') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Video Source</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="src" value="${block.src || ''}" placeholder="Embed URL or media/video.mp4"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="src">Browse Media</button></div></div>`;
+  } else if (block.type === 'callout') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Tone</div><div class="canvas-inspector-seg">${['note', 'highlight', 'warning']
+      .map(tone => `<button type="button" class="${(block.tone || 'note') === tone ? 'active' : ''}" data-canvas-update-key="tone" data-canvas-update-value="${tone}">${tone}</button>`)
+      .join('')}</div></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Title</div><input class="canvas-inspector-input" data-canvas-input-key="title" value="${block.title || ''}" placeholder="Callout title"></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Body</div><textarea class="canvas-inspector-textarea" data-canvas-input-key="content">${block.content || ''}</textarea></div>`;
+  } else if (block.type === 'cta') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Tone</div><div class="canvas-inspector-seg">${['default', 'light', 'dark']
+      .map(tone => `<button type="button" class="${(block.tone || 'default') === tone ? 'active' : ''}" data-canvas-update-key="tone" data-canvas-update-value="${tone}">${tone}</button>`)
+      .join('')}</div></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Headline</div><input class="canvas-inspector-input" data-canvas-input-key="headline" value="${block.headline || ''}" placeholder="Start the conversation"></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Body</div><textarea class="canvas-inspector-textarea" data-canvas-input-key="body">${block.body || ''}</textarea></div>`;
+    body += `<div class="canvas-inspector-row"><div class="canvas-inspector-field"><div class="canvas-inspector-label">Button Label</div><input class="canvas-inspector-input" data-canvas-input-key="buttonLabel" value="${block.buttonLabel || ''}" placeholder="Get in touch"></div><div class="canvas-inspector-field"><div class="canvas-inspector-label">Button URL</div><input class="canvas-inspector-input" data-canvas-input-key="buttonUrl" value="${block.buttonUrl || ''}" placeholder="mailto:hello@example.com"></div></div>`;
+  } else if (block.type === 'beforeafter') {
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Before Image</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="beforeSrc" value="${block.beforeSrc || ''}" placeholder="media/before.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="beforeSrc">Browse Media</button></div></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Before Alt</div><input class="canvas-inspector-input" data-canvas-input-key="beforeAlt" value="${block.beforeAlt || ''}" placeholder="Before image alt"></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">After Image</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="afterSrc" value="${block.afterSrc || ''}" placeholder="media/after.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="afterSrc">Browse Media</button></div></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">After Alt</div><input class="canvas-inspector-input" data-canvas-input-key="afterAlt" value="${block.afterAlt || ''}" placeholder="After image alt"></div>`;
+    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Caption</div><input class="canvas-inspector-input" data-canvas-input-key="caption" value="${block.caption || ''}" placeholder="Optional caption"></div>`;
+  } else if (block.type === 'divider') {
+    body += `<div class="canvas-inspector-hint">Divider blocks do not have extra settings.</div>`;
+  } else {
+    body += `<div class="canvas-inspector-hint">This block has nested settings that are not preview-editable yet. Use the side panel for detailed item editing for now.</div>`;
+  }
+
+  inspector.innerHTML = `<div class="canvas-inspector-head"><div><div class="canvas-inspector-kicker">Preview Block Settings</div><div class="canvas-inspector-title">${block.type}</div></div><button type="button" class="canvas-inspector-close" data-canvas-close-inspector>&times;</button></div><div class="canvas-inspector-body">${body}</div>`;
+}
+
+function applyCanvasBlockMutationLocal(payload) {
+  const { scope, blockId, kind, key, value, blockType } = payload;
+  if (!scope || !blockId) return;
+
+  const didMutate = kind === 'change-block-type'
+    ? blockManager.changeBlockType(getCanvasState(), scope, blockId, blockType)
+    : blockManager.updateBlock(getCanvasState(), scope, blockId, key, value);
+
+  if (!didMutate) return;
+  rerenderCanvasScope(scope);
+}
+
+function requestCanvasMediaPicker(key) {
+  if (!canvasSelectedBlock?.scope || !canvasSelectedBlock?.blockId || !key) return;
+
+  canvasPendingMediaTarget = {
+    ...canvasSelectedBlock,
+    key
+  };
+
+  window.parent.postMessage({
+    type: 'canvas-open-media-picker',
+    payload: canvasPendingMediaTarget
+  }, '*');
 }
 
 function startCanvasEdit(el) {
@@ -1504,8 +1834,66 @@ function setupCanvasEditListeners() {
   if (canvasEditListenersBound) return;
   canvasEditListenersBound = true;
   ensureCanvasEditStyles();
+  ensureCanvasBlockInspector();
 
   document.addEventListener('click', e => {
+    const closeInspector = e.target.closest('[data-canvas-close-inspector]');
+    if (closeInspector) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearCanvasBlockSelection();
+      return;
+    }
+
+    const typeButton = e.target.closest('[data-canvas-change-type]');
+    if (typeButton && canvasSelectedBlock) {
+      e.preventDefault();
+      e.stopPropagation();
+      const nextType = typeButton.getAttribute('data-canvas-change-type') || '';
+      const payload = {
+        kind: 'change-block-type',
+        scope: canvasSelectedBlock.scope,
+        blockId: canvasSelectedBlock.blockId,
+        blockType: nextType
+      };
+      applyCanvasBlockMutationLocal(payload);
+      window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
+      return;
+    }
+
+    const browseButton = e.target.closest('[data-canvas-browse-key]');
+    if (browseButton) {
+      e.preventDefault();
+      e.stopPropagation();
+      requestCanvasMediaPicker(browseButton.getAttribute('data-canvas-browse-key') || '');
+      return;
+    }
+
+    const updateButton = e.target.closest('[data-canvas-update-key]');
+    if (updateButton && canvasSelectedBlock) {
+      e.preventDefault();
+      e.stopPropagation();
+      const payload = {
+        kind: 'update-block',
+        scope: canvasSelectedBlock.scope,
+        blockId: canvasSelectedBlock.blockId,
+        key: updateButton.getAttribute('data-canvas-update-key') || '',
+        value: updateButton.getAttribute('data-canvas-update-value') || ''
+      };
+      applyCanvasBlockMutationLocal(payload);
+      window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
+      return;
+    }
+
+    const shell = e.target.closest('[data-canvas-block-shell="true"]');
+    if (shell && canvasEditEnabled) {
+      selectCanvasBlock({
+        scope: shell.getAttribute('data-canvas-scope') || '',
+        blockId: shell.getAttribute('data-canvas-block-id') || '',
+        projectId: shell.getAttribute('data-canvas-project-id') || ''
+      });
+    }
+
     const addToggle = e.target.closest('[data-canvas-add-toggle]');
     if (addToggle) {
       if (!canvasEditEnabled) return;
@@ -1547,8 +1935,27 @@ function setupCanvasEditListeners() {
   });
 
   document.addEventListener('click', e => {
-    if (e.target.closest('[data-canvas-add-dock]')) return;
+    if (e.target.closest('[data-canvas-add-dock]') || e.target.closest('#canvas-block-inspector')) return;
+    if (e.target.closest('[data-canvas-block-shell="true"]')) return;
     document.querySelectorAll('[data-canvas-add-dock].open').forEach(entry => entry.classList.remove('open'));
+    if (canvasEditEnabled) clearCanvasBlockSelection();
+  });
+
+  document.addEventListener('change', e => {
+    if (!canvasSelectedBlock) return;
+    const input = e.target.closest('[data-canvas-input-key]');
+    if (!input) return;
+
+    const payload = {
+      kind: 'update-block',
+      scope: canvasSelectedBlock.scope,
+      blockId: canvasSelectedBlock.blockId,
+      key: input.getAttribute('data-canvas-input-key') || '',
+      value: input.value
+    };
+
+    applyCanvasBlockMutationLocal(payload);
+    window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
   });
 
   document.addEventListener('keydown', e => {
