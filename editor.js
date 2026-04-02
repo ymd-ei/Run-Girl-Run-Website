@@ -86,7 +86,7 @@ const rendered = new Set(); // tracks which pages have been rendered at least on
 
 function markPageStale(name){ rendered.delete(name); }
 
-function showPage(name){
+function showPage(name, options){
   ['global','about','contact','media','project'].forEach(n=>{
     document.getElementById('page-'+n).style.display='none';
     const el=document.getElementById('nav-'+n); if(el)el.classList.remove('active');
@@ -106,15 +106,15 @@ function showPage(name){
     else if(name==='media') renderMediaPage();
     rendered.add(name);
   }
-  sendPreviewNav();
+  if(!options?.skipNav) sendPreviewNav();
 }
 
-function showProject(id){
-  showPage('project');
+function showProject(id, options){
+  showPage('project', options);
   currentProjectId=id;
   const el=document.getElementById('nav-proj-'+id); if(el)el.classList.add('active');
   renderProject(id);
-  sendPreviewNav();
+  if(!options?.skipNav) sendPreviewNav();
 }
 
 async function loadAll(){
@@ -1466,7 +1466,7 @@ window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='canvas-select-project'){
     const projectId = e.data.payload?.projectId;
     if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
-      showPage('project');
+      showPage('project', { skipNav: true });
       currentProjectId=projectId;
       const el=document.getElementById('nav-proj-'+projectId); if(el)el.classList.add('active');
       renderProject(projectId);
@@ -1478,19 +1478,19 @@ window.addEventListener('message', e=>{
 function syncCanvasSelectionToEditor(payload){
   const scope = payload.scope || '';
   if(scope==='about' && currentPage!=='about'){
-    showPage('about');
+    showPage('about', { skipNav: true });
     return;
   }
 
   if(scope==='contact' && currentPage!=='contact'){
-    showPage('contact');
+    showPage('contact', { skipNav: true });
     return;
   }
 
   if(scope.startsWith('proj-')){
     const projectId = payload.projectId || scope.replace('proj-','');
     if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
-      showProject(projectId);
+      showProject(projectId, { skipNav: true });
     }
   }
 }

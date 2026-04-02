@@ -956,6 +956,7 @@ function runWhenLayoutStable(task) {
 }
 
 async function loadLogStack() {
+  if (isPreviewEmbed) return; // Skip network fetch in editor preview iframe
   const inner = document.getElementById('ls-inner');
   const stack = document.getElementById('log-stack');
   if (!inner || !stack) return;
@@ -1549,9 +1550,9 @@ function setupEditorPreviewBridge() {
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
-      // Clear block selection when navigating away from current context
+      // Clear block selection silently — parent initiated this nav, no need to echo back
       if (canvasSelectedBlock) {
-        clearCanvasBlockSelection();
+        clearCanvasBlockSelection(true);
       }
       applyPreviewNavigation(e.data);
     } else if (e.data.type === 'canvas-media-selected') {
@@ -1714,7 +1715,7 @@ function selectCanvasBlock(selection) {
   window.parent.postMessage({ type: 'canvas-start-edit', payload: canvasSelectedBlock }, '*');
 }
 
-function clearCanvasBlockSelection() {
+function clearCanvasBlockSelection(silent) {
   const hadSelection = !!canvasSelectedBlock;
   canvasSelectedBlock = null;
   const inspector = document.getElementById('canvas-block-inspector');
@@ -1722,7 +1723,7 @@ function clearCanvasBlockSelection() {
     inspector.parentNode.removeChild(inspector);
   }
   renderCanvasBlockInspector();
-  if (hadSelection && window.parent && window.parent !== window) {
+  if (hadSelection && !silent && window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'canvas-clear-selection' }, '*');
   }
 }
