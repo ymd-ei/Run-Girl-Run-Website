@@ -1529,10 +1529,27 @@ function applyCanvasCommit(payload){
 function applyCanvasAddBlock(payload){
   const scope = payload.scope || '';
   const blockType = payload.blockType || '';
+  const blockId = payload.blockId || '';
   if(!scope || !blockType) return;
 
   syncCanvasSelectionToEditor(payload);
-  addBlock(scope, blockType);
+
+  let addedId = null;
+  if(sharedBlockManager){
+    addedId = sharedBlockManager.addBlock(getBlockState(), scope, blockType, blockId || undefined);
+  }else{
+    const blocks=getBlocks(scope)||[];
+    addedId = blockId || ('b' + Date.now());
+    const defaults=getLegacyBlockDefaults(addedId);
+    blocks.push(defaults[blockType]||{id:addedId,type:blockType,content:''});
+    setBlocks(scope,blocks);
+  }
+
+  if(!addedId) return;
+
+  openBlocks.add(addedId);
+  markDirty('canvas add block', { skipPreviewRefresh: true });
+  rerenderBlocks(scope);
 }
 
 function applyCanvasBlockMutation(payload){

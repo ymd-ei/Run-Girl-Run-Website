@@ -1782,6 +1782,29 @@ function requestCanvasMediaPicker(key) {
   }, '*');
 }
 
+function createCanvasBlockId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return 'canvas-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+function addCanvasBlockLocal(scope, blockType, blockId) {
+  const nextId = blockId || createCanvasBlockId();
+  const addedId = blockManager.addBlock(getCanvasState(), scope, blockType, nextId);
+  if (!addedId) return null;
+
+  rerenderCanvasScope(scope);
+  selectCanvasBlock({
+    scope,
+    blockId: addedId,
+    projectId: scope.startsWith('proj-') ? scope.replace('proj-', '') : ''
+  });
+
+  return addedId;
+}
+
 function startCanvasEdit(el) {
   if (!canvasEditEnabled || !el) return;
   if (canvasEditActiveElement === el) return;
@@ -1922,12 +1945,18 @@ function setupCanvasEditListeners() {
       e.stopPropagation();
       const dock = addTypeBtn.closest('[data-canvas-add-dock]');
       if (dock) dock.classList.remove('open');
+      const scope = addTypeBtn.getAttribute('data-canvas-scope') || '';
+      const blockType = addTypeBtn.getAttribute('data-canvas-add-type') || '';
+      const projectId = addTypeBtn.getAttribute('data-canvas-project-id') || '';
+      const blockId = addCanvasBlockLocal(scope, blockType);
+      if (!blockId) return;
       window.parent.postMessage({
         type: 'canvas-add-block',
         payload: {
-          scope: addTypeBtn.getAttribute('data-canvas-scope') || '',
-          projectId: addTypeBtn.getAttribute('data-canvas-project-id') || '',
-          blockType: addTypeBtn.getAttribute('data-canvas-add-type') || ''
+          scope,
+          projectId,
+          blockType,
+          blockId
         }
       }, '*');
       return;
