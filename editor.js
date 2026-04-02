@@ -132,15 +132,17 @@ async function loadAll(){
 function buildNav(){
   document.getElementById('sb-name').textContent=C.name;
   document.getElementById('project-nav').innerHTML=projects.map(p=>`
-    <button class="ni" id="nav-proj-${p.id}" draggable="true"
-      ondragstart="navDragStart(event,'${p.id}')"
+    <button class="ni" id="nav-proj-${p.id}" draggable="false"
+      onclick="showProject('${p.id}')"
       ondragover="navDragOver(event)"
       ondragend="navDragEnd(event)"
       ondrop="navDrop(event,'${p.id}')"
       ondragleave="navDragLeave(event)">
-      <span style="color:var(--muted);font-size:.7rem;margin-right:.2rem;cursor:grab">&#9776;</span>
+      <span class="drag-handle" draggable="true"
+        ondragstart="navDragStart(event,'${p.id}')"
+        onclick="event.stopPropagation()">&#9776;</span>
       <div class="dot"></div>
-      <span onclick="showProject('${p.id}')" style="flex:1;text-align:left">${p.title}</span>
+      <span style="flex:1;text-align:left">${p.title}</span>
       <span class="badge">${p.type}</span>
     </button>`).join('');
 }
@@ -1318,17 +1320,21 @@ function blockDrop(e){
 // ── Sidebar project drag
 let navDragId=null;
 function navDragStart(e,id){
-  navDragId=id; e.currentTarget.style.opacity='.4';
+  navDragId=id;
+  const btn=e.currentTarget.closest('.ni');
+  if(btn) btn.style.opacity='.4';
   e.dataTransfer.effectAllowed='move';
 }
 function navDragEnd(e){
-  e.currentTarget.style.opacity='1'; navDragId=null;
+  const btn=e.currentTarget.closest('.ni');
+  if(btn) btn.style.opacity='1';
+  navDragId=null;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('proj-drag-over'));
 }
 function navDragOver(e){
   e.preventDefault();
   if(!navDragId) return;
-  document.querySelectorAll('.ni[draggable]').forEach(n=>n.classList.remove('proj-drag-over'));
+  document.querySelectorAll('#project-nav .ni').forEach(n=>n.classList.remove('proj-drag-over'));
   e.currentTarget.classList.add('proj-drag-over');
 }
 function navDragLeave(e){ e.currentTarget.classList.remove('proj-drag-over'); }
