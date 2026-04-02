@@ -956,7 +956,7 @@ function removeBlock(scope,blockId){
   markDirty('delete block');rerenderBlocks(scope);
 }
 
-function updateBlock(scope,blockId,key,val){
+function updateBlock(scope,blockId,key,val,options){
   const didUpdate = sharedBlockManager
     ? sharedBlockManager.updateBlock(getBlockState(), scope, blockId, key, val)
     : (()=>{
@@ -967,7 +967,10 @@ function updateBlock(scope,blockId,key,val){
         return true;
       })();
 
-  if(didUpdate) markDirty();
+  if(didUpdate) {
+    const config = options || {};
+    markDirty(config.label, { skipPreviewRefresh: !!config.skipPreviewRefresh });
+  }
 }
 
 function changeBlockType(scope,blockId,newType){
@@ -1489,12 +1492,12 @@ function applyCanvasCommit(payload){
     C.contactPanel[field] = value;
     markPageStale('contact');
     if(currentPage==='contact') renderContact();
-    markDirty('canvas edit contact');
+    markDirty('canvas edit contact', { skipPreviewRefresh: true });
     return;
   }
 
   if(!blockId) return;
-  updateBlock(scope, blockId, field, value);
+  updateBlock(scope, blockId, field, value, { skipPreviewRefresh: true, label: 'canvas edit block' });
 
   if(scope==='about'){
     markPageStale('about');
@@ -1520,10 +1523,14 @@ function initPreview(){
   frame.src=`index.html?preview=1&v=${cacheBust}`;
 }
 
-function markDirty(label){
+function markDirty(label, options){
+  const config = options || {};
   if(label) snapshot(label);
   dirty=true;
   document.getElementById('save-btn').textContent='Save All Changes *';
+
+  if(config.skipPreviewRefresh) return;
+
   document.getElementById('pb-dot').classList.remove('live');
   clearTimeout(previewTimer);
   previewTimer=setTimeout(pushPreview, 600);
