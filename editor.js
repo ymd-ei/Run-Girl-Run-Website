@@ -1418,14 +1418,95 @@ function toggleSection(head){
 // LIVE PREVIEW
 // ─────────────────────────────────────────
 let previewTimer=null, previewReady=false;
+let canvasEditMode = !!window.__EDITOR_V2_CANVAS_DEFAULT;
 
 window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='preview-ready'){
     previewReady=true;
     document.getElementById('pb-dot')?.classList.add('live');
     pushPreview();
+    sendCanvasMode();
+    return;
+  }
+
+  if(e.data&&e.data.type==='canvas-start-edit'){
+    syncCanvasSelectionToEditor(e.data.payload||{});
+    return;
+  }
+
+  if(e.data&&e.data.type==='canvas-commit-edit'){
+    applyCanvasCommit(e.data.payload||{});
+    return;
   }
 });
+
+window.setCanvasEditMode = function setCanvasEditMode(enabled){
+  canvasEditMode = !!enabled;
+  sendCanvasMode();
+};
+
+function sendCanvasMode(){
+  if(!previewReady) return;
+  const frame=document.getElementById('preview-frame');
+  try{
+    frame.contentWindow.postMessage({
+      type:'canvas-edit-mode',
+      enabled: !!canvasEditMode
+    }, '*');
+  }catch(e){}
+}
+
+function syncCanvasSelectionToEditor(payload){
+  const scope = payload.scope || '';
+  if(scope==='about' && currentPage!=='about'){
+    showPage('about');
+    return;
+  }
+
+  if(scope==='contact' && currentPage!=='contact'){
+    showPage('contact');
+    return;
+  }
+
+  if(scope.startsWith('proj-')){
+    const projectId = payload.projectId || scope.replace('proj-','');
+    if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
+      showProject(projectId);
+    }
+  }
+}
+
+function applyCanvasCommit(payload){
+  const scope = payload.scope || '';
+  const field = payload.field || '';
+  const value = typeof payload.value === 'string' ? payload.value : '';
+  const blockId = payload.blockId || '';
+
+  if(!scope || !field) return;
+
+  if(scope==='contact'){
+    C.contactPanel = C.contactPanel || {};
+    C.contactPanel[field] = value;
+    markPageStale('contact');
+    if(currentPage==='contact') renderContact();
+    markDirty('canvas edit contact');
+    return;
+  }
+
+  if(!blockId) return;
+  updateBlock(scope, blockId, field, value);
+
+  if(scope==='about'){
+    markPageStale('about');
+    if(currentPage==='about') rerenderBlocks('about');
+    return;
+  }
+
+  if(scope.startsWith('proj-')){
+    const projectId = payload.projectId || scope.replace('proj-','');
+    if(currentPage==='project' && currentProjectId===projectId) rerenderBlocks(scope);
+  }
+}
 
 function initPreview(){
   const frame=document.getElementById('preview-frame');
@@ -1457,6 +1538,7 @@ function pushPreview(){
       content:C,
       projects:projects
     },'*');
+    sendCanvasMode();
     setTimeout(sendPreviewNav, 100);
   }catch(e){}
 }

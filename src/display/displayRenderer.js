@@ -57,8 +57,11 @@ export function renderDisplayBlock(block) {
  * @param {Array} blocks - Array of block objects
  * @returns {string} HTML
  */
-export function renderDisplayBlocks(blocks) {
-  return renderBlocks(blocks || []);
+export function renderDisplayBlocks(blocks, options = {}) {
+  return renderBlocks(blocks || [], {}, {
+    canvasScope: options.scope || '',
+    canvasProjectId: options.projectId || ''
+  });
 }
 
 /**

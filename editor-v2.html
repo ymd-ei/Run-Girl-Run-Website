@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Editor v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles-editor.css">
+<style>
+  .v2-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin: .75rem .85rem .5rem;
+    padding: .35rem .55rem;
+    border-radius: 999px;
+    font-size: .62rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,.15);
+    color: rgba(255,255,255,.84);
+  }
+
+  .v2-dot {
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: #6fd08c;
+    box-shadow: 0 0 0 5px rgba(111, 208, 140, .14);
+  }
+
+  .mode-toggle-row {
+    display: flex;
+    gap: .5rem;
+    margin: 0 .85rem .7rem;
+  }
+
+  .mode-toggle-btn {
+    flex: 1;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.03);
+    color: rgba(255,255,255,.86);
+    border-radius: 8px;
+    padding: .5rem .55rem;
+    font-size: .7rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .mode-toggle-btn.active {
+    border-color: rgba(111, 208, 140, .55);
+    color: #dff8e7;
+    background: rgba(111, 208, 140, .1);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>
+    <div class="v2-chip"><span class="v2-dot"></span>Editor v2</div>
+    <div class="mode-toggle-row">
+      <button class="mode-toggle-btn active" id="canvas-mode-on" type="button">Canvas Edit</button>
+      <button class="mode-toggle-btn" id="canvas-mode-off" type="button">Panel Only</button>
+    </div>
+    <div class="sb-section">Global</div>
+    <button class="ni active" onclick="showPage('global')" id="nav-global"><div class="dot"></div>Settings</button>
+    <button class="ni" onclick="showPage('about')" id="nav-about"><div class="dot"></div>About</button>
+    <button class="ni" onclick="showPage('contact')" id="nav-contact"><div class="dot"></div>Contact</button>
+    <button class="ni" onclick="showPage('media')" id="nav-media"><div class="dot"></div>Media</button>
+    <div class="sb-section">Projects</div>
+    <div id="project-nav"></div>
+    <button class="add-proj" onclick="addProject()">+ New Project</button>
+    <div class="sb-footer">
+      <button class="preview-btn" onclick="window.open('index.html','_blank')">Preview Site &#x2197;</button>
+      <div id="auth-panel">
+        <button class="preview-btn" id="login-btn" onclick="login()" style="display:none">Log In with GitHub</button>
+        <div id="user-status" style="display:none">
+          <span id="user-name" class="preview-btn">Logged in as @</span>
+          <button class="preview-btn" onclick="logout()">Log Out</button>
+        </div>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveAll()" disabled>Save All Changes</button>
+      <div class="deploy-status" id="deploy-status">Deploy: idle</div>
+    </div>
+  </div>
+  <div id="main">
+    <div id="page-global"></div>
+    <div id="page-about" style="display:none"></div>
+    <div id="page-contact" style="display:none"></div>
+    <div id="page-media" style="display:none"></div>
+    <div id="page-project" style="display:none"></div>
+  </div>
+  <div id="preview-pane">
+    <div id="preview-bar">
+      <span>Live Preview</span>
+      <div class="pb-actions">
+        <div class="pb-indicator" id="pb-dot"></div>
+        <button id="preview-refresh" onclick="refreshPreview()">Refresh</button>
+      </div>
+    </div>
+    <iframe id="preview-frame" src="index.html?preview=1"></iframe>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="undo-bar">
+  <button class="undo-btn" id="undo-btn" onclick="undo()">&#x21B6; Undo <span id="undo-label"></span></button>
+  <button class="undo-btn" id="redo-btn" onclick="redo()">Redo &#x21B7;</button>
+</div>
+
+<div id="media-modal">
+  <div id="media-inner">
+    <div id="media-header">
+      <span>Media Library</span>
+      <button id="media-close" onclick="closeMediaLibrary()">&#x2715;</button>
+    </div>
+    <div id="media-tools">
+      <label id="media-upload-btn">+ Upload File
+        <input type="file" id="media-upload-input" accept="image/*,video/*">
+      </label>
+    </div>
+    <div id="media-search"><input type="text" placeholder="Filter files…" oninput="filterMedia(this.value)"></div>
+    <div id="media-grid"></div>
+  </div>
+</div>
+
+<div id="media-preview-modal">
+  <div id="media-preview-inner">
+    <div id="media-preview-head">
+      <span id="media-preview-name"></span>
+      <button id="media-preview-close" onclick="closeMediaPreview()">&#x2715;</button>
+    </div>
+    <div id="media-preview-body"></div>
+  </div>
+</div>
+
+<script>
+  window.__EDITOR_V2_CANVAS_DEFAULT = true;
+
+  // Backend API URL. Override with ?api=https://<worker>.workers.dev during setup.
+  const params = new URLSearchParams(window.location.search);
+  const apiParam = params.get('api');
+  const sessionTokenParam = params.get('session_token');
+
+  if (sessionTokenParam) {
+    localStorage.setItem('editor_session_token', sessionTokenParam);
+    params.delete('session_token');
+    const next = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState({}, '', next);
+  }
+
+  if (apiParam) {
+    localStorage.setItem('editor_api_base', apiParam);
+  }
+  const API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://rgr-editor-backend.rungirlrun.workers.dev';
+  const LOGIN_URL = `${API_BASE}/auth/login`;
+  const LOGOUT_URL = `${API_BASE}/auth/logout`;
+  const AUTH_CHECK_URL = `${API_BASE}/auth/check`;
+  const SAVE_URL = `${API_BASE}/api/save`;
+  const MEDIA_URL = `${API_BASE}/api/media`;
+</script>
+<script defer src="editor.js"></script>
+<script type="module" src="src/editor-v2.js"></script>
+</body>
+</html>

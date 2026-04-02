@@ -25,6 +25,34 @@ let contactTickersStarted = false;
 let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
+let canvasEditEnabled = false;
+let canvasEditActiveElement = null;
+let canvasEditOriginalText = '';
+let canvasEditListenersBound = false;
+
+function ensureCanvasEditStyles() {
+  if (document.getElementById('canvas-edit-style')) return;
+
+  const style = document.createElement('style');
+  style.id = 'canvas-edit-style';
+  style.textContent = `
+    body.canvas-edit-enabled [data-canvas-editable="true"] {
+      outline: 1px dashed rgba(255, 255, 255, 0.35);
+      outline-offset: 2px;
+    }
+
+    body.canvas-edit-enabled [data-canvas-editable="true"]:hover {
+      outline-color: rgba(255, 255, 255, 0.85);
+    }
+
+    .canvas-edit-active {
+      outline: 1px solid rgba(255, 255, 255, 0.95) !important;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  `;
+
+  document.head.appendChild(style);
+}
 let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
@@ -541,7 +569,7 @@ function renderWorkSection({ showAll = false } = {}) {
 function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
-    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []));
+    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' });
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -566,15 +594,30 @@ function renderContactSection() {
 
   // Update subtitle
   const ctSub = document.querySelector('.ct-sub');
-  if (ctSub) ctSub.innerHTML = ctData.sub;
+  if (ctSub) {
+    ctSub.innerHTML = ctData.sub;
+    ctSub.setAttribute('data-canvas-editable', 'true');
+    ctSub.setAttribute('data-canvas-scope', 'contact');
+    ctSub.setAttribute('data-canvas-field', 'sub');
+  }
 
   // Update email label
   const ctEmailLabel = document.querySelector('.ct-email-label');
-  if (ctEmailLabel) ctEmailLabel.textContent = ctData.emailLabel;
+  if (ctEmailLabel) {
+    ctEmailLabel.textContent = ctData.emailLabel;
+    ctEmailLabel.setAttribute('data-canvas-editable', 'true');
+    ctEmailLabel.setAttribute('data-canvas-scope', 'contact');
+    ctEmailLabel.setAttribute('data-canvas-field', 'emailLabel');
+  }
 
   // Update social label
   const ctSocialLabel = document.querySelector('.ct-social-label');
-  if (ctSocialLabel) ctSocialLabel.textContent = ctData.socialLabel;
+  if (ctSocialLabel) {
+    ctSocialLabel.textContent = ctData.socialLabel;
+    ctSocialLabel.setAttribute('data-canvas-editable', 'true');
+    ctSocialLabel.setAttribute('data-canvas-scope', 'contact');
+    ctSocialLabel.setAttribute('data-canvas-field', 'socialLabel');
+  }
 
   // Update location
   const ctLocation = document.getElementById('ct-location');
@@ -933,7 +976,12 @@ function setupEventListeners() {
         </div>
       </div>`;
 
-      if (ppb) ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []));
+      if (ppb) {
+        ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
+          scope: 'proj-' + id,
+          projectId: id
+        });
+      }
 
       // Fetch like count
       fetchLikeCount(id);
@@ -1264,6 +1312,7 @@ function setupEventListeners() {
 function setupEditorPreviewBridge() {
   if (new URLSearchParams(location.search).has('preview') && window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'preview-ready' }, '*');
+    setupCanvasEditListeners();
   }
 
   window.addEventListener('message', e => {
@@ -1286,7 +1335,126 @@ function setupEditorPreviewBridge() {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
       applyPreviewNavigation(e.data);
+    } else if (e.data.type === 'canvas-edit-mode') {
+      canvasEditEnabled = !!e.data.enabled;
+      document.body.classList.toggle('canvas-edit-enabled', canvasEditEnabled);
+      if (!canvasEditEnabled && canvasEditActiveElement) {
+        finishCanvasEdit(false);
+      }
     }
+  });
+}
+
+function getCanvasEditPayload(el) {
+  if (!el) return null;
+
+  const scope = el.getAttribute('data-canvas-scope') || '';
+  const field = el.getAttribute('data-canvas-field') || '';
+  if (!scope || !field) return null;
+
+  return {
+    scope,
+    field,
+    blockId: el.getAttribute('data-canvas-block-id') || '',
+    projectId: el.getAttribute('data-canvas-project-id') || ''
+  };
+}
+
+function startCanvasEdit(el) {
+  if (!canvasEditEnabled || !el) return;
+  if (canvasEditActiveElement === el) return;
+
+  if (canvasEditActiveElement) finishCanvasEdit(true);
+
+  const payload = getCanvasEditPayload(el);
+  if (!payload) return;
+
+  canvasEditActiveElement = el;
+  canvasEditOriginalText = el.textContent || '';
+  el.setAttribute('contenteditable', 'true');
+  el.setAttribute('spellcheck', 'false');
+  el.classList.add('canvas-edit-active');
+  el.focus();
+
+  const selection = window.getSelection();
+  if (selection) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  window.parent.postMessage({ type: 'canvas-start-edit', payload }, '*');
+}
+
+function finishCanvasEdit(commit) {
+  const el = canvasEditActiveElement;
+  if (!el) return;
+
+  const payload = getCanvasEditPayload(el);
+  if (!payload) return;
+
+  const nextValue = (el.textContent || '').trim();
+  if (!commit) {
+    el.textContent = canvasEditOriginalText;
+    window.parent.postMessage({ type: 'canvas-cancel-edit', payload }, '*');
+  } else {
+    window.parent.postMessage({
+      type: 'canvas-commit-edit',
+      payload: {
+        ...payload,
+        value: nextValue
+      }
+    }, '*');
+  }
+
+  el.removeAttribute('contenteditable');
+  el.removeAttribute('spellcheck');
+  el.classList.remove('canvas-edit-active');
+  canvasEditActiveElement = null;
+  canvasEditOriginalText = '';
+}
+
+function setupCanvasEditListeners() {
+  if (canvasEditListenersBound) return;
+  canvasEditListenersBound = true;
+  ensureCanvasEditStyles();
+
+  document.addEventListener('click', e => {
+    if (!canvasEditEnabled) return;
+    const target = e.target.closest('[data-canvas-editable="true"]');
+    if (!target) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    startCanvasEdit(target);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!canvasEditEnabled || !canvasEditActiveElement) return;
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      finishCanvasEdit(false);
+      return;
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      finishCanvasEdit(true);
+    }
+  });
+
+  document.addEventListener('focusout', e => {
+    if (!canvasEditEnabled || !canvasEditActiveElement) return;
+    if (e.target !== canvasEditActiveElement) return;
+
+    setTimeout(() => {
+      if (!canvasEditActiveElement) return;
+      if (document.activeElement === canvasEditActiveElement) return;
+      finishCanvasEdit(true);
+    }, 0);
   });
 }
 

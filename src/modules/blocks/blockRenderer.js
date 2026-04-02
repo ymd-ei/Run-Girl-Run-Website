@@ -42,21 +42,32 @@ export function renderBlockThumbnail(type, theme = {}) {
  * @param {Object} theme - Theme object (optional, for colors)
  * @returns {string} HTML string
  */
-export function renderBlock(block, theme = {}) {
+export function renderBlock(block, theme = {}, renderOptions = {}) {
   if (!block || !block.type) return '';
+
+  const canvasAttrs = field => {
+    const scope = renderOptions.canvasScope;
+    if (!scope || !block.id || !field) return '';
+
+    const projectIdAttr = renderOptions.canvasProjectId
+      ? ` data-canvas-project-id="${renderOptions.canvasProjectId}"`
+      : '';
+
+    return ` data-canvas-editable="true" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}" data-canvas-field="${field}"${projectIdAttr}`;
+  };
 
   const alignClass =
     block.align === 'center' ? 'ac' : block.align === 'right' ? 'ar' : '';
 
   switch (block.type) {
     case 'text-sm':
-      return `<p class="bl-text-sm ${alignClass}">${block.content || ''}</p>`;
+      return `<p class="bl-text-sm ${alignClass}"${canvasAttrs('content')}>${block.content || ''}</p>`;
 
     case 'text-md':
-      return `<p class="bl-text-md ${alignClass}">${block.content || ''}</p>`;
+      return `<p class="bl-text-md ${alignClass}"${canvasAttrs('content')}>${block.content || ''}</p>`;
 
     case 'text-lg':
-      return `<p class="bl-text-lg ${alignClass}">${block.content || ''}</p>`;
+      return `<p class="bl-text-lg ${alignClass}"${canvasAttrs('content')}>${block.content || ''}</p>`;
 
     case 'image':
       if (block.src) {
@@ -72,7 +83,7 @@ export function renderBlock(block, theme = {}) {
       return `<div class="bl-twocol"><div>${leftHTML}</div><div>${rightHTML}</div></div>`;
 
     case 'quote':
-      return `<div class="bl-quote ${alignClass}"><p>${
+      return `<div class="bl-quote ${alignClass}"><p${canvasAttrs('content')}>${
         block.content || ''
       }</p></div>`;
 
@@ -110,9 +121,9 @@ export function renderBlock(block, theme = {}) {
       return `<div class="bl-divider"></div>`;
 
     case 'callout':
-      return `<div class="bl-callout ${block.tone || 'note'}"><div class="bl-callout-title">${
+      return `<div class="bl-callout ${block.tone || 'note'}"><div class="bl-callout-title"${canvasAttrs('title')}>${
         block.title || ''
-      }</div><div class="bl-callout-body">${block.content || ''}</div></div>`;
+      }</div><div class="bl-callout-body"${canvasAttrs('content')}>${block.content || ''}</div></div>`;
 
     case 'gallery':
       const galleryCols = block.columns === 3 ? 3 : 2;
@@ -146,10 +157,10 @@ export function renderBlock(block, theme = {}) {
 
     case 'cta':
       return `<section class="bl-cta ${block.tone || 'default'}"><div class="bl-cta-copy">${
-        block.headline ? `<h3 class="bl-cta-headline">${block.headline}</h3>` : ''
-      }${block.body ? `<p class="bl-cta-body">${block.body}</p>` : ''}</div>${
+        block.headline ? `<h3 class="bl-cta-headline"${canvasAttrs('headline')}>${block.headline}</h3>` : ''
+      }${block.body ? `<p class="bl-cta-body"${canvasAttrs('body')}>${block.body}</p>` : ''}</div>${
         block.buttonLabel && block.buttonUrl
-          ? `<a class="bl-cta-link" href="${block.buttonUrl}" target="_blank" rel="noopener">${block.buttonLabel}</a>`
+          ? `<a class="bl-cta-link" href="${block.buttonUrl}" target="_blank" rel="noopener"${canvasAttrs('buttonLabel')}>${block.buttonLabel}</a>`
           : ''
       }</section>`;
 
@@ -201,10 +212,10 @@ export function renderBlock(block, theme = {}) {
  * @param {Object} theme - Theme object (optional)
  * @returns {string} HTML string
  */
-export function renderBlocks(blocks, theme = {}) {
+export function renderBlocks(blocks, theme = {}, renderOptions = {}) {
   if (!Array.isArray(blocks)) return '';
 
-  const blocksHTML = blocks.map(b => renderBlock(b, theme)).join('');
+  const blocksHTML = blocks.map(b => renderBlock(b, theme, renderOptions)).join('');
   return `<div class="block-canvas">${blocksHTML}</div>`;
 }
 
