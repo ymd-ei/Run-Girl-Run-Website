@@ -911,13 +911,26 @@ function updateLikeUI(count, liked) {
 }
 
 /**
- * Fetch like count for a project
+ * Fetch like count for a project (sessionStorage-cached per tab session)
  */
 async function fetchLikeCount(id) {
+  if (new URLSearchParams(location.search).has('preview')) return;
+
+  const cacheKey = `rgr_likes_${id}`;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      const { count, liked } = JSON.parse(cached);
+      updateLikeUI(count, liked);
+      return;
+    } catch (_) { /* fall through to fetch */ }
+  }
+
   try {
     const vid = getVisitorId();
     const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}?vid=${encodeURIComponent(vid)}`);
     const data = await res.json();
+    sessionStorage.setItem(cacheKey, JSON.stringify({ count: data.count, liked: data.liked }));
     updateLikeUI(data.count, data.liked);
   } catch (e) {
     console.warn('Failed to fetch likes:', e);
@@ -1062,6 +1075,7 @@ function setupEventListeners() {
           body: JSON.stringify({ vid })
         });
         const data = await res.json();
+        sessionStorage.setItem(`rgr_likes_${id}`, JSON.stringify({ count: data.count, liked: data.liked }));
         updateLikeUI(data.count, data.liked);
       } catch (e) {
         console.warn('Like failed:', e);
