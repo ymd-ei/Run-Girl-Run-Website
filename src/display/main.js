@@ -494,7 +494,7 @@ function renderHero() {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
       }
     } else if (globalState.reel.type === 'video') {
-      reelEl.innerHTML = `<video autoplay muted loop playsinline src="${url}"></video><div id="reel-block"></div>`;
+      reelEl.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${url}"></video><div id="reel-block"></div>`;
       const v = reelEl.querySelector('video');
       if (v) v.play().catch(() => {});
     }
@@ -631,7 +631,7 @@ function renderContactSection() {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
         ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
-        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline src="${vid.url}"></video>`;
+        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${vid.url}"></video>`;
         const v = ctBgVideo.querySelector('video');
         if (v) v.play().catch(() => {});
       }
@@ -1040,7 +1040,11 @@ function setupEventListeners() {
       const lbFrame = document.getElementById('lb-frame');
       const lbLabel = document.getElementById('lb-label');
       if (lbFrame) {
-        lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        if (lightboxReel.type === 'video') {
+          lbFrame.innerHTML = `<video id="lb-video" controls autoplay playsinline preload="auto" src="${src}" style="width:100%;height:100%;max-height:80vh;"></video>`;
+        } else {
+          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        }
       }
       if (lbLabel) lbLabel.textContent = 'Demo Reel';
       lightboxMode = 'reel';
