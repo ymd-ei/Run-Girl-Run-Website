@@ -41,7 +41,8 @@
     "md-pulling",
     "final-fantasy-modding",
     "orbital-loop",
-    "cosmic-drift"
+    "cosmic-drift",
+    "welcome-message"
   ],
   "about": [
     {
@@ -138,7 +139,7 @@
   "contactPanel": {
     "video": {
       "type": "video",
-      "url": "media/Feb Anim Challenge.mp4"
+      "url": "media/RGR_anim_chal_clean.mp4"
     },
     "titleAccent": "— At your service",
     "tickerMid": [
@@ -251,6 +252,19 @@
       "sensitive": true,
       "sensitiveLabel": "Non disclosure agreement",
       "sensitiveColor": "#f5ec00",
+      "longform": false
+    },
+    {
+      "id": "welcome-message",
+      "title": "Welcome Message",
+      "type": "motion",
+      "typeLabel": "Motion",
+      "year": "2026",
+      "thumbnail": "media/woke-up_thumbnail.webp",
+      "published": false,
+      "sensitive": false,
+      "sensitiveLabel": "",
+      "sensitiveColor": "",
       "longform": false
     }
   ],

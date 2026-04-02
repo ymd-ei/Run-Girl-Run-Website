@@ -1,0 +1,22 @@
+{
+  "id": "welcome-message",
+  "title": "Welcome Message",
+  "type": "motion",
+  "typeLabel": "Motion",
+  "year": "2026",
+  "client": "Self",
+  "duration": "",
+  "tags": [],
+  "thumbnail": "media/woke-up_thumbnail.webp",
+  "videoUrl": "",
+  "longform": false,
+  "published": false,
+  "blocks": [
+    {
+      "id": "b2",
+      "type": "text-lg",
+      "content": "Greetings from Run Girl Run Studio!",
+      "align": "left"
+    }
+  ]
+}
