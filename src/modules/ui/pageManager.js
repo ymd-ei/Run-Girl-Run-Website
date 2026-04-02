@@ -89,6 +89,7 @@ export function buildNav(state, onProjectClick) {
 
       return `
         <button class="ni" id="nav-proj-${projectId}"
+          draggable="false"
           onclick="window.events?.onProjectNavClick?.('${projectId}')"
           ondragover="window.dragDropState?.onNavProjectDragOver(event)"
           ondragend="window.dragDropState?.onNavProjectDragEnd(event)"
