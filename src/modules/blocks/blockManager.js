@@ -70,6 +70,27 @@ const BLOCK_DEFAULTS = {
   'divider': { type: 'divider' }
 };
 
+const TEXT_CONTENT_TYPES = new Set(['text-sm', 'text-md', 'text-lg', 'quote']);
+
+function buildBlockForTypeChange(block, newType) {
+  const nextBlock = {
+    id: block.id,
+    ...deepCopy(BLOCK_DEFAULTS[newType])
+  };
+
+  if (TEXT_CONTENT_TYPES.has(block.type) && TEXT_CONTENT_TYPES.has(newType)) {
+    if (Object.prototype.hasOwnProperty.call(block, 'content')) {
+      nextBlock.content = block.content;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(block, 'align')) {
+      nextBlock.align = block.align;
+    }
+  }
+
+  return nextBlock;
+}
+
 export function normalizeBlock(block) {
   if (!block || !block.type) return block;
 
@@ -257,16 +278,15 @@ export function changeBlockType(state, scope, blockId, newType) {
   const template = BLOCK_DEFAULTS[newType];
   if (!template) return false;
 
-  // Keep id, update type and add template properties
-  block.type = newType;
+  const nextBlock = buildBlockForTypeChange(block, newType);
 
-  // Merge in new type's defaults (but keep existing id)
-  const defaults = deepCopy(template);
-  Object.keys(defaults).forEach(key => {
-    if (key !== 'type') {
-      block[key] = defaults[key];
+  Object.keys(block).forEach(key => {
+    if (!Object.prototype.hasOwnProperty.call(nextBlock, key)) {
+      delete block[key];
     }
   });
+
+  Object.assign(block, nextBlock);
 
   return true;
 }
