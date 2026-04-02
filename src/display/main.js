@@ -75,14 +75,14 @@ function ensureCanvasEditStyles() {
     }
 
     body.canvas-edit-enabled .canvas-block-shell:hover {
-      outline: 1px dashed rgba(255, 255, 255, 0.35);
+      outline: 2px dashed rgba(var(--accent-rgb, 94, 48, 235), 0.55);
       outline-offset: 6px;
     }
 
     body.canvas-edit-enabled .canvas-block-shell.canvas-block-selected {
-      outline: 1px solid rgba(255, 255, 255, 0.9);
+      outline: 3px solid var(--color-accent, #5e30eb);
       outline-offset: 6px;
-      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 0 10px rgba(var(--accent-rgb, 94, 48, 235), 0.18);
     }
 
     #canvas-block-inspector {
@@ -1525,7 +1525,7 @@ function setupEditorPreviewBridge() {
       applyTheme(globalState.theme);
       updateDocumentMeta();
       renderHero();
-      renderWorkSection();
+      renderWorkSection({ showAll: true });
       renderAboutPanel();
       renderContactSection();
       loadLogStack();
