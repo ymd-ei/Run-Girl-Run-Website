@@ -208,9 +208,9 @@ export function findBlock(state, scope, blockId) {
  * @param {string} type - Block type
  * @returns {string} New block ID
  */
-export function addBlock(state, scope, type, blockIdOverride) {
+export function addBlock(state, scope, type) {
   const blocks = getBlocks(state, scope) || [];
-  const blockId = blockIdOverride || uid();
+  const blockId = uid();
 
   const template = BLOCK_DEFAULTS[type];
   if (!template) {

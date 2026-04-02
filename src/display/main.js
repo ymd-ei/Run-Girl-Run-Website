@@ -18,38 +18,17 @@ import {
 import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { pool, scheduleIdle } from '../utils/text.js';
-import * as blockManager from '../modules/blocks/blockManager.js';
+import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
 let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
-let canvasEditEnabled = true;
+let canvasEditEnabled = false;
 let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
-let canvasSelectedBlock = null;
-let canvasPendingMediaTarget = null;
-const isPreviewEmbed = new URLSearchParams(location.search).has('preview') && window.parent !== window;
-let navDrivenOpen = false;
-
-const CANVAS_ADD_BLOCK_TYPES = [
-  ['text-md', 'Text'],
-  ['image', 'Image'],
-  ['twocol', 'Two Col'],
-  ['quote', 'Quote'],
-  ['video', 'Video'],
-  ['stats', 'Stats'],
-  ['skills', 'Skills'],
-  ['callout', 'Callout'],
-  ['gallery', 'Gallery'],
-  ['process', 'Process'],
-  ['cta', 'CTA'],
-  ['beforeafter', 'Before/After'],
-  ['faq', 'FAQ'],
-  ['divider', 'Divider']
-];
 
 function ensureCanvasEditStyles() {
   if (document.getElementById('canvas-edit-style')) return;
@@ -69,208 +48,6 @@ function ensureCanvasEditStyles() {
     .canvas-edit-active {
       outline: 1px solid rgba(255, 255, 255, 0.95) !important;
       background: rgba(255, 255, 255, 0.08);
-    }
-
-    body.canvas-edit-enabled .canvas-block-shell {
-      position: relative;
-      padding: 0.75rem;
-      margin: -0.75rem;
-      border-radius: 0.75rem;
-      transition: box-shadow 0.18s ease, outline-color 0.18s ease;
-    }
-
-    body.canvas-edit-enabled .canvas-block-shell:hover {
-      outline: 2px dashed rgba(var(--accent-rgb, 94, 48, 235), 0.55);
-      outline-offset: 6px;
-    }
-
-    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] iframe,
-    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] video {
-      pointer-events: none;
-    }
-
-    body.canvas-edit-enabled .canvas-block-shell.canvas-block-selected {
-      outline: 3px solid var(--color-accent, #5e30eb);
-      outline-offset: 6px;
-      box-shadow: 0 0 0 10px rgba(var(--accent-rgb, 94, 48, 235), 0.18);
-    }
-
-    #canvas-block-inspector {
-      display: none;
-      width: 100%;
-      padding: 1rem;
-      border: 1px solid rgba(0, 0, 0, 0.15);
-      background: rgba(247, 243, 236, 0.96);
-      color: #17130f;
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    }
-
-    body.canvas-edit-enabled #canvas-block-inspector.has-selection {
-      display: block;
-    }
-
-    .canvas-inspector-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.9rem;
-    }
-
-    .canvas-inspector-kicker {
-      font-size: 0.62rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(23, 19, 15, 0.55);
-      margin-bottom: 0.25rem;
-    }
-
-    .canvas-inspector-title {
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .canvas-inspector-close,
-    .canvas-inspector-seg button,
-    .canvas-inspector-browse,
-    .canvas-inspector-select,
-    .canvas-inspector-action {
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .canvas-inspector-close {
-      border: none;
-      background: none;
-      color: rgba(23, 19, 15, 0.55);
-      font-size: 1rem;
-      line-height: 1;
-    }
-
-    .canvas-inspector-body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-    }
-
-    .canvas-inspector-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .canvas-inspector-label {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(23, 19, 15, 0.55);
-    }
-
-    .canvas-inspector-input,
-    .canvas-inspector-textarea,
-    .canvas-inspector-select {
-      width: 100%;
-      border: 1px solid rgba(23, 19, 15, 0.15);
-      background: rgba(255, 255, 255, 0.82);
-      color: #17130f;
-      padding: 0.6rem 0.7rem;
-      font-size: 0.86rem;
-    }
-
-    .canvas-inspector-textarea {
-      min-height: 92px;
-      resize: vertical;
-      line-height: 1.45;
-    }
-
-    .canvas-inspector-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-
-    .canvas-inspector-seg {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-
-    .canvas-inspector-seg button,
-    .canvas-inspector-browse,
-    .canvas-inspector-action {
-      border: 1px solid rgba(23, 19, 15, 0.16);
-      background: rgba(255, 255, 255, 0.86);
-      color: rgba(23, 19, 15, 0.82);
-      padding: 0.45rem 0.62rem;
-      font-size: 0.74rem;
-    }
-
-    .canvas-inspector-seg button.active,
-    .canvas-inspector-action.active {
-      border-color: rgba(23, 19, 15, 0.5);
-      background: rgba(23, 19, 15, 0.08);
-      color: #17130f;
-    }
-
-    .canvas-inspector-hint {
-      font-size: 0.72rem;
-      color: rgba(23, 19, 15, 0.55);
-      line-height: 1.45;
-    }
-
-    .canvas-add-dock {
-      display: none;
-      position: relative;
-      margin: 1.25rem 0 0;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
-    }
-
-    body.canvas-edit-enabled .canvas-add-dock {
-      display: block;
-    }
-
-    .canvas-add-toggle {
-      border: 1px dashed rgba(0, 0, 0, 0.22);
-      background: rgba(255, 255, 255, 0.72);
-      color: rgba(0, 0, 0, 0.7);
-      font: inherit;
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 0.58rem 0.85rem;
-      cursor: pointer;
-    }
-
-    .canvas-add-menu {
-      display: none;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.4rem;
-      margin-top: 0.6rem;
-    }
-
-    .canvas-add-dock.open .canvas-add-menu {
-      display: grid;
-    }
-
-    .canvas-add-item {
-      border: 1px solid rgba(0, 0, 0, 0.16);
-      background: rgba(255, 255, 255, 0.94);
-      color: rgba(0, 0, 0, 0.78);
-      font: inherit;
-      font-size: 0.74rem;
-      padding: 0.58rem 0.65rem;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .canvas-add-item:hover,
-    .canvas-add-toggle:hover {
-      border-color: rgba(0, 0, 0, 0.38);
-      color: rgba(0, 0, 0, 0.92);
     }
   `;
 
@@ -599,9 +376,7 @@ function applyPreviewNavigation(message) {
     const bd = document.getElementById('bd');
     if (workPanel) workPanel.classList.add('open');
     if (bd) bd.classList.add('open');
-    navDrivenOpen = true;
     window.display?.openProject?.(message.projectId);
-    navDrivenOpen = false;
   }
 }
 
@@ -739,9 +514,9 @@ function renderHero() {
   if (globalState.reel && globalState.reel.url) {
     const url = globalState.reel.url;
     if (globalState.reel.type === 'youtube') {
-        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
     } else if (globalState.reel.type === 'vimeo') {
-        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
       // Try to initialize Vimeo player if available
       if (window.Vimeo) {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
@@ -794,11 +569,7 @@ function renderWorkSection({ showAll = false } = {}) {
 function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
-    aboutEl.innerHTML =
-      renderDisplayBlocks(blockManager.normalizeBlocks(globalState.about || []), { scope: 'about' }) +
-      renderCanvasAddDock('about');
-    syncCanvasBlockSelectionUI();
-    renderCanvasBlockInspector();
+    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' });
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -901,7 +672,7 @@ function renderContactSection() {
 
     if (vid && vid.url) {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
-        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allowfullscreen></iframe>`;
+        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
         ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${vid.url}"></video>`;
         const v = ctBgVideo.querySelector('video');
@@ -956,7 +727,6 @@ function runWhenLayoutStable(task) {
 }
 
 async function loadLogStack() {
-  if (isPreviewEmbed) return; // Skip network fetch in editor preview iframe
   const inner = document.getElementById('ls-inner');
   const stack = document.getElementById('log-stack');
   if (!inner || !stack) return;
@@ -1184,10 +954,33 @@ function setupEventListeners() {
         return;
       }
 
+      // Build hero header
+      const heroImg = project.heroImage || project.thumbnail || '';
+      const heroStyle = heroImg ? `background-image:url('${heroImg}')` : '';
+      const heroHTML = `<div class="pp-hero" style="${heroStyle}">
+        <div class="pp-hero-overlay"></div>
+        <div class="pp-hero-actions">
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
+          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+        </div>
+        <div class="pp-hero-content">
+          <div class="pp-hero-left">
+            <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
+            <div class="pp-hero-meta">
+              ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+              ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
+              ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+            </div>
+          </div>
+
+        </div>
+      </div>`;
+
       if (ppb) {
-        ppb.innerHTML = buildProjectPanelHTML(project);
-        syncCanvasBlockSelectionUI();
-        renderCanvasBlockInspector();
+        ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
+          scope: 'proj-' + id,
+          projectId: id
+        });
       }
 
       // Fetch like count
@@ -1215,16 +1008,10 @@ function setupEventListeners() {
         bd.classList.add('project-open');
       }
 
-      if (!isPreviewEmbed) {
-        // Update URL bar so the link is shareable
-        const url = new URL(window.location);
-        url.searchParams.set('project', id);
-        history.pushState({ project: id }, '', url);
-      } else if (!navDrivenOpen) {
-        // Only notify parent when the user clicked a project card directly,
-        // not when the parent sent a preview-nav that triggered openProject.
-        window.parent.postMessage({ type: 'canvas-select-project', payload: { projectId: id } }, '*');
-      }
+      // Update URL bar so the link is shareable
+      const url = new URL(window.location);
+      url.searchParams.set('project', id);
+      history.pushState({ project: id }, '', url);
     },
 
     closeProject() {
@@ -1242,12 +1029,10 @@ function setupEventListeners() {
         if (!anyPanelOpen) bd.classList.remove('open');
       }
 
-      if (!isPreviewEmbed) {
-        // Clear project from URL bar
-        const url = new URL(window.location);
-        url.searchParams.delete('project');
-        history.pushState({}, '', url);
-      }
+      // Clear project from URL bar
+      const url = new URL(window.location);
+      url.searchParams.delete('project');
+      history.pushState({}, '', url);
     },
 
     copyShareLink() {
@@ -1306,7 +1091,7 @@ function setupEventListeners() {
         if (lightboxReel.type === 'video') {
           lbFrame.innerHTML = `<video id="lb-video" controls autoplay playsinline preload="auto" src="${src}" style="width:100%;height:100%;max-height:80vh;"></video>`;
         } else {
-          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allowfullscreen></iframe>`;
+          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
         }
       }
       if (lbLabel) lbLabel.textContent = 'Demo Reel';
@@ -1527,7 +1312,6 @@ function setupEventListeners() {
 function setupEditorPreviewBridge() {
   if (new URLSearchParams(location.search).has('preview') && window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'preview-ready' }, '*');
-    document.body.classList.add('canvas-edit-enabled');
     setupCanvasEditListeners();
   }
 
@@ -1543,34 +1327,20 @@ function setupEditorPreviewBridge() {
       applyTheme(globalState.theme);
       updateDocumentMeta();
       renderHero();
-      renderWorkSection({ showAll: true });
+      renderWorkSection();
       renderAboutPanel();
       renderContactSection();
       loadLogStack();
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
-      // Clear block selection silently — parent initiated this nav, no need to echo back
-      if (canvasSelectedBlock) {
-        clearCanvasBlockSelection(true);
-      }
       applyPreviewNavigation(e.data);
-    } else if (e.data.type === 'canvas-media-selected') {
-      const payload = e.data.payload || {};
-      if (!canvasPendingMediaTarget || payload.key !== canvasPendingMediaTarget.key) return;
-
-      const mutation = {
-        kind: 'update-block',
-        scope: canvasPendingMediaTarget.scope,
-        blockId: canvasPendingMediaTarget.blockId,
-        key: canvasPendingMediaTarget.key,
-        value: payload.path || ''
-      };
-
-      applyCanvasBlockMutationLocal(mutation);
-      window.parent.postMessage({ type: 'canvas-block-mutate', payload: mutation }, '*');
-
-      canvasPendingMediaTarget = null;
+    } else if (e.data.type === 'canvas-edit-mode') {
+      canvasEditEnabled = !!e.data.enabled;
+      document.body.classList.toggle('canvas-edit-enabled', canvasEditEnabled);
+      if (!canvasEditEnabled && canvasEditActiveElement) {
+        finishCanvasEdit(false);
+      }
     }
   });
 }
@@ -1588,247 +1358,6 @@ function getCanvasEditPayload(el) {
     blockId: el.getAttribute('data-canvas-block-id') || '',
     projectId: el.getAttribute('data-canvas-project-id') || ''
   };
-}
-
-function renderCanvasAddDock(scope, projectId = '') {
-  const projectAttr = projectId ? ` data-canvas-project-id="${projectId}"` : '';
-  const items = CANVAS_ADD_BLOCK_TYPES.map(
-    ([type, label]) =>
-      `<button class="canvas-add-item" type="button" data-canvas-add-type="${type}" data-canvas-scope="${scope}"${projectAttr}>${label}</button>`
-  ).join('');
-
-  return `<div class="canvas-add-dock" data-canvas-add-dock data-canvas-scope="${scope}"${projectAttr}><button class="canvas-add-toggle" type="button" data-canvas-add-toggle>+ Add block</button><div class="canvas-add-menu">${items}</div></div>`;
-}
-
-function getCanvasState() {
-  return { globalState, projects };
-}
-
-function getCanvasBlock(scope, blockId) {
-  return blockManager.findBlock(getCanvasState(), scope, blockId);
-}
-
-function getCanvasProject(scope, projectId = '') {
-  const resolvedId = projectId || scope.replace('proj-', '');
-  return projects.find(project => project.id === resolvedId) || null;
-}
-
-function ensureCanvasBlockInspector() {
-  let inspector = document.getElementById('canvas-block-inspector');
-  if (!inspector) {
-    inspector = document.createElement('div');
-    inspector.id = 'canvas-block-inspector';
-  }
-  return inspector;
-}
-
-function positionCanvasBlockInspector() {
-  if (!canvasSelectedBlock) return;
-  const shell = document.querySelector(`[data-canvas-block-shell="true"][data-canvas-scope="${canvasSelectedBlock.scope}"][data-canvas-block-id="${canvasSelectedBlock.blockId}"]`);
-  if (!shell) return;
-  
-  const existing = document.getElementById('canvas-block-inspector');
-  if (existing && existing.parentNode) {
-    existing.parentNode.removeChild(existing);
-  }
-  
-  shell.parentNode?.insertBefore(ensureCanvasBlockInspector(), shell.nextSibling);
-}
-
-function syncCanvasBlockSelectionUI() {
-  document.querySelectorAll('[data-canvas-block-shell="true"]').forEach(shell => {
-    const isSelected =
-      !!canvasSelectedBlock &&
-      shell.getAttribute('data-canvas-scope') === canvasSelectedBlock.scope &&
-      shell.getAttribute('data-canvas-block-id') === canvasSelectedBlock.blockId;
-    shell.classList.toggle('canvas-block-selected', isSelected);
-  });
-}
-
-function buildProjectPanelHTML(project) {
-  if (!project) return '';
-
-  const heroImg = project.heroImage || project.thumbnail || '';
-  const heroStyle = heroImg ? `background-image:url('${heroImg}')` : '';
-  const heroHTML = `<div class="pp-hero" style="${heroStyle}">
-    <div class="pp-hero-overlay"></div>
-    <div class="pp-hero-actions">
-      <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
-      <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
-    </div>
-    <div class="pp-hero-content">
-      <div class="pp-hero-left">
-        <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
-        <div class="pp-hero-meta">
-          ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
-          ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
-          ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
-        </div>
-      </div>
-    </div>
-  </div>`;
-
-  return (
-    heroHTML +
-    renderDisplayBlocks(blockManager.normalizeBlocks(project.blocks || []), {
-      scope: 'proj-' + project.id,
-      projectId: project.id
-    }) +
-    renderCanvasAddDock('proj-' + project.id, project.id)
-  );
-}
-
-function rerenderCanvasScope(scope) {
-  if (scope === 'about') {
-    const aboutEl = document.getElementById('about-body');
-    const scrollTop = aboutEl ? aboutEl.scrollTop : 0;
-    renderAboutPanel();
-    if (aboutEl) aboutEl.scrollTop = scrollTop;
-    return;
-  }
-
-  if (scope.startsWith('proj-')) {
-    const project = getCanvasProject(scope);
-    const ppb = document.getElementById('ppb');
-    if (!project || !ppb) return;
-    const scrollTop = ppb.scrollTop;
-    ppb.innerHTML = buildProjectPanelHTML(project);
-    ppb.scrollTop = scrollTop;
-    syncCanvasBlockSelectionUI();
-    renderCanvasBlockInspector();
-    positionCanvasBlockInspector();
-  }
-}
-positionCanvasBlockInspector();
-  
-function selectCanvasBlock(selection) {
-  if (!selection?.scope || !selection?.blockId) return;
-
-  canvasSelectedBlock = {
-    scope: selection.scope,
-    blockId: selection.blockId,
-    projectId: selection.projectId || ''
-  };
-
-  syncCanvasBlockSelectionUI();
-  renderCanvasBlockInspector();
-  window.parent.postMessage({ type: 'canvas-start-edit', payload: canvasSelectedBlock }, '*');
-}
-
-function clearCanvasBlockSelection(silent) {
-  const hadSelection = !!canvasSelectedBlock;
-  canvasSelectedBlock = null;
-  const inspector = document.getElementById('canvas-block-inspector');
-  if (inspector && inspector.parentNode) {
-    inspector.parentNode.removeChild(inspector);
-  }
-  renderCanvasBlockInspector();
-  if (hadSelection && !silent && window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: 'canvas-clear-selection' }, '*');
-  }
-}
-
-function renderCanvasBlockInspector() {
-  const inspector = ensureCanvasBlockInspector();
-  const block = canvasSelectedBlock ? getCanvasBlock(canvasSelectedBlock.scope, canvasSelectedBlock.blockId) : null;
-
-  inspector.classList.toggle('has-selection', !!block && canvasEditEnabled);
-  if (!block || !canvasEditEnabled) {
-    inspector.innerHTML = '';
-    return;
-  }
-
-  const blockTypeButtons = ['text-sm', 'text-md', 'text-lg', 'quote', 'image', 'video', 'callout', 'cta', 'beforeafter', 'divider']
-    .map(type => `<button type="button" class="${block.type === type ? 'active' : ''}" data-canvas-change-type="${type}">${type}</button>`)
-    .join('');
-
-  let body = `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Block Type</div><div class="canvas-inspector-seg">${blockTypeButtons}</div></div>`;
-
-  if (block.type === 'text-sm' || block.type === 'text-md' || block.type === 'text-lg' || block.type === 'quote') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Alignment</div><div class="canvas-inspector-seg">${['left', 'center', 'right']
-      .map(align => `<button type="button" class="${(block.align || 'left') === align ? 'active' : ''}" data-canvas-update-key="align" data-canvas-update-value="${align}">${align}</button>`)
-      .join('')}</div></div>`;
-    body += `<div class="canvas-inspector-hint">Text content is editable directly on the page. These controls handle layout settings.</div>`;
-  } else if (block.type === 'image') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Image Path</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="src" value="${block.src || ''}" placeholder="media/image.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="src">Browse Media</button></div></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Alt Text</div><input class="canvas-inspector-input" data-canvas-input-key="alt" value="${block.alt || ''}" placeholder="Describe the image"></div>`;
-  } else if (block.type === 'video') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Video Source</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="src" value="${block.src || ''}" placeholder="Embed URL or media/video.mp4"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="src">Browse Media</button></div></div>`;
-  } else if (block.type === 'callout') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Tone</div><div class="canvas-inspector-seg">${['note', 'highlight', 'warning']
-      .map(tone => `<button type="button" class="${(block.tone || 'note') === tone ? 'active' : ''}" data-canvas-update-key="tone" data-canvas-update-value="${tone}">${tone}</button>`)
-      .join('')}</div></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Title</div><input class="canvas-inspector-input" data-canvas-input-key="title" value="${block.title || ''}" placeholder="Callout title"></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Body</div><textarea class="canvas-inspector-textarea" data-canvas-input-key="content">${block.content || ''}</textarea></div>`;
-  } else if (block.type === 'cta') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Tone</div><div class="canvas-inspector-seg">${['default', 'light', 'dark']
-      .map(tone => `<button type="button" class="${(block.tone || 'default') === tone ? 'active' : ''}" data-canvas-update-key="tone" data-canvas-update-value="${tone}">${tone}</button>`)
-      .join('')}</div></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Headline</div><input class="canvas-inspector-input" data-canvas-input-key="headline" value="${block.headline || ''}" placeholder="Start the conversation"></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Body</div><textarea class="canvas-inspector-textarea" data-canvas-input-key="body">${block.body || ''}</textarea></div>`;
-    body += `<div class="canvas-inspector-row"><div class="canvas-inspector-field"><div class="canvas-inspector-label">Button Label</div><input class="canvas-inspector-input" data-canvas-input-key="buttonLabel" value="${block.buttonLabel || ''}" placeholder="Get in touch"></div><div class="canvas-inspector-field"><div class="canvas-inspector-label">Button URL</div><input class="canvas-inspector-input" data-canvas-input-key="buttonUrl" value="${block.buttonUrl || ''}" placeholder="mailto:hello@example.com"></div></div>`;
-  } else if (block.type === 'beforeafter') {
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Before Image</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="beforeSrc" value="${block.beforeSrc || ''}" placeholder="media/before.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="beforeSrc">Browse Media</button></div></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Before Alt</div><input class="canvas-inspector-input" data-canvas-input-key="beforeAlt" value="${block.beforeAlt || ''}" placeholder="Before image alt"></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">After Image</div><div class="canvas-inspector-row"><input class="canvas-inspector-input" data-canvas-input-key="afterSrc" value="${block.afterSrc || ''}" placeholder="media/after.jpg"><button type="button" class="canvas-inspector-browse" data-canvas-browse-key="afterSrc">Browse Media</button></div></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">After Alt</div><input class="canvas-inspector-input" data-canvas-input-key="afterAlt" value="${block.afterAlt || ''}" placeholder="After image alt"></div>`;
-    body += `<div class="canvas-inspector-field"><div class="canvas-inspector-label">Caption</div><input class="canvas-inspector-input" data-canvas-input-key="caption" value="${block.caption || ''}" placeholder="Optional caption"></div>`;
-  } else if (block.type === 'divider') {
-    body += `<div class="canvas-inspector-hint">Divider blocks do not have extra settings.</div>`;
-  } else {
-    body += `<div class="canvas-inspector-hint">This block has nested settings that are not preview-editable yet. Use the side panel for detailed item editing for now.</div>`;
-  }
-
-  inspector.innerHTML = `<div class="canvas-inspector-head"><div><div class="canvas-inspector-kicker">Preview Block Settings</div><div class="canvas-inspector-title">${block.type}</div></div><button type="button" class="canvas-inspector-close" data-canvas-close-inspector>&times;</button></div><div class="canvas-inspector-body">${body}</div>`;
-}
-
-function applyCanvasBlockMutationLocal(payload) {
-  const { scope, blockId, kind, key, value, blockType } = payload;
-  if (!scope || !blockId) return;
-
-  const didMutate = kind === 'change-block-type'
-    ? blockManager.changeBlockType(getCanvasState(), scope, blockId, blockType)
-    : blockManager.updateBlock(getCanvasState(), scope, blockId, key, value);
-
-  if (!didMutate) return;
-  rerenderCanvasScope(scope);
-}
-
-function requestCanvasMediaPicker(key) {
-  if (!canvasSelectedBlock?.scope || !canvasSelectedBlock?.blockId || !key) return;
-
-  canvasPendingMediaTarget = {
-    ...canvasSelectedBlock,
-    key
-  };
-
-  window.parent.postMessage({
-    type: 'canvas-open-media-picker',
-    payload: canvasPendingMediaTarget
-  }, '*');
-}
-
-function createCanvasBlockId() {
-  if (window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return 'canvas-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
-}
-
-function addCanvasBlockLocal(scope, blockType, blockId) {
-  const nextId = blockId || createCanvasBlockId();
-  const addedId = blockManager.addBlock(getCanvasState(), scope, blockType, nextId);
-  if (!addedId) return null;
-
-  rerenderCanvasScope(scope);
-  selectCanvasBlock({
-    scope,
-    blockId: addedId,
-    projectId: scope.startsWith('proj-') ? scope.replace('proj-', '') : ''
-  });
-
-  return addedId;
 }
 
 function startCanvasEdit(el) {
@@ -1891,103 +1420,8 @@ function setupCanvasEditListeners() {
   if (canvasEditListenersBound) return;
   canvasEditListenersBound = true;
   ensureCanvasEditStyles();
-  ensureCanvasBlockInspector();
 
   document.addEventListener('click', e => {
-    const closeInspector = e.target.closest('[data-canvas-close-inspector]');
-    if (closeInspector) {
-      e.preventDefault();
-      e.stopPropagation();
-      clearCanvasBlockSelection();
-      return;
-    }
-
-    const typeButton = e.target.closest('[data-canvas-change-type]');
-    if (typeButton && canvasSelectedBlock) {
-      e.preventDefault();
-      e.stopPropagation();
-      const nextType = typeButton.getAttribute('data-canvas-change-type') || '';
-      const payload = {
-        kind: 'change-block-type',
-        scope: canvasSelectedBlock.scope,
-        blockId: canvasSelectedBlock.blockId,
-        blockType: nextType
-      };
-      applyCanvasBlockMutationLocal(payload);
-      window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
-      return;
-    }
-
-    const browseButton = e.target.closest('[data-canvas-browse-key]');
-    if (browseButton) {
-      e.preventDefault();
-      e.stopPropagation();
-      requestCanvasMediaPicker(browseButton.getAttribute('data-canvas-browse-key') || '');
-      return;
-    }
-
-    const updateButton = e.target.closest('[data-canvas-update-key]');
-    if (updateButton && canvasSelectedBlock) {
-      e.preventDefault();
-      e.stopPropagation();
-      const payload = {
-        kind: 'update-block',
-        scope: canvasSelectedBlock.scope,
-        blockId: canvasSelectedBlock.blockId,
-        key: updateButton.getAttribute('data-canvas-update-key') || '',
-        value: updateButton.getAttribute('data-canvas-update-value') || ''
-      };
-      applyCanvasBlockMutationLocal(payload);
-      window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
-      return;
-    }
-
-    const shell = e.target.closest('[data-canvas-block-shell="true"]');
-    if (shell && canvasEditEnabled) {
-      selectCanvasBlock({
-        scope: shell.getAttribute('data-canvas-scope') || '',
-        blockId: shell.getAttribute('data-canvas-block-id') || '',
-        projectId: shell.getAttribute('data-canvas-project-id') || ''
-      });
-    }
-
-    const addToggle = e.target.closest('[data-canvas-add-toggle]');
-    if (addToggle) {
-      if (!canvasEditEnabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const dock = addToggle.closest('[data-canvas-add-dock]');
-      document.querySelectorAll('[data-canvas-add-dock].open').forEach(entry => {
-        if (entry !== dock) entry.classList.remove('open');
-      });
-      if (dock) dock.classList.toggle('open');
-      return;
-    }
-
-    const addTypeBtn = e.target.closest('[data-canvas-add-type]');
-    if (addTypeBtn) {
-      if (!canvasEditEnabled) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const dock = addTypeBtn.closest('[data-canvas-add-dock]');
-      if (dock) dock.classList.remove('open');
-      const scope = addTypeBtn.getAttribute('data-canvas-scope') || '';
-      const blockType = addTypeBtn.getAttribute('data-canvas-add-type') || '';
-      const projectId = addTypeBtn.getAttribute('data-canvas-project-id') || '';
-      const blockId = addCanvasBlockLocal(scope, blockType);
-      if (!blockId) return;
-      window.parent.postMessage({
-        type: 'canvas-add-block',
-        payload: {
-          scope,
-          projectId,
-          blockType,
-          blockId
-        }
-      }, '*');
-      return;
-    }
-
     if (!canvasEditEnabled) return;
     const target = e.target.closest('[data-canvas-editable="true"]');
     if (!target) return;
@@ -1995,30 +1429,6 @@ function setupCanvasEditListeners() {
     e.preventDefault();
     e.stopPropagation();
     startCanvasEdit(target);
-  });
-
-  document.addEventListener('click', e => {
-    if (e.target.closest('[data-canvas-add-dock]') || e.target.closest('#canvas-block-inspector')) return;
-    if (e.target.closest('[data-canvas-block-shell="true"]')) return;
-    document.querySelectorAll('[data-canvas-add-dock].open').forEach(entry => entry.classList.remove('open'));
-    if (canvasEditEnabled) clearCanvasBlockSelection();
-  });
-
-  document.addEventListener('change', e => {
-    if (!canvasSelectedBlock) return;
-    const input = e.target.closest('[data-canvas-input-key]');
-    if (!input) return;
-
-    const payload = {
-      kind: 'update-block',
-      scope: canvasSelectedBlock.scope,
-      blockId: canvasSelectedBlock.blockId,
-      key: input.getAttribute('data-canvas-input-key') || '',
-      value: input.value
-    };
-
-    applyCanvasBlockMutationLocal(payload);
-    window.parent.postMessage({ type: 'canvas-block-mutate', payload }, '*');
   });
 
   document.addEventListener('keydown', e => {

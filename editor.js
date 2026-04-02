@@ -86,7 +86,7 @@ const rendered = new Set(); // tracks which pages have been rendered at least on
 
 function markPageStale(name){ rendered.delete(name); }
 
-function showPage(name, options){
+function showPage(name){
   ['global','about','contact','media','project'].forEach(n=>{
     document.getElementById('page-'+n).style.display='none';
     const el=document.getElementById('nav-'+n); if(el)el.classList.remove('active');
@@ -96,8 +96,6 @@ function showPage(name, options){
   const navEl=document.getElementById('nav-'+name); if(navEl)navEl.classList.add('active');
   currentPage=name;
   if(name!=='project') currentProjectId=null;
-  // Show the panel when navigating via sidebar
-  document.body.classList.add('v2-panel-show');
   // Only re-render if stale
   if(!rendered.has(name)){
     if(name==='global') renderGlobal();
@@ -106,15 +104,15 @@ function showPage(name, options){
     else if(name==='media') renderMediaPage();
     rendered.add(name);
   }
-  if(!options?.skipNav) sendPreviewNav();
+  sendPreviewNav();
 }
 
-function showProject(id, options){
-  showPage('project', options);
+function showProject(id){
+  showPage('project');
   currentProjectId=id;
   const el=document.getElementById('nav-proj-'+id); if(el)el.classList.add('active');
   renderProject(id);
-  if(!options?.skipNav) sendPreviewNav();
+  sendPreviewNav();
 }
 
 async function loadAll(){
@@ -958,7 +956,7 @@ function removeBlock(scope,blockId){
   markDirty('delete block');rerenderBlocks(scope);
 }
 
-function updateBlock(scope,blockId,key,val,options){
+function updateBlock(scope,blockId,key,val){
   const didUpdate = sharedBlockManager
     ? sharedBlockManager.updateBlock(getBlockState(), scope, blockId, key, val)
     : (()=>{
@@ -969,10 +967,7 @@ function updateBlock(scope,blockId,key,val,options){
         return true;
       })();
 
-  if(didUpdate) {
-    const config = options || {};
-    markDirty(config.label, { skipPreviewRefresh: !!config.skipPreviewRefresh });
-  }
+  if(didUpdate) markDirty();
 }
 
 function changeBlockType(scope,blockId,newType){
@@ -1423,23 +1418,19 @@ function toggleSection(head){
 // LIVE PREVIEW
 // ─────────────────────────────────────────
 let previewTimer=null, previewReady=false;
+let canvasEditMode = !!window.__EDITOR_V2_CANVAS_DEFAULT;
 
 window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='preview-ready'){
     previewReady=true;
     document.getElementById('pb-dot')?.classList.add('live');
     pushPreview();
+    sendCanvasMode();
     return;
   }
 
   if(e.data&&e.data.type==='canvas-start-edit'){
     syncCanvasSelectionToEditor(e.data.payload||{});
-    document.body.classList.add('v2-panel-show');
-    return;
-  }
-
-  if(e.data&&e.data.type==='canvas-clear-selection'){
-    document.body.classList.remove('v2-panel-show');
     return;
   }
 
@@ -1447,50 +1438,40 @@ window.addEventListener('message', e=>{
     applyCanvasCommit(e.data.payload||{});
     return;
   }
-
-  if(e.data&&e.data.type==='canvas-add-block'){
-    applyCanvasAddBlock(e.data.payload||{});
-    return;
-  }
-
-  if(e.data&&e.data.type==='canvas-block-mutate'){
-    applyCanvasBlockMutation(e.data.payload||{});
-    return;
-  }
-
-  if(e.data&&e.data.type==='canvas-open-media-picker'){
-    openCanvasMediaPicker(e.data.payload||{});
-    return;
-  }
-
-  if(e.data&&e.data.type==='canvas-select-project'){
-    const projectId = e.data.payload?.projectId;
-    if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
-      showPage('project', { skipNav: true });
-      currentProjectId=projectId;
-      const el=document.getElementById('nav-proj-'+projectId); if(el)el.classList.add('active');
-      renderProject(projectId);
-    }
-    return;
-  }
 });
+
+window.setCanvasEditMode = function setCanvasEditMode(enabled){
+  canvasEditMode = !!enabled;
+  sendCanvasMode();
+};
+
+function sendCanvasMode(){
+  if(!previewReady) return;
+  const frame=document.getElementById('preview-frame');
+  try{
+    frame.contentWindow.postMessage({
+      type:'canvas-edit-mode',
+      enabled: !!canvasEditMode
+    }, '*');
+  }catch(e){}
+}
 
 function syncCanvasSelectionToEditor(payload){
   const scope = payload.scope || '';
   if(scope==='about' && currentPage!=='about'){
-    showPage('about', { skipNav: true });
+    showPage('about');
     return;
   }
 
   if(scope==='contact' && currentPage!=='contact'){
-    showPage('contact', { skipNav: true });
+    showPage('contact');
     return;
   }
 
   if(scope.startsWith('proj-')){
     const projectId = payload.projectId || scope.replace('proj-','');
     if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
-      showProject(projectId, { skipNav: true });
+      showProject(projectId);
     }
   }
 }
@@ -1508,12 +1489,12 @@ function applyCanvasCommit(payload){
     C.contactPanel[field] = value;
     markPageStale('contact');
     if(currentPage==='contact') renderContact();
-    markDirty('canvas edit contact', { skipPreviewRefresh: true });
+    markDirty('canvas edit contact');
     return;
   }
 
   if(!blockId) return;
-  updateBlock(scope, blockId, field, value, { skipPreviewRefresh: true, label: 'canvas edit block' });
+  updateBlock(scope, blockId, field, value);
 
   if(scope==='about'){
     markPageStale('about');
@@ -1525,101 +1506,6 @@ function applyCanvasCommit(payload){
     const projectId = payload.projectId || scope.replace('proj-','');
     if(currentPage==='project' && currentProjectId===projectId) rerenderBlocks(scope);
   }
-}
-
-function applyCanvasAddBlock(payload){
-  const scope = payload.scope || '';
-  const blockType = payload.blockType || '';
-  const blockId = payload.blockId || '';
-  if(!scope || !blockType) return;
-
-  syncCanvasSelectionToEditor(payload);
-
-  let addedId = null;
-  if(sharedBlockManager){
-    addedId = sharedBlockManager.addBlock(getBlockState(), scope, blockType, blockId || undefined);
-  }else{
-    const blocks=getBlocks(scope)||[];
-    addedId = blockId || ('b' + Date.now());
-    const defaults=getLegacyBlockDefaults(addedId);
-    blocks.push(defaults[blockType]||{id:addedId,type:blockType,content:''});
-    setBlocks(scope,blocks);
-  }
-
-  if(!addedId) return;
-
-  openBlocks.add(addedId);
-  markDirty('canvas add block', { skipPreviewRefresh: true });
-  rerenderBlocks(scope);
-}
-
-function applyCanvasBlockMutation(payload){
-  const scope = payload.scope || '';
-  const blockId = payload.blockId || '';
-  if(!scope || !blockId) return;
-
-  let didUpdate = false;
-  if(payload.kind==='change-block-type'){
-    const nextType = payload.blockType || '';
-    if(!nextType) return;
-
-    if(sharedBlockManager){
-      didUpdate = sharedBlockManager.changeBlockType(getBlockState(), scope, blockId, nextType);
-    }else{
-      const blocks=getBlocks(scope)||[];
-      const block=blocks.find(item=>item.id===blockId);
-      if(block){ block.type=nextType; didUpdate=true; }
-    }
-
-    if(didUpdate) openBlocks.add(blockId);
-  } else {
-    const key = payload.key || '';
-    if(!key) return;
-    didUpdate = sharedBlockManager
-      ? sharedBlockManager.updateBlock(getBlockState(), scope, blockId, key, payload.value)
-      : (()=>{
-          const blocks=getBlocks(scope)||[];
-          const block=blocks.find(item=>item.id===blockId);
-          if(!block) return false;
-          block[key]=payload.value;
-          return true;
-        })();
-  }
-
-  if(!didUpdate) return;
-
-  markDirty('canvas block settings', { skipPreviewRefresh: true });
-
-  if(scope==='about'){
-    markPageStale('about');
-    if(currentPage==='about') rerenderBlocks('about');
-    return;
-  }
-
-  if(scope.startsWith('proj-')){
-    const projectId = payload.projectId || scope.replace('proj-','');
-    if(currentPage==='project' && currentProjectId===projectId) rerenderBlocks(scope);
-  }
-}
-
-function openCanvasMediaPicker(payload){
-  const frame=document.getElementById('preview-frame');
-  if(!frame || !payload?.scope || !payload?.blockId || !payload?.key) return;
-
-  openMediaLibrary(path => {
-    try{
-      frame.contentWindow.postMessage({
-        type:'canvas-media-selected',
-        payload:{
-          scope: payload.scope,
-          blockId: payload.blockId,
-          projectId: payload.projectId || '',
-          key: payload.key,
-          path
-        }
-      }, '*');
-    }catch(e){}
-  }, null, { skipPreviewRefresh: true });
 }
 
 function initPreview(){
@@ -1634,14 +1520,10 @@ function initPreview(){
   frame.src=`index.html?preview=1&v=${cacheBust}`;
 }
 
-function markDirty(label, options){
-  const config = options || {};
+function markDirty(label){
   if(label) snapshot(label);
   dirty=true;
   document.getElementById('save-btn').textContent='Save All Changes *';
-
-  if(config.skipPreviewRefresh) return;
-
   document.getElementById('pb-dot').classList.remove('live');
   clearTimeout(previewTimer);
   previewTimer=setTimeout(pushPreview, 600);
@@ -1656,6 +1538,7 @@ function pushPreview(){
       content:C,
       projects:projects
     },'*');
+    sendCanvasMode();
     setTimeout(sendPreviewNav, 100);
   }catch(e){}
 }
@@ -2685,7 +2568,6 @@ function rtInsert(textareaId, text){
 let mediaCallback = null;
 let mediaFiles = [];
 let mediaPathInputId = null; // direct reference to the path input to update
-let mediaInsertOptions = {};
 
 function formatBytes(bytes){
   const size = Number(bytes);
@@ -2743,10 +2625,9 @@ function getMediaUsageCount(path){
   return hits.length;
 }
 
-async function openMediaLibrary(onInsert, pathInputId, options){
+async function openMediaLibrary(onInsert, pathInputId){
   mediaCallback = onInsert;
   mediaPathInputId = pathInputId || null;
-  mediaInsertOptions = options || {};
   document.getElementById('media-modal').classList.add('open');
   document.getElementById('media-search').querySelector('input').value = '';
   const grid = document.getElementById('media-grid');
@@ -2762,7 +2643,6 @@ async function openMediaLibrary(onInsert, pathInputId, options){
 function closeMediaLibrary(){
   document.getElementById('media-modal').classList.remove('open');
   mediaCallback = null;
-  mediaInsertOptions = {};
 }
 
 async function refreshMediaGrid(){
@@ -2923,7 +2803,7 @@ function insertMedia(path){
     const input = document.getElementById(mediaPathInputId);
     if(input){ input.value = path; input.dispatchEvent(new Event('input')); }
   }
-  markDirty(undefined, { skipPreviewRefresh: !!mediaInsertOptions.skipPreviewRefresh });
+  markDirty();
   closeMediaLibrary();
   toast('Inserted: '+path);
 }
