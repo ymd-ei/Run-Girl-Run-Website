@@ -735,9 +735,9 @@ function renderHero() {
   if (globalState.reel && globalState.reel.url) {
     const url = globalState.reel.url;
     if (globalState.reel.type === 'youtube') {
-        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allowfullscreen></iframe><div id="reel-block"></div>`;
     } else if (globalState.reel.type === 'vimeo') {
-        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allowfullscreen></iframe><div id="reel-block"></div>`;
       // Try to initialize Vimeo player if available
       if (window.Vimeo) {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
@@ -897,7 +897,7 @@ function renderContactSection() {
 
     if (vid && vid.url) {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
-        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
         ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${vid.url}"></video>`;
         const v = ctBgVideo.querySelector('video');
@@ -1297,7 +1297,7 @@ function setupEventListeners() {
         if (lightboxReel.type === 'video') {
           lbFrame.innerHTML = `<video id="lb-video" controls autoplay playsinline preload="auto" src="${src}" style="width:100%;height:100%;max-height:80vh;"></video>`;
         } else {
-          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allowfullscreen></iframe>`;
         }
       }
       if (lbLabel) lbLabel.textContent = 'Demo Reel';

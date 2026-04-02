@@ -92,7 +92,7 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
         if (isDirectVideoSource(block.src)) {
           return `<div class="bl-video"><video src="${block.src}" controls playsinline preload="metadata"></video></div>`;
         }
-        return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+        return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allowfullscreen></iframe></div>`;
       }
       return `<div class="bl-video empty">Video embed</div>`;
 
