@@ -54,16 +54,20 @@
     background: rgba(111, 208, 140, .1);
   }
 
+  #preview-pane {
+    position: relative;
+  }
+
   .focus-preview-floating {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: .5rem;
-    position: fixed;
+    position: absolute;
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 1200;
+    z-index: 20;
     width: 42px;
     height: 42px;
     padding: 0;
@@ -126,12 +130,6 @@
 </style>
 </head>
 <body>
-<button id="focus-preview-floating" class="focus-preview-floating" type="button" aria-label="Toggle settings panel">
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M4 6.5h16M4 12h10M4 17.5h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-  </svg>
-  <span class="focus-preview-floating-label" id="focus-preview-floating-label">Hide Panel</span>
-</button>
 <div id="app">
   <div id="sidebar">
     <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>
@@ -169,6 +167,12 @@
     <div id="page-project" style="display:none"></div>
   </div>
   <div id="preview-pane">
+    <button id="focus-preview-floating" class="focus-preview-floating" type="button" aria-label="Toggle settings panel">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 6.5h16M4 12h10M4 17.5h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span class="focus-preview-floating-label" id="focus-preview-floating-label">Hide Panel</span>
+    </button>
     <div id="preview-bar">
       <span>Live Preview</span>
       <div class="pb-actions">

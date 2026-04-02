@@ -1456,6 +1456,14 @@ window.addEventListener('message', e=>{
     openCanvasMediaPicker(e.data.payload||{});
     return;
   }
+
+  if(e.data&&e.data.type==='canvas-select-project'){
+    const projectId = e.data.payload?.projectId;
+    if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
+      showProject(projectId);
+    }
+    return;
+  }
 });
 
 window.setCanvasEditMode = function setCanvasEditMode(enabled){

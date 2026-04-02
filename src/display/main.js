@@ -96,7 +96,7 @@ function ensureCanvasEditStyles() {
     #canvas-block-inspector {
       display: none;
       position: fixed;
-      right: 1rem;
+      left: 1rem;
       top: 1rem;
       width: min(360px, calc(100vw - 2rem));
       max-height: calc(100vh - 2rem);
@@ -1218,6 +1218,10 @@ function setupEventListeners() {
       const url = new URL(window.location);
       url.searchParams.set('project', id);
       history.pushState({ project: id }, '', url);
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'canvas-select-project', payload: { projectId: id } }, '*');
+      }
     },
 
     closeProject() {
