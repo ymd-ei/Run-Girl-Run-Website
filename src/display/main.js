@@ -25,7 +25,7 @@ let contactTickersStarted = false;
 let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
-let canvasEditEnabled = false;
+let canvasEditEnabled = true;
 let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
@@ -1518,6 +1518,7 @@ function setupEventListeners() {
 function setupEditorPreviewBridge() {
   if (new URLSearchParams(location.search).has('preview') && window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'preview-ready' }, '*');
+    document.body.classList.add('canvas-edit-enabled');
     setupCanvasEditListeners();
   }
 
@@ -1540,16 +1541,11 @@ function setupEditorPreviewBridge() {
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
-      applyPreviewNavigation(e.data);
-    } else if (e.data.type === 'canvas-edit-mode') {
-      canvasEditEnabled = !!e.data.enabled;
-      document.body.classList.toggle('canvas-edit-enabled', canvasEditEnabled);
-      if (!canvasEditEnabled && canvasEditActiveElement) {
-        finishCanvasEdit(false);
-      }
-      if (!canvasEditEnabled) {
+      // Clear block selection when navigating away from current context
+      if (canvasSelectedBlock) {
         clearCanvasBlockSelection();
       }
+      applyPreviewNavigation(e.data);
     } else if (e.data.type === 'canvas-media-selected') {
       const payload = e.data.payload || {};
       if (!canvasPendingMediaTarget || payload.key !== canvasPendingMediaTarget.key) return;
@@ -1711,12 +1707,16 @@ function selectCanvasBlock(selection) {
 }
 
 function clearCanvasBlockSelection() {
+  const hadSelection = !!canvasSelectedBlock;
   canvasSelectedBlock = null;
   const inspector = document.getElementById('canvas-block-inspector');
   if (inspector && inspector.parentNode) {
     inspector.parentNode.removeChild(inspector);
   }
   renderCanvasBlockInspector();
+  if (hadSelection && window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'canvas-clear-selection' }, '*');
+  }
 }
 
 function renderCanvasBlockInspector() {

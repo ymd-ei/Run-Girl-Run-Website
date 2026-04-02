@@ -1,12 +1,3 @@
-function setCanvasButtons(enabled) {
-  const onBtn = document.getElementById('canvas-mode-on');
-  const offBtn = document.getElementById('canvas-mode-off');
-  if (!onBtn || !offBtn) return;
-
-  onBtn.classList.toggle('active', !!enabled);
-  offBtn.classList.toggle('active', !enabled);
-}
-
 function setFocusPreviewButton(enabled) {
   const label = document.getElementById('focus-preview-floating-label');
   const button = document.getElementById('focus-preview-floating');
@@ -25,53 +16,6 @@ function applyFocusPreview(enabled) {
   }
 }
 
-function applyCanvasMode(enabled) {
-  if (typeof window.setCanvasEditMode === 'function') {
-    window.setCanvasEditMode(!!enabled);
-  }
-  setCanvasButtons(enabled);
-}
-
-window.__editorV2SetMode = applyCanvasMode;
-
-function waitForLegacyEditorReady(attempts = 160) {
-  if (typeof window.setCanvasEditMode === 'function') {
-    applyCanvasMode(true);
-    return;
-  }
-
-  if (attempts <= 0) {
-    console.warn('Editor v2 could not attach canvas mode API');
-    return;
-  }
-
-  setTimeout(() => waitForLegacyEditorReady(attempts - 1), 50);
-}
-
-function wireModeButtons() {
-  const onBtn = document.getElementById('canvas-mode-on');
-  const offBtn = document.getElementById('canvas-mode-off');
-  const floatingFocusBtn = document.getElementById('focus-preview-floating');
-
-  const toggleFocusPreview = () => {
-    const next = !document.body.classList.contains('v2-focus-preview');
-    applyFocusPreview(next);
-  };
-
-  if (onBtn) {
-    onBtn.addEventListener('click', () => applyCanvasMode(true));
-  }
-  if (offBtn) {
-    offBtn.addEventListener('click', () => applyCanvasMode(false));
-  }
-  if (floatingFocusBtn) {
-    floatingFocusBtn.addEventListener('click', toggleFocusPreview);
-  }
-
-  setCanvasButtons(true);
-  setFocusPreviewButton(document.body.classList.contains('v2-focus-preview'));
-}
-
 function initEditorV2() {
   const storedFocusMode = (() => {
     try {
@@ -85,8 +29,15 @@ function initEditorV2() {
     document.body.classList.add('v2-focus-preview');
   }
 
-  wireModeButtons();
-  waitForLegacyEditorReady();
+  const floatingFocusBtn = document.getElementById('focus-preview-floating');
+  if (floatingFocusBtn) {
+    floatingFocusBtn.addEventListener('click', () => {
+      const next = !document.body.classList.contains('v2-focus-preview');
+      applyFocusPreview(next);
+    });
+  }
+
+  setFocusPreviewButton(document.body.classList.contains('v2-focus-preview'));
 }
 
 if (document.readyState === 'loading') {

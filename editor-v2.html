@@ -29,31 +29,6 @@
     box-shadow: 0 0 0 5px rgba(111, 208, 140, .14);
   }
 
-  .mode-toggle-row {
-    display: flex;
-    gap: .5rem;
-    margin: 0 .85rem .7rem;
-  }
-
-  .mode-toggle-btn {
-    flex: 1;
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(255,255,255,.03);
-    color: rgba(255,255,255,.86);
-    border-radius: 8px;
-    padding: .5rem .55rem;
-    font-size: .7rem;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-
-  .mode-toggle-btn.active {
-    border-color: rgba(111, 208, 140, .55);
-    color: #dff8e7;
-    background: rgba(111, 208, 140, .1);
-  }
-
   #preview-pane {
     position: relative;
   }
@@ -115,29 +90,54 @@
     height: 18px;
   }
 
-  body.v2-focus-preview #app {
+  /* Focus Preview overrides everything — panel always hidden */
+  body.v2-focus-preview #app,
+  body.v2-focus-preview.v2-panel-auto.v2-panel-show #app {
     grid-template-columns: 200px minmax(0, 1fr);
   }
 
-  body.v2-focus-preview #main {
+  body.v2-focus-preview #main,
+  body.v2-focus-preview.v2-panel-auto.v2-panel-show #main {
     display: none;
   }
 
-  body.v2-focus-preview #preview-pane {
+  body.v2-focus-preview #preview-pane,
+  body.v2-focus-preview.v2-panel-auto.v2-panel-show #preview-pane {
     grid-column: 2;
     border-left-color: rgba(255,255,255,.08);
   }
+
+  /* Contextual panel: hidden until a block is selected */
+  body.v2-panel-auto #app {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  body.v2-panel-auto #main {
+    display: none;
+  }
+
+  body.v2-panel-auto #preview-pane {
+    grid-column: 2;
+  }
+
+  body.v2-panel-auto.v2-panel-show #app {
+    grid-template-columns: 200px 1fr 1fr;
+  }
+
+  body.v2-panel-auto.v2-panel-show #main {
+    display: block;
+  }
+
+  body.v2-panel-auto.v2-panel-show #preview-pane {
+    grid-column: auto;
+  }
 </style>
 </head>
-<body>
+<body class="v2-panel-auto">
 <div id="app">
   <div id="sidebar">
     <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>
     <div class="v2-chip"><span class="v2-dot"></span>Editor v2</div>
-    <div class="mode-toggle-row">
-      <button class="mode-toggle-btn active" id="canvas-mode-on" type="button" onclick="window.__editorV2SetMode && window.__editorV2SetMode(true)">Canvas Edit</button>
-      <button class="mode-toggle-btn" id="canvas-mode-off" type="button" onclick="window.__editorV2SetMode && window.__editorV2SetMode(false)">Panel Only</button>
-    </div>
     <div class="sb-section">Global</div>
     <button class="ni active" onclick="showPage('global')" id="nav-global"><div class="dot"></div>Settings</button>
     <button class="ni" onclick="showPage('about')" id="nav-about"><div class="dot"></div>About</button>
@@ -218,8 +218,6 @@
 </div>
 
 <script>
-  window.__EDITOR_V2_CANVAS_DEFAULT = true;
-
   // Backend API URL. Override with ?api=https://<worker>.workers.dev during setup.
   const params = new URLSearchParams(window.location.search);
   const apiParam = params.get('api');

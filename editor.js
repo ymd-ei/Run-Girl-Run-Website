@@ -96,6 +96,8 @@ function showPage(name){
   const navEl=document.getElementById('nav-'+name); if(navEl)navEl.classList.add('active');
   currentPage=name;
   if(name!=='project') currentProjectId=null;
+  // Show the panel when navigating via sidebar
+  document.body.classList.add('v2-panel-show');
   // Only re-render if stale
   if(!rendered.has(name)){
     if(name==='global') renderGlobal();
@@ -1421,19 +1423,23 @@ function toggleSection(head){
 // LIVE PREVIEW
 // ─────────────────────────────────────────
 let previewTimer=null, previewReady=false;
-let canvasEditMode = !!window.__EDITOR_V2_CANVAS_DEFAULT;
 
 window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='preview-ready'){
     previewReady=true;
     document.getElementById('pb-dot')?.classList.add('live');
     pushPreview();
-    sendCanvasMode();
     return;
   }
 
   if(e.data&&e.data.type==='canvas-start-edit'){
     syncCanvasSelectionToEditor(e.data.payload||{});
+    document.body.classList.add('v2-panel-show');
+    return;
+  }
+
+  if(e.data&&e.data.type==='canvas-clear-selection'){
+    document.body.classList.remove('v2-panel-show');
     return;
   }
 
@@ -1468,22 +1474,6 @@ window.addEventListener('message', e=>{
     return;
   }
 });
-
-window.setCanvasEditMode = function setCanvasEditMode(enabled){
-  canvasEditMode = !!enabled;
-  sendCanvasMode();
-};
-
-function sendCanvasMode(){
-  if(!previewReady) return;
-  const frame=document.getElementById('preview-frame');
-  try{
-    frame.contentWindow.postMessage({
-      type:'canvas-edit-mode',
-      enabled: !!canvasEditMode
-    }, '*');
-  }catch(e){}
-}
 
 function syncCanvasSelectionToEditor(payload){
   const scope = payload.scope || '';
@@ -1666,7 +1656,6 @@ function pushPreview(){
       content:C,
       projects:projects
     },'*');
-    sendCanvasMode();
     setTimeout(sendPreviewNav, 100);
   }catch(e){}
 }
