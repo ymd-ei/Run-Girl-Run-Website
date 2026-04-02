@@ -31,6 +31,8 @@ let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
 let canvasSelectedBlock = null;
 let canvasPendingMediaTarget = null;
+const isPreviewEmbed = new URLSearchParams(location.search).has('preview') && window.parent !== window;
+let navDrivenOpen = false;
 
 const CANVAS_ADD_BLOCK_TYPES = [
   ['text-md', 'Text'],
@@ -597,7 +599,9 @@ function applyPreviewNavigation(message) {
     const bd = document.getElementById('bd');
     if (workPanel) workPanel.classList.add('open');
     if (bd) bd.classList.add('open');
+    navDrivenOpen = true;
     window.display?.openProject?.(message.projectId);
+    navDrivenOpen = false;
   }
 }
 
@@ -1210,12 +1214,14 @@ function setupEventListeners() {
         bd.classList.add('project-open');
       }
 
-      // Update URL bar so the link is shareable
-      const url = new URL(window.location);
-      url.searchParams.set('project', id);
-      history.pushState({ project: id }, '', url);
-
-      if (window.parent && window.parent !== window) {
+      if (!isPreviewEmbed) {
+        // Update URL bar so the link is shareable
+        const url = new URL(window.location);
+        url.searchParams.set('project', id);
+        history.pushState({ project: id }, '', url);
+      } else if (!navDrivenOpen) {
+        // Only notify parent when the user clicked a project card directly,
+        // not when the parent sent a preview-nav that triggered openProject.
         window.parent.postMessage({ type: 'canvas-select-project', payload: { projectId: id } }, '*');
       }
     },
@@ -1235,10 +1241,12 @@ function setupEventListeners() {
         if (!anyPanelOpen) bd.classList.remove('open');
       }
 
-      // Clear project from URL bar
-      const url = new URL(window.location);
-      url.searchParams.delete('project');
-      history.pushState({}, '', url);
+      if (!isPreviewEmbed) {
+        // Clear project from URL bar
+        const url = new URL(window.location);
+        url.searchParams.delete('project');
+        history.pushState({}, '', url);
+      }
     },
 
     copyShareLink() {
