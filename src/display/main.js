@@ -95,19 +95,15 @@ function ensureCanvasEditStyles() {
 
     #canvas-block-inspector {
       display: none;
-      position: fixed;
-      left: 1rem;
-      top: 1rem;
-      width: min(360px, calc(100vw - 2rem));
-      max-height: calc(100vh - 2rem);
-      overflow: auto;
+      width: 100%;
       padding: 1rem;
       border: 1px solid rgba(0, 0, 0, 0.15);
       background: rgba(247, 243, 236, 0.96);
       color: #17130f;
-      z-index: 1200;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
       backdrop-filter: blur(12px);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
 
     body.canvas-edit-enabled #canvas-block-inspector.has-selection {
@@ -1614,12 +1610,24 @@ function getCanvasProject(scope, projectId = '') {
 
 function ensureCanvasBlockInspector() {
   let inspector = document.getElementById('canvas-block-inspector');
-  if (inspector) return inspector;
-
-  inspector = document.createElement('div');
-  inspector.id = 'canvas-block-inspector';
-  document.body.appendChild(inspector);
+  if (!inspector) {
+    inspector = document.createElement('div');
+    inspector.id = 'canvas-block-inspector';
+  }
   return inspector;
+}
+
+function positionCanvasBlockInspector() {
+  if (!canvasSelectedBlock) return;
+  const shell = document.querySelector(`[data-canvas-block-shell="true"][data-canvas-scope="${canvasSelectedBlock.scope}"][data-canvas-block-id="${canvasSelectedBlock.blockId}"]`);
+  if (!shell) return;
+  
+  const existing = document.getElementById('canvas-block-inspector');
+  if (existing && existing.parentNode) {
+    existing.parentNode.removeChild(existing);
+  }
+  
+  shell.parentNode?.insertBefore(ensureCanvasBlockInspector(), shell.nextSibling);
 }
 
 function syncCanvasBlockSelectionUI() {
@@ -1683,9 +1691,11 @@ function rerenderCanvasScope(scope) {
     ppb.scrollTop = scrollTop;
     syncCanvasBlockSelectionUI();
     renderCanvasBlockInspector();
+    positionCanvasBlockInspector();
   }
 }
-
+positionCanvasBlockInspector();
+  
 function selectCanvasBlock(selection) {
   if (!selection?.scope || !selection?.blockId) return;
 
@@ -1702,7 +1712,10 @@ function selectCanvasBlock(selection) {
 
 function clearCanvasBlockSelection() {
   canvasSelectedBlock = null;
-  syncCanvasBlockSelectionUI();
+  const inspector = document.getElementById('canvas-block-inspector');
+  if (inspector && inspector.parentNode) {
+    inspector.parentNode.removeChild(inspector);
+  }
   renderCanvasBlockInspector();
 }
 
