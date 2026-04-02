@@ -79,6 +79,17 @@ function ensureCanvasEditStyles() {
       outline-offset: 6px;
     }
 
+    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] {
+      padding: 0.75rem;
+      margin: -0.75rem;
+      border-radius: 0.75rem;
+    }
+
+    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] iframe,
+    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] video {
+      pointer-events: none;
+    }
+
     body.canvas-edit-enabled .canvas-block-shell.canvas-block-selected {
       outline: 3px solid var(--color-accent, #5e30eb);
       outline-offset: 6px;
