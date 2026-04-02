@@ -1441,6 +1441,11 @@ window.addEventListener('message', e=>{
     applyCanvasCommit(e.data.payload||{});
     return;
   }
+
+  if(e.data&&e.data.type==='canvas-add-block'){
+    applyCanvasAddBlock(e.data.payload||{});
+    return;
+  }
 });
 
 window.setCanvasEditMode = function setCanvasEditMode(enabled){
@@ -1509,6 +1514,15 @@ function applyCanvasCommit(payload){
     const projectId = payload.projectId || scope.replace('proj-','');
     if(currentPage==='project' && currentProjectId===projectId) rerenderBlocks(scope);
   }
+}
+
+function applyCanvasAddBlock(payload){
+  const scope = payload.scope || '';
+  const blockType = payload.blockType || '';
+  if(!scope || !blockType) return;
+
+  syncCanvasSelectionToEditor(payload);
+  addBlock(scope, blockType);
 }
 
 function initPreview(){

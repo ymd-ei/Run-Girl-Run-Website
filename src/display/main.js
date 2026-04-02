@@ -30,6 +30,23 @@ let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
 
+const CANVAS_ADD_BLOCK_TYPES = [
+  ['text-md', 'Text'],
+  ['image', 'Image'],
+  ['twocol', 'Two Col'],
+  ['quote', 'Quote'],
+  ['video', 'Video'],
+  ['stats', 'Stats'],
+  ['skills', 'Skills'],
+  ['callout', 'Callout'],
+  ['gallery', 'Gallery'],
+  ['process', 'Process'],
+  ['cta', 'CTA'],
+  ['beforeafter', 'Before/After'],
+  ['faq', 'FAQ'],
+  ['divider', 'Divider']
+];
+
 function ensureCanvasEditStyles() {
   if (document.getElementById('canvas-edit-style')) return;
 
@@ -48,6 +65,58 @@ function ensureCanvasEditStyles() {
     .canvas-edit-active {
       outline: 1px solid rgba(255, 255, 255, 0.95) !important;
       background: rgba(255, 255, 255, 0.08);
+    }
+
+    .canvas-add-dock {
+      display: none;
+      position: relative;
+      margin: 1.25rem 0 0;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    body.canvas-edit-enabled .canvas-add-dock {
+      display: block;
+    }
+
+    .canvas-add-toggle {
+      border: 1px dashed rgba(0, 0, 0, 0.22);
+      background: rgba(255, 255, 255, 0.72);
+      color: rgba(0, 0, 0, 0.7);
+      font: inherit;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.58rem 0.85rem;
+      cursor: pointer;
+    }
+
+    .canvas-add-menu {
+      display: none;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+
+    .canvas-add-dock.open .canvas-add-menu {
+      display: grid;
+    }
+
+    .canvas-add-item {
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      background: rgba(255, 255, 255, 0.94);
+      color: rgba(0, 0, 0, 0.78);
+      font: inherit;
+      font-size: 0.74rem;
+      padding: 0.58rem 0.65rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .canvas-add-item:hover,
+    .canvas-add-toggle:hover {
+      border-color: rgba(0, 0, 0, 0.38);
+      color: rgba(0, 0, 0, 0.92);
     }
   `;
 
@@ -569,7 +638,9 @@ function renderWorkSection({ showAll = false } = {}) {
 function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
-    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' });
+    aboutEl.innerHTML =
+      renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' }) +
+      renderCanvasAddDock('about');
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -977,10 +1048,13 @@ function setupEventListeners() {
       </div>`;
 
       if (ppb) {
-        ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
-          scope: 'proj-' + id,
-          projectId: id
-        });
+        ppb.innerHTML =
+          heroHTML +
+          renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
+            scope: 'proj-' + id,
+            projectId: id
+          }) +
+          renderCanvasAddDock('proj-' + id, id);
       }
 
       // Fetch like count
@@ -1360,6 +1434,16 @@ function getCanvasEditPayload(el) {
   };
 }
 
+function renderCanvasAddDock(scope, projectId = '') {
+  const projectAttr = projectId ? ` data-canvas-project-id="${projectId}"` : '';
+  const items = CANVAS_ADD_BLOCK_TYPES.map(
+    ([type, label]) =>
+      `<button class="canvas-add-item" type="button" data-canvas-add-type="${type}" data-canvas-scope="${scope}"${projectAttr}>${label}</button>`
+  ).join('');
+
+  return `<div class="canvas-add-dock" data-canvas-add-dock data-canvas-scope="${scope}"${projectAttr}><button class="canvas-add-toggle" type="button" data-canvas-add-toggle>+ Add block</button><div class="canvas-add-menu">${items}</div></div>`;
+}
+
 function startCanvasEdit(el) {
   if (!canvasEditEnabled || !el) return;
   if (canvasEditActiveElement === el) return;
@@ -1422,6 +1506,37 @@ function setupCanvasEditListeners() {
   ensureCanvasEditStyles();
 
   document.addEventListener('click', e => {
+    const addToggle = e.target.closest('[data-canvas-add-toggle]');
+    if (addToggle) {
+      if (!canvasEditEnabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const dock = addToggle.closest('[data-canvas-add-dock]');
+      document.querySelectorAll('[data-canvas-add-dock].open').forEach(entry => {
+        if (entry !== dock) entry.classList.remove('open');
+      });
+      if (dock) dock.classList.toggle('open');
+      return;
+    }
+
+    const addTypeBtn = e.target.closest('[data-canvas-add-type]');
+    if (addTypeBtn) {
+      if (!canvasEditEnabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const dock = addTypeBtn.closest('[data-canvas-add-dock]');
+      if (dock) dock.classList.remove('open');
+      window.parent.postMessage({
+        type: 'canvas-add-block',
+        payload: {
+          scope: addTypeBtn.getAttribute('data-canvas-scope') || '',
+          projectId: addTypeBtn.getAttribute('data-canvas-project-id') || '',
+          blockType: addTypeBtn.getAttribute('data-canvas-add-type') || ''
+        }
+      }, '*');
+      return;
+    }
+
     if (!canvasEditEnabled) return;
     const target = e.target.closest('[data-canvas-editable="true"]');
     if (!target) return;
@@ -1429,6 +1544,11 @@ function setupCanvasEditListeners() {
     e.preventDefault();
     e.stopPropagation();
     startCanvasEdit(target);
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-canvas-add-dock]')) return;
+    document.querySelectorAll('[data-canvas-add-dock].open').forEach(entry => entry.classList.remove('open'));
   });
 
   document.addEventListener('keydown', e => {
