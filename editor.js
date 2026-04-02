@@ -1460,7 +1460,10 @@ window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='canvas-select-project'){
     const projectId = e.data.payload?.projectId;
     if(projectId && (currentPage!=='project' || currentProjectId!==projectId)){
-      showProject(projectId);
+      showPage('project');
+      currentProjectId=projectId;
+      const el=document.getElementById('nav-proj-'+projectId); if(el)el.classList.add('active');
+      renderProject(projectId);
     }
     return;
   }
