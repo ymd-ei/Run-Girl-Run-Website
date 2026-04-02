@@ -8,11 +8,10 @@ function setCanvasButtons(enabled) {
 }
 
 function setFocusPreviewButton(enabled) {
-  const toggle = document.getElementById('focus-preview-toggle');
-  if (!toggle) return;
-
-  toggle.classList.toggle('active', !!enabled);
-  toggle.textContent = enabled ? 'Show Panel' : 'Focus Preview';
+  const label = document.getElementById('focus-preview-floating-label');
+  const button = document.getElementById('focus-preview-floating');
+  if (button) button.classList.toggle('active', !!enabled);
+  if (label) label.textContent = enabled ? 'Show Panel' : 'Hide Panel';
 }
 
 function applyFocusPreview(enabled) {
@@ -52,7 +51,6 @@ function waitForLegacyEditorReady(attempts = 160) {
 function wireModeButtons() {
   const onBtn = document.getElementById('canvas-mode-on');
   const offBtn = document.getElementById('canvas-mode-off');
-  const focusBtn = document.getElementById('focus-preview-toggle');
   const floatingFocusBtn = document.getElementById('focus-preview-floating');
 
   const toggleFocusPreview = () => {
@@ -65,9 +63,6 @@ function wireModeButtons() {
   }
   if (offBtn) {
     offBtn.addEventListener('click', () => applyCanvasMode(false));
-  }
-  if (focusBtn) {
-    focusBtn.addEventListener('click', toggleFocusPreview);
   }
   if (floatingFocusBtn) {
     floatingFocusBtn.addEventListener('click', toggleFocusPreview);
