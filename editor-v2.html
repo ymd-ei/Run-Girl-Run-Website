@@ -61,8 +61,8 @@
     <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>
     <div class="v2-chip"><span class="v2-dot"></span>Editor v2</div>
     <div class="mode-toggle-row">
-      <button class="mode-toggle-btn active" id="canvas-mode-on" type="button">Canvas Edit</button>
-      <button class="mode-toggle-btn" id="canvas-mode-off" type="button">Panel Only</button>
+      <button class="mode-toggle-btn active" id="canvas-mode-on" type="button" onclick="window.__editorV2SetMode && window.__editorV2SetMode(true)">Canvas Edit</button>
+      <button class="mode-toggle-btn" id="canvas-mode-off" type="button" onclick="window.__editorV2SetMode && window.__editorV2SetMode(false)">Panel Only</button>
     </div>
     <div class="sb-section">Global</div>
     <button class="ni active" onclick="showPage('global')" id="nav-global"><div class="dot"></div>Settings</button>
