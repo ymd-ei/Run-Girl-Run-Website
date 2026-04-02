@@ -13,10 +13,102 @@
   "published": true,
   "blocks": [
     {
-      "id": "b2",
+      "id": "b17751471149354dlf",
       "type": "text-lg",
       "content": "Greetings from Run Girl Run Studio!",
       "align": "left"
+    },
+    {
+      "id": "b1775147114935p4ab",
+      "type": "text-md",
+      "content": "Welcome to Run Girl Run.",
+      "align": "left"
+    },
+    {
+      "id": "b1775147114935jjog",
+      "type": "text-md",
+      "content": "This is an online portfolio that documents all the work we have done. <br> Now, I will admit is't still a little sparse with content.",
+      "align": "left"
+    },
+    {
+      "id": "b1775147114935w8pg",
+      "type": "quote",
+      "content": "But it is intentional",
+      "align": "left"
+    },
+    {
+      "id": "b17751471149351oup",
+      "type": "text-sm",
+      "content": "CONTENT ROLLOUT",
+      "align": "left"
+    },
+    {
+      "id": "b177514711493604pj",
+      "type": "text-md",
+      "content": "We are currently in the process of formatting all the different projects we have done, gathering the necessary media assets and creating the writeup for them.<br>But this process takes a while to do.",
+      "align": "left"
+    },
+    {
+      "id": "b17751471149365eri",
+      "type": "callout",
+      "tone": "warning",
+      "title": "As such we will be doing them in stages.",
+      "content": ""
+    },
+    {
+      "id": "b1775147114936ujqu",
+      "type": "process",
+      "steps": [
+        {
+          "title": "Creative Writing",
+          "date": "",
+          "content": "Create a rough draft of the write up, giving as much information as possible.",
+          "imageAlt": "",
+          "image": ""
+        },
+        {
+          "title": "Asset Finding",
+          "date": "",
+          "content": "Collecting all of the necessary assets",
+          "imageAlt": "",
+          "image": ""
+        },
+        {
+          "title": "Asset Building + Formatting",
+          "date": "",
+          "content": "In order to serve the content as lightweight as possible, we have to format everything to be web ready so that can load ast fast as possible for a huge majority of the audience.",
+          "imageAlt": "",
+          "image": ""
+        },
+        {
+          "title": "Delivery",
+          "date": "",
+          "content": "After grabbing all of the assets, while working on the rough copy in tandem, a project is now ready to be published on the site",
+          "imageAlt": "",
+          "image": ""
+        }
+      ]
+    },
+    {
+      "id": "b1775147114936tdj5",
+      "type": "text-md",
+      "content": "Seeing as there are a lot of steps required to deliver all of this, there will be a huge backlog to go through.",
+      "align": "left"
+    },
+    {
+      "id": "b1775147114936ngoa",
+      "type": "quote",
+      "content": "Which means there will be plenty to look forward to!!!",
+      "align": "left"
+    },
+    {
+      "id": "b1775147114936syc0",
+      "type": "cta",
+      "headline": "Ready for more?",
+      "body": "In the meantime if you are interested in us and want to learn more, you can visit out instagram page where we will be more active. <br> Enjoy your stay!",
+      "buttonLabel": "Instagram",
+      "buttonUrl": "https://instagram.com/me_are_jei",
+      "tone": "default"
     }
   ]
 }
