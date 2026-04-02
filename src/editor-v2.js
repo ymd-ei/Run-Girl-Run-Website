@@ -53,6 +53,12 @@ function wireModeButtons() {
   const onBtn = document.getElementById('canvas-mode-on');
   const offBtn = document.getElementById('canvas-mode-off');
   const focusBtn = document.getElementById('focus-preview-toggle');
+  const floatingFocusBtn = document.getElementById('focus-preview-floating');
+
+  const toggleFocusPreview = () => {
+    const next = !document.body.classList.contains('v2-focus-preview');
+    applyFocusPreview(next);
+  };
 
   if (onBtn) {
     onBtn.addEventListener('click', () => applyCanvasMode(true));
@@ -61,10 +67,10 @@ function wireModeButtons() {
     offBtn.addEventListener('click', () => applyCanvasMode(false));
   }
   if (focusBtn) {
-    focusBtn.addEventListener('click', () => {
-      const next = !document.body.classList.contains('v2-focus-preview');
-      applyFocusPreview(next);
-    });
+    focusBtn.addEventListener('click', toggleFocusPreview);
+  }
+  if (floatingFocusBtn) {
+    floatingFocusBtn.addEventListener('click', toggleFocusPreview);
   }
 
   setCanvasButtons(true);

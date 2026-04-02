@@ -73,8 +73,37 @@
     background: rgba(111, 208, 140, .1);
   }
 
+  .focus-preview-floating {
+    display: none;
+    position: fixed;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1200;
+    padding: .65rem .8rem;
+    border: 1px solid rgba(111, 208, 140, .45);
+    border-radius: 999px;
+    background: rgba(15, 15, 15, .92);
+    color: #dff8e7;
+    font-family: inherit;
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    box-shadow: 0 14px 40px rgba(0,0,0,.28);
+    cursor: pointer;
+  }
+
+  .focus-preview-floating:hover {
+    border-color: rgba(111, 208, 140, .72);
+    background: rgba(20, 20, 20, .98);
+  }
+
   body.v2-focus-preview #app {
     grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  body.v2-focus-preview #focus-preview-toggle {
+    display: none;
   }
 
   body.v2-focus-preview #main {
@@ -85,9 +114,16 @@
     grid-column: 2;
     border-left-color: rgba(255,255,255,.08);
   }
+
+  body.v2-focus-preview .focus-preview-floating {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>
 </head>
 <body>
+<button id="focus-preview-floating" class="focus-preview-floating" type="button">Show Panel</button>
 <div id="app">
   <div id="sidebar">
     <div class="sb-logo"><span id="sb-name">YOUR NAME</span>Portfolio Editor</div>

@@ -71,18 +71,15 @@ function ensureCanvasEditStyles() {
 
     body.canvas-edit-enabled .canvas-block-shell {
       position: relative;
+      padding: 0.75rem;
+      margin: -0.75rem;
+      border-radius: 0.75rem;
       transition: box-shadow 0.18s ease, outline-color 0.18s ease;
     }
 
     body.canvas-edit-enabled .canvas-block-shell:hover {
       outline: 2px dashed rgba(var(--accent-rgb, 94, 48, 235), 0.55);
       outline-offset: 6px;
-    }
-
-    body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] {
-      padding: 0.75rem;
-      margin: -0.75rem;
-      border-radius: 0.75rem;
     }
 
     body.canvas-edit-enabled .canvas-block-shell[data-canvas-block-type="video"] iframe,
