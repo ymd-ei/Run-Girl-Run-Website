@@ -954,7 +954,7 @@ function setupEventListeners() {
       });
     },
 
-    async openProject(id) {
+    async openProject(id, options) {
       const ppb = document.getElementById('ppb');
       if (ppb) {
         ppb.innerHTML = '<p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em">Loading project...</p>';
@@ -1022,12 +1022,14 @@ function setupEventListeners() {
       }
 
       // Update URL bar so the link is shareable
-      const url = new URL(window.location);
-      url.searchParams.set('project', id);
-      history.pushState({ project: id }, '', url);
+      if (!options?.skipHistory) {
+        const url = new URL(window.location);
+        url.searchParams.set('project', id);
+        history.pushState({ project: id }, '', url);
+      }
     },
 
-    closeProject() {
+    closeProject(options) {
       const pp = document.getElementById('pp');
       if (pp) {
         suspendMediaIn(pp);
@@ -1043,9 +1045,11 @@ function setupEventListeners() {
       }
 
       // Clear project from URL bar
-      const url = new URL(window.location);
-      url.searchParams.delete('project');
-      history.pushState({}, '', url);
+      if (!options?.skipHistory) {
+        const url = new URL(window.location);
+        url.searchParams.delete('project');
+        history.pushState({}, '', url);
+      }
     },
 
     copyShareLink() {
@@ -1232,6 +1236,19 @@ function setupEventListeners() {
     }
   });
 
+  // Browser back/forward navigation
+  window.addEventListener('popstate', () => {
+    const id = new URLSearchParams(location.search).get('project');
+    const pp = document.getElementById('pp');
+    const isOpen = pp && pp.classList.contains('open');
+
+    if (id && !isOpen) {
+      window.display?.openProject(id, { skipHistory: true });
+    } else if (!id && isOpen) {
+      window.display?.closeProject({ skipHistory: true });
+    }
+  });
+
   // Contact panel scroll effects
   const contactWrapper = document.getElementById('contact-wrapper');
   if (contactWrapper) {
@@ -1330,6 +1347,7 @@ function setupEditorPreviewBridge() {
   }
 
   window.addEventListener('message', e => {
+    if (e.origin !== location.origin) return;
     if (e.data.type === 'preview-data') {
       Object.assign(globalState, e.data.content);
       projectCache.clear();
