@@ -88,16 +88,17 @@ export function buildNav(state, onProjectClick) {
       if (!project) return '';
 
       return `
-        <button class="ni" id="nav-proj-${projectId}" 
-          draggable="true"
-          ondragstart="window.dragDropState?.onNavProjectDragStart(event, '${projectId}')"
+        <button class="ni" id="nav-proj-${projectId}"
+          onclick="window.events?.onProjectNavClick?.('${projectId}')"
           ondragover="window.dragDropState?.onNavProjectDragOver(event)"
           ondragend="window.dragDropState?.onNavProjectDragEnd(event)"
           ondrop="window.dragDropState?.onNavProjectDrop(event, '${projectId}')"
           ondragleave="window.dragDropState?.onNavProjectDragLeave(event)">
-          <span style="color:var(--muted);font-size:.7rem;margin-right:.2rem;cursor:grab">&#9776;</span>
+          <span class="drag-handle" draggable="true"
+            ondragstart="window.dragDropState?.onNavProjectDragStart(event, '${projectId}')"
+            onclick="event.stopPropagation()">&#9776;</span>
           <div class="dot"></div>
-          <span onclick="window.events?.onProjectNavClick?.('${projectId}')" style="flex:1;text-align:left">${project.title}</span>
+          <span style="flex:1;text-align:left">${project.title}</span>
           <span class="badge">${project.type || 'motion'}</span>
         </button>
       `;

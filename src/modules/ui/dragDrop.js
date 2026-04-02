@@ -15,12 +15,14 @@ export const dragDropState = {
   onNavProjectDragStart(event, projectId) {
     this.currentDragId = projectId;
     this.dragType = 'project';
-    event.currentTarget.style.opacity = '0.4';
+    const btn = event.currentTarget.closest('.ni');
+    if (btn) btn.style.opacity = '0.4';
     event.dataTransfer.effectAllowed = 'move';
   },
 
   onNavProjectDragEnd(event) {
-    event.currentTarget.style.opacity = '1';
+    const btn = event.currentTarget.closest('.ni');
+    if (btn) btn.style.opacity = '1';
     this.currentDragId = null;
     this.dragType = null;
     document.querySelectorAll('.ni').forEach(el => {
@@ -31,7 +33,7 @@ export const dragDropState = {
   onNavProjectDragOver(event) {
     event.preventDefault();
     if (this.dragType !== 'project' || !this.currentDragId) return;
-    document.querySelectorAll('.ni[draggable]').forEach(el => {
+    document.querySelectorAll('#project-nav .ni').forEach(el => {
       el.classList.remove('proj-drag-over');
     });
     event.currentTarget.classList.add('proj-drag-over');

@@ -275,7 +275,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .bk.drag-over-top{border-top:2px solid var(--accent)}
 .bk.drag-over-bottom{border-bottom:2px solid var(--accent)}
 .ni.proj-drag-over{border-left-color:var(--accent);background:var(--surface2)}
-.ni[draggable=true]{cursor:grab}
+.ni{cursor:pointer}
+.ni .drag-handle{color:var(--muted);font-size:.7rem;margin-right:.2rem;cursor:grab;flex-shrink:0}
 
 /* ─────────────────────────────────────────
    UNDO BAR
