@@ -110,6 +110,17 @@
       "type": "text-sm",
       "content": "Actively working on many different projects. <br><I> Please, enjoy your stay.</I>",
       "align": "center"
+    },
+    {
+      "id": "b17751839246597hpd",
+      "type": "alpha-art",
+      "src": "media/doog_loop-smoller.png",
+      "alt": "",
+      "color": "#5e30eb",
+      "bg": "transparent",
+      "scale": 0.3,
+      "fit": "contain",
+      "ratio": "16/9"
     }
   ],
   "siteTitle": "Run Girl Run",
