@@ -87,7 +87,9 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
         block.color || '#5e30eb'
       };--alpha-bg:${block.bg || 'transparent'};--alpha-fit:${
         block.fit === 'cover' ? 'cover' : 'contain'
-      };--alpha-ratio:${block.ratio || '16/9'}"><div class="bl-alpha-art-mask"></div></div>`;
+      };--alpha-ratio:${block.ratio || '16/9'}"><img class="bl-alpha-art-probe" src="${
+        block.src
+      }" alt="" aria-hidden="true" onload="if(this.naturalWidth&&this.naturalHeight){this.parentElement.style.setProperty('--alpha-natural-width',this.naturalWidth+'px');this.parentElement.style.setProperty('--alpha-ratio',this.naturalWidth+' / '+this.naturalHeight);}"><div class="bl-alpha-art-mask"></div></div>`;
 
     case 'twocol':
       const leftHTML = renderBlock(block.left || {}, theme);
