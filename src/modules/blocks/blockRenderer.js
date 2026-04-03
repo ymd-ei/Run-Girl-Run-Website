@@ -81,13 +81,15 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       if (!block.src) {
         return `<div class="bl-alpha-art empty">${block.alt || 'Alpha artwork'}</div>`;
       }
+      const rawScale = Number(block.scale);
+      const safeScale = Number.isFinite(rawScale) ? clamp(rawScale, 0.1, 2) : 1;
       return `<div class="bl-alpha-art" role="img" aria-label="${
         block.alt || 'Alpha artwork'
       }" style="--alpha-src:url('${block.src}');--alpha-color:${
         block.color || '#5e30eb'
       };--alpha-bg:${block.bg || 'transparent'};--alpha-fit:${
         block.fit === 'cover' ? 'cover' : 'contain'
-      };--alpha-ratio:${block.ratio || '16/9'}"><img class="bl-alpha-art-probe" src="${
+      };--alpha-scale:${safeScale};--alpha-ratio:${block.ratio || '16/9'}"><img class="bl-alpha-art-probe" src="${
         block.src
       }" alt="" aria-hidden="true" onload="if(this.naturalWidth&&this.naturalHeight){this.parentElement.style.setProperty('--alpha-natural-width',this.naturalWidth+'px');this.parentElement.style.setProperty('--alpha-ratio',this.naturalWidth+' / '+this.naturalHeight);}"><div class="bl-alpha-art-mask"></div></div>`;
 

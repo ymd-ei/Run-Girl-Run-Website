@@ -698,6 +698,7 @@ function blockEditorHTML(scope, b, i, total){
   } else if(b.type==='alpha-art'){
     const dzStableId = 'alphadz_'+b.id;
     const tintPresets = ['#5e30eb','#ff5a1f','#1a1714','#ffffff','#16a085','#f5b700'];
+    const scaleValue = Number.isFinite(Number(b.scale)) ? Number(b.scale) : 1;
     body=`
       <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
         ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media/projects', 'alpha-art.png', dzStableId)}
@@ -710,6 +711,12 @@ function blockEditorHTML(scope, b, i, total){
       <div class="field"><label>Tint Presets</label>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap">
           ${tintPresets.map(color=>`<button class="al-btn" title="Use ${color}" style="padding:.2rem .45rem;border-color:var(--border)" onclick="updateBlock('${scope}','${b.id}','color','${color}')"><span style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${color};border:1px solid rgba(0,0,0,.2)"></span></button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Scale</label>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <input type="range" min="0.1" max="2" step="0.05" value="${scaleValue}" style="flex:1" oninput="updateBlock('${scope}','${b.id}','scale',+this.value);this.nextElementSibling.textContent=(+this.value).toFixed(2)+'x'">
+          <span style="font-size:.76rem;color:var(--muted);min-width:3.4rem;text-align:right">${scaleValue.toFixed(2)}x</span>
         </div>
       </div>
       <div class="row2">
@@ -919,7 +926,7 @@ function getLegacyBlockDefaults(id){
     'text-md':{id,type:'text-md',content:'',align:'left'},
     'text-lg':{id,type:'text-lg',content:'',align:'left'},
     'image':{id,type:'image',src:'',alt:''},
-    'alpha-art':{id,type:'alpha-art',src:'',alt:'',color:'#5e30eb',bg:'transparent',fit:'contain',ratio:'16/9'},
+    'alpha-art':{id,type:'alpha-art',src:'',alt:'',color:'#5e30eb',bg:'transparent',scale:1,fit:'contain',ratio:'16/9'},
     'twocol':{id,type:'twocol',left:{type:'image',src:'',alt:''},right:{type:'text-md',content:'',align:'left'}},
     'quote':{id,type:'quote',content:'',align:'left'},
     'video':{id,type:'video',src:''},
@@ -2206,6 +2213,7 @@ function blocksToMarkdown(blocks){
       if((b.alt||'').trim()) out.push(`alt: ${(b.alt||'').trim()}`);
       out.push(`color: ${(b.color||'#5e30eb').trim()}`);
       out.push(`bg: ${(b.bg||'transparent').trim()}`);
+      out.push(`scale: ${Number.isFinite(Number(b.scale)) ? Number(b.scale) : 1}`);
       out.push(`fit: ${((b.fit||'contain')==='cover'?'cover':'contain')}`);
       out.push(`ratio: ${(b.ratio||'16/9').trim()}`);
       out.push(':::');
@@ -2334,6 +2342,7 @@ function parseMarkdownToBlocks(md){
         alt:'',
         color:'#5e30eb',
         bg:'transparent',
+        scale:1,
         fit:'contain',
         ratio:'16/9'
       };
@@ -2348,6 +2357,10 @@ function parseMarkdownToBlocks(md){
           else if(key === 'alt') block.alt = value;
           else if(key === 'color') block.color = value;
           else if(key === 'bg') block.bg = value;
+          else if(key === 'scale') {
+            const parsed = parseFloat(value);
+            block.scale = Number.isFinite(parsed) ? parsed : 1;
+          }
           else if(key === 'fit') block.fit = value.toLowerCase() === 'cover' ? 'cover' : 'contain';
           else if(key === 'ratio') block.ratio = value;
         }

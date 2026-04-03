@@ -43,6 +43,7 @@ const BLOCK_DEFAULTS = {
     alt: '',
     color: '#5e30eb',
     bg: 'transparent',
+    scale: 1,
     fit: 'contain',
     ratio: '16/9'
   },
@@ -155,6 +156,11 @@ export function normalizeBlock(block) {
   if (normalized.type === 'beforeafter') {
     const position = Number(normalized.position);
     normalized.position = Number.isFinite(position) ? Math.max(0, Math.min(100, position)) : 67;
+  }
+
+  if (normalized.type === 'alpha-art') {
+    const scale = Number(normalized.scale);
+    normalized.scale = Number.isFinite(scale) ? Math.max(0.1, Math.min(2, scale)) : 1;
   }
 
   return normalized;

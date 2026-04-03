@@ -30,6 +30,7 @@ src: media/projects/fox-alpha.png
 alt: Fox mark
 color: #ff5a1f
 bg: transparent
+scale: 1
 fit: contain
 ratio: 16/9
 :::

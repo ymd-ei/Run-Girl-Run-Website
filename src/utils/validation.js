@@ -212,6 +212,7 @@ export function parseMarkdownToBlocks(md) {
         alt: '',
         color: '#5e30eb',
         bg: 'transparent',
+        scale: 1,
         fit: 'contain',
         ratio: '16/9'
       };
@@ -226,6 +227,10 @@ export function parseMarkdownToBlocks(md) {
           else if (key === 'alt') block.alt = value;
           else if (key === 'color') block.color = value;
           else if (key === 'bg') block.bg = value;
+          else if (key === 'scale') {
+            const parsed = parseFloat(value);
+            block.scale = Number.isFinite(parsed) ? parsed : 1;
+          }
           else if (key === 'fit') block.fit = value.toLowerCase() === 'cover' ? 'cover' : 'contain';
           else if (key === 'ratio') block.ratio = value;
         }

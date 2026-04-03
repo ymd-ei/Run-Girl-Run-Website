@@ -205,6 +205,7 @@ export function getBlockBodyHTML(block, scope) {
   if (type === 'alpha-art') {
     const dzStableId = 'alphadz_' + block.id;
     const tintPresets = ['#5e30eb', '#ff5a1f', '#1a1714', '#ffffff', '#16a085', '#f5b700'];
+    const scaleValue = Number.isFinite(Number(block.scale)) ? Number(block.scale) : 1;
     return `
       <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
         <div id="${dzStableId}">
@@ -223,6 +224,12 @@ export function getBlockBodyHTML(block, scope) {
       <div class="field"><label>Tint Presets</label>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap">
           ${tintPresets.map(color => `<button class="al-btn" title="Use ${color}" style="padding:.2rem .45rem;border-color:var(--border)" onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'color', '${color}')"><span style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${color};border:1px solid rgba(0,0,0,.2)"></span></button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Scale</label>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <input type="range" min="0.1" max="2" step="0.05" value="${scaleValue}" style="flex:1" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'scale', +this.value);this.nextElementSibling.textContent=(+this.value).toFixed(2)+'x'">
+          <span style="font-size:.76rem;color:var(--muted);min-width:3.4rem;text-align:right">${scaleValue.toFixed(2)}x</span>
         </div>
       </div>
       <div class="row2">
