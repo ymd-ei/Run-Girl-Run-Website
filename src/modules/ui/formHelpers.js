@@ -204,6 +204,7 @@ export function getBlockBodyHTML(block, scope) {
 
   if (type === 'alpha-art') {
     const dzStableId = 'alphadz_' + block.id;
+    const tintPresets = ['#5e30eb', '#ff5a1f', '#1a1714', '#ffffff', '#16a085', '#f5b700'];
     return `
       <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
         <div id="${dzStableId}">
@@ -218,6 +219,11 @@ export function getBlockBodyHTML(block, scope) {
       <div class="row2">
         <div class="field"><label>Tint Color</label><input type="color" value="${block.color || '#5e30eb'}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'color', this.value)"></div>
         <div class="field"><label>Background</label><input value="${block.bg || 'transparent'}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'bg', this.value)"></div>
+      </div>
+      <div class="field"><label>Tint Presets</label>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          ${tintPresets.map(color => `<button class="al-btn" title="Use ${color}" style="padding:.2rem .45rem;border-color:var(--border)" onclick="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'color', '${color}')"><span style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${color};border:1px solid rgba(0,0,0,.2)"></span></button>`).join('')}
+        </div>
       </div>
       <div class="row2">
         <div class="field"><label>Fit</label>

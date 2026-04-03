@@ -697,6 +697,7 @@ function blockEditorHTML(scope, b, i, total){
       <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
   } else if(b.type==='alpha-art'){
     const dzStableId = 'alphadz_'+b.id;
+    const tintPresets = ['#5e30eb','#ff5a1f','#1a1714','#ffffff','#16a085','#f5b700'];
     body=`
       <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
         ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media/projects', 'alpha-art.png', dzStableId)}
@@ -705,6 +706,11 @@ function blockEditorHTML(scope, b, i, total){
       <div class="row2">
         <div class="field"><label>Tint Color</label><input type="color" value="${b.color||'#5e30eb'}" oninput="updateBlock('${scope}','${b.id}','color',this.value)"></div>
         <div class="field"><label>Background</label><input value="${b.bg||'transparent'}" placeholder="transparent" oninput="updateBlock('${scope}','${b.id}','bg',this.value)"></div>
+      </div>
+      <div class="field"><label>Tint Presets</label>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          ${tintPresets.map(color=>`<button class="al-btn" title="Use ${color}" style="padding:.2rem .45rem;border-color:var(--border)" onclick="updateBlock('${scope}','${b.id}','color','${color}')"><span style="display:inline-block;width:.8rem;height:.8rem;border-radius:50%;background:${color};border:1px solid rgba(0,0,0,.2)"></span></button>`).join('')}
+        </div>
       </div>
       <div class="row2">
         <div class="field"><label>Fit</label>
