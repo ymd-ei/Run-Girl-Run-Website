@@ -37,6 +37,15 @@ const BLOCK_DEFAULTS = {
   'text-md': { type: 'text-md', content: '', align: 'left' },
   'text-lg': { type: 'text-lg', content: '', align: 'left' },
   'image': { type: 'image', src: '', alt: '' },
+  'alpha-art': {
+    type: 'alpha-art',
+    src: '',
+    alt: '',
+    color: '#5e30eb',
+    bg: 'transparent',
+    fit: 'contain',
+    ratio: '16/9'
+  },
   'twocol': {
     type: 'twocol',
     left: { type: 'image', src: '', alt: '' },

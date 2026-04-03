@@ -24,6 +24,18 @@ When you import a `.md` file into a project, the parser converts markdown syntax
 ```
 → `video` block
 
+```
+:::alpha
+src: media/projects/fox-alpha.png
+alt: Fox mark
+color: #ff5a1f
+bg: transparent
+fit: contain
+ratio: 16/9
+:::
+```
+→ `alpha-art` block (recolorable alpha image)
+
 ## Divider
 
 ```

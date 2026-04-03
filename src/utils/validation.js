@@ -203,6 +203,39 @@ export function parseMarkdownToBlocks(md) {
       continue;
     }
 
+    // Alpha art block
+    if (/^:::alpha\s*$/i.test(line)) {
+      const block = {
+        id: uid(),
+        type: 'alpha-art',
+        src: '',
+        alt: '',
+        color: '#5e30eb',
+        bg: 'transparent',
+        fit: 'contain',
+        ratio: '16/9'
+      };
+      i++;
+      while (i < lines.length && !/^:::\s*$/.test(lines[i].trim())) {
+        const current = lines[i].trim();
+        const pair = current.match(/^([a-z]+)\s*:\s*(.+)$/i);
+        if (pair) {
+          const key = pair[1].toLowerCase();
+          const value = pair[2].trim();
+          if (key === 'src') block.src = value;
+          else if (key === 'alt') block.alt = value;
+          else if (key === 'color') block.color = value;
+          else if (key === 'bg') block.bg = value;
+          else if (key === 'fit') block.fit = value.toLowerCase() === 'cover' ? 'cover' : 'contain';
+          else if (key === 'ratio') block.ratio = value;
+        }
+        i++;
+      }
+      if (i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push(block);
+      continue;
+    }
+
     // Stats shorthand: lines like "148,000 | Combined Views"
     const statMatch = line.match(/^([\d,]+\+?)\s*\|\s*(.+)$/);
     if (statMatch) {
@@ -236,7 +269,17 @@ export function parseMarkdownToBlocks(md) {
         content,
         align: 'left'
       });
+      continue;
     }
+
+    // Fallback for unrecognized block-like lines so malformed markdown cannot stall parsing.
+    blocks.push({
+      id: uid(),
+      type: 'text-md',
+      content: inlineFormat(line.trim()),
+      align: 'left'
+    });
+    i++;
   }
 
   return blocks;

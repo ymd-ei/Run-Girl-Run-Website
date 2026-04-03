@@ -695,6 +695,27 @@ function blockEditorHTML(scope, b, i, total){
         <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','src',v),'${dzStableId}_p')">&#x1F5C2; Browse Media</button>
       </div>
       <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
+  } else if(b.type==='alpha-art'){
+    const dzStableId = 'alphadz_'+b.id;
+    body=`
+      <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
+        ${makeDropzone(b.src||'', v=>{ updateBlock(scope,b.id,'src',v); }, 'media/projects', 'alpha-art.png', dzStableId)}
+        <button class="add-btn" style="margin-top:.35rem" onclick="openMediaLibrary(v=>updateBlock('${scope}','${b.id}','src',v),'${dzStableId}_p')">&#x1F5C2; Browse Media</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Tint Color</label><input type="color" value="${b.color||'#5e30eb'}" oninput="updateBlock('${scope}','${b.id}','color',this.value)"></div>
+        <div class="field"><label>Background</label><input value="${b.bg||'transparent'}" placeholder="transparent" oninput="updateBlock('${scope}','${b.id}','bg',this.value)"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Fit</label>
+          <select onchange="updateBlock('${scope}','${b.id}','fit',this.value)">
+            <option value="contain" ${(b.fit||'contain')==='contain'?'selected':''}>Contain</option>
+            <option value="cover" ${(b.fit||'contain')==='cover'?'selected':''}>Cover</option>
+          </select>
+        </div>
+        <div class="field"><label>Aspect Ratio</label><input value="${b.ratio||'16/9'}" placeholder="16/9" oninput="updateBlock('${scope}','${b.id}','ratio',this.value)"></div>
+      </div>
+      <div class="field"><label>Alt Text</label><input value="${b.alt||''}" oninput="updateBlock('${scope}','${b.id}','alt',this.value)"></div>`;
   } else if(b.type==='twocol'){
     body=`<div class="twocol-editor">
       <div><div class="col-label">Left Column</div>${colBlockEditor(scope,b,'left')}</div>
@@ -867,13 +888,14 @@ function blockPreview(b){
   if(b.type==='process') return `${(b.steps||[]).length} step${(b.steps||[]).length===1?'':'s'}`;
   if(b.type==='gallery') return `${(b.items||[]).length} image${(b.items||[]).length===1?'':'s'} · ${(b.columns||2)} cols`;
   if(b.type==='image') return b.src||b.alt||'(empty)';
+  if(b.type==='alpha-art') return `Alpha Art · ${b.src||'(empty)'}`;
   if(b.type==='twocol') return 'Two columns';
   return (b.content||'').slice(0,60);
 }
 
 function blockMenuTypes(){
   return [
-    ['text-md','T','Text'],['image','&#x1F5BC;','Image'],['twocol','&#x25A6;','Two Col'],
+    ['text-md','T','Text'],['image','&#x1F5BC;','Image'],['alpha-art','&#x25D0;','Alpha Art'],['twocol','&#x25A6;','Two Col'],
     ['quote','"','Quote'],['video','&#x25B6;','Video'],['stats','#','Stats'],
     ['skills','%','Skills'],['callout','!','Callout'],['gallery','&#x1F5BC;','Gallery'],
     ['process','1.','Process'],['cta','&#x2192;','CTA'],['beforeafter','&#x21C4;','Before/After'],
@@ -891,6 +913,7 @@ function getLegacyBlockDefaults(id){
     'text-md':{id,type:'text-md',content:'',align:'left'},
     'text-lg':{id,type:'text-lg',content:'',align:'left'},
     'image':{id,type:'image',src:'',alt:''},
+    'alpha-art':{id,type:'alpha-art',src:'',alt:'',color:'#5e30eb',bg:'transparent',fit:'contain',ratio:'16/9'},
     'twocol':{id,type:'twocol',left:{type:'image',src:'',alt:''},right:{type:'text-md',content:'',align:'left'}},
     'quote':{id,type:'quote',content:'',align:'left'},
     'video':{id,type:'video',src:''},
@@ -2171,6 +2194,17 @@ function blocksToMarkdown(blocks){
       out.push(`![${b.alt||''}](${b.src||''})`);
       return;
     }
+    if(b.type==='alpha-art'){
+      out.push(':::alpha');
+      out.push(`src: ${(b.src||'').trim()}`);
+      if((b.alt||'').trim()) out.push(`alt: ${(b.alt||'').trim()}`);
+      out.push(`color: ${(b.color||'#5e30eb').trim()}`);
+      out.push(`bg: ${(b.bg||'transparent').trim()}`);
+      out.push(`fit: ${((b.fit||'contain')==='cover'?'cover':'contain')}`);
+      out.push(`ratio: ${(b.ratio||'16/9').trim()}`);
+      out.push(':::');
+      return;
+    }
     if(b.type==='video'){
       out.push(`!video(${b.src||''})`);
       return;
@@ -2282,6 +2316,39 @@ function parseMarkdownToBlocks(md){
       }
       if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
       blocks.push({ id: uid(), type:'gallery', columns: (cols===3?3:2), items: items.length ? items : [{src:'',alt:'',caption:''}] });
+      continue;
+    }
+
+    // Alpha art block
+    if(/^:::alpha\s*$/i.test(line)){
+      const block = {
+        id: uid(),
+        type:'alpha-art',
+        src:'',
+        alt:'',
+        color:'#5e30eb',
+        bg:'transparent',
+        fit:'contain',
+        ratio:'16/9'
+      };
+      i++;
+      while(i < lines.length && !/^:::\s*$/.test(lines[i].trim())){
+        const current = lines[i].trim();
+        const pair = current.match(/^([a-z]+)\s*:\s*(.+)$/i);
+        if(pair){
+          const key = pair[1].toLowerCase();
+          const value = pair[2].trim();
+          if(key === 'src') block.src = value;
+          else if(key === 'alt') block.alt = value;
+          else if(key === 'color') block.color = value;
+          else if(key === 'bg') block.bg = value;
+          else if(key === 'fit') block.fit = value.toLowerCase() === 'cover' ? 'cover' : 'contain';
+          else if(key === 'ratio') block.ratio = value;
+        }
+        i++;
+      }
+      if(i < lines.length && /^:::\s*$/.test(lines[i].trim())) i++;
+      blocks.push(block);
       continue;
     }
 
@@ -2465,7 +2532,12 @@ function parseMarkdownToBlocks(md){
         ? inlineFormat(paraLines.map(x=>'• '+x.replace(/^[-*]\s+/, '')).join('<br>'))
         : inlineFormat(paraLines.join('<br>'));
       blocks.push({id:uid(), type:'text-md', content, align:'left'});
+      continue;
     }
+
+    // Fallback for unrecognized block-like lines so malformed markdown cannot stall parsing.
+    blocks.push({id:uid(), type:'text-md', content:inlineFormat(line.trim()), align:'left'});
+    i++;
   }
 
   return blocks;

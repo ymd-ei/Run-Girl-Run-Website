@@ -77,6 +77,18 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       }
       return `<div class="bl-image empty">${block.alt || 'Image'}</div>`;
 
+    case 'alpha-art':
+      if (!block.src) {
+        return `<div class="bl-alpha-art empty">${block.alt || 'Alpha artwork'}</div>`;
+      }
+      return `<div class="bl-alpha-art" role="img" aria-label="${
+        block.alt || 'Alpha artwork'
+      }" style="--alpha-src:url('${block.src}');--alpha-color:${
+        block.color || '#5e30eb'
+      };--alpha-bg:${block.bg || 'transparent'};--alpha-fit:${
+        block.fit === 'cover' ? 'cover' : 'contain'
+      };--alpha-ratio:${block.ratio || '16/9'}"><div class="bl-alpha-art-mask"></div></div>`;
+
     case 'twocol':
       const leftHTML = renderBlock(block.left || {}, theme);
       const rightHTML = renderBlock(block.right || {}, theme);
@@ -240,6 +252,7 @@ export function getBlockTypeName(type) {
     'text-md': 'Medium Text',
     'text-lg': 'Large Text',
     'image': 'Image',
+    'alpha-art': 'Alpha Art',
     'twocol': 'Two Column',
     'quote': 'Quote',
     'video': 'Video',

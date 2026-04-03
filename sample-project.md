@@ -49,6 +49,15 @@ Rapid iteration with the client cut revision rounds in half.
 
 ![Hero shot](media/projects/sample-hero.jpg)
 
+:::alpha
+src: media/projects/sample-hero.jpg
+alt: Recolorable alpha artwork
+color: #ff5a1f
+bg: transparent
+fit: contain
+ratio: 16/9
+:::
+
 !video(https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 
 ---

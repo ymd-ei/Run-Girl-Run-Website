@@ -25,6 +25,9 @@ export function getBlockPreview(block) {
   if (block.type === 'image') {
     return block.src || block.alt || '(empty)';
   }
+  if (block.type === 'alpha-art') {
+    return `Alpha Art · ${block.src || '(empty)'}`;
+  }
   if (block.type === 'twocol') {
     return 'Two columns';
   }
@@ -60,6 +63,7 @@ export function getBlockTypeLabel(type) {
     'text-md': 'Text (Medium)',
     'text-lg': 'Text (Large)',
     image: 'Image',
+    'alpha-art': 'Alpha Art',
     twocol: 'Two Columns',
     quote: 'Quote',
     video: 'Video',
@@ -85,6 +89,7 @@ export function getBlockMenuHTML(scope) {
   const types = [
     ['text-md', 'T', 'Text'],
     ['image', '🖼', 'Image'],
+    ['alpha-art', '◐', 'Alpha Art'],
     ['twocol', '⊞', 'Two Col'],
     ['quote', '"', 'Quote'],
     ['video', '▶', 'Video'],
@@ -195,6 +200,35 @@ export function getBlockBodyHTML(block, scope) {
       <div class="field"><label>Alt Text</label>
         <input value="${block.alt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'alt', this.value)">
       </div>`;
+  }
+
+  if (type === 'alpha-art') {
+    const dzStableId = 'alphadz_' + block.id;
+    return `
+      <div class="field"><label>Alpha Artwork (Transparent PNG/SVG)</label>
+        <div id="${dzStableId}">
+          <input type="file" accept="image/*" style="display:none">
+          <div class="dz-label">Drag & drop or click to select</div>
+          <div class="dz-sub">Loading...</div>
+        </div>
+        <input type="text" id="${dzStableId}_p" value="${block.src || ''}" placeholder="Path or URL"
+          style="margin-top:.5rem" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'src', this.value)">
+        <button class="add-btn" style="margin-top:.35rem" onclick="window.events?.onBrowseMedia?.('${scope}', '${block.id}', '${dzStableId}_p')">📁 Browse Media</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Tint Color</label><input type="color" value="${block.color || '#5e30eb'}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'color', this.value)"></div>
+        <div class="field"><label>Background</label><input value="${block.bg || 'transparent'}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'bg', this.value)"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Fit</label>
+          <select onchange="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'fit', this.value)">
+            <option value="contain" ${(block.fit || 'contain') === 'contain' ? 'selected' : ''}>Contain</option>
+            <option value="cover" ${(block.fit || 'contain') === 'cover' ? 'selected' : ''}>Cover</option>
+          </select>
+        </div>
+        <div class="field"><label>Aspect Ratio</label><input value="${block.ratio || '16/9'}" placeholder="16/9" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'ratio', this.value)"></div>
+      </div>
+      <div class="field"><label>Alt Text</label><input value="${block.alt || ''}" oninput="window.events?.onUpdateBlock?.('${scope}', '${block.id}', 'alt', this.value)"></div>`;
   }
 
   // Two column block
