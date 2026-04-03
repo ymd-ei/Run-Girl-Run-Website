@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Editor — Offline</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles-editor.css">
+<style>
+  #app { grid-template-columns: 220px 1fr 1fr; }
+  .file-actions { display: flex; flex-direction: column; gap: .35rem; padding: .75rem; border-bottom: 1px solid var(--border); }
+  .file-btn { padding: .5rem; border: 1px solid var(--border); background: none; color: var(--muted); font-family: var(--font); font-size: .68rem; letter-spacing: .04em; transition: all .15s; text-align: center; cursor: pointer; }
+  .file-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .file-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .file-btn.primary:hover { opacity: .85; }
+  .sb-hint { font-size: .58rem; color: var(--muted); padding: .2rem .75rem .5rem; line-height: 1.5; }
+  #main { max-width: 760px; }
+  .welcome-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; text-align: center; gap: 1.2rem; }
+  .welcome-panel h2 { font-size: 1.1rem; font-weight: 400; color: var(--text); }
+  .welcome-panel p { font-size: .78rem; color: var(--muted); max-width: 440px; line-height: 1.7; }
+  .welcome-actions { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; margin-top: .5rem; }
+  .welcome-actions .file-btn { padding: .65rem 1.2rem; font-size: .72rem; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-logo"><span>RGR Studio</span>Local Project Editor</div>
+    <div class="file-actions">
+      <button class="file-btn" onclick="openProjectJSON()">Open Project JSON</button>
+      <button class="file-btn" onclick="importMD()">Import from .md</button>
+      <button class="file-btn" onclick="newProject()">+ New Project</button>
+    </div>
+    <div class="sb-section">Open Projects</div>
+    <div id="project-nav"></div>
+    <div class="sb-hint" id="sb-hint">Open a JSON file or import a .md to get started.</div>
+    <div class="sb-footer">
+      <button class="file-btn primary" id="save-btn" onclick="saveProjectJSON()" style="display:none">&#x2193; Save Project JSON</button>
+      <button class="file-btn" id="export-md-btn" onclick="exportMD()" style="display:none">&#x2B73; Export as .md</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="welcome" class="welcome-panel">
+      <h2>Offline Project Editor</h2>
+      <p>Edit project content blocks locally, without needing a server. Open an existing project JSON, import markdown, or start a new project from scratch.</p>
+      <div class="welcome-actions">
+        <button class="file-btn primary" onclick="openProjectJSON()">Open Project JSON</button>
+        <button class="file-btn" onclick="importMD()">Import from .md</button>
+        <button class="file-btn" onclick="newProject()">+ New Project</button>
+      </div>
+    </div>
+    <div id="page-project" style="display:none"></div>
+  </div>
+  <div id="preview-pane">
+    <div id="preview-bar">
+      <span>Live Preview</span>
+      <div class="pb-actions">
+        <div class="pb-indicator" id="pb-dot"></div>
+        <button id="preview-refresh" onclick="refreshPreview()">Refresh</button>
+      </div>
+    </div>
+    <iframe id="preview-frame"></iframe>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="undo-bar">
+  <button class="undo-btn" id="undo-btn" onclick="undo()" disabled>&#x21B6; Undo <span id="undo-label"></span></button>
+  <button class="undo-btn" id="redo-btn" onclick="redo()" disabled>Redo &#x21B7;</button>
+</div>
+
+<script defer src="local-editor.js"></script>
+</body>
+</html>
