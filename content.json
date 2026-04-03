@@ -36,13 +36,13 @@
     "resume": "resume/RJ_RGR_anim-02_W25.pdf"
   },
   "projects": [
-    "welcome-message",
     "all-blocks-sample",
     "woke-up-dance-exercise",
     "md-pulling",
     "final-fantasy-modding",
     "orbital-loop",
-    "cosmic-drift"
+    "cosmic-drift",
+    "welcome-message"
   ],
   "about": [
     {
@@ -112,7 +112,7 @@
       "align": "center"
     },
     {
-      "id": "b17751839246597hpd",
+      "id": "b1775184302236ide7",
       "type": "alpha-art",
       "src": "media/doog_loop-smoller.png",
       "alt": "",
@@ -187,19 +187,6 @@
     "sensitiveColor": "#e03030"
   },
   "projectCards": [
-    {
-      "id": "welcome-message",
-      "title": "Welcome Message",
-      "type": "Pipeline",
-      "typeLabel": "Pipeline",
-      "year": "2026",
-      "thumbnail": "media/woke-up_thumbnail.webp",
-      "published": true,
-      "sensitive": false,
-      "sensitiveLabel": "",
-      "sensitiveColor": "",
-      "longform": false
-    },
     {
       "id": "all-blocks-sample",
       "title": "All Blocks Sample",
@@ -276,6 +263,19 @@
       "sensitive": true,
       "sensitiveLabel": "Non disclosure agreement",
       "sensitiveColor": "#f5ec00",
+      "longform": false
+    },
+    {
+      "id": "welcome-message",
+      "title": "Welcome Message",
+      "type": "Pipeline",
+      "typeLabel": "Pipeline",
+      "year": "2026",
+      "thumbnail": "media/woke-up_thumbnail.webp",
+      "published": true,
+      "sensitive": false,
+      "sensitiveLabel": "",
+      "sensitiveColor": "",
       "longform": false
     }
   ],
