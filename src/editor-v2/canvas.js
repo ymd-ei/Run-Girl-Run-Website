@@ -95,7 +95,10 @@ export function renderCanvas() {
   // Back to work from project panel
   document.getElementById('v2-panel-back-work')?.addEventListener('click', () => {
     const projPanel = inner.querySelector('.v2-panel[data-v2-panel="project"]');
-    if (projPanel) projPanel.classList.remove('open');
+    if (projPanel) {
+      projPanel.classList.remove('open');
+      projPanel.classList.remove('v2-longform');
+    }
     currentProjectId = null;
     showPanel('work');
   });
@@ -299,6 +302,9 @@ export async function openProject(id) {
   const panel = inner.querySelector('.v2-panel[data-v2-panel="project"]');
   if (!panel) return;
 
+  const isLongform = project.longform === true;
+  panel.classList.toggle('v2-longform', isLongform);
+
   const heroImg = project.heroImage || project.thumbnail || '';
   const blocks = normalizeBlocks(project.blocks || []);
   const blocksHTML = renderDisplayBlocks(blocks, { scope: 'proj-' + id, projectId: id });
@@ -307,18 +313,20 @@ export async function openProject(id) {
   if (scrollEl) {
     scrollEl.innerHTML = `
       <div class="v2-project">
-        <div class="v2-project-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}>
-          <div class="v2-project-hero-overlay"></div>
-          <div class="v2-project-hero-content">
-            <h2 class="v2-project-title">${project.title || ''}</h2>
-            <div class="v2-project-meta">
-              ${project.typeLabel ? `<span class="v2-project-tag">${project.typeLabel}</span>` : ''}
-              ${project.year ? `<span class="v2-project-tag">${project.year}</span>` : ''}
-              ${project.client ? `<span class="v2-project-tag">${project.client}</span>` : ''}
+        <div class="pp-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}>
+          <div class="pp-hero-overlay"></div>
+          <div class="pp-hero-content">
+            <div class="pp-hero-left">
+              <h2 class="pp-hero-title">${project.title || ''}</h2>
+              <div class="pp-hero-meta">
+                ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+                ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
+                ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+              </div>
             </div>
           </div>
         </div>
-        <div class="v2-project-blocks pb">${blocksHTML}</div>
+        <div class="block-canvas">${blocksHTML}</div>
       </div>`;
     scrollEl.scrollTop = 0;
   }
@@ -393,6 +401,7 @@ export function showPanel(name) {
 
   // Close all panels
   inner.querySelectorAll('.v2-panel.open').forEach(p => p.classList.remove('open'));
+  inner.querySelector('.v2-panel.v2-longform')?.classList.remove('v2-longform');
 
   // Reset hero push
   const hero = inner.querySelector('.v2-hero');

@@ -662,56 +662,80 @@ html, body {
 }
 
 /* ── Project Detail ── */
-.v2-project-hero {
-  height: 40vh;
-  min-height: 240px;
-  background-size: cover;
-  background-position: center;
-  background-color: #222;
+
+/* Longform mode: centered elevated modal that slides up */
+.v2-panel.v2-longform {
+  width: min(900px, 86%);
+  max-height: 84%;
+  top: 8%;
+  right: auto;
+  left: 50%;
+  bottom: auto;
+  border: 1px solid rgba(var(--accent-rgb, 94, 48, 235), 0.1);
+  border-radius: 5px;
+  box-shadow: 0 26px 70px rgba(10, 8, 6, 0.45);
+  transform: translate(-50%, calc(100% + 3rem));
+  opacity: 0;
+  transition: transform .62s cubic-bezier(0.16, 1, 0.3, 1), opacity .32s ease;
+}
+
+.v2-panel.v2-longform.open {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+.v2-panel.v2-longform .v2-ph {
+  display: none;
+}
+
+.v2-panel.v2-longform .v2-panel-scroll {
+  padding: 0 clamp(1.4rem, 3.8vw, 3rem) clamp(2rem, 4.2vw, 3.2rem);
+}
+
+.v2-panel.v2-longform .block-canvas {
+  max-width: 72ch;
+  margin: 0 auto;
+  gap: 1.6rem;
+  padding-top: clamp(1.8rem, 3.4vw, 2.7rem);
+}
+
+.v2-panel.v2-longform .pp-hero {
+  width: calc(100% + clamp(2.8rem, 7.6vw, 6rem));
+  margin: 0 calc(-1 * clamp(1.4rem, 3.8vw, 3rem)) 2rem;
+}
+
+.v2-panel.v2-longform .bl-text-md {
+  font-size: 0.95rem;
+  line-height: 1.95;
+}
+
+.v2-panel.v2-longform .bl-text-lg {
+  font-size: clamp(2.2rem, 3.6vw, 3.25rem);
+  line-height: 1.06;
+}
+
+/* Project scroll body stripes */
+.v2-panel[data-v2-panel="project"] .v2-panel-scroll {
   position: relative;
-  display: flex;
-  align-items: flex-end;
+  isolation: isolate;
+  background-image: repeating-linear-gradient(-55deg,
+    transparent, transparent 16px,
+    rgba(var(--accent-rgb, 94, 48, 235), 0.18) 16px,
+    rgba(var(--accent-rgb, 94, 48, 235), 0.18) 17px);
 }
 
-.v2-project-hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent 60%);
+/* Work cards need pointer cursor */
+.v2-work .wc {
+  cursor: pointer !important;
 }
 
-.v2-project-hero-content {
-  position: relative;
-  z-index: 1;
-  padding: 2rem;
-}
-
-.v2-project-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: .5rem;
-}
-
-.v2-project-meta {
-  display: flex;
-  gap: .5rem;
-  flex-wrap: wrap;
-}
-
-.v2-project-tag {
-  font-size: .6rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
-  padding: .2rem .5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.v2-project-blocks {
-  padding: 2rem;
-  background: var(--panel-bg, var(--paper, #f7f3ec));
-  color: var(--ink, #1a1714);
+.v2-canvas-nav-links button,
+.v2-pc,
+.v2-backbtn,
+.v2-ct-close,
+.ct-email-link,
+.ct-icon-btn {
+  cursor: pointer !important;
 }
 
 /* ── Floating Inspector ── */
