@@ -47,13 +47,14 @@
 
 <script type="module">
   import { loadSiteData } from './src/editor-v2/dataBridge.js';
-  import { renderCanvas, renderSidebarProjects } from './src/editor-v2/canvas.js';
+  import { renderCanvas, renderSidebarProjects, initEditing } from './src/editor-v2/canvas.js';
 
   async function init() {
     try {
       await loadSiteData();
       renderCanvas();
       renderSidebarProjects();
+      initEditing();
     } catch (err) {
       console.error('v2 init failed:', err);
       const inner = document.getElementById('v2-canvas-inner');

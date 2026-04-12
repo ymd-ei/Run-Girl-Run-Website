@@ -13,9 +13,50 @@ import {
 } from '../display/displayRenderer.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 import { phosphorIcon } from '../utils/icons.js';
+import { initInspector, setSelection, clearSelection, getSelection } from './inspector.js';
+import { initToolbar, startEdit, finishEdit, isEditing } from './floatingToolbar.js';
 
 let currentSection = 'home';
 let currentProjectId = null;
+
+// ── Selection & editing wiring ──
+
+/**
+ * Initialize the selection + editing systems. Call once after DOM ready.
+ */
+export function initEditing() {
+  // Inspector: when a field changes → re-render the affected block/section
+  initInspector((selection, key, value) => {
+    if (selection.type === 'section') {
+      rerenderSection(selection.sectionName);
+    } else if (selection.type === 'block') {
+      rerenderBlock(selection.scope, selection.blockId);
+    }
+  });
+
+  // Floating toolbar: when inline text edit commits
+  initToolbar((scope, blockId, field, value) => {
+    const block = findBlockData(scope, blockId);
+    if (block) {
+      block[field] = value;
+      // Don't re-render while editing content — the contenteditable IS the display
+      if (field === 'align') {
+        // Alignment change updates the inspector if open
+        const sel = getSelection();
+        if (sel && sel.blockId === blockId) {
+          setSelection(sel); // re-render inspector
+        }
+      }
+    }
+  });
+
+  // Canvas click / double-click handlers
+  const canvas = document.getElementById('v2-canvas');
+  if (!canvas) return;
+
+  canvas.addEventListener('click', handleCanvasClick);
+  canvas.addEventListener('dblclick', handleCanvasDblClick);
+}
 
 /**
  * Full render — call after data is loaded
@@ -267,4 +308,140 @@ export function renderSidebarProjects() {
   list.querySelectorAll('[data-v2-open-project]').forEach(btn => {
     btn.addEventListener('click', () => openProject(btn.dataset.v2OpenProject));
   });
+}
+
+// ── Canvas selection handlers ──
+
+function handleCanvasClick(e) {
+  if (isEditing()) return; // Don't disturb inline edit
+
+  // Did we click on a block element with canvas attributes?
+  const blockEl = e.target.closest('[data-canvas-block-id]');
+  if (blockEl) {
+    e.stopPropagation();
+    selectBlock(blockEl);
+    return;
+  }
+
+  // Did we click inside a v2-section?
+  const sectionEl = e.target.closest('[data-v2-section]');
+  if (sectionEl) {
+    const sectionName = sectionEl.dataset.v2Section;
+    clearCanvasSelection();
+    setSelection({ type: 'section', sectionName });
+    showInspector();
+    return;
+  }
+
+  // Clicked blank canvas
+  clearCanvasSelection();
+  clearSelection();
+}
+
+function handleCanvasDblClick(e) {
+  // Double-click on a text-editable element → inline edit
+  const el = e.target.closest('[data-canvas-editable]');
+  if (!el) return;
+
+  e.stopPropagation();
+  selectBlock(el);
+  startEdit(el);
+}
+
+function selectBlock(el) {
+  clearCanvasSelection();
+
+  const scope = el.getAttribute('data-canvas-scope');
+  const blockId = el.getAttribute('data-canvas-block-id');
+  if (!scope || !blockId) return;
+
+  // Walk up to the nearest top-level block wrapper (or use the element itself)
+  const wrapper = el.closest('.block-canvas > *') || el;
+  wrapper.classList.add('v2-selected');
+
+  setSelection({ type: 'block', scope, blockId });
+  showInspector();
+}
+
+function clearCanvasSelection() {
+  document.querySelectorAll('.v2-selected').forEach(el => el.classList.remove('v2-selected'));
+}
+
+function showInspector() {
+  const insp = document.getElementById('v2-inspector');
+  if (insp) {
+    insp.classList.add('open');
+    document.documentElement.style.setProperty('--v2-inspector-w', '280px');
+  }
+}
+
+// ── Re-render helpers ──
+
+function rerenderSection(name) {
+  const g = state.global;
+  const theme = g.theme || {};
+
+  if (name === 'hero') {
+    const sec = document.getElementById('v2-sec-hero');
+    if (!sec) return;
+    const content = sec.querySelector('.v2-hero-content') || sec;
+    // Rebuild just hero inner content
+    const heroHTML = buildHeroHTML(g);
+    const temp = document.createElement('div');
+    temp.innerHTML = heroHTML;
+    const newInner = temp.querySelector('.v2-hero-content');
+    if (newInner && content.classList.contains('v2-hero-content')) {
+      content.innerHTML = newInner.innerHTML;
+    }
+  } else if (name === 'contact') {
+    const sec = document.getElementById('v2-sec-contact');
+    if (sec) {
+      sec.querySelector('.v2-section-inner').innerHTML = buildContactHTML(g);
+    }
+  }
+}
+
+function rerenderBlock(scope, blockId) {
+  // Find all elements with this block ID and re-render them
+  const el = document.querySelector(`[data-canvas-block-id="${blockId}"]`);
+  if (!el) return;
+
+  // Get the block data
+  const block = findBlockData(scope, blockId);
+  if (!block) return;
+
+  const theme = state.global.theme || {};
+
+  // Import renderBlock dynamically from the shared renderer
+  import('../modules/blocks/blockRenderer.js').then(({ renderBlock }) => {
+    const renderOptions = { canvasScope: scope };
+    const m = scope.match(/^proj-(.+)$/);
+    if (m) renderOptions.canvasProjectId = m[1];
+
+    const newHTML = renderBlock(block, theme, renderOptions);
+    if (!newHTML) return;
+
+    // Find the wrapper to replace (parent .block-canvas child, or the element itself)
+    const wrapper = el.closest('.block-canvas > *') || el;
+    const temp = document.createElement('div');
+    temp.innerHTML = newHTML;
+    const newEl = temp.firstElementChild;
+    if (newEl) {
+      wrapper.replaceWith(newEl);
+      // Re-select the new element
+      newEl.classList.add('v2-selected');
+    }
+  });
+}
+
+function findBlockData(scope, blockId) {
+  if (scope === 'about') {
+    return (state.global.about || []).find(b => b.id === blockId);
+  }
+  const m = scope.match(/^proj-(.+)$/);
+  if (m) {
+    const project = state.projectCache.get(m[1]);
+    if (project) return (project.blocks || []).find(b => b.id === blockId);
+  }
+  return null;
 }
