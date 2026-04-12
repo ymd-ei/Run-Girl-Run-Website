@@ -198,7 +198,7 @@ function buildWorkPanelHTML(g, theme) {
   const gridHTML = renderWorkGrid(state.projects, theme, { showAll: true });
 
   const safeGrid = gridHTML.replace(
-    /onclick="window\.display\?\.openProject\?\('([^']+)'\)"/g,
+    /onclick="window\.display\?\.openProject\?\.\('([^']+)'\)"/g,
     'data-v2-project="$1"'
   );
 
