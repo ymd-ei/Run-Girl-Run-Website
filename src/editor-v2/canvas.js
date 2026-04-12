@@ -101,6 +101,11 @@ export function renderCanvas() {
   });
 
   updateSidebarNav();
+
+  // Wire canvas nav buttons
+  inner.querySelectorAll('[data-v2-nav]').forEach(btn => {
+    btn.addEventListener('click', () => showPanel(btn.dataset.v2Nav));
+  });
 }
 
 /**
@@ -164,10 +169,19 @@ function buildHeroHTML(g) {
     <div class="v2-hero" data-v2-section="hero" id="v2-sec-hero">
       <div class="v2-hero-bg">${reelHTML}</div>
       <div class="v2-hero-overlay"></div>
+      <div class="v2-hero-accent-glow"></div>
       <div class="v2-hero-text">
         <p class="v2-hero-role">${role}</p>
         <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
       </div>
+      <nav class="v2-canvas-nav">
+        <span class="v2-canvas-nav-name">${g.name || 'Your Name'}</span>
+        <div class="v2-canvas-nav-links">
+          <button data-v2-nav="work">Work</button>
+          <button data-v2-nav="about">About</button>
+          <button data-v2-nav="contact">Contact</button>
+        </div>
+      </nav>
     </div>`;
 }
 
@@ -190,7 +204,7 @@ function buildWorkPanelHTML(g, theme) {
 
   return `
     <div class="v2-panel v2-panel-wide" data-v2-panel="work">
-      <button class="v2-panel-close">&times;</button>
+      <div class="v2-ph"><span class="v2-pt">Work</span><button class="v2-pc v2-panel-close">&#x2715;</button></div>
       <div class="v2-panel-scroll">
         <div class="v2-work">
           <div class="v2-work-filters">${filterBtns}</div>
@@ -206,7 +220,7 @@ function buildAboutPanelHTML(g) {
 
   return `
     <div class="v2-panel" data-v2-panel="about">
-      <button class="v2-panel-close">&times;</button>
+      <div class="v2-ph"><span class="v2-pt">About</span><button class="v2-pc v2-panel-close">&#x2715;</button></div>
       <div class="v2-panel-scroll">
         <div class="v2-about pb">${blocksHTML}</div>
       </div>
@@ -216,6 +230,8 @@ function buildAboutPanelHTML(g) {
 function buildContactPanelHTML(g) {
   const ct = renderContactPanel(g);
   const email = g.contact?.email || '';
+  const location = g.contact?.location || '';
+  const siteName = g.name || '';
 
   const icons = (g.contact?.links || [])
     .map(l => `<a href="${l.url}" class="ct-icon-btn" title="${l.label}"><i class="${phosphorIcon(l.url)}"></i></a>`)
@@ -223,22 +239,31 @@ function buildContactPanelHTML(g) {
 
   return `
     <div class="v2-panel v2-panel-contact" data-v2-panel="contact">
-      <button class="v2-panel-close">&times;</button>
+      <button class="v2-ct-close v2-panel-close">&#x2715;</button>
       <div class="v2-panel-scroll">
         <div class="v2-contact">
-          <div class="v2-contact-hero">
+          <div class="v2-ct-splash">
+            ${location ? `<p class="ct-tag">${location}</p>` : ''}
             <h1 class="ct-hero">${ct.hero}</h1>
             <p class="ct-sub">${ct.sub}</p>
           </div>
-          <div class="v2-contact-details">
-            <div class="v2-contact-col">
-              <p class="v2-contact-label">${ct.emailLabel}</p>
-              <a href="${email ? 'mailto:' + email : '#'}" class="v2-contact-email">${email}</a>
+          <div class="v2-ct-links">
+            <div class="ct-email-block">
+              <p class="ct-email-label">${ct.emailLabel}</p>
+              <a href="${email ? 'mailto:' + email : '#'}" class="ct-email-link">
+                <span>${email}</span>
+                <i class="ph-fill ph-arrow-up-right arr"></i>
+              </a>
             </div>
-            <div class="v2-contact-col">
-              <p class="v2-contact-label">${ct.socialLabel}</p>
+            <div class="ct-social-wrap">
+              <p class="ct-social-label">${ct.socialLabel}</p>
               <div class="ct-icons">${icons}</div>
             </div>
+          </div>
+          <div class="ct-footer">
+            <span>${siteName}</span>
+            <div class="ct-footer-dot"></div>
+            <span>${location}</span>
           </div>
         </div>
       </div>
@@ -248,8 +273,13 @@ function buildContactPanelHTML(g) {
 function buildProjectPanelHTML() {
   return `
     <div class="v2-panel v2-panel-wide" data-v2-panel="project">
-      <button class="v2-panel-close">&times;</button>
-      <button class="v2-panel-back" id="v2-panel-back-work">&#x2190; Work</button>
+      <div class="v2-ph">
+        <button class="v2-backbtn" id="v2-panel-back-work">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Back
+        </button>
+        <button class="v2-pc v2-panel-close">&#x2715;</button>
+      </div>
       <div class="v2-panel-scroll"></div>
     </div>`;
 }
