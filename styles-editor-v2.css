@@ -998,3 +998,10 @@ html, body {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* ── Sensitive-tape diagonal stripes ── */
+@keyframes pinstripe-scroll { from { background-position-x: 0 } to { background-position-x: 23.8px } }
+
+/* ── No-transition utility (project open reset) ── */
+.v2-panel.no-transition,
+.v2-panel.no-transition * { transition: none !important; }

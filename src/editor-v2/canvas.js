@@ -9,7 +9,8 @@ import {
   applyTheme,
   renderWorkGrid,
   renderContactPanel,
-  renderDisplayBlocks
+  renderDisplayBlocks,
+  initSensitiveTapes
 } from '../display/displayRenderer.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 import { phosphorIcon } from '../utils/icons.js';
@@ -109,6 +110,24 @@ export function renderCanvas() {
   inner.querySelectorAll('[data-v2-nav]').forEach(btn => {
     btn.addEventListener('click', () => showPanel(btn.dataset.v2Nav));
   });
+
+  // Wire work filter buttons
+  inner.querySelectorAll('[data-v2-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.v2Filter;
+      inner.querySelectorAll('[data-v2-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      inner.querySelectorAll('.wg .wc').forEach(card => {
+        const type = card.dataset.type || '';
+        const show = filter === 'all' || type === filter;
+        card.style.opacity = show ? '' : '0';
+        card.style.pointerEvents = show ? '' : 'none';
+      });
+    });
+  });
+
+  // Sensitive tapes on work cards
+  initSensitiveTapes(state.projects, { showAll: true });
 }
 
 /**
@@ -118,23 +137,62 @@ function applyCanvasTheme(theme) {
   const root = document.getElementById('v2-canvas');
   if (!root) return;
 
+  const ink = theme.ink || '#1a1714';
+  const paper = theme.paper || '#f2ede4';
+  const accent = theme.accent || '#5e30eb';
+  const inkRgb = hexToRgb(ink);
+  const paperRgb = hexToRgb(paper);
+
   const vars = {
-    '--color-accent': theme.accent || '#5e30eb',
-    '--color-paper': theme.paper || '#f2ede4',
-    '--color-ink': theme.ink || '#1a1714',
+    // ── editor prefixed colors ──
+    '--color-accent': accent,
+    '--color-paper': paper,
+    '--color-ink': ink,
     '--color-panel-bg': theme.panelBg || '#f7f3ec',
     '--color-contact-accent': theme.ctAccent || '#ff7828',
     '--color-contact-bg': theme.ctBg || '#080808',
     '--color-contact-hi': theme.ctHi || '#ffffff',
     '--color-sensitive': theme.sensitiveColor || '#e03030',
-    '--ink': theme.ink || '#1a1714',
-    '--paper': theme.paper || '#f2ede4',
-    '--accent': theme.accent || '#5e30eb',
-    '--accent-rgb': hexToRgb(theme.accent || '#5e30eb'),
+
+    // ── core theme tokens (consumed by styles-main.css) ──
+    '--ink': ink,
+    '--paper': paper,
+    '--accent': accent,
+    '--accent-rgb': hexToRgb(accent),
     '--panel-bg': theme.panelBg || '#f7f3ec',
-    '--ct-accent': theme.ctAccent || '#ff4361',
+    '--ink-rgb': inkRgb,
+    '--paper-rgb': paperRgb,
+    '--surface': theme.surface || '#ede8df',
+    '--muted': `rgba(${inkRgb},0.4)`,
+    '--border': `rgba(${inkRgb},0.12)`,
+    '--panel-border': `rgba(${inkRgb},0.1)`,
+
+    // ── typography tokens ──
+    '--font-b': "'DM Sans',sans-serif",
+    '--font-s': "'Cormorant Garamond',serif",
+    '--font-hero': "'Bebas Neue',sans-serif",
+    '--font-ui': "'Space Grotesk',sans-serif",
+    '--fs-xs': '.6rem',
+    '--fs-sm': '.7rem',
+    '--fs-md': '.85rem',
+    '--fs-body': '.95rem',
+    '--fs-lg': '1.3rem',
+    '--fs-xl': '2.2rem',
+    '--ls-tight': '.04em',
+    '--ls-normal': '.1em',
+    '--ls-wide': '.16em',
+    '--ls-xwide': '.25em',
+
+    // ── motion ──
+    '--ease': 'cubic-bezier(0.16,1,0.3,1)',
+
+    // ── contact tokens ──
+    '--ct-accent': theme.ctAccent || '#ff7828',
     '--ct-bg': theme.ctBg || '#080808',
-    '--ct-hi': theme.ctHi || '#ffffff'
+    '--ct-hi': theme.ctHi || '#ffffff',
+    '--ct-muted': 'rgba(255,255,255,0.35)',
+    '--ct-border': 'rgba(255,255,255,0.1)',
+    '--ct-accent-rgb': hexToRgb(theme.ctAccent || '#ff7828')
   };
 
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
@@ -302,8 +360,13 @@ export async function openProject(id) {
   const panel = inner.querySelector('.v2-panel[data-v2-panel="project"]');
   if (!panel) return;
 
+  // No-transition reset (matches main site #pp open logic)
+  panel.classList.remove('open');
+  panel.classList.add('no-transition');
   const isLongform = project.longform === true;
   panel.classList.toggle('v2-longform', isLongform);
+  void panel.offsetWidth; // layout flush
+  panel.classList.remove('no-transition');
 
   const heroImg = project.heroImage || project.thumbnail || '';
   const blocks = normalizeBlocks(project.blocks || []);
@@ -423,6 +486,11 @@ export function showPanel(name) {
 
     if (name === 'contact') {
       if (hero) hero.classList.add('v2-hero-pushed');
+    }
+
+    // Trigger skill bar fill animation when about opens
+    if (name === 'about') {
+      panel.querySelectorAll('.skf').forEach(bar => bar.classList.add('go'));
     }
 
     updateSidebarActive();
