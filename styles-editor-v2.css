@@ -419,8 +419,8 @@ html, body {
 
 .v2-hero-role {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: .75rem;
-  letter-spacing: .22em;
+  font-size: .6rem;
+  letter-spacing: .25em;
   text-transform: uppercase;
   color: var(--accent, #5e30eb);
   margin-bottom: .9rem;
@@ -443,7 +443,7 @@ html, body {
 
 /* ── Work Grid ── */
 .v2-work {
-  padding: 1.5rem 2rem 2rem;
+  padding: 2rem;
   background: var(--paper, #f2ede4);
   color: var(--ink, #1a1714);
   min-height: 100%;
@@ -454,8 +454,8 @@ html, body {
 
 .v2-work-filters {
   display: flex;
-  gap: .5rem;
-  margin-bottom: 1.25rem;
+  gap: .4rem;
+  margin-bottom: 1.75rem;
   flex-wrap: wrap;
 }
 
@@ -1002,6 +1002,30 @@ html, body {
 /* ── Sensitive-tape diagonal stripes ── */
 @keyframes pinstripe-scroll { from { background-position-x: 0 } to { background-position-x: 23.8px } }
 
+/* ── Project panel (non-longform) sizing ── */
+.v2-panel[data-v2-panel="project"]:not(.v2-longform) {
+  width: min(680px, 96%);
+}
+.v2-panel[data-v2-panel="project"]:not(.v2-longform) .v2-panel-scroll {
+  padding: 0 2rem 2rem;
+}
+
 /* ── No-transition utility (project open reset) ── */
 .v2-panel.no-transition,
 .v2-panel.no-transition * { transition: none !important; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .v2-panel { width: 100% !important; border-left: none; }
+  .wg { grid-template-columns: 1fr; }
+  .bl-twocol { grid-template-columns: 1fr; }
+  .bl-cta { flex-direction: column; align-items: flex-start; }
+  .bl-before-after { width: 100%; }
+  .v2-panel.v2-longform {
+    top: 0; left: 0; right: 0; bottom: 0;
+    max-height: none; border-radius: 0; border-left: none;
+    transform: translateX(110%); opacity: 1;
+    width: 100% !important;
+  }
+  .v2-panel.v2-longform.open { transform: translateX(0); }
+}
