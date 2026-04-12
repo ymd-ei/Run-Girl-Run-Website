@@ -600,6 +600,16 @@ html, body {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.v2-ft-rgr {
+  background: var(--v2-accent, #5e30eb) !important;
+  color: #fff !important;
+  font-size: .6rem !important;
+  font-weight: 600;
+  letter-spacing: .06em;
+  padding: .2rem .4rem !important;
+  border-radius: 2px;
+}
+
 .v2-ft-sep {
   width: 1px;
   height: 16px;

@@ -29,6 +29,7 @@ function createToolbarDOM() {
     <button data-cmd="bold" title="Bold"><b>B</b></button>
     <button data-cmd="italic" title="Italic"><i>I</i></button>
     <button data-cmd="underline" title="Underline"><u>U</u></button>
+    <button data-cmd="rgr" title="RGR Badge" class="v2-ft-rgr">RGR</button>
     <span class="v2-ft-sep"></span>
     <button data-cmd="align-left" title="Align Left">&#x21E4;</button>
     <button data-cmd="align-center" title="Center">&#x21D4;</button>
@@ -65,6 +66,27 @@ function handleCommand(cmd) {
     case 'underline':
       document.execCommand('underline', false);
       break;
+    case 'rgr': {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) break;
+      const range = sel.getRangeAt(0);
+      // Check if already inside an <rgr> — if so, unwrap
+      const parentRgr = sel.anchorNode.parentElement?.closest('rgr');
+      if (parentRgr) {
+        const frag = document.createDocumentFragment();
+        while (parentRgr.firstChild) frag.appendChild(parentRgr.firstChild);
+        parentRgr.replaceWith(frag);
+      } else {
+        const badge = document.createElement('rgr');
+        badge.appendChild(range.extractContents());
+        range.insertNode(badge);
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(badge);
+        sel.addRange(newRange);
+      }
+      break;
+    }
     case 'align-left':
     case 'align-center':
     case 'align-right': {
