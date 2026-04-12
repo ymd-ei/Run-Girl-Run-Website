@@ -64,26 +64,42 @@ export function initEditing() {
  * Full render — call after data is loaded
  */
 export function renderCanvas() {
-  const canvas = document.getElementById('v2-canvas-inner');
-  if (!canvas) return;
+  const inner = document.getElementById('v2-canvas-inner');
+  if (!inner) return;
 
   const g = state.global;
   const theme = g.theme || {};
 
-  // Apply theme CSS variables to the canvas scope
   applyCanvasTheme(theme);
 
-  canvas.innerHTML = buildHeroHTML(g) +
-    buildWorkHTML(g, theme) +
-    buildAboutHTML(g) +
-    buildContactHTML(g);
+  inner.innerHTML = buildHeroHTML(g) +
+    '<div class="v2-backdrop" id="v2-backdrop"></div>' +
+    buildWorkPanelHTML(g, theme) +
+    buildAboutPanelHTML(g) +
+    buildContactPanelHTML(g) +
+    buildProjectPanelHTML();
 
-  // Wire up project card clicks
-  canvas.querySelectorAll('[data-v2-project]').forEach(card => {
+  // Wire project card clicks
+  inner.querySelectorAll('[data-v2-project]').forEach(card => {
     card.addEventListener('click', () => openProject(card.dataset.v2Project));
   });
 
-  // Wire up section nav clicks from sidebar
+  // Wire panel close buttons
+  inner.querySelectorAll('.v2-panel-close').forEach(btn => {
+    btn.addEventListener('click', closePanel);
+  });
+
+  // Backdrop click closes panels
+  document.getElementById('v2-backdrop')?.addEventListener('click', closePanel);
+
+  // Back to work from project panel
+  document.getElementById('v2-panel-back-work')?.addEventListener('click', () => {
+    const projPanel = inner.querySelector('.v2-panel[data-v2-panel="project"]');
+    if (projPanel) projPanel.classList.remove('open');
+    currentProjectId = null;
+    showPanel('work');
+  });
+
   updateSidebarNav();
 }
 
@@ -145,30 +161,25 @@ function buildHeroHTML(g) {
   }
 
   return `
-    <section class="v2-section" data-v2-section="hero" id="v2-sec-hero">
-      <div class="v2-section-label">Hero</div>
-      <div class="v2-hero">
-        <div class="v2-hero-bg">${reelHTML}</div>
-        <div class="v2-hero-overlay"></div>
-        <div class="v2-hero-text">
-          <p class="v2-hero-role">${role}</p>
-          <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
-        </div>
+    <div class="v2-hero" data-v2-section="hero" id="v2-sec-hero">
+      <div class="v2-hero-bg">${reelHTML}</div>
+      <div class="v2-hero-overlay"></div>
+      <div class="v2-hero-text">
+        <p class="v2-hero-role">${role}</p>
+        <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
       </div>
-    </section>`;
+    </div>`;
 }
 
-function buildWorkHTML(g, theme) {
+function buildWorkPanelHTML(g, theme) {
   const filters = g.filters || [
     { value: '2d', label: '2D' },
     { value: '3d', label: '3D' },
     { value: 'motion', label: 'Motion' }
   ];
 
-  // Show all projects (including drafts) in editor
   const gridHTML = renderWorkGrid(state.projects, theme, { showAll: true });
 
-  // Replace onclick handlers with data attributes for v2
   const safeGrid = gridHTML.replace(
     /onclick="window\.display\?\.openProject\?\('([^']+)'\)"/g,
     'data-v2-project="$1"'
@@ -178,27 +189,31 @@ function buildWorkHTML(g, theme) {
     filters.map(f => `<button class="fb" data-v2-filter="${f.value}">${f.label}</button>`).join('');
 
   return `
-    <section class="v2-section" data-v2-section="work" id="v2-sec-work">
-      <div class="v2-section-label">Work</div>
-      <div class="v2-work">
-        <div class="v2-work-filters">${filterBtns}</div>
-        <div class="v2-work-grid wg">${safeGrid}</div>
+    <div class="v2-panel v2-panel-wide" data-v2-panel="work">
+      <button class="v2-panel-close">&times;</button>
+      <div class="v2-panel-scroll">
+        <div class="v2-work">
+          <div class="v2-work-filters">${filterBtns}</div>
+          <div class="v2-work-grid wg">${safeGrid}</div>
+        </div>
       </div>
-    </section>`;
+    </div>`;
 }
 
-function buildAboutHTML(g) {
+function buildAboutPanelHTML(g) {
   const blocks = normalizeBlocks(g.about || []);
   const blocksHTML = renderDisplayBlocks(blocks, { scope: 'about' });
 
   return `
-    <section class="v2-section" data-v2-section="about" id="v2-sec-about">
-      <div class="v2-section-label">About</div>
-      <div class="v2-about pb">${blocksHTML}</div>
-    </section>`;
+    <div class="v2-panel" data-v2-panel="about">
+      <button class="v2-panel-close">&times;</button>
+      <div class="v2-panel-scroll">
+        <div class="v2-about pb">${blocksHTML}</div>
+      </div>
+    </div>`;
 }
 
-function buildContactHTML(g) {
+function buildContactPanelHTML(g) {
   const ct = renderContactPanel(g);
   const email = g.contact?.email || '';
 
@@ -207,32 +222,43 @@ function buildContactHTML(g) {
     .join('');
 
   return `
-    <section class="v2-section" data-v2-section="contact" id="v2-sec-contact">
-      <div class="v2-section-label">Contact</div>
-      <div class="v2-contact">
-        <div class="v2-contact-hero">
-          <h1 class="ct-hero">${ct.hero}</h1>
-          <p class="ct-sub">${ct.sub}</p>
-        </div>
-        <div class="v2-contact-details">
-          <div class="v2-contact-col">
-            <p class="v2-contact-label">${ct.emailLabel}</p>
-            <a href="${email ? 'mailto:' + email : '#'}" class="v2-contact-email">${email}</a>
+    <div class="v2-panel v2-panel-contact" data-v2-panel="contact">
+      <button class="v2-panel-close">&times;</button>
+      <div class="v2-panel-scroll">
+        <div class="v2-contact">
+          <div class="v2-contact-hero">
+            <h1 class="ct-hero">${ct.hero}</h1>
+            <p class="ct-sub">${ct.sub}</p>
           </div>
-          <div class="v2-contact-col">
-            <p class="v2-contact-label">${ct.socialLabel}</p>
-            <div class="ct-icons">${icons}</div>
+          <div class="v2-contact-details">
+            <div class="v2-contact-col">
+              <p class="v2-contact-label">${ct.emailLabel}</p>
+              <a href="${email ? 'mailto:' + email : '#'}" class="v2-contact-email">${email}</a>
+            </div>
+            <div class="v2-contact-col">
+              <p class="v2-contact-label">${ct.socialLabel}</p>
+              <div class="ct-icons">${icons}</div>
+            </div>
           </div>
         </div>
       </div>
-    </section>`;
+    </div>`;
+}
+
+function buildProjectPanelHTML() {
+  return `
+    <div class="v2-panel v2-panel-wide" data-v2-panel="project">
+      <button class="v2-panel-close">&times;</button>
+      <button class="v2-panel-back" id="v2-panel-back-work">&#x2190; Work</button>
+      <div class="v2-panel-scroll"></div>
+    </div>`;
 }
 
 // ── Project detail ──
 
 export async function openProject(id) {
-  const canvas = document.getElementById('v2-canvas-inner');
-  if (!canvas) return;
+  const inner = document.getElementById('v2-canvas-inner');
+  if (!inner) return;
 
   const project = await loadProject(id);
   if (!project) return;
@@ -240,15 +266,16 @@ export async function openProject(id) {
   currentProjectId = id;
   currentSection = 'project';
 
+  const panel = inner.querySelector('.v2-panel[data-v2-panel="project"]');
+  if (!panel) return;
+
   const heroImg = project.heroImage || project.thumbnail || '';
   const blocks = normalizeBlocks(project.blocks || []);
   const blocksHTML = renderDisplayBlocks(blocks, { scope: 'proj-' + id, projectId: id });
 
-  canvas.innerHTML = `
-    <section class="v2-section" data-v2-section="project">
-      <div class="v2-section-label">
-        <button class="v2-back-btn" id="v2-back">&#x2190; Back to all sections</button>
-      </div>
+  const scrollEl = panel.querySelector('.v2-panel-scroll');
+  if (scrollEl) {
+    scrollEl.innerHTML = `
       <div class="v2-project">
         <div class="v2-project-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}>
           <div class="v2-project-hero-overlay"></div>
@@ -262,14 +289,15 @@ export async function openProject(id) {
           </div>
         </div>
         <div class="v2-project-blocks pb">${blocksHTML}</div>
-      </div>
-    </section>`;
+      </div>`;
+    scrollEl.scrollTop = 0;
+  }
 
-  document.getElementById('v2-back')?.addEventListener('click', () => {
-    currentProjectId = null;
-    currentSection = 'home';
-    renderCanvas();
-  });
+  // Close work panel, open project panel
+  inner.querySelector('.v2-panel[data-v2-panel="work"]')?.classList.remove('open');
+  panel.classList.add('open');
+  document.getElementById('v2-backdrop')?.classList.add('open');
+  updateSidebarActive();
 }
 
 // ── Sidebar nav ──
@@ -278,16 +306,31 @@ function updateSidebarNav() {
   const nav = document.getElementById('v2-sidebar-nav');
   if (!nav) return;
 
-  const sections = ['hero', 'work', 'about', 'contact'];
+  const sections = [
+    { key: 'home', label: 'Home' },
+    { key: 'work', label: 'Work' },
+    { key: 'about', label: 'About' },
+    { key: 'contact', label: 'Contact' }
+  ];
+
   nav.innerHTML = sections
-    .map(s => `<button class="v2-nav-item" data-v2-goto="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`)
+    .map(s => `<button class="v2-nav-item${s.key === currentSection ? ' active' : ''}" data-v2-goto="${s.key}">${s.label}</button>`)
     .join('');
 
   nav.querySelectorAll('[data-v2-goto]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const target = document.getElementById('v2-sec-' + btn.dataset.v2Goto);
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const target = btn.dataset.v2Goto;
+      if (target === 'home') closePanel();
+      else showPanel(target);
     });
+  });
+}
+
+function updateSidebarActive() {
+  const nav = document.getElementById('v2-sidebar-nav');
+  if (!nav) return;
+  nav.querySelectorAll('.v2-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.v2Goto === currentSection);
   });
 }
 
@@ -310,6 +353,45 @@ export function renderSidebarProjects() {
   list.querySelectorAll('[data-v2-open-project]').forEach(btn => {
     btn.addEventListener('click', () => openProject(btn.dataset.v2OpenProject));
   });
+}
+
+// ── Panel navigation ──
+
+export function showPanel(name) {
+  const inner = document.getElementById('v2-canvas-inner');
+  if (!inner) return;
+
+  // Close all panels
+  inner.querySelectorAll('.v2-panel.open').forEach(p => p.classList.remove('open'));
+
+  // Reset hero push
+  const hero = inner.querySelector('.v2-hero');
+  if (hero) hero.classList.remove('v2-hero-pushed');
+
+  if (!name) {
+    document.getElementById('v2-backdrop')?.classList.remove('open');
+    currentSection = 'home';
+    currentProjectId = null;
+    updateSidebarActive();
+    return;
+  }
+
+  const panel = inner.querySelector(`.v2-panel[data-v2-panel="${name}"]`);
+  if (panel) {
+    panel.classList.add('open');
+    document.getElementById('v2-backdrop')?.classList.add('open');
+    currentSection = name;
+
+    if (name === 'contact') {
+      if (hero) hero.classList.add('v2-hero-pushed');
+    }
+
+    updateSidebarActive();
+  }
+}
+
+export function closePanel() {
+  showPanel(null);
 }
 
 // ── Canvas selection handlers ──
@@ -388,9 +470,12 @@ function rerenderSection(name) {
       content.innerHTML = newInner.innerHTML;
     }
   } else if (name === 'contact') {
-    const sec = document.getElementById('v2-sec-contact');
-    if (sec) {
-      sec.querySelector('.v2-section-inner').innerHTML = buildContactHTML(g);
+    const panel = document.querySelector('.v2-panel[data-v2-panel="contact"] .v2-panel-scroll');
+    if (panel) {
+      const temp = document.createElement('div');
+      temp.innerHTML = buildContactPanelHTML(g);
+      const newScroll = temp.querySelector('.v2-panel-scroll');
+      if (newScroll) panel.innerHTML = newScroll.innerHTML;
     }
   }
 }
