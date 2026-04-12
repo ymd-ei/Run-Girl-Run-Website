@@ -1,0 +1,270 @@
+/**
+ * Canvas — v2 Editor
+ * Renders the portfolio site sections inline inside the editor canvas.
+ * Uses shared renderers (displayRenderer, blockRenderer) — does NOT import main.js.
+ */
+
+import { state, loadProject } from './dataBridge.js';
+import {
+  applyTheme,
+  renderWorkGrid,
+  renderContactPanel,
+  renderDisplayBlocks
+} from '../display/displayRenderer.js';
+import { normalizeBlocks } from '../modules/blocks/blockManager.js';
+import { phosphorIcon } from '../utils/icons.js';
+
+let currentSection = 'home';
+let currentProjectId = null;
+
+/**
+ * Full render — call after data is loaded
+ */
+export function renderCanvas() {
+  const canvas = document.getElementById('v2-canvas-inner');
+  if (!canvas) return;
+
+  const g = state.global;
+  const theme = g.theme || {};
+
+  // Apply theme CSS variables to the canvas scope
+  applyCanvasTheme(theme);
+
+  canvas.innerHTML = buildHeroHTML(g) +
+    buildWorkHTML(g, theme) +
+    buildAboutHTML(g) +
+    buildContactHTML(g);
+
+  // Wire up project card clicks
+  canvas.querySelectorAll('[data-v2-project]').forEach(card => {
+    card.addEventListener('click', () => openProject(card.dataset.v2Project));
+  });
+
+  // Wire up section nav clicks from sidebar
+  updateSidebarNav();
+}
+
+/**
+ * Apply theme as CSS variables scoped to the canvas wrapper
+ */
+function applyCanvasTheme(theme) {
+  const root = document.getElementById('v2-canvas');
+  if (!root) return;
+
+  const vars = {
+    '--color-accent': theme.accent || '#5e30eb',
+    '--color-paper': theme.paper || '#f2ede4',
+    '--color-ink': theme.ink || '#1a1714',
+    '--color-panel-bg': theme.panelBg || '#f7f3ec',
+    '--color-contact-accent': theme.ctAccent || '#ff7828',
+    '--color-contact-bg': theme.ctBg || '#080808',
+    '--color-contact-hi': theme.ctHi || '#ffffff',
+    '--color-sensitive': theme.sensitiveColor || '#e03030',
+    '--ink': theme.ink || '#1a1714',
+    '--paper': theme.paper || '#f2ede4',
+    '--accent': theme.accent || '#5e30eb',
+    '--accent-rgb': hexToRgb(theme.accent || '#5e30eb'),
+    '--panel-bg': theme.panelBg || '#f7f3ec',
+    '--ct-accent': theme.ctAccent || '#ff4361',
+    '--ct-bg': theme.ctBg || '#080808',
+    '--ct-hi': theme.ctHi || '#ffffff'
+  };
+
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r},${g},${b}`;
+}
+
+// ── Section builders ──
+
+function buildHeroHTML(g) {
+  const name = g.name || 'Your Name';
+  const role = g.role || 'Your Role';
+  const parts = name.split(' ');
+  const line1 = parts[0] || '';
+  const line2 = parts.slice(1).join(' ') || '';
+
+  let reelHTML = '';
+  if (g.reel && g.reel.url) {
+    if (g.reel.type === 'video') {
+      reelHTML = `<video muted loop playsinline preload="metadata" src="${g.reel.url}" style="width:100%;height:100%;object-fit:cover;"></video>`;
+    } else {
+      reelHTML = `<div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;color:#666;font-size:.75rem;">Video embed (${g.reel.type})</div>`;
+    }
+  } else {
+    reelHTML = `<div style="width:100%;height:100%;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#666;font-size:.75rem;">Demo Reel Goes Here</div>`;
+  }
+
+  return `
+    <section class="v2-section" data-v2-section="hero" id="v2-sec-hero">
+      <div class="v2-section-label">Hero</div>
+      <div class="v2-hero">
+        <div class="v2-hero-bg">${reelHTML}</div>
+        <div class="v2-hero-overlay"></div>
+        <div class="v2-hero-text">
+          <p class="v2-hero-role">${role}</p>
+          <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
+        </div>
+      </div>
+    </section>`;
+}
+
+function buildWorkHTML(g, theme) {
+  const filters = g.filters || [
+    { value: '2d', label: '2D' },
+    { value: '3d', label: '3D' },
+    { value: 'motion', label: 'Motion' }
+  ];
+
+  // Show all projects (including drafts) in editor
+  const gridHTML = renderWorkGrid(state.projects, theme, { showAll: true });
+
+  // Replace onclick handlers with data attributes for v2
+  const safeGrid = gridHTML.replace(
+    /onclick="window\.display\?\.openProject\?\('([^']+)'\)"/g,
+    'data-v2-project="$1"'
+  );
+
+  const filterBtns = `<button class="fb active" data-v2-filter="all">All</button>` +
+    filters.map(f => `<button class="fb" data-v2-filter="${f.value}">${f.label}</button>`).join('');
+
+  return `
+    <section class="v2-section" data-v2-section="work" id="v2-sec-work">
+      <div class="v2-section-label">Work</div>
+      <div class="v2-work">
+        <div class="v2-work-filters">${filterBtns}</div>
+        <div class="v2-work-grid wg">${safeGrid}</div>
+      </div>
+    </section>`;
+}
+
+function buildAboutHTML(g) {
+  const blocks = normalizeBlocks(g.about || []);
+  const blocksHTML = renderDisplayBlocks(blocks, { scope: 'about' });
+
+  return `
+    <section class="v2-section" data-v2-section="about" id="v2-sec-about">
+      <div class="v2-section-label">About</div>
+      <div class="v2-about pb">${blocksHTML}</div>
+    </section>`;
+}
+
+function buildContactHTML(g) {
+  const ct = renderContactPanel(g);
+  const email = g.contact?.email || '';
+
+  const icons = (g.contact?.links || [])
+    .map(l => `<a href="${l.url}" class="ct-icon-btn" title="${l.label}"><i class="${phosphorIcon(l.url)}"></i></a>`)
+    .join('');
+
+  return `
+    <section class="v2-section" data-v2-section="contact" id="v2-sec-contact">
+      <div class="v2-section-label">Contact</div>
+      <div class="v2-contact">
+        <div class="v2-contact-hero">
+          <h1 class="ct-hero">${ct.hero}</h1>
+          <p class="ct-sub">${ct.sub}</p>
+        </div>
+        <div class="v2-contact-details">
+          <div class="v2-contact-col">
+            <p class="v2-contact-label">${ct.emailLabel}</p>
+            <a href="${email ? 'mailto:' + email : '#'}" class="v2-contact-email">${email}</a>
+          </div>
+          <div class="v2-contact-col">
+            <p class="v2-contact-label">${ct.socialLabel}</p>
+            <div class="ct-icons">${icons}</div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// ── Project detail ──
+
+export async function openProject(id) {
+  const canvas = document.getElementById('v2-canvas-inner');
+  if (!canvas) return;
+
+  const project = await loadProject(id);
+  if (!project) return;
+
+  currentProjectId = id;
+  currentSection = 'project';
+
+  const heroImg = project.heroImage || project.thumbnail || '';
+  const blocks = normalizeBlocks(project.blocks || []);
+  const blocksHTML = renderDisplayBlocks(blocks, { scope: 'proj-' + id, projectId: id });
+
+  canvas.innerHTML = `
+    <section class="v2-section" data-v2-section="project">
+      <div class="v2-section-label">
+        <button class="v2-back-btn" id="v2-back">&#x2190; Back to all sections</button>
+      </div>
+      <div class="v2-project">
+        <div class="v2-project-hero" ${heroImg ? `style="background-image:url('${heroImg}')"` : ''}>
+          <div class="v2-project-hero-overlay"></div>
+          <div class="v2-project-hero-content">
+            <h2 class="v2-project-title">${project.title || ''}</h2>
+            <div class="v2-project-meta">
+              ${project.typeLabel ? `<span class="v2-project-tag">${project.typeLabel}</span>` : ''}
+              ${project.year ? `<span class="v2-project-tag">${project.year}</span>` : ''}
+              ${project.client ? `<span class="v2-project-tag">${project.client}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="v2-project-blocks pb">${blocksHTML}</div>
+      </div>
+    </section>`;
+
+  document.getElementById('v2-back')?.addEventListener('click', () => {
+    currentProjectId = null;
+    currentSection = 'home';
+    renderCanvas();
+  });
+}
+
+// ── Sidebar nav ──
+
+function updateSidebarNav() {
+  const nav = document.getElementById('v2-sidebar-nav');
+  if (!nav) return;
+
+  const sections = ['hero', 'work', 'about', 'contact'];
+  nav.innerHTML = sections
+    .map(s => `<button class="v2-nav-item" data-v2-goto="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`)
+    .join('');
+
+  nav.querySelectorAll('[data-v2-goto]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById('v2-sec-' + btn.dataset.v2Goto);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+/**
+ * Build project list in sidebar
+ */
+export function renderSidebarProjects() {
+  const list = document.getElementById('v2-sidebar-projects');
+  if (!list) return;
+
+  list.innerHTML = state.projects
+    .map(p => {
+      const dot = p.published ? 'v2-dot-pub' : 'v2-dot-draft';
+      return `<button class="v2-nav-item v2-nav-project" data-v2-open-project="${p.id}">
+        <span class="v2-dot ${dot}"></span>${p.title || p.id}
+      </button>`;
+    })
+    .join('');
+
+  list.querySelectorAll('[data-v2-open-project]').forEach(btn => {
+    btn.addEventListener('click', () => openProject(btn.dataset.v2OpenProject));
+  });
+}

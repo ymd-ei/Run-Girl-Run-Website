@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Editor v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+<!-- Display styles (for rendering site content on canvas) -->
+<link rel="stylesheet" href="styles-main.css">
+<!-- Editor chrome (overrides where needed) -->
+<link rel="stylesheet" href="styles-editor-v2.css">
+</head>
+<body>
+
+<div id="v2-app">
+  <!-- SIDEBAR -->
+  <div id="v2-sidebar">
+    <div class="v2-sidebar-logo"><span>RGR Studio</span>Editor v2</div>
+
+    <div class="v2-sidebar-section">Sections</div>
+    <div id="v2-sidebar-nav"></div>
+
+    <div class="v2-sidebar-section">Projects</div>
+    <div id="v2-sidebar-projects"></div>
+
+    <div class="v2-sidebar-footer">
+      <a href="index.html" target="_blank">View Live Site &#x2197;</a>
+      <a href="editor.html">Switch to v1 Editor</a>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="v2-canvas">
+    <div id="v2-canvas-inner">
+      <div class="v2-loading">Loading site data…</div>
+    </div>
+  </div>
+
+  <!-- INSPECTOR (Phase 2) -->
+  <div id="v2-inspector"></div>
+</div>
+
+<div id="v2-toast"></div>
+
+<script type="module">
+  import { loadSiteData } from './src/editor-v2/dataBridge.js';
+  import { renderCanvas, renderSidebarProjects } from './src/editor-v2/canvas.js';
+
+  async function init() {
+    try {
+      await loadSiteData();
+      renderCanvas();
+      renderSidebarProjects();
+    } catch (err) {
+      console.error('v2 init failed:', err);
+      const inner = document.getElementById('v2-canvas-inner');
+      if (inner) inner.innerHTML = `<div class="v2-loading" style="color:#c06060;">Failed to load: ${err.message}</div>`;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
