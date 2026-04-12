@@ -13,7 +13,7 @@ import {
 } from '../display/displayRenderer.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 import { phosphorIcon } from '../utils/icons.js';
-import { initInspector, setSelection, clearSelection, getSelection } from './inspector.js';
+import { initInspector, showAt, hideInspector, setSelection, clearSelection, getSelection, bindCanvasScroll } from './inspector.js';
 import { initToolbar, startEdit, finishEdit, isEditing } from './floatingToolbar.js';
 
 let currentSection = 'home';
@@ -56,6 +56,9 @@ export function initEditing() {
 
   canvas.addEventListener('click', handleCanvasClick);
   canvas.addEventListener('dblclick', handleCanvasDblClick);
+
+  // Bind scroll reposition for floating inspector
+  bindCanvasScroll(canvas);
 }
 
 /**
@@ -328,8 +331,7 @@ function handleCanvasClick(e) {
   if (sectionEl) {
     const sectionName = sectionEl.dataset.v2Section;
     clearCanvasSelection();
-    setSelection({ type: 'section', sectionName });
-    showInspector();
+    showAt(sectionEl, { type: 'section', sectionName });
     return;
   }
 
@@ -359,20 +361,11 @@ function selectBlock(el) {
   const wrapper = el.closest('.block-canvas > *') || el;
   wrapper.classList.add('v2-selected');
 
-  setSelection({ type: 'block', scope, blockId });
-  showInspector();
+  showAt(wrapper, { type: 'block', scope, blockId });
 }
 
 function clearCanvasSelection() {
   document.querySelectorAll('.v2-selected').forEach(el => el.classList.remove('v2-selected'));
-}
-
-function showInspector() {
-  const insp = document.getElementById('v2-inspector');
-  if (insp) {
-    insp.classList.add('open');
-    document.documentElement.style.setProperty('--v2-inspector-w', '280px');
-  }
 }
 
 // ── Re-render helpers ──

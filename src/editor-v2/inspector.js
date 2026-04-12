@@ -1,6 +1,6 @@
 /**
  * Inspector — v2 Editor
- * Right-panel contextual property editor. Shows editable fields for selected elements.
+ * Floating contextual property editor, anchored to the selected block on the canvas.
  */
 
 import { state, loadProject } from './dataBridge.js';
@@ -88,6 +88,11 @@ const CONTACT_FIELDS = [
 
 let currentSelection = null; // { type: 'block'|'section', scope, blockId, sectionName }
 let onChangeCallback = null;
+let anchorEl = null;        // DOM element the inspector is anchored to
+let scrollContainer = null; // the canvas scroll container
+
+const MARGIN = 8;           // min px from viewport edges
+const PANEL_W = 300;        // matches CSS width
 
 /**
  * Initialize the inspector. Call once on startup.
@@ -95,10 +100,45 @@ let onChangeCallback = null;
  */
 export function initInspector(onChange) {
   onChangeCallback = onChange;
+
+  // Reposition on window resize
+  window.addEventListener('resize', () => { if (anchorEl) reposition(); });
 }
 
 /**
- * Set the current selection and render the inspector panel
+ * Attach scroll listener to the canvas container (call once after DOM ready).
+ */
+export function bindCanvasScroll(container) {
+  scrollContainer = container;
+  if (scrollContainer) {
+    scrollContainer.addEventListener('scroll', () => { if (anchorEl) reposition(); }, { passive: true });
+  }
+}
+
+/**
+ * Show the inspector anchored to a DOM element.
+ */
+export function showAt(el, selection) {
+  anchorEl = el;
+  currentSelection = selection;
+  render();
+  reposition();
+  const panel = document.getElementById('v2-inspector');
+  if (panel) panel.classList.add('open');
+}
+
+/**
+ * Hide the inspector.
+ */
+export function hideInspector() {
+  currentSelection = null;
+  anchorEl = null;
+  const panel = document.getElementById('v2-inspector');
+  if (panel) panel.classList.remove('open');
+}
+
+/**
+ * Set the current selection and re-render fields (without changing anchor).
  */
 export function setSelection(selection) {
   currentSelection = selection;
@@ -106,11 +146,10 @@ export function setSelection(selection) {
 }
 
 /**
- * Clear the selection
+ * Clear the selection and hide.
  */
 export function clearSelection() {
-  currentSelection = null;
-  render();
+  hideInspector();
 }
 
 export function getSelection() {
@@ -133,6 +172,39 @@ function render() {
   } else if (currentSelection.type === 'block') {
     renderBlockInspector(panel);
   }
+}
+
+// ── Positioning ──
+
+function reposition() {
+  const panel = document.getElementById('v2-inspector');
+  if (!panel || !anchorEl) return;
+
+  const rect = anchorEl.getBoundingClientRect();
+  const panelH = panel.offsetHeight || 200;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Horizontal: center on the block, clamp to viewport
+  let left = rect.left + rect.width / 2 - PANEL_W / 2;
+  left = Math.max(MARGIN, Math.min(left, vw - PANEL_W - MARGIN));
+
+  // Vertical: prefer below the block
+  let top = rect.bottom + MARGIN;
+
+  // If it would overflow the bottom, try above
+  if (top + panelH > vh - MARGIN) {
+    const above = rect.top - panelH - MARGIN;
+    if (above >= MARGIN) {
+      top = above;
+    } else {
+      // Neither fits cleanly — anchor to bottom of viewport with scroll
+      top = Math.max(MARGIN, vh - panelH - MARGIN);
+    }
+  }
+
+  panel.style.top = top + 'px';
+  panel.style.left = left + 'px';
 }
 
 function renderSectionInspector(panel) {
