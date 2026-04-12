@@ -8,17 +8,15 @@ import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 
 // ── Block type → field definitions ──
 
+// Only non-visual properties live here. Text content is edited inline on the canvas.
 const BLOCK_FIELDS = {
   'text-sm': [
-    { key: 'content', label: 'Content', type: 'textarea' },
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'text-md': [
-    { key: 'content', label: 'Content', type: 'textarea' },
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'text-lg': [
-    { key: 'content', label: 'Content', type: 'textarea' },
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'image': [
@@ -35,7 +33,6 @@ const BLOCK_FIELDS = {
     { key: 'ratio', label: 'Aspect Ratio', type: 'text' }
   ],
   'quote': [
-    { key: 'content', label: 'Quote', type: 'textarea' },
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'video': [
@@ -43,13 +40,9 @@ const BLOCK_FIELDS = {
   ],
   'divider': [],
   'callout': [
-    { key: 'tone', label: 'Tone', type: 'select', options: ['note', 'highlight', 'warning'] },
-    { key: 'title', label: 'Title', type: 'text' },
-    { key: 'content', label: 'Body', type: 'textarea' }
+    { key: 'tone', label: 'Tone', type: 'select', options: ['note', 'highlight', 'warning'] }
   ],
   'cta': [
-    { key: 'headline', label: 'Headline', type: 'text' },
-    { key: 'body', label: 'Body', type: 'textarea' },
     { key: 'buttonLabel', label: 'Button Text', type: 'text' },
     { key: 'buttonUrl', label: 'Button URL', type: 'text' },
     { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'highlight'] }

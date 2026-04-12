@@ -55,7 +55,6 @@ export function initEditing() {
   if (!canvas) return;
 
   canvas.addEventListener('click', handleCanvasClick);
-  canvas.addEventListener('dblclick', handleCanvasDblClick);
 
   // Bind scroll reposition for floating inspector
   bindCanvasScroll(canvas);
@@ -316,9 +315,21 @@ export function renderSidebarProjects() {
 // ── Canvas selection handlers ──
 
 function handleCanvasClick(e) {
-  if (isEditing()) return; // Don't disturb inline edit
+  if (isEditing()) {
+    // If we clicked inside the element being edited, let it be
+    return;
+  }
 
-  // Did we click on a block element with canvas attributes?
+  // Did we click on an inline-editable element? → start typing immediately
+  const editableEl = e.target.closest('[data-canvas-editable]');
+  if (editableEl) {
+    e.stopPropagation();
+    selectBlock(editableEl);
+    startEdit(editableEl);
+    return;
+  }
+
+  // Did we click on a block element (non-editable, e.g. image, video)?
   const blockEl = e.target.closest('[data-canvas-block-id]');
   if (blockEl) {
     e.stopPropagation();
@@ -338,16 +349,6 @@ function handleCanvasClick(e) {
   // Clicked blank canvas
   clearCanvasSelection();
   clearSelection();
-}
-
-function handleCanvasDblClick(e) {
-  // Double-click on a text-editable element → inline edit
-  const el = e.target.closest('[data-canvas-editable]');
-  if (!el) return;
-
-  e.stopPropagation();
-  selectBlock(el);
-  startEdit(el);
 }
 
 function selectBlock(el) {
