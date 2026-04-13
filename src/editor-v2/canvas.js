@@ -843,6 +843,11 @@ function rerenderBlock(scope, blockId) {
     // Wrapper exists — replace its inner content
     wrapper.innerHTML = newHTML;
     wrapper.classList.add('v2-selected');
+    // Update padding on the wrapper itself
+    const pt = block.paddingTop;
+    const pb = block.paddingBottom;
+    wrapper.style.paddingTop = pt ? (parseInt(pt, 10) || 0) + 'px' : '';
+    wrapper.style.paddingBottom = pb ? (parseInt(pb, 10) || 0) + 'px' : '';
   } else {
     // Legacy: no wrapper, replace the element itself
     const target = el.closest('.block-canvas > *') || el;

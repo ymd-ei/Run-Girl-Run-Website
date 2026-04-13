@@ -413,8 +413,8 @@ function renderBlockInspector(panel) {
   bindFieldEvents(panel, fields, (key, value) => {
     if (key === 'scale' || key === 'position') {
       block[key] = parseFloat(value);
-    } else if (key === 'columns') {
-      block[key] = parseInt(value, 10);
+    } else if (key === 'columns' || key === 'paddingTop' || key === 'paddingBottom') {
+      block[key] = parseInt(value, 10) || 0;
     } else {
       block[key] = value;
     }
