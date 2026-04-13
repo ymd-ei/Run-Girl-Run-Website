@@ -1407,6 +1407,96 @@ html, body {
   border-color: var(--v2-accent);
 }
 
+/* ── Inspector: project order drag ── */
+
+.v2-insp-hint {
+  font-size: .7rem;
+  color: var(--v2-muted);
+  margin-bottom: 6px;
+}
+
+.v2-insp-order-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  font-size: .78rem;
+  transition: opacity .12s, border-color .12s;
+}
+.v2-insp-order-item:active { cursor: grabbing; }
+.v2-insp-order-item.v2-draft { opacity: .5; }
+.v2-insp-order-item.v2-dragging { opacity: .3; }
+.v2-insp-order-item.v2-drag-above { border-top: 2px solid var(--v2-accent); }
+.v2-insp-order-item.v2-drag-below { border-bottom: 2px solid var(--v2-accent); }
+
+.v2-insp-order-grip {
+  color: var(--v2-muted);
+  font-size: .7rem;
+  cursor: grab;
+}
+
+.v2-insp-order-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-insp-order-draft {
+  font-size: .65rem;
+  color: var(--v2-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── Hero: Watch Reel button preview ── */
+
+.v2-hero-reel-btn {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem 1.2rem;
+  border-radius: 999px;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.v2-hero-reel-btn .wr-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.6);
+}
+
+.v2-hero-reel-btn .wr-tri {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 7px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 2px;
+}
+
 /* ── Sidebar context (project metadata) ── */
 
 .v2-ctx-fields {

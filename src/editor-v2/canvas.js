@@ -278,6 +278,7 @@ function buildHeroHTML(g) {
         <p class="v2-hero-role">${role}</p>
         <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
       </div>
+      ${g.watchReel?.url ? `<div class="v2-hero-reel-btn"><span class="wr-play"><span class="wr-tri"></span></span> Watch Reel</div>` : ''}
       <nav class="v2-canvas-nav">
         <span class="v2-canvas-nav-name">${g.name || 'Your Name'}</span>
         <div class="v2-canvas-nav-links">
@@ -342,7 +343,7 @@ function buildContactPanelHTML(g) {
     .join('');
 
   return `
-    <div class="v2-panel v2-panel-contact" data-v2-panel="contact">
+    <div class="v2-panel v2-panel-contact" data-v2-panel="contact" data-v2-section="contact">
       <button class="v2-ct-close v2-panel-close">&#x2715;</button>
       <div class="v2-panel-scroll">
         <div class="v2-contact">
@@ -1013,14 +1014,16 @@ function rerenderSection(name) {
   if (name === 'hero') {
     const sec = document.getElementById('v2-sec-hero');
     if (!sec) return;
-    const content = sec.querySelector('.v2-hero-content') || sec;
-    // Rebuild just hero inner content
-    const heroHTML = buildHeroHTML(g);
+    const newHTML = buildHeroHTML(g);
     const temp = document.createElement('div');
-    temp.innerHTML = heroHTML;
-    const newInner = temp.querySelector('.v2-hero-content');
-    if (newInner && content.classList.contains('v2-hero-content')) {
-      content.innerHTML = newInner.innerHTML;
+    temp.innerHTML = newHTML;
+    const newHero = temp.querySelector('.v2-hero');
+    if (newHero) {
+      sec.innerHTML = newHero.innerHTML;
+      // Re-wire canvas nav buttons inside the new hero
+      sec.querySelectorAll('[data-v2-nav]').forEach(btn => {
+        btn.addEventListener('click', () => showPanel(btn.dataset.v2Nav));
+      });
     }
   } else if (name === 'contact') {
     const panel = document.querySelector('.v2-panel[data-v2-panel="contact"] .v2-panel-scroll');
@@ -1029,6 +1032,20 @@ function rerenderSection(name) {
       temp.innerHTML = buildContactPanelHTML(g);
       const newScroll = temp.querySelector('.v2-panel-scroll');
       if (newScroll) panel.innerHTML = newScroll.innerHTML;
+    }
+  } else if (name === 'work') {
+    const gridEl = document.querySelector('.v2-work-grid');
+    if (gridEl) {
+      const gridHTML = renderWorkGrid(state.projects, theme, { showAll: true });
+      const safeGrid = gridHTML.replace(
+        /onclick="window\.display\?\.openProject\?\.\('([^']+)'\)"/g,
+        'data-v2-project="$1"'
+      );
+      gridEl.innerHTML = safeGrid;
+      // Re-wire project card clicks
+      gridEl.querySelectorAll('[data-v2-project]').forEach(card => {
+        card.addEventListener('click', () => openProject(card.dataset.v2Project));
+      });
     }
   }
 }

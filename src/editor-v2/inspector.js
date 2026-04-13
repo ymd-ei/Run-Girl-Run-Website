@@ -107,16 +107,21 @@ const BLOCK_TYPE_LABELS = [
 const HERO_FIELDS = [
   { key: 'name', label: 'Name', type: 'text' },
   { key: 'role', label: 'Role', type: 'text' },
-  { key: 'location', label: 'Location', type: 'text' }
+  { key: 'location', label: 'Location', type: 'text' },
+  { key: 'reel.url', label: 'Background Video', type: 'image' },
+  { key: 'watchReel.url', label: 'Watch Reel Video', type: 'image' }
 ];
 
 const CONTACT_FIELDS = [
   { key: 'contactPanel.title', label: 'Hero Title', type: 'text' },
   { key: 'contactPanel.titleAccent', label: 'Hero Accent', type: 'text' },
   { key: 'contactPanel.sub', label: 'Subtitle', type: 'textarea' },
+  { key: 'contactPanel.scrollCue', label: 'Scroll Cue', type: 'text' },
   { key: 'contactPanel.emailLabel', label: 'Email Label', type: 'text' },
   { key: 'contactPanel.socialLabel', label: 'Social Label', type: 'text' },
+  { key: 'contactPanel.resumeLabel', label: 'Resume Label', type: 'text' },
   { key: 'contact.email', label: 'Email', type: 'text' },
+  { key: 'contact.resume', label: 'Resume File', type: 'image' },
   { key: 'contactPanel.tickerTop', label: 'Ticker Top (comma-sep)', type: 'text', isArray: true },
   { key: 'contactPanel.tickerMid', label: 'Ticker Mid (comma-sep)', type: 'text', isArray: true },
   { key: 'contactPanel.video.url', label: 'Background Video', type: 'image' }
@@ -259,6 +264,71 @@ function renderSectionInspector(panel) {
   } else if (name === 'contact') {
     fields = CONTACT_FIELDS;
     data = state.global;
+
+    const links = data.contact?.links || [];
+    const linksHTML = links.map((l, i) => `
+      <div class="v2-insp-sub-item" data-link-idx="${i}">
+        <div class="v2-insp-sub-header"><span>#${i + 1}</span><button class="v2-insp-sub-del" data-del-link="${i}">&times;</button></div>
+        <label>Label <input type="text" data-link-field="label" data-link-idx="${i}" value="${escapeHtml(l.label || '')}"></label>
+        <label>URL <input type="text" data-link-field="url" data-link-idx="${i}" value="${escapeHtml(l.url || '')}"></label>
+      </div>`).join('');
+
+    panel.innerHTML = `
+      <div class="v2-insp-header">Contact</div>
+      <div class="v2-insp-fields">
+        ${fields.map(f => {
+          let val = getNestedValue(data, f.key);
+          if (f.isArray && Array.isArray(val)) val = val.join(', ');
+          return renderField(f, val);
+        }).join('')}
+        <div class="v2-insp-field">
+          <label>Social Links</label>
+          <div class="v2-insp-sub-items v2-links-list">${linksHTML}</div>
+          <button class="v2-insp-sub-add v2-add-link">+ Add Link</button>
+        </div>
+      </div>`;
+
+    bindFieldEvents(panel, fields, (key, value) => {
+      const fieldDef = fields.find(f => f.key === key);
+      if (fieldDef?.isArray) {
+        setNestedValue(state.global, key, value.split(',').map(s => s.trim()).filter(Boolean));
+      } else {
+        setNestedValue(state.global, key, value);
+      }
+      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+    });
+
+    const syncLinks = () => {
+      if (onChangeCallback) onChangeCallback(currentSelection, 'contact.links', data.contact.links);
+    };
+
+    panel.addEventListener('input', (e) => {
+      const field = e.target.dataset.linkField;
+      const idx = Number(e.target.dataset.linkIdx);
+      if (field && !isNaN(idx) && data.contact?.links?.[idx]) {
+        data.contact.links[idx][field] = e.target.value;
+        syncLinks();
+      }
+    });
+
+    panel.querySelector('.v2-add-link')?.addEventListener('click', () => {
+      if (!data.contact) data.contact = {};
+      if (!data.contact.links) data.contact.links = [];
+      data.contact.links.push({ label: '', url: '' });
+      syncLinks();
+      render();
+    });
+
+    panel.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('[data-del-link]');
+      if (delBtn) {
+        const idx = Number(delBtn.dataset.delLink);
+        data.contact.links.splice(idx, 1);
+        syncLinks();
+        render();
+      }
+    });
+    return;
   } else if (name === 'theme') {
     fields = THEME_FIELDS;
     data = state.global.theme || {};
@@ -293,6 +363,11 @@ function renderSectionInspector(panel) {
           <label>Filters</label>
           <div class="v2-insp-sub-items v2-filter-list">${filterListHTML}</div>
           <button class="v2-insp-sub-add v2-add-filter">+ Add Filter</button>
+        </div>
+        <div class="v2-insp-field">
+          <label>Project Order</label>
+          <p class="v2-insp-hint">Drag to reorder. Draft projects shown dimmed.</p>
+          <div class="v2-insp-sub-items v2-project-order-list">${buildProjectOrderHTML()}</div>
         </div>
       </div>`;
 
@@ -330,6 +405,9 @@ function renderSectionInspector(panel) {
         render();
       }
     });
+
+    // Project order drag reordering
+    initProjectOrderDrag(panel);
     return;
   } else if (name === 'project') {
     const projectId = currentSelection.projectId;
@@ -370,8 +448,105 @@ function renderSectionInspector(panel) {
       setNestedValue(state.global, key, value.split(',').map(s => s.trim()).filter(Boolean));
     } else {
       setNestedValue(state.global, key, value);
+      // Auto-set video type when editing reel/watchReel URL
+      if (key === 'reel.url') {
+        setNestedValue(state.global, 'reel.type', detectMediaType(value));
+      } else if (key === 'watchReel.url') {
+        setNestedValue(state.global, 'watchReel.type', detectMediaType(value));
+      }
     }
     if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+  });
+}
+
+// ── Project order drag reorder ──
+
+function buildProjectOrderHTML() {
+  const projects = state.global.projects || [];
+  const cards = state.projects || [];
+  return projects.map((id, i) => {
+    const card = cards.find(c => c.id === id);
+    const title = card?.title || id;
+    const draft = card?.published === false;
+    return `<div class="v2-insp-order-item${draft ? ' v2-draft' : ''}" draggable="true" data-order-idx="${i}" data-order-id="${escapeHtml(id)}">
+      <span class="v2-insp-order-grip" title="Drag to reorder">&#9776;</span>
+      <span class="v2-insp-order-label">${escapeHtml(title)}</span>
+      ${draft ? '<span class="v2-insp-order-draft">Draft</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function initProjectOrderDrag(panel) {
+  const list = panel.querySelector('.v2-project-order-list');
+  if (!list) return;
+
+  let dragIdx = null;
+
+  list.addEventListener('dragstart', (e) => {
+    const item = e.target.closest('[data-order-idx]');
+    if (!item) return;
+    dragIdx = Number(item.dataset.orderIdx);
+    item.classList.add('v2-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('[data-order-idx]');
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    target.classList.toggle('v2-drag-above', e.clientY < mid);
+    target.classList.toggle('v2-drag-below', e.clientY >= mid);
+  });
+
+  list.addEventListener('dragleave', (e) => {
+    const target = e.target.closest('[data-order-idx]');
+    if (target) {
+      target.classList.remove('v2-drag-above', 'v2-drag-below');
+    }
+  });
+
+  list.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('[data-order-idx]');
+    if (!target || dragIdx === null) return;
+
+    let dropIdx = Number(target.dataset.orderIdx);
+    const rect = target.getBoundingClientRect();
+    if (e.clientY >= rect.top + rect.height / 2) dropIdx++;
+    if (dropIdx > dragIdx) dropIdx--;
+
+    if (dropIdx !== dragIdx) {
+      const projects = state.global.projects;
+      const [moved] = projects.splice(dragIdx, 1);
+      projects.splice(dropIdx, 0, moved);
+
+      // Also reorder projectCards to match
+      const cards = state.projects;
+      const [movedCard] = cards.splice(cards.findIndex(c => c.id === moved), 1) || [null];
+      if (movedCard) {
+        const newCardIdx = projects.indexOf(moved);
+        cards.splice(newCardIdx, 0, movedCard);
+      }
+
+      if (onChangeCallback) onChangeCallback(currentSelection, 'projects', projects);
+    }
+
+    // Clear drag indicators and re-render
+    list.querySelectorAll('[data-order-idx]').forEach(el => {
+      el.classList.remove('v2-dragging', 'v2-drag-above', 'v2-drag-below');
+    });
+    dragIdx = null;
+    render();
+  });
+
+  list.addEventListener('dragend', () => {
+    list.querySelectorAll('[data-order-idx]').forEach(el => {
+      el.classList.remove('v2-dragging', 'v2-drag-above', 'v2-drag-below');
+    });
+    dragIdx = null;
   });
 }
 
@@ -923,4 +1098,12 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function detectMediaType(url) {
+  if (!url) return 'video';
+  if (/vimeo\.com/i.test(url)) return 'vimeo';
+  if (/youtu\.?be/i.test(url)) return 'youtube';
+  if (/<iframe/i.test(url)) return 'embed';
+  return 'video';
 }
