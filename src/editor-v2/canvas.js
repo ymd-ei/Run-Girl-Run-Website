@@ -4,7 +4,7 @@
  * Uses shared renderers (displayRenderer, blockRenderer) — does NOT import main.js.
  */
 
-import { state, loadProject } from './dataBridge.js';
+import { state, loadProject, markDirty } from './dataBridge.js';
 import {
   applyTheme,
   renderWorkGrid,
@@ -29,8 +29,14 @@ export function initEditing() {
   // Inspector: when a field changes → re-render the affected block/section
   initInspector((selection, key, value) => {
     if (selection.type === 'section') {
+      markDirty('content.json');
       rerenderSection(selection.sectionName);
     } else if (selection.type === 'block') {
+      if (selection.scope && selection.scope.startsWith('proj-')) {
+        markDirty('projects/' + selection.scope.replace('proj-', '') + '.json');
+      } else {
+        markDirty('content.json');
+      }
       rerenderBlock(selection.scope, selection.blockId);
     }
   });
@@ -40,6 +46,11 @@ export function initEditing() {
     const block = findBlockData(scope, blockId);
     if (block) {
       block[field] = value;
+      if (scope && scope.startsWith('proj-')) {
+        markDirty('projects/' + scope.replace('proj-', '') + '.json');
+      } else {
+        markDirty('content.json');
+      }
       // Don't re-render while editing content — the contenteditable IS the display
       if (field === 'align') {
         // Alignment change updates the inspector if open

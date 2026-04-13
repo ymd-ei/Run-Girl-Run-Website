@@ -151,6 +151,50 @@ html, body {
   color: var(--v2-text);
 }
 
+/* Save button */
+.v2-save-btn {
+  background: var(--v2-accent) !important;
+  border-color: var(--v2-accent) !important;
+  color: #fff !important;
+  font-weight: 500;
+}
+.v2-save-btn:hover {
+  filter: brightness(1.15);
+}
+.v2-save-btn:disabled {
+  opacity: .35;
+  cursor: default;
+  filter: none;
+}
+.v2-save-btn.v2-save-dirty {
+  animation: v2-pulse-save 2s ease-in-out infinite;
+}
+@keyframes v2-pulse-save {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 8px rgba(94, 48, 235, 0.5); }
+}
+
+/* Auth status */
+.v2-auth-status {
+  font-size: .65rem;
+  color: var(--v2-muted);
+  text-align: center;
+  padding: .25rem 0;
+}
+.v2-auth-user {
+  color: var(--v2-text);
+}
+.v2-auth-link {
+  color: var(--v2-accent);
+  text-decoration: none;
+}
+.v2-auth-link:hover { text-decoration: underline; }
+
+/* Toast error variant */
+#v2-toast.error {
+  background: #c04040;
+}
+
 /* ── Canvas (center) ── */
 #v2-canvas {
   position: relative;
