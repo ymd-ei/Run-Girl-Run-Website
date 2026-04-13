@@ -244,34 +244,7 @@ function render() {
 // ── Positioning ──
 
 function reposition() {
-  const panel = document.getElementById('v2-inspector');
-  if (!panel || !anchorEl) return;
-
-  const rect = anchorEl.getBoundingClientRect();
-  const panelH = panel.offsetHeight || 200;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  // Horizontal: center on the block, clamp to viewport
-  let left = rect.left + rect.width / 2 - PANEL_W / 2;
-  left = Math.max(MARGIN, Math.min(left, vw - PANEL_W - MARGIN));
-
-  // Vertical: prefer below the block
-  let top = rect.bottom + MARGIN;
-
-  // If it would overflow the bottom, try above
-  if (top + panelH > vh - MARGIN) {
-    const above = rect.top - panelH - MARGIN;
-    if (above >= MARGIN) {
-      top = above;
-    } else {
-      // Neither fits cleanly — anchor to bottom of viewport with scroll
-      top = Math.max(MARGIN, vh - panelH - MARGIN);
-    }
-  }
-
-  panel.style.top = top + 'px';
-  panel.style.left = left + 'px';
+  // Inspector is now docked to the right — no floating positioning needed.
 }
 
 function renderSectionInspector(panel) {
