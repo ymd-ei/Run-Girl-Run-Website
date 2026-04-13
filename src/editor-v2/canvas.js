@@ -286,7 +286,7 @@ function buildHeroHTML(g) {
         <p class="v2-hero-role">${role}</p>
         <h1 class="v2-hero-name">${line1}${line2 ? '<br><em>' + line2 + '</em>' : ''}</h1>
       </div>
-      ${g.watchReel?.url ? `<div class="v2-hero-reel-btn"><span class="wr-play"><span class="wr-tri"></span></span> Watch Reel</div>` : ''}
+      ${g.watchReel?.url ? `<div class="v2-hero-reel-btn"><button><span class="wr-play"><span class="wr-tri"></span></span>Watch Reel</button></div>` : ''}
       <nav class="v2-canvas-nav">
         <span class="v2-canvas-nav-name">${g.name || 'Your Name'}</span>
         <div class="v2-canvas-nav-links">
@@ -354,7 +354,12 @@ function buildContactPanelHTML(g) {
   const videoUrl = cp.video?.url || '';
   let videoBgHTML = '';
   if (videoUrl) {
-    videoBgHTML = `<div class="v2-ct-bg"><video muted loop playsinline preload="metadata" src="${videoUrl}"></video><div class="v2-ct-bg-dark"></div></div>`;
+    videoBgHTML = `<div class="v2-ct-bg">
+      <div class="v2-ct-bg-video"><video muted loop playsinline preload="metadata" src="${videoUrl}"></video></div>
+      <div class="v2-ct-bg-grad"></div>
+      <div class="v2-ct-bg-dark"></div>
+      <div class="v2-ct-bg-grain"></div>
+    </div>`;
   }
 
   const icons = (g.contact?.links || [])
