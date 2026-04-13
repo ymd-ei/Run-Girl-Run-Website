@@ -605,6 +605,8 @@ html, body {
   align-items: center;
   gap: .6rem;
   margin-bottom: 1.5rem;
+  opacity: 1;
+  transform: none;
 }
 
 .v2-contact .ct-hero {
@@ -618,6 +620,8 @@ html, body {
   overflow: visible;
   max-width: 100%;
   mix-blend-mode: difference;
+  opacity: 1;
+  transform: none;
 }
 
 .v2-contact .ct-hero .accent-word {
@@ -634,6 +638,8 @@ html, body {
   line-height: 1.8;
   max-width: 480px;
   margin-top: 1.75rem;
+  opacity: 1;
+  transform: none;
 }
 
 /* Scroll cue */
@@ -648,6 +654,7 @@ html, body {
   letter-spacing: .25em;
   text-transform: uppercase;
   color: var(--ct-muted, rgba(255, 255, 255, 0.35));
+  opacity: 1;
 }
 
 .v2-contact .ct-scroll-line {
