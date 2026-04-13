@@ -96,6 +96,12 @@ export function initEditing() {
   // Media library sidebar button
   initMediaButton();
   window.__v2OpenMediaLibrary = openMediaLibrary;
+
+  // Global Esc dismiss
+  initGlobalEsc();
+
+  // FAQ, before/after, gallery interactions
+  initBlockInteractions(canvas);
 }
 
 /**
@@ -615,19 +621,34 @@ export async function openMediaLibrary(onPick) {
   // Click backdrop to close
   modal.onclick = (e) => { if (e.target === modal) closeMediaLibrary(); };
 
-  // Item click → pick
+  // Item click → preview (or pick if callback exists and double-click)
   const gridEl = document.getElementById('v2-media-grid');
   if (gridEl) {
     gridEl.onclick = (e) => {
       const item = e.target.closest('[data-media-path]');
       if (!item) return;
       const path = item.dataset.mediaPath;
-      if (mediaPickCallback) {
+      const name = item.title || path;
+      showMediaPreview(path, name);
+    };
+  }
+
+  // Preview select button
+  const selectBtn = document.getElementById('v2-media-preview-select');
+  if (selectBtn) {
+    selectBtn.onclick = () => {
+      const preview = document.getElementById('v2-media-preview');
+      const path = preview?.dataset.currentPath;
+      if (path && mediaPickCallback) {
         mediaPickCallback(path);
       }
       closeMediaLibrary();
     };
   }
+
+  // Preview close button
+  const previewCloseBtn = document.getElementById('v2-media-preview-close');
+  if (previewCloseBtn) previewCloseBtn.onclick = hideMediaPreview;
 
   // Upload
   const uploadInput = document.getElementById('v2-media-upload');
@@ -651,14 +672,147 @@ export async function openMediaLibrary(onPick) {
 }
 
 function closeMediaLibrary() {
+  hideMediaPreview();
   const modal = document.getElementById('v2-media-modal');
   if (modal) modal.hidden = true;
   mediaPickCallback = null;
 }
 
+function showMediaPreview(path, name) {
+  const preview = document.getElementById('v2-media-preview');
+  if (!preview) return;
+  preview.dataset.currentPath = path;
+
+  const contentEl = preview.querySelector('.v2-media-preview-content');
+  const nameEl = preview.querySelector('.v2-media-preview-name');
+  const selectBtn = document.getElementById('v2-media-preview-select');
+  if (nameEl) nameEl.textContent = name;
+  if (selectBtn) selectBtn.style.display = mediaPickCallback ? '' : 'none';
+
+  const isVideo = /\.(mp4|webm|mov)$/i.test(path);
+  if (isVideo) {
+    contentEl.innerHTML = `<video src="${path}" controls autoplay muted style="max-width:100%;max-height:100%;"></video>`;
+  } else {
+    contentEl.innerHTML = `<img src="${path}" alt="${escapeAttr(name)}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+  }
+  preview.hidden = false;
+}
+
+function hideMediaPreview() {
+  const preview = document.getElementById('v2-media-preview');
+  if (!preview || preview.hidden) return;
+  preview.hidden = true;
+  const contentEl = preview.querySelector('.v2-media-preview-content');
+  if (contentEl) contentEl.innerHTML = '';
+}
+
+function isMediaPreviewOpen() {
+  const p = document.getElementById('v2-media-preview');
+  return p && !p.hidden;
+}
+
+function isMediaModalOpen() {
+  const m = document.getElementById('v2-media-modal');
+  return m && !m.hidden;
+}
+
 function initMediaButton() {
   const btn = document.getElementById('v2-media-btn');
   if (btn) btn.onclick = () => openMediaLibrary(null);
+}
+
+// ── Global Escape handler ──
+
+function initGlobalEsc() {
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+
+    // Priority 1: media preview
+    if (isMediaPreviewOpen()) {
+      e.preventDefault();
+      hideMediaPreview();
+      return;
+    }
+
+    // Priority 2: media modal
+    if (isMediaModalOpen()) {
+      e.preventDefault();
+      closeMediaLibrary();
+      return;
+    }
+
+    // Priority 3: inline editing (handled by floatingToolbar's own listener)
+    if (isEditing()) return;
+
+    // Priority 4: inspector open → close it
+    if (getSelection()) {
+      e.preventDefault();
+      clearCanvasSelection();
+      clearSelection();
+      return;
+    }
+  });
+}
+
+// ── Interactive block behaviors (FAQ, before/after, gallery) ──
+
+function initBlockInteractions(canvas) {
+  // FAQ accordion toggle
+  canvas.addEventListener('click', e => {
+    const trigger = e.target.closest('[data-faq-trigger]');
+    if (!trigger) return;
+    const item = trigger.closest('[data-faq-item]');
+    if (!item) return;
+    e.stopPropagation();
+    const isOpen = item.classList.contains('open');
+    // Close all siblings
+    item.closest('[data-faq]')?.querySelectorAll('[data-faq-item]').forEach(i => {
+      i.classList.remove('open');
+      const panel = i.querySelector('[data-faq-panel]');
+      const btn = i.querySelector('[data-faq-trigger]');
+      if (panel) panel.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+    if (!isOpen) {
+      item.classList.add('open');
+      const panel = item.querySelector('[data-faq-panel]');
+      const btn = item.querySelector('[data-faq-trigger]');
+      if (panel) panel.hidden = false;
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  // Before/after slider
+  let activeBA = null;
+  canvas.addEventListener('pointerdown', e => {
+    const handle = e.target.closest('[data-before-after-handle]');
+    if (!handle) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activeBA = handle.closest('[data-before-after]');
+    handle.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!activeBA) return;
+    const frame = activeBA.querySelector('[data-before-after-frame]');
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const pct = (x / rect.width) * 100;
+    activeBA.style.setProperty('--before-after-pos', pct + '%');
+  });
+  document.addEventListener('pointerup', () => { activeBA = null; });
+  document.addEventListener('pointercancel', () => { activeBA = null; });
+
+  // Gallery image lightbox (simple fullscreen preview)
+  canvas.addEventListener('click', e => {
+    const img = e.target.closest('.bl-gallery-open');
+    if (!img) return;
+    e.stopPropagation();
+    const src = img.dataset.fullSrc || img.src;
+    const alt = img.dataset.fullAlt || img.alt || '';
+    if (src) showMediaPreview(src, alt);
+  });
 }
 
 // ── Panel navigation ──
