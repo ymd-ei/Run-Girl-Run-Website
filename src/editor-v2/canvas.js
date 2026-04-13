@@ -479,6 +479,9 @@ export async function openProject(id) {
       showAt(settingsBtn, { type: 'section', sectionName: 'project', projectId: id });
     };
   }
+
+  // Update sidebar context with project metadata
+  updateSidebarContext(id, project);
 }
 
 // ── Sidebar nav ──
@@ -556,6 +559,60 @@ export function handleDeleteProject(id) {
   closePanel();
   renderSidebarProjects();
   renderCanvas();
+}
+
+// ── Sidebar context (project metadata) ──
+
+function updateSidebarContext(projectId, project) {
+  const ctx = document.getElementById('v2-sidebar-context');
+  if (!ctx) return;
+
+  const card = state.projects.find(p => p.id === projectId) || {};
+
+  ctx.innerHTML = `
+    <div class="v2-sidebar-section">Project Settings</div>
+    <div class="v2-ctx-fields">
+      <label>Title</label>
+      <input type="text" data-ctx-key="title" value="${escapeAttr(card.title || '')}">
+      <label>Type</label>
+      <input type="text" data-ctx-key="type" value="${escapeAttr(card.type || '')}">
+      <label>Type Label</label>
+      <input type="text" data-ctx-key="typeLabel" value="${escapeAttr(card.typeLabel || '')}">
+      <label>Year</label>
+      <input type="text" data-ctx-key="year" value="${escapeAttr(card.year || '')}">
+      <label>Client</label>
+      <input type="text" data-ctx-key="client" value="${escapeAttr(project.client || '')}">
+      <label>Thumbnail</label>
+      <input type="text" data-ctx-key="thumbnail" value="${escapeAttr(card.thumbnail || '')}">
+      <label>
+        <input type="checkbox" data-ctx-key="longform" ${project.longform ? 'checked' : ''}> Longform layout
+      </label>
+      <label>
+        <input type="checkbox" data-ctx-key="sensitive" ${card.sensitive ? 'checked' : ''}> Sensitive
+      </label>
+      <label>Sensitive Label</label>
+      <input type="text" data-ctx-key="sensitiveLabel" value="${escapeAttr(card.sensitiveLabel || '')}">
+    </div>`;
+
+  ctx.querySelectorAll('input[data-ctx-key]').forEach(el => {
+    const handler = () => {
+      const key = el.dataset.ctxKey;
+      const val = el.type === 'checkbox' ? el.checked : el.value;
+      const c = state.projects.find(p => p.id === projectId);
+      if (c) c[key] = val;
+      const proj = state.projectCache.get(projectId);
+      if (proj) proj[key] = val;
+      markDirty('content.json');
+      markDirty('projects/' + projectId + '.json');
+    };
+    el.addEventListener('input', handler);
+    el.addEventListener('change', handler);
+  });
+}
+
+function clearSidebarContext() {
+  const ctx = document.getElementById('v2-sidebar-context');
+  if (ctx) ctx.innerHTML = '';
 }
 
 function escapeAttr(str) {
@@ -833,6 +890,7 @@ export function showPanel(name) {
     document.getElementById('v2-backdrop')?.classList.remove('open');
     currentSection = 'home';
     currentProjectId = null;
+    clearSidebarContext();
     updateSidebarActive();
     return;
   }
@@ -845,6 +903,7 @@ export function showPanel(name) {
 
     if (name !== 'project') {
       currentProjectId = null;
+      clearSidebarContext();
     }
 
     if (name === 'contact') {
