@@ -109,7 +109,12 @@ const HERO_FIELDS = [
   { key: 'role', label: 'Role', type: 'text' },
   { key: 'location', label: 'Location', type: 'text' },
   { key: 'reel.url', label: 'Background Video', type: 'image' },
-  { key: 'watchReel.url', label: 'Watch Reel Video', type: 'image' }
+  { key: 'watchReel.url', label: 'Watch Reel Video', type: 'image' },
+  { key: 'favicon', label: 'Favicon', type: 'image' },
+  { key: 'logo', label: 'Nav Logo', type: 'image' },
+  { key: 'ogTitle', label: 'OG Title', type: 'text' },
+  { key: 'ogDescription', label: 'OG Description', type: 'textarea' },
+  { key: 'ogImage', label: 'OG Image', type: 'image' }
 ];
 
 const CONTACT_FIELDS = [
@@ -133,11 +138,15 @@ const WORK_FIELDS = [
 
 const PROJECT_META_FIELDS = [
   { key: 'title', label: 'Title', type: 'text' },
-  { key: 'type', label: 'Type', type: 'text' },
-  { key: 'typeLabel', label: 'Type Label', type: 'text' },
+  { key: 'type', label: 'Type', type: 'select', dynamic: 'filters' },
   { key: 'year', label: 'Year', type: 'text' },
   { key: 'client', label: 'Client', type: 'text' },
+  { key: 'duration', label: 'Duration', type: 'text' },
   { key: 'thumbnail', label: 'Thumbnail', type: 'image' },
+  { key: 'heroImage', label: 'Hero Image', type: 'image' },
+  { key: 'videoUrl', label: 'Video URL', type: 'text' },
+  { key: 'description', label: 'Share Description', type: 'textarea' },
+  { key: 'tags', label: 'Tags (comma-sep)', type: 'text', isArray: true },
   { key: 'longform', label: 'Longform layout', type: 'checkbox' },
   { key: 'sensitive', label: 'Sensitive', type: 'checkbox' },
   { key: 'sensitiveLabel', label: 'Sensitive Label', type: 'text' }
@@ -415,18 +424,33 @@ function renderSectionInspector(panel) {
 
     const card = state.projects.find(p => p.id === projectId) || {};
     const proj = state.projectCache.get(projectId) || card;
+    const merged = { ...card, ...proj };
 
     fields = PROJECT_META_FIELDS;
     panel.innerHTML = `
       <div class="v2-insp-header">Project Settings</div>
-      <div class="v2-insp-fields">${fields.map(f => renderField(f, (f.key === 'client' ? proj : card)[f.key])).join('')}</div>`;
+      <div class="v2-insp-fields">${fields.map(f => {
+        let val = merged[f.key];
+        if (f.isArray && Array.isArray(val)) val = val.join(', ');
+        return renderField(f, val);
+      }).join('')}</div>`;
 
     bindFieldEvents(panel, fields, (key, value) => {
       const c = state.projects.find(p => p.id === projectId);
-      if (c) c[key] = value;
       const p = state.projectCache.get(projectId);
-      if (p) p[key] = value;
-      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+      const fieldDef = fields.find(f => f.key === key);
+      const finalVal = fieldDef?.isArray ? value.split(',').map(s => s.trim()).filter(Boolean) : value;
+      if (c) c[key] = finalVal;
+      if (p) p[key] = finalVal;
+      // Auto-set typeLabel when type changes
+      if (key === 'type') {
+        const filters = state.global?.filters || [];
+        const match = filters.find(f => f.value === value);
+        const label = match?.label || value;
+        if (c) c.typeLabel = label;
+        if (p) p.typeLabel = label;
+      }
+      if (onChangeCallback) onChangeCallback(currentSelection, key, finalVal);
     });
     return;
   } else {
@@ -673,7 +697,16 @@ function renderField(field, value) {
   }
 
   if (field.type === 'select') {
-    const opts = (field.options || []).map(o =>
+    let options = field.options || [];
+    if (field.dynamic === 'filters') {
+      const filters = state.global?.filters || [
+        { value: '2d', label: '2D' },
+        { value: '3d', label: '3D' },
+        { value: 'motion', label: 'Motion' }
+      ];
+      options = filters.map(f => f.value);
+    }
+    const opts = options.map(o =>
       `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`
     ).join('');
     return `<div class="v2-insp-field">
