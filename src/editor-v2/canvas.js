@@ -508,8 +508,6 @@ export function handleDeleteProject(id) {
   renderSidebarProjects();
   renderCanvas();
 }
-  });
-}
 
 // ── Panel navigation ──
 
