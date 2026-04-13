@@ -33,11 +33,17 @@ export function initEditing() {
   initInspector((selection, key, value) => {
     pushState(state);
     if (selection.type === 'section') {
-      markDirty('content.json');
-      if (selection.sectionName === 'theme') {
-        applyCanvasTheme(state.global.theme || {});
+      if (selection.sectionName === 'project' && selection.projectId) {
+        markDirty('projects/' + selection.projectId + '.json');
+        markDirty('content.json');
+        rerenderSection(selection.sectionName, selection.projectId);
       } else {
-        rerenderSection(selection.sectionName);
+        markDirty('content.json');
+        if (selection.sectionName === 'theme') {
+          applyCanvasTheme(state.global.theme || {});
+        } else {
+          rerenderSection(selection.sectionName);
+        }
       }
     } else if (selection.type === 'block') {
       if (selection.scope && selection.scope.startsWith('proj-')) {
@@ -288,7 +294,7 @@ function buildHeroHTML(g) {
       </div>
       ${g.watchReel?.url ? `<div class="v2-hero-reel-btn"><button><span class="wr-play"><span class="wr-tri"></span></span>Watch Reel</button></div>` : ''}
       <nav class="v2-canvas-nav">
-        <span class="v2-canvas-nav-name">${g.name || 'Your Name'}</span>
+        <span class="v2-canvas-nav-name">${g.logo ? `<img src="${g.logo}" alt="${escapeAttr(g.name || '')}" class="v2-nav-logo">` : (g.name || 'Your Name')}</span>
         <div class="v2-canvas-nav-links">
           <button data-v2-nav="work">Work</button>
           <button data-v2-nav="about">About</button>
@@ -474,6 +480,7 @@ export async function openProject(id) {
                 ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
                 ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
                 ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
+                ${project.duration ? `<span class="pp-hero-tag">${project.duration}</span>` : ''}
               </div>
             </div>
           </div>
@@ -1068,9 +1075,45 @@ function clearCanvasSelection() {
 
 // ── Re-render helpers ──
 
-function rerenderSection(name) {
+function rerenderSection(name, projectId) {
   const g = state.global;
   const theme = g.theme || {};
+
+  if (name === 'project' && projectId) {
+    const card = state.projects.find(p => p.id === projectId) || {};
+    const proj = state.projectCache.get(projectId) || card;
+    const project = { ...card, ...proj };
+    const heroImg = project.heroImage || project.thumbnail || '';
+    const heroEl = document.querySelector('.v2-panel[data-v2-panel="project"] .pp-hero');
+    if (heroEl) {
+      heroEl.style.backgroundImage = heroImg ? `url('${heroImg}')` : '';
+      const titleEl = heroEl.querySelector('.pp-hero-title');
+      if (titleEl) titleEl.textContent = project.title || '';
+      const metaEl = heroEl.querySelector('.pp-hero-meta');
+      if (metaEl) {
+        metaEl.innerHTML = [
+          project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : '',
+          project.year ? `<span class="pp-hero-tag">${project.year}</span>` : '',
+          project.client ? `<span class="pp-hero-tag">${project.client}</span>` : '',
+          project.duration ? `<span class="pp-hero-tag">${project.duration}</span>` : '',
+        ].filter(Boolean).join('');
+      }
+    }
+    // Also refresh the work grid card
+    const gridEl = document.querySelector('.v2-work-grid');
+    if (gridEl) {
+      const gridHTML = renderWorkGrid(state.projects, theme, { showAll: true });
+      const safeGrid = gridHTML.replace(
+        /onclick="window\.display\?\.openProject\?\.\('([^']+)'\)"/g,
+        'data-v2-project="$1"'
+      );
+      gridEl.innerHTML = safeGrid;
+      gridEl.querySelectorAll('[data-v2-project]').forEach(card => {
+        card.addEventListener('click', () => openProject(card.dataset.v2Project));
+      });
+    }
+    return;
+  }
 
   if (name === 'hero') {
     const sec = document.getElementById('v2-sec-hero');

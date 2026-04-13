@@ -420,6 +420,12 @@ html, body {
   letter-spacing: .04em;
   color: var(--paper, #f2ede4);
 }
+.v2-canvas-nav-name img.v2-nav-logo {
+  height: 2em;
+  max-width: 40vw;
+  object-fit: contain;
+  vertical-align: middle;
+}
 
 .v2-canvas-nav-links {
   display: flex;
