@@ -526,12 +526,15 @@ html, body {
   position: relative;
 }
 
-/* Contact background video */
+/* Contact background layers */
 .v2-ct-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  margin-bottom: -100vh;
   overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 .v2-ct-bg-video {
   position: absolute;
@@ -570,6 +573,12 @@ html, body {
   background-size: 128px 128px;
 }
 
+/* Contact content wrapper (sits above sticky bg) */
+.v2-ct-content {
+  position: relative;
+}
+
+/* Splash section */
 .v2-ct-splash {
   min-height: 100vh;
   display: flex;
@@ -577,11 +586,10 @@ html, body {
   justify-content: flex-end;
   padding: 3rem 3.5rem 4rem;
   position: relative;
-  z-index: 1;
 }
 
 .v2-contact .ct-tag {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
   font-size: .6rem;
   font-weight: 500;
   letter-spacing: .25em;
@@ -594,47 +602,46 @@ html, body {
 }
 
 .v2-contact .ct-hero {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-hero, 'Bebas Neue', sans-serif);
   font-size: clamp(2rem, 8vw, 14rem);
   line-height: .88;
   letter-spacing: .01em;
   color: var(--ct-hi, #fff);
   text-transform: uppercase;
   white-space: nowrap;
-  opacity: 1;
-  transform: none;
-  mix-blend-mode: normal;
+  overflow: visible;
+  max-width: 100%;
+  mix-blend-mode: difference;
 }
 
 .v2-contact .ct-hero .accent-word {
   color: var(--ct-accent, #ff7828);
   font-style: normal;
-  mix-blend-mode: normal;
+  mix-blend-mode: screen;
 }
 
 .v2-contact .ct-sub {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
   font-weight: 300;
   font-size: .95rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ct-muted, rgba(255, 255, 255, 0.35));
   line-height: 1.8;
   max-width: 480px;
   margin-top: 1.75rem;
-  opacity: 1;
-  transform: none;
 }
 
+/* Scroll cue */
 .v2-contact .ct-scroll-cue {
   display: flex;
   align-items: center;
   gap: .75rem;
   margin-top: 2.5rem;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
   font-size: .6rem;
   font-weight: 500;
   letter-spacing: .25em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ct-muted, rgba(255, 255, 255, 0.35));
 }
 
 .v2-contact .ct-scroll-line {
@@ -643,13 +650,100 @@ html, body {
   background: var(--ct-accent, #ff7828);
 }
 
+/* Tickers */
+.v2-contact .ct-ticker {
+  position: relative;
+  z-index: 2;
+  width: 115%;
+  margin-left: -7.5%;
+  overflow: hidden;
+  border-top: 1.5px solid color-mix(in srgb, var(--ct-accent, #ff7828) 70%, transparent);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--ct-accent, #ff7828) 70%, transparent);
+  padding: .55rem 0;
+  background: color-mix(in srgb, var(--ct-accent, #ff7828) 20%, transparent);
+}
+
+.v2-contact .ct-ticker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(-55deg, transparent, transparent 18px, color-mix(in srgb, var(--ct-accent, #ff7828) 30%, transparent) 18px, color-mix(in srgb, var(--ct-accent, #ff7828) 30%, transparent) 19.5px);
+  background-size: 23.8px 100%;
+  animation: v2-pinstripe-scroll 1.8s linear infinite;
+}
+
+@keyframes v2-pinstripe-scroll {
+  from { background-position-x: 0; }
+  to { background-position-x: 23.8px; }
+}
+
+.v2-contact .ct-ticker.tape-top {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  width: 140%;
+  margin-left: 0;
+  top: 8%;
+  transform: rotate(20deg);
+  transform-origin: center center;
+}
+
+.v2-contact .ct-ticker.tape-mid {
+  transform: rotate(-6deg);
+}
+
+.v2-contact .ct-ticker.reverse .ticker-track {
+  animation-direction: reverse;
+}
+
+.v2-contact .ticker-track {
+  display: flex;
+  gap: 0;
+  white-space: nowrap;
+  will-change: transform;
+  animation: v2-ticker-scroll 30s linear infinite;
+}
+
+@keyframes v2-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-25%); }
+}
+
+.v2-contact .ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .5rem;
+  flex-shrink: 0;
+}
+
+.v2-contact .ticker-word {
+  font-family: var(--font-b, 'DM Sans', sans-serif);
+  font-weight: 500;
+  font-size: clamp(.75rem, 1.2vw, 1rem);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ct-accent, #ff7828);
+  white-space: nowrap;
+}
+
+.v2-contact .ticker-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ct-accent, #ff7828);
+  flex-shrink: 0;
+  opacity: .7;
+}
+
+/* Links section */
 .v2-ct-links {
   padding: 5rem 3.5rem 4rem;
   display: flex;
   flex-direction: column;
   gap: 4rem;
-  position: relative;
-  z-index: 1;
 }
 
 .v2-contact .ct-email-block {
@@ -660,12 +754,12 @@ html, body {
 
 .v2-contact .ct-email-label,
 .v2-contact .ct-social-label {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
   font-size: .6rem;
   font-weight: 600;
   letter-spacing: .25em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ct-muted, rgba(255, 255, 255, 0.35));
 }
 
 .v2-contact .ct-social-label {
@@ -673,7 +767,7 @@ html, body {
 }
 
 .v2-contact .ct-email-link {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-hero, 'Bebas Neue', sans-serif);
   font-size: clamp(2.5rem, 6vw, 5.5rem);
   letter-spacing: .02em;
   text-transform: uppercase;
@@ -713,7 +807,7 @@ html, body {
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ct-border, rgba(255, 255, 255, 0.1));
   color: rgba(255, 255, 255, 0.5);
   text-decoration: none;
   font-size: 1.3rem;
@@ -729,18 +823,58 @@ html, body {
   transform: translateY(-4px);
 }
 
+/* Resume block */
+.v2-contact .ct-resume-block {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.v2-contact .ct-resume-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.75rem;
+  border: 1px solid var(--ct-border, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--ct-hi, #fff);
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  align-self: flex-start;
+  transition: border-color .2s, background .2s, background-image .2s, gap .3s cubic-bezier(0.16, 1, 0.3, 1), color .2s;
+}
+
+.v2-contact .ct-resume-link:hover {
+  border-color: var(--ct-accent, #ff7828);
+  background: rgba(255, 120, 40, 0.06);
+  background-image: repeating-linear-gradient(-55deg, transparent, transparent 15px, color-mix(in srgb, var(--ct-accent, #ff7828) 20%, transparent) 15px, color-mix(in srgb, var(--ct-accent, #ff7828) 20%, transparent) 16px);
+  background-size: 21px 100%;
+  color: var(--ct-accent, #ff7828);
+  gap: 1.5rem;
+}
+
+.v2-contact .ct-resume-link i {
+  font-size: 1rem;
+  color: var(--ct-accent, #ff7828);
+}
+
+/* Footer */
 .v2-contact .ct-footer {
   padding: 1.5rem 3.5rem 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: 'Space Grotesk', sans-serif;
+  border-top: 1px solid var(--ct-border, rgba(255, 255, 255, 0.1));
+  font-family: var(--font-ui, 'Space Grotesk', sans-serif);
   font-size: .6rem;
   font-weight: 500;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ct-muted, rgba(255, 255, 255, 0.35));
 }
 
 .v2-contact .ct-footer-dot {
