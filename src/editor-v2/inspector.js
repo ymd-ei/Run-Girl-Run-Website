@@ -11,17 +11,28 @@ import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 // Only non-visual properties live here. Text content is edited inline on the canvas.
 const BLOCK_FIELDS = {
   'text-sm': [
-    { key: 'align', label: 'Alignment', type: 'align' }
+    { key: 'align', label: 'Alignment', type: 'align' },
+    { key: '_format', label: 'Format', type: 'format' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'text-md': [
-    { key: 'align', label: 'Alignment', type: 'align' }
+    { key: 'align', label: 'Alignment', type: 'align' },
+    { key: '_format', label: 'Format', type: 'format' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'text-lg': [
-    { key: 'align', label: 'Alignment', type: 'align' }
+    { key: 'align', label: 'Alignment', type: 'align' },
+    { key: '_format', label: 'Format', type: 'format' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'image': [
     { key: 'src', label: 'Image URL', type: 'image' },
-    { key: 'alt', label: 'Alt Text', type: 'text' }
+    { key: 'alt', label: 'Alt Text', type: 'text' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'alpha-art': [
     { key: 'src', label: 'Image URL', type: 'image' },
@@ -33,19 +44,31 @@ const BLOCK_FIELDS = {
     { key: 'ratio', label: 'Aspect Ratio', type: 'text' }
   ],
   'quote': [
-    { key: 'align', label: 'Alignment', type: 'align' }
+    { key: 'align', label: 'Alignment', type: 'align' },
+    { key: '_format', label: 'Format', type: 'format' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'video': [
-    { key: 'src', label: 'Video URL', type: 'image' }
+    { key: 'src', label: 'Video URL', type: 'image' },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
-  'divider': [],
+  'divider': [
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+  ],
   'callout': [
-    { key: 'tone', label: 'Tone', type: 'select', options: ['note', 'highlight', 'warning'] }
+    { key: 'tone', label: 'Tone', type: 'select', options: ['note', 'highlight', 'warning'] },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'cta': [
     { key: 'buttonLabel', label: 'Button Text', type: 'text' },
     { key: 'buttonUrl', label: 'Button URL', type: 'text' },
-    { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'highlight'] }
+    { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'highlight'] },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ],
   'beforeafter': [
     { key: 'beforeSrc', label: 'Before Image', type: 'image' },
@@ -53,7 +76,9 @@ const BLOCK_FIELDS = {
     { key: 'afterSrc', label: 'After Image', type: 'image' },
     { key: 'afterAlt', label: 'After Alt', type: 'text' },
     { key: 'caption', label: 'Caption', type: 'text' },
-    { key: 'position', label: 'Position (0–100)', type: 'number', min: 0, max: 100, step: 1 }
+    { key: 'position', label: 'Position (0–100)', type: 'number', min: 0, max: 100, step: 1 },
+    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
+    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
   ]
 };
 
@@ -95,7 +120,15 @@ const CONTACT_FIELDS = [
   { key: 'contactPanel.sub', label: 'Subtitle', type: 'textarea' },
   { key: 'contactPanel.emailLabel', label: 'Email Label', type: 'text' },
   { key: 'contactPanel.socialLabel', label: 'Social Label', type: 'text' },
-  { key: 'contact.email', label: 'Email', type: 'text' }
+  { key: 'contact.email', label: 'Email', type: 'text' },
+  { key: 'contactPanel.tickerTop', label: 'Ticker Top (comma-sep)', type: 'text', isArray: true },
+  { key: 'contactPanel.tickerMid', label: 'Ticker Mid (comma-sep)', type: 'text', isArray: true },
+  { key: 'contactPanel.video.url', label: 'Background Video', type: 'image' }
+];
+
+const WORK_FIELDS = [
+  { key: 'siteTitle', label: 'Site Title', type: 'text' },
+  { key: 'filters', label: 'Filters (JSON)', type: 'textarea', isJSON: true }
 ];
 
 const THEME_FIELDS = [
@@ -260,6 +293,36 @@ function renderSectionInspector(panel) {
       if (onChangeCallback) onChangeCallback(currentSelection, key, value);
     });
     return;
+  } else if (name === 'work') {
+    fields = WORK_FIELDS;
+    data = state.global;
+
+    const filterVal = JSON.stringify(data.filters || [], null, 2);
+    panel.innerHTML = `
+      <div class="v2-insp-header">Work</div>
+      <div class="v2-insp-fields">
+        ${renderField({ key: 'siteTitle', label: 'Site Title', type: 'text' }, data.siteTitle || '')}
+        <div class="v2-insp-field">
+          <label for="v2-field-filters">Filters</label>
+          <textarea id="v2-field-filters" data-key="filters" rows="5">${escapeHtml(filterVal)}</textarea>
+        </div>
+      </div>`;
+
+    bindFieldEvents(panel, [{ key: 'siteTitle', label: 'Site Title', type: 'text' }], (key, value) => {
+      state.global[key] = value;
+      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+    });
+    // Filters: parse JSON on blur
+    const filtersEl = panel.querySelector('#v2-field-filters');
+    if (filtersEl) {
+      filtersEl.addEventListener('blur', () => {
+        try {
+          state.global.filters = JSON.parse(filtersEl.value);
+          if (onChangeCallback) onChangeCallback(currentSelection, 'filters', state.global.filters);
+        } catch { /* invalid JSON, ignore */ }
+      });
+    }
+    return;
   } else {
     panel.innerHTML = `<div class="v2-insp-empty">Section: ${name}</div>`;
     return;
@@ -267,10 +330,19 @@ function renderSectionInspector(panel) {
 
   panel.innerHTML = `
     <div class="v2-insp-header">${name.charAt(0).toUpperCase() + name.slice(1)}</div>
-    <div class="v2-insp-fields">${fields.map(f => renderField(f, getNestedValue(data, f.key))).join('')}</div>`;
+    <div class="v2-insp-fields">${fields.map(f => {
+      let val = getNestedValue(data, f.key);
+      if (f.isArray && Array.isArray(val)) val = val.join(', ');
+      return renderField(f, val);
+    }).join('')}</div>`;
 
   bindFieldEvents(panel, fields, (key, value) => {
-    setNestedValue(state.global, key, value);
+    const fieldDef = fields.find(f => f.key === key);
+    if (fieldDef?.isArray) {
+      setNestedValue(state.global, key, value.split(',').map(s => s.trim()).filter(Boolean));
+    } else {
+      setNestedValue(state.global, key, value);
+    }
     if (onChangeCallback) onChangeCallback(currentSelection, key, value);
   });
 }
@@ -289,24 +361,10 @@ function renderBlockInspector(panel) {
   const fields = BLOCK_FIELDS[block.type];
 
   if (!fields) {
-    // Complex block type (items-based) — show type label and basic info
+    // Complex block type (items-based) — full sub-item editing
     if (ITEM_BLOCK_TYPES.has(block.type)) {
-      const itemCount = block.items?.length || block.steps?.length || 0;
-      panel.innerHTML = `
-        <div class="v2-insp-header">${block.type}</div>
-        ${actionsHTML}
-        <div class="v2-insp-fields">
-          <div class="v2-insp-info">${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
-          ${block.type === 'gallery' ? renderField({ key: 'columns', label: 'Columns', type: 'select', options: ['2', '3'] }, String(block.columns || 2)) : ''}
-        </div>`;
-
+      renderComplexBlockInspector(panel, block, actionsHTML);
       bindBlockActionEvents(panel);
-      if (block.type === 'gallery') {
-        bindFieldEvents(panel, [{ key: 'columns', label: 'Columns', type: 'select', options: ['2', '3'] }], (key, value) => {
-          block[key] = key === 'columns' ? parseInt(value, 10) : value;
-          if (onChangeCallback) onChangeCallback(currentSelection, key, value);
-        });
-      }
       return;
     }
 
@@ -391,6 +449,18 @@ function bindBlockActionEvents(panel) {
 function renderField(field, value) {
   const val = value ?? '';
   const id = 'v2-field-' + field.key.replace(/\./g, '-');
+
+  if (field.type === 'format') {
+    return `<div class="v2-insp-field">
+      <label>${field.label}</label>
+      <div class="v2-insp-format-btns">
+        <button data-fmt-cmd="bold" title="Bold"><b>B</b></button>
+        <button data-fmt-cmd="italic" title="Italic"><i>I</i></button>
+        <button data-fmt-cmd="underline" title="Underline"><u>U</u></button>
+        <button data-fmt-cmd="rgr" title="RGR Badge" class="v2-ft-rgr">RGR</button>
+      </div>
+    </div>`;
+  }
 
   if (field.type === 'textarea') {
     return `<div class="v2-insp-field">
@@ -524,6 +594,229 @@ function bindFieldEvents(panel, fields, onEdit) {
       }
     });
   });
+
+  // Format buttons (bold, italic, underline, RGR badge)
+  panel.querySelectorAll('[data-fmt-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault()); // keep focus on contenteditable
+    btn.addEventListener('click', () => {
+      const cmd = btn.dataset.fmtCmd;
+      if (cmd === 'rgr') {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return;
+        const range = sel.getRangeAt(0);
+        const parentRgr = sel.anchorNode.parentElement?.closest('rgr');
+        if (parentRgr) {
+          const frag = document.createDocumentFragment();
+          while (parentRgr.firstChild) frag.appendChild(parentRgr.firstChild);
+          parentRgr.replaceWith(frag);
+        } else {
+          const badge = document.createElement('rgr');
+          badge.appendChild(range.extractContents());
+          range.insertNode(badge);
+          sel.removeAllRanges();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(badge);
+          sel.addRange(newRange);
+        }
+      } else {
+        document.execCommand(cmd, false);
+      }
+    });
+  });
+}
+
+// ── Complex block sub-item inspector ──
+
+const ITEM_SCHEMAS = {
+  stats:   { arrayKey: 'items', fields: [{ key: 'num', label: 'Value', type: 'text' }, { key: 'label', label: 'Label', type: 'text' }] },
+  skills:  { arrayKey: 'items', fields: [{ key: 'name', label: 'Name', type: 'text' }, { key: 'pct', label: 'Percent', type: 'number', min: 0, max: 100 }] },
+  gallery: { arrayKey: 'items', fields: [{ key: 'src', label: 'Image', type: 'image' }, { key: 'alt', label: 'Alt', type: 'text' }, { key: 'caption', label: 'Caption', type: 'text' }], blockFields: [{ key: 'columns', label: 'Columns', type: 'select', options: ['2', '3'] }] },
+  process: { arrayKey: 'steps', fields: [{ key: 'title', label: 'Title', type: 'text' }, { key: 'content', label: 'Body', type: 'textarea' }, { key: 'date', label: 'Date', type: 'text' }, { key: 'image', label: 'Image', type: 'image' }] },
+  faq:     { arrayKey: 'items', fields: [{ key: 'question', label: 'Question', type: 'text' }, { key: 'answer', label: 'Answer', type: 'textarea' }] },
+  twocol:  null // special case
+};
+
+function renderComplexBlockInspector(panel, block, actionsHTML) {
+  const schema = ITEM_SCHEMAS[block.type];
+
+  // Two-column: special case — each side is a block
+  if (block.type === 'twocol') {
+    const leftType = block.left?.type || 'text-md';
+    const rightType = block.right?.type || 'image';
+    panel.innerHTML = `
+      <div class="v2-insp-header">Two Columns</div>
+      ${actionsHTML}
+      <div class="v2-insp-fields">
+        <div class="v2-insp-sub-header">Left (${leftType})</div>
+        ${renderSubBlockFields(block.left || {}, 'left')}
+        <div class="v2-insp-sub-header">Right (${rightType})</div>
+        ${renderSubBlockFields(block.right || {}, 'right')}
+      </div>
+      <div class="v2-insp-field">
+        <label>Padding Top</label>
+        <select data-key="paddingTop">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingTop||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+      </div>
+      <div class="v2-insp-field">
+        <label>Padding Bottom</label>
+        <select data-key="paddingBottom">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingBottom||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+      </div>`;
+
+    // Bind twocol sub-fields
+    panel.querySelectorAll('[data-side][data-subkey]').forEach(el => {
+      el.addEventListener('input', () => {
+        const side = el.dataset.side;
+        const key = el.dataset.subkey;
+        if (!block[side]) block[side] = {};
+        block[side][key] = el.value;
+        if (onChangeCallback) onChangeCallback(currentSelection, `${side}.${key}`, el.value);
+      });
+    });
+    // Padding
+    panel.querySelectorAll('select[data-key]').forEach(el => {
+      el.addEventListener('change', () => {
+        block[el.dataset.key] = el.value;
+        if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, el.value);
+      });
+    });
+    return;
+  }
+
+  if (!schema) return;
+
+  const items = block[schema.arrayKey] || [];
+  const blockFieldsHTML = (schema.blockFields || []).map(f => renderField(f, String(block[f.key] ?? ''))).join('');
+
+  let itemsHTML = items.map((item, i) => `
+    <div class="v2-insp-sub-item" data-item-index="${i}">
+      <div class="v2-insp-sub-header">
+        <span>#${i + 1}</span>
+        <button class="v2-insp-sub-del" data-del-index="${i}" title="Remove">✕</button>
+      </div>
+      ${schema.fields.map(f => {
+        const val = item[f.key] ?? '';
+        const id = `v2-sub-${i}-${f.key}`;
+        if (f.type === 'textarea') {
+          return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><textarea id="${id}" data-item-idx="${i}" data-subkey="${f.key}" rows="2">${escapeHtml(val)}</textarea></div>`;
+        }
+        if (f.type === 'number') {
+          return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="number" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${val}" min="${f.min??''}" max="${f.max??''}"></div>`;
+        }
+        if (f.type === 'image') {
+          return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><div class="v2-insp-upload-row"><input type="text" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${escapeHtml(val)}"><button class="v2-insp-upload-btn" data-upload-for-sub="${i}-${f.key}">⇧</button><input type="file" class="v2-insp-upload-input" data-upload-sub-key="${i}-${f.key}" accept="image/*,video/*" hidden></div></div>`;
+        }
+        return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="text" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${escapeHtml(val)}"></div>`;
+      }).join('')}
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="v2-insp-header">${block.type}</div>
+    ${actionsHTML}
+    <div class="v2-insp-fields">
+      ${blockFieldsHTML}
+      <div class="v2-insp-sub-items">${itemsHTML}</div>
+      <button class="v2-insp-sub-add" data-add-item>+ Add Item</button>
+      <div class="v2-insp-field">
+        <label>Padding Top</label>
+        <select data-key="paddingTop">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingTop||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+      </div>
+      <div class="v2-insp-field">
+        <label>Padding Bottom</label>
+        <select data-key="paddingBottom">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingBottom||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+      </div>
+    </div>`;
+
+  // Bind block-level fields (e.g. gallery columns)
+  if (schema.blockFields) {
+    bindFieldEvents(panel, schema.blockFields, (key, value) => {
+      block[key] = key === 'columns' ? parseInt(value, 10) : value;
+      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+    });
+  }
+
+  // Bind sub-item field edits
+  panel.querySelectorAll('[data-item-idx][data-subkey]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.itemIdx, 10);
+      const key = el.dataset.subkey;
+      const arr = block[schema.arrayKey];
+      if (arr && arr[idx]) {
+        arr[idx][key] = (el.type === 'number') ? parseFloat(el.value) : el.value;
+        if (onChangeCallback) onChangeCallback(currentSelection, `${schema.arrayKey}[${idx}].${key}`, el.value);
+      }
+    });
+  });
+
+  // Bind padding
+  panel.querySelectorAll('select[data-key]').forEach(el => {
+    el.addEventListener('change', () => {
+      block[el.dataset.key] = el.value;
+      if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, el.value);
+    });
+  });
+
+  // Delete sub-item
+  panel.querySelectorAll('.v2-insp-sub-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.delIndex, 10);
+      const arr = block[schema.arrayKey];
+      if (arr) {
+        arr.splice(idx, 1);
+        if (onChangeCallback) onChangeCallback(currentSelection, schema.arrayKey, arr);
+        render(); // re-render inspector
+      }
+    });
+  });
+
+  // Add sub-item
+  const addBtn = panel.querySelector('[data-add-item]');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      if (!block[schema.arrayKey]) block[schema.arrayKey] = [];
+      const newItem = {};
+      schema.fields.forEach(f => { newItem[f.key] = f.type === 'number' ? 0 : ''; });
+      block[schema.arrayKey].push(newItem);
+      if (onChangeCallback) onChangeCallback(currentSelection, schema.arrayKey, block[schema.arrayKey]);
+      render(); // re-render inspector
+    });
+  }
+
+  // Sub-item upload buttons
+  panel.querySelectorAll('.v2-insp-upload-btn[data-upload-for-sub]').forEach(btn => {
+    const [idxStr, key] = btn.dataset.uploadForSub.split('-');
+    const idx = parseInt(idxStr, 10);
+    const fileInput = panel.querySelector(`.v2-insp-upload-input[data-upload-sub-key="${btn.dataset.uploadForSub}"]`);
+    if (!fileInput) return;
+    btn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      btn.textContent = '…'; btn.disabled = true;
+      try {
+        const result = await uploadMedia(file);
+        if (result.success && result.path) {
+          const arr = block[schema.arrayKey];
+          if (arr && arr[idx]) { arr[idx][key] = result.path; }
+          const textEl = panel.querySelector(`input[data-item-idx="${idx}"][data-subkey="${key}"]`);
+          if (textEl) textEl.value = result.path;
+          if (onChangeCallback) onChangeCallback(currentSelection, `${schema.arrayKey}[${idx}].${key}`, result.path);
+          btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 1500);
+        } else { btn.textContent = '✗'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000); }
+      } catch { btn.textContent = '✗'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000); }
+    });
+  });
+}
+
+function renderSubBlockFields(sub, side) {
+  const type = sub.type || 'text-md';
+  const fields = BLOCK_FIELDS[type] || [];
+  return fields.filter(f => f.key !== '_format' && f.key !== 'paddingTop' && f.key !== 'paddingBottom').map(f => {
+    const val = sub[f.key] ?? '';
+    const id = `v2-twocol-${side}-${f.key}`;
+    if (f.type === 'image') {
+      return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="text" id="${id}" data-side="${side}" data-subkey="${f.key}" value="${escapeHtml(val)}"></div>`;
+    }
+    return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="text" id="${id}" data-side="${side}" data-subkey="${f.key}" value="${escapeHtml(val)}"></div>`;
+  }).join('') + `<div class="v2-insp-field"><label>Content</label><textarea data-side="${side}" data-subkey="content" rows="3">${escapeHtml(sub.content || '')}</textarea></div>`;
 }
 
 // ── Helpers ──

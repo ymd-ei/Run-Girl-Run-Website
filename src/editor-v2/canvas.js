@@ -288,8 +288,8 @@ function buildWorkPanelHTML(g, theme) {
     filters.map(f => `<button class="fb" data-v2-filter="${f.value}">${f.label}</button>`).join('');
 
   return `
-    <div class="v2-panel v2-panel-wide" data-v2-panel="work">
-      <div class="v2-ph"><span class="v2-pt">Work</span><button class="v2-pc v2-panel-close">&#x2715;</button></div>
+    <div class="v2-panel v2-panel-wide" data-v2-panel="work" data-v2-section="work">
+      <div class="v2-ph"><span class="v2-pt" data-v2-section="work">Work</span><button class="v2-pc v2-panel-close">&#x2715;</button></div>
       <div class="v2-panel-scroll">
         <div class="v2-work">
           <div class="v2-work-filters">${filterBtns}</div>
@@ -363,6 +363,7 @@ function buildProjectPanelHTML() {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Back
         </button>
+        <button class="v2-proj-pub-btn" id="v2-project-publish" title="Toggle publish"></button>
         <button class="v2-proj-del-btn" id="v2-project-delete" title="Delete project">&#128465;</button>
         <button class="v2-pc v2-panel-close">&#x2715;</button>
       </div>
@@ -430,6 +431,29 @@ export async function openProject(id) {
   if (delBtn) {
     delBtn.onclick = () => handleDeleteProject(id);
   }
+
+  // Wire publish toggle
+  const pubBtn = document.getElementById('v2-project-publish');
+  if (pubBtn) {
+    const card = state.projects.find(p => p.id === id);
+    const isPublished = card?.published !== false;
+    pubBtn.textContent = isPublished ? 'Published' : 'Draft';
+    pubBtn.classList.toggle('v2-pub-on', isPublished);
+    pubBtn.onclick = () => {
+      pushState(state);
+      const c = state.projects.find(p => p.id === id);
+      if (c) {
+        c.published = !c.published;
+        pubBtn.textContent = c.published ? 'Published' : 'Draft';
+        pubBtn.classList.toggle('v2-pub-on', c.published);
+        markDirty('content.json');
+        renderSidebarProjects();
+      }
+    };
+  }
+
+  // Update sidebar context with project metadata
+  updateSidebarContext(id, project);
 }
 
 // ── Sidebar nav ──
@@ -509,6 +533,66 @@ export function handleDeleteProject(id) {
   renderCanvas();
 }
 
+// ── Sidebar context (project metadata) ──
+
+function updateSidebarContext(projectId, project) {
+  const ctx = document.getElementById('v2-sidebar-context');
+  if (!ctx) return;
+
+  const card = state.projects.find(p => p.id === projectId) || {};
+
+  ctx.innerHTML = `
+    <div class="v2-sidebar-section">Project Settings</div>
+    <div class="v2-ctx-fields">
+      <label>Title</label>
+      <input type="text" data-ctx-key="title" value="${escapeAttr(card.title || '')}">
+      <label>Type</label>
+      <input type="text" data-ctx-key="type" value="${escapeAttr(card.type || '')}">
+      <label>Type Label</label>
+      <input type="text" data-ctx-key="typeLabel" value="${escapeAttr(card.typeLabel || '')}">
+      <label>Year</label>
+      <input type="text" data-ctx-key="year" value="${escapeAttr(card.year || '')}">
+      <label>Client</label>
+      <input type="text" data-ctx-key="client" value="${escapeAttr(project.client || '')}">
+      <label>Thumbnail</label>
+      <input type="text" data-ctx-key="thumbnail" value="${escapeAttr(card.thumbnail || '')}">
+      <label>
+        <input type="checkbox" data-ctx-key="longform" ${project.longform ? 'checked' : ''}> Longform layout
+      </label>
+      <label>
+        <input type="checkbox" data-ctx-key="sensitive" ${card.sensitive ? 'checked' : ''}> Sensitive
+      </label>
+      <label>Sensitive Label</label>
+      <input type="text" data-ctx-key="sensitiveLabel" value="${escapeAttr(card.sensitiveLabel || '')}">
+    </div>`;
+
+  ctx.querySelectorAll('input[data-ctx-key]').forEach(el => {
+    const handler = () => {
+      const key = el.dataset.ctxKey;
+      const val = el.type === 'checkbox' ? el.checked : el.value;
+      // Update card (in state.projects)
+      const c = state.projects.find(p => p.id === projectId);
+      if (c) c[key] = val;
+      // Update cached project
+      const proj = state.projectCache.get(projectId);
+      if (proj) proj[key] = val;
+      markDirty('content.json');
+      markDirty('projects/' + projectId + '.json');
+    };
+    el.addEventListener('input', handler);
+    el.addEventListener('change', handler);
+  });
+}
+
+function clearSidebarContext() {
+  const ctx = document.getElementById('v2-sidebar-context');
+  if (ctx) ctx.innerHTML = '';
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
 // ── Panel navigation ──
 
 export function showPanel(name) {
@@ -527,6 +611,7 @@ export function showPanel(name) {
     document.getElementById('v2-backdrop')?.classList.remove('open');
     currentSection = 'home';
     currentProjectId = null;
+    clearSidebarContext();
     updateSidebarActive();
     return;
   }
@@ -536,6 +621,11 @@ export function showPanel(name) {
     panel.classList.add('open');
     document.getElementById('v2-backdrop')?.classList.add('open');
     currentSection = name;
+
+    if (name !== 'project') {
+      currentProjectId = null;
+      clearSidebarContext();
+    }
 
     if (name === 'contact') {
       if (hero) hero.classList.add('v2-hero-pushed');
@@ -726,7 +816,11 @@ function renderEditableBlocks(blocks, scope, options = {}) {
 
   const html = (blocks || []).map(block => {
     const inner = renderBlock(block, theme, renderOpts);
-    return `<div class="v2-block-wrap" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}">${inner}</div>`;
+    const padStyles = [];
+    if (block.paddingTop && block.paddingTop !== '0') padStyles.push(`padding-top:${block.paddingTop}`);
+    if (block.paddingBottom && block.paddingBottom !== '0') padStyles.push(`padding-bottom:${block.paddingBottom}`);
+    const styleAttr = padStyles.length ? ` style="${padStyles.join(';')}"` : '';
+    return `<div class="v2-block-wrap" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}"${styleAttr}>${inner}</div>`;
   }).join('');
 
   return `<div class="block-canvas">${html}<button class="v2-add-block-btn" data-v2-add-scope="${scope}">+ Add Block</button></div>`;
