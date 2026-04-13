@@ -12,7 +12,9 @@ import {
   renderDisplayBlocks,
   initSensitiveTapes
 } from '../display/displayRenderer.js';
-import { normalizeBlocks } from '../modules/blocks/blockManager.js';
+import { normalizeBlocks, normalizeBlock } from '../modules/blocks/blockManager.js';
+import { renderBlock } from '../modules/blocks/blockRenderer.js';
+import { uid } from '../utils/validation.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { initInspector, showAt, hideInspector, setSelection, clearSelection, getSelection, bindCanvasScroll } from './inspector.js';
 import { initToolbar, startEdit, finishEdit, isEditing } from './floatingToolbar.js';
@@ -39,6 +41,9 @@ export function initEditing() {
       }
       rerenderBlock(selection.scope, selection.blockId);
     }
+  }, (action, selection, extra) => {
+    // Inspector action buttons: move-up, move-down, delete, add-after
+    handleBlockAction(action, selection, extra);
   });
 
   // Floating toolbar: when inline text edit commits
@@ -288,7 +293,7 @@ function buildWorkPanelHTML(g, theme) {
 
 function buildAboutPanelHTML(g) {
   const blocks = normalizeBlocks(g.about || []);
-  const blocksHTML = renderDisplayBlocks(blocks, { scope: 'about' });
+  const blocksHTML = renderEditableBlocks(blocks, 'about');
 
   return `
     <div class="v2-panel" data-v2-panel="about">
@@ -381,7 +386,7 @@ export async function openProject(id) {
 
   const heroImg = project.heroImage || project.thumbnail || '';
   const blocks = normalizeBlocks(project.blocks || []);
-  const blocksHTML = renderDisplayBlocks(blocks, { scope: 'proj-' + id, projectId: id });
+  const blocksHTML = renderEditableBlocks(blocks, 'proj-' + id, { projectId: id });
 
   const scrollEl = panel.querySelector('.v2-panel-scroll');
   if (scrollEl) {
@@ -400,7 +405,7 @@ export async function openProject(id) {
             </div>
           </div>
         </div>
-        <div class="block-canvas">${blocksHTML}</div>
+        ${blocksHTML}
       </div>`;
     scrollEl.scrollTop = 0;
   }
@@ -520,6 +525,21 @@ function handleCanvasClick(e) {
     return;
   }
 
+  // "Add Block" button → show type picker
+  const addBtn = e.target.closest('.v2-add-block-btn');
+  if (addBtn) {
+    e.stopPropagation();
+    showBlockTypePicker(addBtn);
+    return;
+  }
+
+  // Type picker option click
+  const tpOpt = e.target.closest('.v2-tp-opt');
+  if (tpOpt) {
+    e.stopPropagation();
+    return; // handled by picker's own listener
+  }
+
   // Did we click on an inline-editable element? → start typing immediately
   const editableEl = e.target.closest('[data-canvas-editable]');
   if (editableEl) {
@@ -529,7 +549,7 @@ function handleCanvasClick(e) {
     return;
   }
 
-  // Did we click on a block element (non-editable, e.g. image, video)?
+  // Did we click on a block wrapper or block element?
   const blockEl = e.target.closest('[data-canvas-block-id]');
   if (blockEl) {
     e.stopPropagation();
@@ -599,8 +619,9 @@ function rerenderSection(name) {
 }
 
 function rerenderBlock(scope, blockId) {
-  // Find all elements with this block ID and re-render them
-  const el = document.querySelector(`[data-canvas-block-id="${blockId}"]`);
+  // Find the block wrapper (or inline editable element) and re-render
+  const wrapper = document.querySelector(`.v2-block-wrap[data-canvas-block-id="${blockId}"]`);
+  const el = wrapper || document.querySelector(`[data-canvas-block-id="${blockId}"]`);
   if (!el) return;
 
   // Get the block data
@@ -609,26 +630,28 @@ function rerenderBlock(scope, blockId) {
 
   const theme = state.global.theme || {};
 
-  // Import renderBlock dynamically from the shared renderer
-  import('../modules/blocks/blockRenderer.js').then(({ renderBlock }) => {
-    const renderOptions = { canvasScope: scope };
-    const m = scope.match(/^proj-(.+)$/);
-    if (m) renderOptions.canvasProjectId = m[1];
+  const renderOpts = { canvasScope: scope };
+  const m = scope.match(/^proj-(.+)$/);
+  if (m) renderOpts.canvasProjectId = m[1];
 
-    const newHTML = renderBlock(block, theme, renderOptions);
-    if (!newHTML) return;
+  const newHTML = renderBlock(block, theme, renderOpts);
+  if (!newHTML) return;
 
-    // Find the wrapper to replace (parent .block-canvas child, or the element itself)
-    const wrapper = el.closest('.block-canvas > *') || el;
+  if (wrapper) {
+    // Wrapper exists — replace its inner content
+    wrapper.innerHTML = newHTML;
+    wrapper.classList.add('v2-selected');
+  } else {
+    // Legacy: no wrapper, replace the element itself
+    const target = el.closest('.block-canvas > *') || el;
     const temp = document.createElement('div');
     temp.innerHTML = newHTML;
     const newEl = temp.firstElementChild;
     if (newEl) {
-      wrapper.replaceWith(newEl);
-      // Re-select the new element
+      target.replaceWith(newEl);
       newEl.classList.add('v2-selected');
     }
-  });
+  }
 }
 
 function findBlockData(scope, blockId) {
@@ -641,4 +664,209 @@ function findBlockData(scope, blockId) {
     if (project) return (project.blocks || []).find(b => b.id === blockId);
   }
   return null;
+}
+
+// ── Editable block rendering ──
+
+/**
+ * Render blocks wrapped in selectable containers for the editor.
+ * Each block gets a .v2-block-wrap with data attributes for click selection.
+ * An "Add Block" button is appended inside the block-canvas.
+ */
+function renderEditableBlocks(blocks, scope, options = {}) {
+  const theme = state.global.theme || {};
+  const renderOpts = { canvasScope: scope };
+  if (options.projectId) renderOpts.canvasProjectId = options.projectId;
+
+  const html = (blocks || []).map(block => {
+    const inner = renderBlock(block, theme, renderOpts);
+    return `<div class="v2-block-wrap" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}">${inner}</div>`;
+  }).join('');
+
+  return `<div class="block-canvas">${html}<button class="v2-add-block-btn" data-v2-add-scope="${scope}">+ Add Block</button></div>`;
+}
+
+// ── Block CRUD actions ──
+
+const BLOCK_TYPE_MENU = [
+  ['text-md', 'Text'],
+  ['text-sm', 'Small Text'],
+  ['text-lg', 'Large Text'],
+  ['image', 'Image'],
+  ['video', 'Video'],
+  ['quote', 'Quote'],
+  ['divider', 'Divider'],
+  ['callout', 'Callout'],
+  ['cta', 'Call to Action'],
+  ['gallery', 'Gallery'],
+  ['stats', 'Stats'],
+  ['skills', 'Skills'],
+  ['process', 'Process'],
+  ['beforeafter', 'Before / After'],
+  ['faq', 'FAQ'],
+  ['alpha-art', 'Alpha Art'],
+  ['twocol', 'Two Columns']
+];
+
+function getBlocksForScope(scope) {
+  if (scope === 'about') return state.global.about || [];
+  const m = scope.match(/^proj-(.+)$/);
+  if (m) {
+    const proj = state.projectCache.get(m[1]);
+    return proj?.blocks || [];
+  }
+  return [];
+}
+
+function setBlocksForScope(scope, blocks) {
+  if (scope === 'about') {
+    state.global.about = blocks;
+  } else {
+    const m = scope.match(/^proj-(.+)$/);
+    if (m) {
+      const proj = state.projectCache.get(m[1]);
+      if (proj) proj.blocks = blocks;
+    }
+  }
+}
+
+function markDirtyForScope(scope) {
+  if (scope === 'about') {
+    markDirty('content.json');
+  } else {
+    const m = scope.match(/^proj-(.+)$/);
+    if (m) markDirty('projects/' + m[1] + '.json');
+  }
+}
+
+function handleBlockAction(action, selection, extra) {
+  const { scope, blockId } = selection;
+  const blocks = getBlocksForScope(scope);
+  const index = blocks.findIndex(b => b.id === blockId);
+  if (index === -1 && action !== 'add-after') return;
+
+  switch (action) {
+    case 'move-up':
+      if (index > 0) {
+        [blocks[index - 1], blocks[index]] = [blocks[index], blocks[index - 1]];
+        markDirtyForScope(scope);
+        rerenderAllBlocks(scope);
+        requestAnimationFrame(() => reselectBlock(scope, blockId));
+      }
+      break;
+
+    case 'move-down':
+      if (index < blocks.length - 1) {
+        [blocks[index], blocks[index + 1]] = [blocks[index + 1], blocks[index]];
+        markDirtyForScope(scope);
+        rerenderAllBlocks(scope);
+        requestAnimationFrame(() => reselectBlock(scope, blockId));
+      }
+      break;
+
+    case 'delete':
+      blocks.splice(index, 1);
+      markDirtyForScope(scope);
+      clearCanvasSelection();
+      clearSelection();
+      rerenderAllBlocks(scope);
+      break;
+
+    case 'add-after': {
+      const newBlock = normalizeBlock({ id: uid(), type: extra });
+      if (!newBlock) return;
+      if (index >= 0) {
+        blocks.splice(index + 1, 0, newBlock);
+      } else {
+        blocks.push(newBlock);
+      }
+      setBlocksForScope(scope, blocks);
+      markDirtyForScope(scope);
+      rerenderAllBlocks(scope);
+      requestAnimationFrame(() => reselectBlock(scope, newBlock.id));
+      break;
+    }
+  }
+}
+
+function addNewBlock(scope, type) {
+  const blocks = getBlocksForScope(scope);
+  const newBlock = normalizeBlock({ id: uid(), type });
+  if (!newBlock) return;
+  blocks.push(newBlock);
+  setBlocksForScope(scope, blocks);
+  markDirtyForScope(scope);
+  rerenderAllBlocks(scope);
+  requestAnimationFrame(() => reselectBlock(scope, newBlock.id));
+}
+
+function rerenderAllBlocks(scope) {
+  const blocks = normalizeBlocks(getBlocksForScope(scope));
+
+  if (scope === 'about') {
+    const container = document.querySelector('.v2-about');
+    if (container) {
+      container.innerHTML = renderEditableBlocks(blocks, 'about');
+    }
+  } else {
+    const m = scope.match(/^proj-(.+)$/);
+    if (m) {
+      const projectEl = document.querySelector('.v2-project');
+      if (!projectEl) return;
+      const oldCanvas = projectEl.querySelector('.block-canvas');
+      const newHTML = renderEditableBlocks(blocks, scope, { projectId: m[1] });
+      if (oldCanvas) {
+        const temp = document.createElement('div');
+        temp.innerHTML = newHTML;
+        const newCanvas = temp.querySelector('.block-canvas');
+        if (newCanvas) oldCanvas.replaceWith(newCanvas);
+      }
+    }
+  }
+}
+
+function reselectBlock(scope, blockId) {
+  const el = document.querySelector(`.v2-block-wrap[data-canvas-block-id="${blockId}"]`);
+  if (el) {
+    clearCanvasSelection();
+    el.classList.add('v2-selected');
+    showAt(el, { type: 'block', scope, blockId });
+  }
+}
+
+// ── Block type picker (for "Add Block" button) ──
+
+function showBlockTypePicker(anchorBtn) {
+  // Remove any existing picker
+  document.querySelector('.v2-type-picker')?.remove();
+
+  const scope = anchorBtn.dataset.v2AddScope;
+  const picker = document.createElement('div');
+  picker.className = 'v2-type-picker';
+
+  picker.innerHTML = `<div class="v2-tp-title">Add Block</div><div class="v2-tp-grid">` +
+    BLOCK_TYPE_MENU.map(([type, label]) =>
+      `<button class="v2-tp-opt" data-type="${type}">${label}</button>`
+    ).join('') + `</div>`;
+
+  anchorBtn.insertAdjacentElement('afterend', picker);
+
+  picker.addEventListener('click', (e) => {
+    const opt = e.target.closest('[data-type]');
+    if (!opt) return;
+    e.stopPropagation();
+    addNewBlock(scope, opt.dataset.type);
+    picker.remove();
+  });
+
+  // Close on outside click
+  setTimeout(() => {
+    const close = (e) => {
+      if (!picker.contains(e.target) && e.target !== anchorBtn) {
+        picker.remove();
+        document.removeEventListener('click', close, true);
+      }
+    };
+    document.addEventListener('click', close, true);
+  }, 0);
 }

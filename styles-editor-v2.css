@@ -915,6 +915,22 @@ html, body {
 
 /* ── Selection highlighting ── */
 
+.v2-block-wrap {
+  transition: outline .12s ease, outline-offset .12s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  cursor: pointer;
+}
+
+.v2-block-wrap:hover {
+  outline-color: rgba(94, 48, 235, 0.35);
+}
+
+/* Suppress inner block outlines when inside a wrapper */
+.v2-block-wrap [data-canvas-block-id] {
+  outline: none !important;
+}
+
 [data-canvas-block-id] {
   transition: outline .12s ease, outline-offset .12s ease;
   outline: 2px solid transparent;
@@ -1072,4 +1088,135 @@ html, body {
     width: 100% !important;
   }
   .v2-panel.v2-longform.open { transform: translateX(0); }
+}
+
+/* ── Inspector block actions ── */
+
+.v2-insp-actions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: .5rem;
+}
+
+.v2-insp-act {
+  flex: 1;
+  padding: .3rem 0;
+  font-size: .65rem;
+  background: var(--v2-surface2);
+  border: 1px solid var(--v2-border);
+  color: var(--v2-muted);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.v2-insp-act:hover:not(:disabled) {
+  background: var(--v2-border);
+  color: var(--v2-text);
+}
+
+.v2-insp-act:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.v2-insp-act-del:hover:not(:disabled) {
+  background: #e03030;
+  color: #fff;
+  border-color: #e03030;
+}
+
+.v2-insp-add-row {
+  margin-bottom: .75rem;
+}
+
+.v2-insp-add-sel {
+  width: 100%;
+  background: var(--v2-surface2);
+  border: 1px solid var(--v2-border);
+  color: var(--v2-muted);
+  font-size: .7rem;
+  padding: .35rem .5rem;
+  border-radius: 3px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.v2-insp-add-sel:focus {
+  outline: none;
+  border-color: var(--v2-accent);
+}
+
+/* ── Add Block button (in-canvas) ── */
+
+.v2-add-block-btn {
+  display: block;
+  width: 100%;
+  padding: .6rem;
+  margin-top: 1rem;
+  background: transparent;
+  border: 2px dashed var(--v2-border, rgba(255,255,255,.12));
+  border-radius: 6px;
+  color: var(--v2-muted, rgba(255,255,255,.4));
+  font-size: .75rem;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+
+.v2-add-block-btn:hover {
+  border-color: var(--v2-accent, #5e30eb);
+  color: var(--v2-accent, #5e30eb);
+  background: rgba(94, 48, 235, 0.06);
+}
+
+/* ── Block type picker ── */
+
+.v2-type-picker {
+  position: relative;
+  z-index: 50;
+  background: var(--v2-surface, #1e1b18);
+  border: 1px solid var(--v2-border, #3a3530);
+  border-radius: 8px;
+  padding: .75rem;
+  margin-top: .5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.v2-tp-title {
+  font-size: .6rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--v2-muted, rgba(255,255,255,.4));
+  margin-bottom: .5rem;
+}
+
+.v2-tp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.v2-tp-opt {
+  padding: .4rem .3rem;
+  font-size: .65rem;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--v2-surface2, #2a2623);
+  border: 1px solid var(--v2-border, #3a3530);
+  color: var(--v2-text, #ddd);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v2-tp-opt:hover {
+  background: var(--v2-accent, #5e30eb);
+  border-color: var(--v2-accent, #5e30eb);
+  color: #fff;
 }

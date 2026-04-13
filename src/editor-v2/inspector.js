@@ -60,6 +60,27 @@ const BLOCK_FIELDS = {
 // Complex block types with sub-items get a simplified inspector
 const ITEM_BLOCK_TYPES = new Set(['stats', 'skills', 'gallery', 'process', 'faq', 'twocol']);
 
+// Block type labels for the "add after" picker
+const BLOCK_TYPE_LABELS = [
+  ['text-md', 'Text'],
+  ['text-sm', 'Small Text'],
+  ['text-lg', 'Large Text'],
+  ['image', 'Image'],
+  ['video', 'Video'],
+  ['quote', 'Quote'],
+  ['divider', 'Divider'],
+  ['callout', 'Callout'],
+  ['cta', 'Call to Action'],
+  ['gallery', 'Gallery'],
+  ['stats', 'Stats'],
+  ['skills', 'Skills'],
+  ['process', 'Process'],
+  ['beforeafter', 'Before / After'],
+  ['faq', 'FAQ'],
+  ['alpha-art', 'Alpha Art'],
+  ['twocol', 'Two Columns']
+];
+
 // ── Hero field definitions ──
 
 const HERO_FIELDS = [
@@ -81,6 +102,7 @@ const CONTACT_FIELDS = [
 
 let currentSelection = null; // { type: 'block'|'section', scope, blockId, sectionName }
 let onChangeCallback = null;
+let onActionCallback = null;
 let anchorEl = null;        // DOM element the inspector is anchored to
 let scrollContainer = null; // the canvas scroll container
 
@@ -91,8 +113,9 @@ const PANEL_W = 300;        // matches CSS width
  * Initialize the inspector. Call once on startup.
  * @param {Function} onChange - Called when a field is edited: onChange(selection, key, value)
  */
-export function initInspector(onChange) {
+export function initInspector(onChange, onAction) {
   onChangeCallback = onChange;
+  onActionCallback = onAction || null;
 
   // Reposition on window resize
   window.addEventListener('resize', () => { if (anchorEl) reposition(); });
@@ -236,19 +259,23 @@ function renderBlockInspector(panel) {
     return;
   }
 
+  const { index, count } = getBlockPosition(scope, blockId);
+  const actionsHTML = renderBlockActions(index, count);
   const fields = BLOCK_FIELDS[block.type];
 
   if (!fields) {
     // Complex block type (items-based) — show type label and basic info
     if (ITEM_BLOCK_TYPES.has(block.type)) {
-      const count = block.items?.length || block.steps?.length || 0;
+      const itemCount = block.items?.length || block.steps?.length || 0;
       panel.innerHTML = `
         <div class="v2-insp-header">${block.type}</div>
+        ${actionsHTML}
         <div class="v2-insp-fields">
-          <div class="v2-insp-info">${count} item${count !== 1 ? 's' : ''}</div>
+          <div class="v2-insp-info">${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
           ${block.type === 'gallery' ? renderField({ key: 'columns', label: 'Columns', type: 'select', options: ['2', '3'] }, String(block.columns || 2)) : ''}
         </div>`;
 
+      bindBlockActionEvents(panel);
       if (block.type === 'gallery') {
         bindFieldEvents(panel, [{ key: 'columns', label: 'Columns', type: 'select', options: ['2', '3'] }], (key, value) => {
           block[key] = key === 'columns' ? parseInt(value, 10) : value;
@@ -258,14 +285,20 @@ function renderBlockInspector(panel) {
       return;
     }
 
-    panel.innerHTML = `<div class="v2-insp-empty">No editable fields for ${block.type}</div>`;
+    panel.innerHTML = `
+      <div class="v2-insp-header">${block.type}</div>
+      ${actionsHTML}
+      <div class="v2-insp-empty">No editable fields for ${block.type}</div>`;
+    bindBlockActionEvents(panel);
     return;
   }
 
   panel.innerHTML = `
     <div class="v2-insp-header">${block.type}</div>
+    ${actionsHTML}
     <div class="v2-insp-fields">${fields.map(f => renderField(f, block[f.key])).join('')}</div>`;
 
+  bindBlockActionEvents(panel);
   bindFieldEvents(panel, fields, (key, value) => {
     if (key === 'scale' || key === 'position') {
       block[key] = parseFloat(value);
@@ -275,6 +308,56 @@ function renderBlockInspector(panel) {
       block[key] = value;
     }
     if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+  });
+}
+
+function getBlockPosition(scope, blockId) {
+  let blocks = [];
+  if (scope === 'about') {
+    blocks = state.global.about || [];
+  } else {
+    const m = scope.match(/^proj-(.+)$/);
+    if (m) {
+      const proj = state.projectCache.get(m[1]);
+      blocks = proj?.blocks || [];
+    }
+  }
+  const index = blocks.findIndex(b => b.id === blockId);
+  return { index, count: blocks.length };
+}
+
+function renderBlockActions(index, count) {
+  const addOpts = BLOCK_TYPE_LABELS.map(([val, label]) =>
+    `<option value="${val}">${label}</option>`
+  ).join('');
+
+  return `<div class="v2-insp-actions">
+    <button class="v2-insp-act" data-v2-action="move-up" title="Move up" ${index <= 0 ? 'disabled' : ''}>&#9650;</button>
+    <button class="v2-insp-act" data-v2-action="move-down" title="Move down" ${index >= count - 1 ? 'disabled' : ''}>&#9660;</button>
+    <button class="v2-insp-act v2-insp-act-del" data-v2-action="delete" title="Delete block">&#10005;</button>
+  </div>
+  <div class="v2-insp-add-row">
+    <select class="v2-insp-add-sel" data-v2-action="add-after">
+      <option value="">+ Add block after…</option>
+      ${addOpts}
+    </select>
+  </div>`;
+}
+
+function bindBlockActionEvents(panel) {
+  panel.querySelectorAll('[data-v2-action]').forEach(el => {
+    if (el.tagName === 'SELECT') {
+      el.addEventListener('change', () => {
+        if (el.value && onActionCallback) {
+          onActionCallback(el.dataset.v2Action, currentSelection, el.value);
+          el.value = '';
+        }
+      });
+    } else if (el.tagName === 'BUTTON') {
+      el.addEventListener('click', () => {
+        if (onActionCallback) onActionCallback(el.dataset.v2Action, currentSelection);
+      });
+    }
   });
 }
 
