@@ -26,6 +26,15 @@ function createToolbarDOM() {
   bar.id = 'v2-float-toolbar';
   bar.className = 'v2-float-toolbar';
   bar.innerHTML = `
+    <button data-cmd="bold" title="Bold"><b>B</b></button>
+    <button data-cmd="italic" title="Italic"><i>I</i></button>
+    <button data-cmd="underline" title="Underline"><u>U</u></button>
+    <button data-cmd="rgr" title="RGR Badge" class="v2-ft-rgr">RGR</button>
+    <span class="v2-ft-sep"></span>
+    <button data-cmd="align-left" title="Align Left">&#x21E4;</button>
+    <button data-cmd="align-center" title="Center">&#x21D4;</button>
+    <button data-cmd="align-right" title="Align Right">&#x21E5;</button>
+    <span class="v2-ft-sep"></span>
     <button data-cmd="done" title="Done (Enter)">&#x2713;</button>
     <button data-cmd="cancel" title="Cancel (Esc)">&#x2715;</button>
   `;
@@ -144,10 +153,11 @@ export function finishEdit(commit) {
   const scope = el.getAttribute('data-canvas-scope');
   const blockId = el.getAttribute('data-canvas-block-id');
   const field = el.getAttribute('data-canvas-field');
+  const itemIndex = el.getAttribute('data-canvas-item');
 
   if (commit && scope && blockId && field && onCommitCallback) {
     const value = el.innerHTML.trim();
-    onCommitCallback(scope, blockId, field, value);
+    onCommitCallback(scope, blockId, field, value, itemIndex !== null ? parseInt(itemIndex, 10) : undefined);
   } else if (!commit) {
     el.innerHTML = originalContent;
   }

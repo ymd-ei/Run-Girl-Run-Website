@@ -12,27 +12,24 @@ import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 const BLOCK_FIELDS = {
   'text-sm': [
     { key: 'align', label: 'Alignment', type: 'align' },
-    { key: '_format', label: 'Format', type: 'format' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'text-md': [
     { key: 'align', label: 'Alignment', type: 'align' },
-    { key: '_format', label: 'Format', type: 'format' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'text-lg': [
     { key: 'align', label: 'Alignment', type: 'align' },
-    { key: '_format', label: 'Format', type: 'format' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'image': [
     { key: 'src', label: 'Image URL', type: 'image' },
     { key: 'alt', label: 'Alt Text', type: 'text' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'alpha-art': [
     { key: 'src', label: 'Image URL', type: 'image' },
@@ -45,30 +42,29 @@ const BLOCK_FIELDS = {
   ],
   'quote': [
     { key: 'align', label: 'Alignment', type: 'align' },
-    { key: '_format', label: 'Format', type: 'format' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'video': [
     { key: 'src', label: 'Video URL', type: 'image' },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'divider': [
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'callout': [
     { key: 'tone', label: 'Tone', type: 'select', options: ['note', 'highlight', 'warning'] },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'cta': [
     { key: 'buttonLabel', label: 'Button Text', type: 'text' },
     { key: 'buttonUrl', label: 'Button URL', type: 'text' },
     { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'highlight'] },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ],
   'beforeafter': [
     { key: 'beforeSrc', label: 'Before Image', type: 'image' },
@@ -77,8 +73,8 @@ const BLOCK_FIELDS = {
     { key: 'afterAlt', label: 'After Alt', type: 'text' },
     { key: 'caption', label: 'Caption', type: 'text' },
     { key: 'position', label: 'Position (0–100)', type: 'number', min: 0, max: 100, step: 1 },
-    { key: 'paddingTop', label: 'Padding Top', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] },
-    { key: 'paddingBottom', label: 'Padding Bottom', type: 'select', options: ['0', '0.5rem', '1rem', '2rem', '3rem'] }
+    { key: 'paddingTop', label: 'Pad Top (px)', type: 'number', min: 0, step: 1 },
+    { key: 'paddingBottom', label: 'Pad Bottom (px)', type: 'number', min: 0, step: 1 }
   ]
 };
 
@@ -128,6 +124,18 @@ const CONTACT_FIELDS = [
 
 const WORK_FIELDS = [
   { key: 'siteTitle', label: 'Site Title', type: 'text' }
+];
+
+const PROJECT_META_FIELDS = [
+  { key: 'title', label: 'Title', type: 'text' },
+  { key: 'type', label: 'Type', type: 'text' },
+  { key: 'typeLabel', label: 'Type Label', type: 'text' },
+  { key: 'year', label: 'Year', type: 'text' },
+  { key: 'client', label: 'Client', type: 'text' },
+  { key: 'thumbnail', label: 'Thumbnail', type: 'image' },
+  { key: 'longform', label: 'Longform layout', type: 'checkbox' },
+  { key: 'sensitive', label: 'Sensitive', type: 'checkbox' },
+  { key: 'sensitiveLabel', label: 'Sensitive Label', type: 'text' }
 ];
 
 const THEME_FIELDS = [
@@ -337,7 +345,7 @@ function renderSectionInspector(panel) {
       if (!state.global.filters) state.global.filters = [];
       state.global.filters.push({ value: '', label: '' });
       syncFilters();
-      renderSectionInspector(name);
+      render();
     });
 
     panel.addEventListener('click', (e) => {
@@ -346,8 +354,28 @@ function renderSectionInspector(panel) {
         const idx = Number(delBtn.dataset.delFilter);
         state.global.filters.splice(idx, 1);
         syncFilters();
-        renderSectionInspector(name);
+        render();
       }
+    });
+    return;
+  } else if (name === 'project') {
+    const projectId = currentSelection.projectId;
+    if (!projectId) { panel.innerHTML = `<div class="v2-insp-empty">No project selected</div>`; return; }
+
+    const card = state.projects.find(p => p.id === projectId) || {};
+    const proj = state.projectCache.get(projectId) || card;
+
+    fields = PROJECT_META_FIELDS;
+    panel.innerHTML = `
+      <div class="v2-insp-header">Project Settings</div>
+      <div class="v2-insp-fields">${fields.map(f => renderField(f, (f.key === 'client' ? proj : card)[f.key])).join('')}</div>`;
+
+    bindFieldEvents(panel, fields, (key, value) => {
+      const c = state.projects.find(p => p.id === projectId);
+      if (c) c[key] = value;
+      const p = state.projectCache.get(projectId);
+      if (p) p[key] = value;
+      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
     });
     return;
   } else {
@@ -539,9 +567,16 @@ function renderField(field, value) {
       <label for="${id}">${field.label}</label>
       <div class="v2-insp-upload-row">
         <input type="text" id="${id}" data-key="${field.key}" value="${escapeHtml(val)}" placeholder="URL or upload…">
+        <button class="v2-insp-browse-btn" data-browse-for="${field.key}" title="Browse media">&#128193;</button>
         <button class="v2-insp-upload-btn" data-upload-for="${field.key}" title="Upload file">&#8679;</button>
         <input type="file" class="v2-insp-upload-input" data-upload-key="${field.key}" accept="image/*,video/*" hidden>
       </div>
+    </div>`;
+  }
+
+  if (field.type === 'checkbox') {
+    return `<div class="v2-insp-field v2-insp-field-check">
+      <label><input type="checkbox" data-key="${field.key}" ${val ? 'checked' : ''}> ${field.label}</label>
     </div>`;
   }
 
@@ -556,6 +591,10 @@ function bindFieldEvents(panel, fields, onEdit) {
   // Text, textarea, number, select
   panel.querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(el => {
     if (el.dataset.colorText) return; // handled by color sync
+    if (el.type === 'checkbox') {
+      el.addEventListener('change', () => { onEdit(el.dataset.key, el.checked); });
+      return;
+    }
     el.addEventListener('input', () => {
       onEdit(el.dataset.key, el.value);
     });
@@ -622,6 +661,20 @@ function bindFieldEvents(panel, fields, onEdit) {
     });
   });
 
+  // Browse media buttons (image fields)
+  panel.querySelectorAll('.v2-insp-browse-btn[data-browse-for]').forEach(btn => {
+    const key = btn.dataset.browseFor;
+    btn.addEventListener('click', () => {
+      if (typeof window.__v2OpenMediaLibrary === 'function') {
+        window.__v2OpenMediaLibrary((path) => {
+          const textInput = panel.querySelector(`input[type="text"][data-key="${key}"]`);
+          if (textInput) textInput.value = path;
+          onEdit(key, path);
+        });
+      }
+    });
+  });
+
   // Format buttons (bold, italic, underline, RGR badge)
   panel.querySelectorAll('[data-fmt-cmd]').forEach(btn => {
     btn.addEventListener('mousedown', e => e.preventDefault()); // keep focus on contenteditable
@@ -680,12 +733,12 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
         ${renderSubBlockFields(block.right || {}, 'right')}
       </div>
       <div class="v2-insp-field">
-        <label>Padding Top</label>
-        <select data-key="paddingTop">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingTop||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+        <label>Pad Top (px)</label>
+        <input type="number" data-key="paddingTop" value="${parseInt(block.paddingTop) || 0}" min="0" step="1">
       </div>
       <div class="v2-insp-field">
-        <label>Padding Bottom</label>
-        <select data-key="paddingBottom">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingBottom||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+        <label>Pad Bottom (px)</label>
+        <input type="number" data-key="paddingBottom" value="${parseInt(block.paddingBottom) || 0}" min="0" step="1">
       </div>`;
 
     // Bind twocol sub-fields
@@ -699,10 +752,10 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
       });
     });
     // Padding
-    panel.querySelectorAll('select[data-key]').forEach(el => {
-      el.addEventListener('change', () => {
-        block[el.dataset.key] = el.value;
-        if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, el.value);
+    panel.querySelectorAll('input[type="number"][data-key]').forEach(el => {
+      el.addEventListener('input', () => {
+        block[el.dataset.key] = parseInt(el.value, 10) || 0;
+        if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, block[el.dataset.key]);
       });
     });
     return;
@@ -729,7 +782,7 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
           return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="number" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${val}" min="${f.min??''}" max="${f.max??''}"></div>`;
         }
         if (f.type === 'image') {
-          return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><div class="v2-insp-upload-row"><input type="text" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${escapeHtml(val)}"><button class="v2-insp-upload-btn" data-upload-for-sub="${i}-${f.key}">⇧</button><input type="file" class="v2-insp-upload-input" data-upload-sub-key="${i}-${f.key}" accept="image/*,video/*" hidden></div></div>`;
+          return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><div class="v2-insp-upload-row"><input type="text" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${escapeHtml(val)}"><button class="v2-insp-browse-btn" data-browse-for-sub="${i}-${f.key}" title="Browse media">&#128193;</button><button class="v2-insp-upload-btn" data-upload-for-sub="${i}-${f.key}">⇧</button><input type="file" class="v2-insp-upload-input" data-upload-sub-key="${i}-${f.key}" accept="image/*,video/*" hidden></div></div>`;
         }
         return `<div class="v2-insp-field"><label for="${id}">${f.label}</label><input type="text" id="${id}" data-item-idx="${i}" data-subkey="${f.key}" value="${escapeHtml(val)}"></div>`;
       }).join('')}
@@ -743,12 +796,12 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
       <div class="v2-insp-sub-items">${itemsHTML}</div>
       <button class="v2-insp-sub-add" data-add-item>+ Add Item</button>
       <div class="v2-insp-field">
-        <label>Padding Top</label>
-        <select data-key="paddingTop">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingTop||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+        <label>Pad Top (px)</label>
+        <input type="number" data-key="paddingTop" value="${parseInt(block.paddingTop) || 0}" min="0" step="1">
       </div>
       <div class="v2-insp-field">
-        <label>Padding Bottom</label>
-        <select data-key="paddingBottom">${['0','0.5rem','1rem','2rem','3rem'].map(o => `<option value="${o}" ${(block.paddingBottom||'0')===o?'selected':''}>${o}</option>`).join('')}</select>
+        <label>Pad Bottom (px)</label>
+        <input type="number" data-key="paddingBottom" value="${parseInt(block.paddingBottom) || 0}" min="0" step="1">
       </div>
     </div>`;
 
@@ -774,10 +827,10 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
   });
 
   // Bind padding
-  panel.querySelectorAll('select[data-key]').forEach(el => {
-    el.addEventListener('change', () => {
-      block[el.dataset.key] = el.value;
-      if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, el.value);
+  panel.querySelectorAll('input[type="number"][data-key]').forEach(el => {
+    el.addEventListener('input', () => {
+      block[el.dataset.key] = parseInt(el.value, 10) || 0;
+      if (onChangeCallback) onChangeCallback(currentSelection, el.dataset.key, block[el.dataset.key]);
     });
   });
 
@@ -829,6 +882,23 @@ function renderComplexBlockInspector(panel, block, actionsHTML) {
           btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 1500);
         } else { btn.textContent = '✗'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000); }
       } catch { btn.textContent = '✗'; setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000); }
+    });
+  });
+
+  // Sub-item browse media buttons
+  panel.querySelectorAll('.v2-insp-browse-btn[data-browse-for-sub]').forEach(btn => {
+    const [idxStr, key] = btn.dataset.browseForSub.split('-');
+    const idx = parseInt(idxStr, 10);
+    btn.addEventListener('click', () => {
+      if (typeof window.__v2OpenMediaLibrary === 'function') {
+        window.__v2OpenMediaLibrary((path) => {
+          const arr = block[schema.arrayKey];
+          if (arr && arr[idx]) { arr[idx][key] = path; }
+          const textEl = panel.querySelector(`input[data-item-idx="${idx}"][data-subkey="${key}"]`);
+          if (textEl) textEl.value = path;
+          if (onChangeCallback) onChangeCallback(currentSelection, `${schema.arrayKey}[${idx}].${key}`, path);
+        });
+      }
     });
   });
 }

@@ -222,6 +222,19 @@ export async function uploadMedia(file, folder = 'media') {
 }
 
 /**
+ * List all media files from the backend.
+ * @returns {Array<{name: string, path: string, size: number, url: string}>}
+ */
+export async function fetchMediaFiles() {
+  try {
+    const res = await fetch(`${API_BASE}/api/media`, authHeaders({ method: 'GET' }));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.files || [];
+  } catch { return []; }
+}
+
+/**
  * Create a new project with a generated slug.
  * @param {string} title - Project title
  * @returns {Object} The new project object

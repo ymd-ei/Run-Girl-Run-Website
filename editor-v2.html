@@ -26,7 +26,8 @@
     <div class="v2-sidebar-section">Projects</div>
     <div id="v2-sidebar-projects"></div>
 
-    <div id="v2-sidebar-context"></div>
+    <div class="v2-sidebar-section">Media</div>
+    <button id="v2-media-btn" class="v2-nav-item">Media Library</button>
 
     <div class="v2-sidebar-section">Settings</div>
     <button id="v2-theme-btn" class="v2-nav-item v2-theme-btn">Theme</button>
@@ -49,6 +50,21 @@
 
 <!-- FLOATING INSPECTOR (positioned by JS, outside grid) -->
 <div id="v2-inspector"></div>
+
+<!-- MEDIA LIBRARY MODAL -->
+<div id="v2-media-modal" class="v2-media-modal" hidden>
+  <div class="v2-media-modal-inner">
+    <div class="v2-media-modal-header">
+      <span>Media Library</span>
+      <input type="text" id="v2-media-search" placeholder="Filter…" class="v2-media-search">
+      <label class="v2-media-upload-label">
+        Upload <input type="file" id="v2-media-upload" accept="image/*,video/*" hidden>
+      </label>
+      <button id="v2-media-close" class="v2-media-close">&times;</button>
+    </div>
+    <div id="v2-media-grid" class="v2-media-grid"></div>
+  </div>
+</div>
 
 <div id="v2-toast"></div>
 

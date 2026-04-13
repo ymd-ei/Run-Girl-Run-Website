@@ -4,7 +4,7 @@
  * Uses shared renderers (displayRenderer, blockRenderer) — does NOT import main.js.
  */
 
-import { state, loadProject, markDirty, uploadMedia, createProject, deleteProject } from './dataBridge.js';
+import { state, loadProject, markDirty, uploadMedia, createProject, deleteProject, fetchMediaFiles } from './dataBridge.js';
 import { pushState } from './history.js';
 import {
   applyTheme,
@@ -54,11 +54,20 @@ export function initEditing() {
   });
 
   // Floating toolbar: when inline text edit commits
-  initToolbar((scope, blockId, field, value) => {
+  initToolbar((scope, blockId, field, value, itemIndex) => {
     pushState(state);
     const block = findBlockData(scope, blockId);
     if (block) {
-      block[field] = value;
+      // Sub-item field: e.g. "items.num" with itemIndex=2
+      if (itemIndex !== undefined && field.includes('.')) {
+        const [arrKey, subKey] = field.split('.');
+        const arr = block[arrKey];
+        if (arr && arr[itemIndex]) {
+          arr[itemIndex][subKey] = value;
+        }
+      } else {
+        block[field] = value;
+      }
       if (scope && scope.startsWith('proj-')) {
         markDirty('projects/' + scope.replace('proj-', '') + '.json');
       } else {
@@ -83,6 +92,10 @@ export function initEditing() {
 
   // Bind scroll reposition for floating inspector
   bindCanvasScroll(canvas);
+
+  // Media library sidebar button
+  initMediaButton();
+  window.__v2OpenMediaLibrary = openMediaLibrary;
 }
 
 /**
@@ -364,6 +377,7 @@ function buildProjectPanelHTML() {
           Back
         </button>
         <button class="v2-proj-pub-btn" id="v2-project-publish" title="Toggle publish"></button>
+        <button class="v2-proj-settings-btn" id="v2-project-settings" title="Project settings">&#9881;</button>
         <button class="v2-proj-del-btn" id="v2-project-delete" title="Delete project">&#128465;</button>
         <button class="v2-pc v2-panel-close">&#x2715;</button>
       </div>
@@ -452,8 +466,13 @@ export async function openProject(id) {
     };
   }
 
-  // Update sidebar context with project metadata
-  updateSidebarContext(id, project);
+  // Wire settings button → open project metadata in inspector
+  const settingsBtn = document.getElementById('v2-project-settings');
+  if (settingsBtn) {
+    settingsBtn.onclick = () => {
+      showAt(settingsBtn, { type: 'section', sectionName: 'project', projectId: id });
+    };
+  }
 }
 
 // ── Sidebar nav ──
@@ -533,64 +552,113 @@ export function handleDeleteProject(id) {
   renderCanvas();
 }
 
-// ── Sidebar context (project metadata) ──
-
-function updateSidebarContext(projectId, project) {
-  const ctx = document.getElementById('v2-sidebar-context');
-  if (!ctx) return;
-
-  const card = state.projects.find(p => p.id === projectId) || {};
-
-  ctx.innerHTML = `
-    <div class="v2-sidebar-section">Project Settings</div>
-    <div class="v2-ctx-fields">
-      <label>Title</label>
-      <input type="text" data-ctx-key="title" value="${escapeAttr(card.title || '')}">
-      <label>Type</label>
-      <input type="text" data-ctx-key="type" value="${escapeAttr(card.type || '')}">
-      <label>Type Label</label>
-      <input type="text" data-ctx-key="typeLabel" value="${escapeAttr(card.typeLabel || '')}">
-      <label>Year</label>
-      <input type="text" data-ctx-key="year" value="${escapeAttr(card.year || '')}">
-      <label>Client</label>
-      <input type="text" data-ctx-key="client" value="${escapeAttr(project.client || '')}">
-      <label>Thumbnail</label>
-      <input type="text" data-ctx-key="thumbnail" value="${escapeAttr(card.thumbnail || '')}">
-      <label>
-        <input type="checkbox" data-ctx-key="longform" ${project.longform ? 'checked' : ''}> Longform layout
-      </label>
-      <label>
-        <input type="checkbox" data-ctx-key="sensitive" ${card.sensitive ? 'checked' : ''}> Sensitive
-      </label>
-      <label>Sensitive Label</label>
-      <input type="text" data-ctx-key="sensitiveLabel" value="${escapeAttr(card.sensitiveLabel || '')}">
-    </div>`;
-
-  ctx.querySelectorAll('input[data-ctx-key]').forEach(el => {
-    const handler = () => {
-      const key = el.dataset.ctxKey;
-      const val = el.type === 'checkbox' ? el.checked : el.value;
-      // Update card (in state.projects)
-      const c = state.projects.find(p => p.id === projectId);
-      if (c) c[key] = val;
-      // Update cached project
-      const proj = state.projectCache.get(projectId);
-      if (proj) proj[key] = val;
-      markDirty('content.json');
-      markDirty('projects/' + projectId + '.json');
-    };
-    el.addEventListener('input', handler);
-    el.addEventListener('change', handler);
-  });
-}
-
-function clearSidebarContext() {
-  const ctx = document.getElementById('v2-sidebar-context');
-  if (ctx) ctx.innerHTML = '';
-}
-
 function escapeAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// ── Media Library ──
+
+let mediaCache = null;
+let mediaPickCallback = null;
+
+async function loadMediaFiles(force = false) {
+  if (!force && mediaCache) return mediaCache;
+  mediaCache = await fetchMediaFiles();
+  return mediaCache;
+}
+
+function renderMediaGrid(files, filter = '') {
+  const grid = document.getElementById('v2-media-grid');
+  if (!grid) return;
+
+  const lowerFilter = filter.toLowerCase();
+  const filtered = lowerFilter
+    ? files.filter(f => f.name.toLowerCase().includes(lowerFilter))
+    : files;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="v2-media-empty">No media files found</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(f => {
+    const isVideo = /\.(mp4|webm|mov)$/i.test(f.name);
+    const thumb = isVideo
+      ? `<div class="v2-media-thumb v2-media-video-thumb">&#9654; ${escapeAttr(f.name)}</div>`
+      : `<img class="v2-media-thumb" src="${f.path}" alt="${escapeAttr(f.name)}">`;
+    return `<div class="v2-media-item" data-media-path="${escapeAttr(f.path)}" title="${escapeAttr(f.name)}">${thumb}<div class="v2-media-name">${escapeAttr(f.name)}</div></div>`;
+  }).join('');
+}
+
+export async function openMediaLibrary(onPick) {
+  mediaPickCallback = onPick || null;
+  const modal = document.getElementById('v2-media-modal');
+  if (!modal) return;
+
+  modal.hidden = false;
+  const grid = document.getElementById('v2-media-grid');
+  if (grid) grid.innerHTML = '<div class="v2-media-empty">Loading…</div>';
+
+  const files = await loadMediaFiles();
+  renderMediaGrid(files);
+
+  const search = document.getElementById('v2-media-search');
+  if (search) {
+    search.value = '';
+    search.oninput = () => renderMediaGrid(files, search.value);
+  }
+
+  // Close button
+  const closeBtn = document.getElementById('v2-media-close');
+  if (closeBtn) closeBtn.onclick = closeMediaLibrary;
+
+  // Click backdrop to close
+  modal.onclick = (e) => { if (e.target === modal) closeMediaLibrary(); };
+
+  // Item click → pick
+  const gridEl = document.getElementById('v2-media-grid');
+  if (gridEl) {
+    gridEl.onclick = (e) => {
+      const item = e.target.closest('[data-media-path]');
+      if (!item) return;
+      const path = item.dataset.mediaPath;
+      if (mediaPickCallback) {
+        mediaPickCallback(path);
+      }
+      closeMediaLibrary();
+    };
+  }
+
+  // Upload
+  const uploadInput = document.getElementById('v2-media-upload');
+  if (uploadInput) {
+    uploadInput.value = '';
+    uploadInput.onchange = async () => {
+      const file = uploadInput.files[0];
+      if (!file) return;
+      const result = await uploadMedia(file);
+      if (result.success) {
+        mediaCache = null; // invalidate
+        const freshFiles = await loadMediaFiles(true);
+        renderMediaGrid(freshFiles, search?.value || '');
+        if (mediaPickCallback && result.path) {
+          mediaPickCallback(result.path);
+          closeMediaLibrary();
+        }
+      }
+    };
+  }
+}
+
+function closeMediaLibrary() {
+  const modal = document.getElementById('v2-media-modal');
+  if (modal) modal.hidden = true;
+  mediaPickCallback = null;
+}
+
+function initMediaButton() {
+  const btn = document.getElementById('v2-media-btn');
+  if (btn) btn.onclick = () => openMediaLibrary(null);
 }
 
 // ── Panel navigation ──
@@ -611,7 +679,6 @@ export function showPanel(name) {
     document.getElementById('v2-backdrop')?.classList.remove('open');
     currentSection = 'home';
     currentProjectId = null;
-    clearSidebarContext();
     updateSidebarActive();
     return;
   }
@@ -624,7 +691,6 @@ export function showPanel(name) {
 
     if (name !== 'project') {
       currentProjectId = null;
-      clearSidebarContext();
     }
 
     if (name === 'contact') {
@@ -817,8 +883,10 @@ function renderEditableBlocks(blocks, scope, options = {}) {
   const html = (blocks || []).map(block => {
     const inner = renderBlock(block, theme, renderOpts);
     const padStyles = [];
-    if (block.paddingTop && block.paddingTop !== '0') padStyles.push(`padding-top:${block.paddingTop}`);
-    if (block.paddingBottom && block.paddingBottom !== '0') padStyles.push(`padding-bottom:${block.paddingBottom}`);
+    const pt = block.paddingTop;
+    const pb = block.paddingBottom;
+    if (pt && pt !== '0' && pt !== 0) padStyles.push(`padding-top:${typeof pt === 'number' ? pt + 'px' : pt}`);
+    if (pb && pb !== '0' && pb !== 0) padStyles.push(`padding-bottom:${typeof pb === 'number' ? pb + 'px' : pb}`);
     const styleAttr = padStyles.length ? ` style="${padStyles.join(';')}"` : '';
     return `<div class="v2-block-wrap" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}"${styleAttr}>${inner}</div>`;
   }).join('');

@@ -45,7 +45,7 @@ export function renderBlockThumbnail(type, theme = {}) {
 export function renderBlock(block, theme = {}, renderOptions = {}) {
   if (!block || !block.type) return '';
 
-  const canvasAttrs = field => {
+  const canvasAttrs = (field, itemIndex) => {
     const scope = renderOptions.canvasScope;
     if (!scope || !block.id || !field) return '';
 
@@ -53,7 +53,9 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       ? ` data-canvas-project-id="${renderOptions.canvasProjectId}"`
       : '';
 
-    return ` data-canvas-editable="true" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}" data-canvas-field="${field}"${projectIdAttr}`;
+    const itemAttr = itemIndex !== undefined ? ` data-canvas-item="${itemIndex}"` : '';
+
+    return ` data-canvas-editable="true" data-canvas-scope="${scope}" data-canvas-block-id="${block.id}" data-canvas-field="${field}"${itemAttr}${projectIdAttr}`;
   };
 
   const alignClass =
@@ -116,8 +118,8 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       const cols = (block.items || []).length;
       const statsHTML = (block.items || [])
         .map(
-          s =>
-            `<div class="sc"><div class="sn" data-target="${s.num}">${s.num}</div><div class="sl">${s.label}</div></div>`
+          (s, i) =>
+            `<div class="sc"><div class="sn" data-target="${s.num}"${canvasAttrs('items.num', i)}>${s.num}</div><div class="sl"${canvasAttrs('items.label', i)}>${s.num}</div><div class="sl"${canvasAttrs('items.label', i)}>${s.label}</div></div>`
         )
         .join('');
       return `<div class="bl-stats" style="grid-template-columns:repeat(${cols},1fr)">${statsHTML}</div>`;
@@ -125,12 +127,8 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
     case 'skills':
       const skillsHTML = (block.items || [])
         .map(
-          s =>
-            `<div class="skr"><div class="skn"><span>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${
-              s.pct / 100
-            }"></div></div></div>`
-        )
-        .join('');
+          (s, i) =>
+            `<div class="skr"><div class="skn"><span${canvasAttrs('items.name', i)}>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${s.pct / 100n('');
       return `<div class="bl-skills" id="skl">${skillsHTML}</div>`;
 
     case 'divider':
@@ -145,13 +143,13 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       const galleryCols = block.columns === 3 ? 3 : 2;
       return `<div class="bl-gallery cols-${galleryCols}">${(block.items || [])
         .map(
-          item =>
+          (item, i) =>
+            `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${item.src || ''}" alt="${
+          (item, i) =>
             `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${item.src || ''}" alt="${
               item.alt || ''
             }" data-full-src="${item.src || ''}" data-full-alt="${item.alt || ''}">${
-              item.caption ? `<figcaption>${item.caption}</figcaption>` : ''
-            }</figure>`
-        )
+              item.caption ? `<figcaption${canvasAttrs('items.caption', i)}
         .join('')}</div>`;
 
     case 'process':
@@ -166,10 +164,10 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
           }<div class="bl-process-num">${
             index + 1
           }</div><div class="bl-process-copy">${
-            step.date ? `<div class="bl-process-meta"><span class="bl-process-date">${step.date}</span></div>` : ''
-          }<h4>${step.title || ''}</h4><p>${step.content || ''}</p></div></div>`
-        )
-        .join('')}</div>`;
+            step.date ? `<div class="bl-process-meta"><span class="bl-process-date"${canvasAttrs('steps.date', index)}>${step.date}</span></div>` : ''
+          }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}>${step.content || ''}</p></div></div>`
+        )${canvasAttrs('steps.date', index)}>${step.date}</span></div>` : ''
+          }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}
 
     case 'cta':
       return `<section class="bl-cta ${block.tone || 'default'}"><div class="bl-cta-copy">${
@@ -211,11 +209,11 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
           const isOpen = index === openIndex;
           return `<div class="bl-faq-item ${isOpen ? 'open' : ''}" data-faq-item><button class="bl-faq-trigger" type="button" aria-expanded="${
             isOpen ? 'true' : 'false'
-          }" data-faq-trigger><span>${item.question || `Question ${index + 1}`}</span><span class="bl-faq-icon" aria-hidden="true">+</span></button><div class="bl-faq-panel" ${
+          }" data-faq-trigger><span${canvasAttrs('items.question', index)}>${item.question || `Question ${index + 1}`}</span><span class="bl-faq-icon" aria-hidden="true">+</span></button><div class="bl-faq-panel" ${
             isOpen ? '' : 'hidden'
-          } data-faq-panel><p>${item.answer || ''}</p></div></div>`;
-        })
-        .join('')}</div>`;
+          } data-faq-panel><p${canv${canvasAttrs('items.question', index)}>${item.question || `Question ${index + 1}`}</span><span class="bl-faq-icon" aria-hidden="true">+</span></button><div class="bl-faq-panel" ${
+            isOpen ? '' : 'hidden'
+          } data-faq-panel><p${canvasAttrs('items.answer', index)}
 
     default:
       return '';
