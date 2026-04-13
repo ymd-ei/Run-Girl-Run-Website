@@ -1812,36 +1812,9 @@ html, body {
   color: var(--v2-accent, #e84c8a);
 }
 
-/* ── Media Library Modal ── */
-.v2-media-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.v2-media-modal[hidden] { display: none; }
-.v2-media-modal-inner {
-  position: relative;
-  background: var(--v2-bg, #111);
-  border: 1px solid var(--v2-border, #333);
-  border-radius: 10px;
-  width: min(900px, 90vw);
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.v2-media-modal-header {
-  display: flex;
-  align-items: center;
+/* ── Media Library Panel ── */
+.v2-panel[data-v2-panel="media"] .v2-ph {
   gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--v2-border, #333);
-  font-weight: 600;
-  color: var(--v2-text, #eee);
 }
 .v2-media-search {
   flex: 1;
@@ -1851,6 +1824,7 @@ html, body {
   color: var(--v2-text, #eee);
   padding: 4px 8px;
   font-size: .85rem;
+  min-width: 0;
 }
 .v2-media-upload-label {
   font-size: .8rem;
@@ -1859,22 +1833,33 @@ html, body {
   padding: 4px 10px;
   border: 1px solid var(--v2-accent, #e84c8a);
   border-radius: 4px;
+  white-space: nowrap;
 }
-.v2-media-close {
-  background: none;
+.v2-media-pick-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--v2-accent, #e84c8a);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 500;
+}
+.v2-media-pick-banner[hidden] { display: none; }
+.v2-media-pick-cancel {
+  background: rgba(255,255,255,.2);
   border: none;
-  color: var(--v2-text-muted, #888);
-  font-size: 1.4rem;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: .8rem;
   cursor: pointer;
-  padding: 0 4px;
 }
 .v2-media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
   padding: 16px;
-  overflow-y: auto;
-  flex: 1;
 }
 .v2-media-item {
   cursor: pointer;
@@ -1965,6 +1950,21 @@ html, body {
   padding: 5px 14px;
   font-size: .8rem;
   cursor: pointer;
+}
+.v2-media-preview-select[hidden] { display: none; }
+.v2-media-preview-delete {
+  background: none;
+  border: 1px solid #c44;
+  color: #c44;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.v2-media-preview-delete:hover {
+  background: #c44;
+  color: #fff;
 }
 .v2-media-preview-close {
   background: none;

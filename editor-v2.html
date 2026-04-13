@@ -29,7 +29,7 @@
     <div id="v2-sidebar-context"></div>
 
     <div class="v2-sidebar-section">Media</div>
-    <button id="v2-media-btn" class="v2-nav-item">Media Library</button>
+    <button id="v2-media-btn" class="v2-nav-item" data-v2-goto="media">Media Library</button>
 
     <div class="v2-sidebar-section">Settings</div>
     <button id="v2-theme-btn" class="v2-nav-item v2-theme-btn">Theme</button>
@@ -51,30 +51,6 @@
 
   <!-- RIGHT INSPECTOR PANEL -->
   <div id="v2-inspector"></div>
-</div>
-
-<!-- MEDIA LIBRARY MODAL -->
-<div id="v2-media-modal" class="v2-media-modal" hidden>
-  <div class="v2-media-modal-inner">
-    <div class="v2-media-modal-header">
-      <span>Media Library</span>
-      <input type="text" id="v2-media-search" placeholder="Filter…" class="v2-media-search">
-      <label class="v2-media-upload-label">
-        Upload <input type="file" id="v2-media-upload" accept="image/*,video/*" hidden>
-      </label>
-      <button id="v2-media-close" class="v2-media-close">&times;</button>
-    </div>
-    <div id="v2-media-grid" class="v2-media-grid"></div>
-    <!-- Preview overlay -->
-    <div id="v2-media-preview" class="v2-media-preview" hidden>
-      <div class="v2-media-preview-content"></div>
-      <div class="v2-media-preview-bar">
-        <span class="v2-media-preview-name"></span>
-        <button id="v2-media-preview-select" class="v2-media-preview-select">Select</button>
-        <button id="v2-media-preview-close" class="v2-media-preview-close">&times;</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div id="v2-toast"></div>

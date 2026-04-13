@@ -4,7 +4,7 @@
  * Uses shared renderers (displayRenderer, blockRenderer) — does NOT import main.js.
  */
 
-import { state, loadProject, markDirty, uploadMedia, createProject, deleteProject, fetchMediaFiles } from './dataBridge.js';
+import { state, loadProject, markDirty, uploadMedia, deleteMedia, createProject, deleteProject, fetchMediaFiles } from './dataBridge.js';
 import { pushState } from './history.js';
 import {
   applyTheme,
@@ -22,6 +22,15 @@ import { initToolbar, startEdit, finishEdit, isEditing } from './floatingToolbar
 
 let currentSection = 'home';
 let currentProjectId = null;
+
+function showToast(msg, isError) {
+  const el = document.getElementById('v2-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
 
 // ── Selection & editing wiring ──
 
@@ -135,7 +144,8 @@ export function renderCanvas() {
     buildWorkPanelHTML(g, theme) +
     buildAboutPanelHTML(g) +
     buildContactPanelHTML(g) +
-    buildProjectPanelHTML();
+    buildProjectPanelHTML() +
+    buildMediaPanelHTML();
 
   // Wire project card clicks
   inner.querySelectorAll('[data-v2-project]').forEach(card => {
@@ -566,6 +576,9 @@ function updateSidebarActive() {
   nav.querySelectorAll('.v2-nav-item').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.v2Goto === currentSection);
   });
+  // Media button highlight
+  const mediaBtn = document.getElementById('v2-media-btn');
+  if (mediaBtn) mediaBtn.classList.toggle('active', currentSection === 'media');
 }
 
 /**
@@ -690,6 +703,37 @@ async function loadMediaFiles(force = false) {
   return mediaCache;
 }
 
+function buildMediaPanelHTML() {
+  return `
+    <div class="v2-panel v2-panel-wide" data-v2-panel="media">
+      <div class="v2-ph">
+        <span class="v2-pt">Media Library</span>
+        <input type="text" id="v2-media-search" placeholder="Filter…" class="v2-media-search">
+        <label class="v2-media-upload-label">
+          Upload <input type="file" id="v2-media-upload" accept="image/*,video/*" hidden>
+        </label>
+        <button class="v2-pc v2-panel-close">&#x2715;</button>
+      </div>
+      <div class="v2-panel-scroll">
+        <div id="v2-media-pick-banner" class="v2-media-pick-banner" hidden>
+          <span>Select a file to insert</span>
+          <button id="v2-media-pick-cancel" class="v2-media-pick-cancel">Cancel</button>
+        </div>
+        <div id="v2-media-grid" class="v2-media-grid"></div>
+      </div>
+      <!-- Preview overlay -->
+      <div id="v2-media-preview" class="v2-media-preview" hidden>
+        <div class="v2-media-preview-content"></div>
+        <div class="v2-media-preview-bar">
+          <span class="v2-media-preview-name"></span>
+          <button id="v2-media-preview-select" class="v2-media-preview-select" hidden>Select</button>
+          <button id="v2-media-preview-delete" class="v2-media-preview-delete" title="Delete file">&#128465; Delete</button>
+          <button id="v2-media-preview-close" class="v2-media-preview-close">&times;</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderMediaGrid(files, filter = '') {
   const grid = document.getElementById('v2-media-grid');
   if (!grid) return;
@@ -709,21 +753,34 @@ function renderMediaGrid(files, filter = '') {
     const thumb = isVideo
       ? `<div class="v2-media-thumb v2-media-video-thumb">&#9654; ${escapeAttr(f.name)}</div>`
       : `<img class="v2-media-thumb" src="${f.path}" alt="${escapeAttr(f.name)}">`;
-    return `<div class="v2-media-item" data-media-path="${escapeAttr(f.path)}" title="${escapeAttr(f.name)}">${thumb}<div class="v2-media-name">${escapeAttr(f.name)}</div></div>`;
+    return `<div class="v2-media-item" data-media-path="${escapeAttr(f.path)}" title="${escapeAttr(f.name)}">
+      ${thumb}
+      <div class="v2-media-name">${escapeAttr(f.name)}</div>
+    </div>`;
   }).join('');
 }
 
 export async function openMediaLibrary(onPick) {
   mediaPickCallback = onPick || null;
-  const modal = document.getElementById('v2-media-modal');
-  if (!modal) return;
 
-  modal.hidden = false;
+  // Show the media panel
+  showPanel('media');
+
   const grid = document.getElementById('v2-media-grid');
   if (grid) grid.innerHTML = '<div class="v2-media-empty">Loading…</div>';
 
   const files = await loadMediaFiles();
   renderMediaGrid(files);
+
+  // Pick mode banner
+  const banner = document.getElementById('v2-media-pick-banner');
+  if (banner) banner.hidden = !mediaPickCallback;
+
+  const cancelBtn = document.getElementById('v2-media-pick-cancel');
+  if (cancelBtn) cancelBtn.onclick = () => {
+    mediaPickCallback = null;
+    if (banner) banner.hidden = true;
+  };
 
   const search = document.getElementById('v2-media-search');
   if (search) {
@@ -731,35 +788,64 @@ export async function openMediaLibrary(onPick) {
     search.oninput = () => renderMediaGrid(files, search.value);
   }
 
-  // Close button
-  const closeBtn = document.getElementById('v2-media-close');
-  if (closeBtn) closeBtn.onclick = closeMediaLibrary;
-
-  // Click backdrop to close
-  modal.onclick = (e) => { if (e.target === modal) closeMediaLibrary(); };
-
-  // Item click → preview (or pick if callback exists and double-click)
-  const gridEl = document.getElementById('v2-media-grid');
-  if (gridEl) {
-    gridEl.onclick = (e) => {
+  // Item click → preview
+  if (grid) {
+    grid.onclick = (e) => {
       const item = e.target.closest('[data-media-path]');
       if (!item) return;
       const path = item.dataset.mediaPath;
       const name = item.title || path;
+      // In pick mode: select immediately on click
+      if (mediaPickCallback) {
+        mediaPickCallback(path);
+        mediaPickCallback = null;
+        if (banner) banner.hidden = true;
+        closePanel();
+        return;
+      }
       showMediaPreview(path, name);
     };
   }
 
-  // Preview select button
+  // Preview select button (pick mode only)
   const selectBtn = document.getElementById('v2-media-preview-select');
   if (selectBtn) {
+    selectBtn.hidden = !mediaPickCallback;
     selectBtn.onclick = () => {
       const preview = document.getElementById('v2-media-preview');
       const path = preview?.dataset.currentPath;
       if (path && mediaPickCallback) {
         mediaPickCallback(path);
+        mediaPickCallback = null;
+        if (banner) banner.hidden = true;
       }
-      closeMediaLibrary();
+      hideMediaPreview();
+      closePanel();
+    };
+  }
+
+  // Preview delete button
+  const deleteBtn = document.getElementById('v2-media-preview-delete');
+  if (deleteBtn) {
+    deleteBtn.onclick = async () => {
+      const preview = document.getElementById('v2-media-preview');
+      const path = preview?.dataset.currentPath;
+      if (!path) return;
+      if (!confirm(`Delete "${path.split('/').pop()}"? This cannot be undone.`)) return;
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = 'Deleting…';
+      const result = await deleteMedia(path);
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = '\u{1F5D1} Delete';
+      if (result.success) {
+        hideMediaPreview();
+        mediaCache = null;
+        const freshFiles = await loadMediaFiles(true);
+        renderMediaGrid(freshFiles, search?.value || '');
+        showToast('Deleted: ' + path.split('/').pop());
+      } else {
+        showToast(result.error || 'Delete failed', true);
+      }
     };
   }
 
@@ -776,23 +862,21 @@ export async function openMediaLibrary(onPick) {
       if (!file) return;
       const result = await uploadMedia(file);
       if (result.success) {
-        mediaCache = null; // invalidate
+        mediaCache = null;
         const freshFiles = await loadMediaFiles(true);
         renderMediaGrid(freshFiles, search?.value || '');
+        showToast('Uploaded: ' + file.name);
         if (mediaPickCallback && result.path) {
           mediaPickCallback(result.path);
-          closeMediaLibrary();
+          mediaPickCallback = null;
+          if (banner) banner.hidden = true;
+          closePanel();
         }
+      } else {
+        showToast(result.error || 'Upload failed', true);
       }
     };
   }
-}
-
-function closeMediaLibrary() {
-  hideMediaPreview();
-  const modal = document.getElementById('v2-media-modal');
-  if (modal) modal.hidden = true;
-  mediaPickCallback = null;
 }
 
 function showMediaPreview(path, name) {
@@ -804,7 +888,7 @@ function showMediaPreview(path, name) {
   const nameEl = preview.querySelector('.v2-media-preview-name');
   const selectBtn = document.getElementById('v2-media-preview-select');
   if (nameEl) nameEl.textContent = name;
-  if (selectBtn) selectBtn.style.display = mediaPickCallback ? '' : 'none';
+  if (selectBtn) selectBtn.hidden = !mediaPickCallback;
 
   const isVideo = /\.(mp4|webm|mov)$/i.test(path);
   if (isVideo) {
@@ -828,9 +912,8 @@ function isMediaPreviewOpen() {
   return p && !p.hidden;
 }
 
-function isMediaModalOpen() {
-  const m = document.getElementById('v2-media-modal');
-  return m && !m.hidden;
+function isMediaPanelOpen() {
+  return currentSection === 'media';
 }
 
 function initMediaButton() {
@@ -851,10 +934,11 @@ function initGlobalEsc() {
       return;
     }
 
-    // Priority 2: media modal
-    if (isMediaModalOpen()) {
+    // Priority 2: media panel open → close it
+    if (isMediaPanelOpen() && !isMediaPreviewOpen()) {
       e.preventDefault();
-      closeMediaLibrary();
+      mediaPickCallback = null;
+      closePanel();
       return;
     }
 
@@ -980,6 +1064,8 @@ export function showPanel(name) {
 }
 
 export function closePanel() {
+  hideMediaPreview();
+  mediaPickCallback = null;
   showPanel(null);
 }
 

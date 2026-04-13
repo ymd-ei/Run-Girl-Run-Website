@@ -235,6 +235,24 @@ export async function fetchMediaFiles() {
 }
 
 /**
+ * Delete a media file from the backend.
+ * @param {string} path - File path (must start with 'media/')
+ * @returns {{ success: boolean, error?: string }}
+ */
+export async function deleteMedia(path) {
+  const res = await fetch(`${API_BASE}/api/media`, authHeaders({
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  }));
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    return { success: false, error: data.error || 'Delete failed' };
+  }
+  return { success: true };
+}
+
+/**
  * Create a new project with a generated slug.
  * @param {string} title - Project title
  * @returns {Object} The new project object
