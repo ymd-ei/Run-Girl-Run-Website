@@ -56,6 +56,14 @@ export function initEditing() {
   // Floating toolbar: when inline text edit commits
   initToolbar((scope, blockId, field, value, itemIndex) => {
     pushState(state);
+
+    // Section-level inline edits (e.g. contact title/sub)
+    if (scope === '__section') {
+      setNestedValue(state.global, field, value);
+      markDirty('content.json');
+      return;
+    }
+
     const block = findBlockData(scope, blockId);
     if (block) {
       // Sub-item field: e.g. "items.num" with itemIndex=2
@@ -334,9 +342,20 @@ function buildAboutPanelHTML(g) {
 
 function buildContactPanelHTML(g) {
   const ct = renderContactPanel(g);
+  const cp = g.contactPanel || {};
   const email = g.contact?.email || '';
   const location = g.contact?.location || '';
   const siteName = g.name || '';
+
+  const ctTitle = cp.title || "Let's";
+  const ctAccent = cp.titleAccent || 'work.';
+  const ctSub = cp.sub || "Animation, motion, original features — whatever the idea, we're built for it. Let's talk.";
+
+  const videoUrl = cp.video?.url || '';
+  let videoBgHTML = '';
+  if (videoUrl) {
+    videoBgHTML = `<div class="v2-ct-bg"><video muted loop playsinline preload="metadata" src="${videoUrl}"></video><div class="v2-ct-bg-dark"></div></div>`;
+  }
 
   const icons = (g.contact?.links || [])
     .map(l => `<a href="${l.url}" class="ct-icon-btn" title="${l.label}"><i class="${phosphorIcon(l.url)}"></i></a>`)
@@ -347,21 +366,21 @@ function buildContactPanelHTML(g) {
       <button class="v2-ct-close v2-panel-close">&#x2715;</button>
       <div class="v2-panel-scroll">
         <div class="v2-contact">
-          <div class="v2-ct-splash">
-            ${location ? `<p class="ct-tag">${location}</p>` : ''}
-            <h1 class="ct-hero">${ct.hero}</h1>
-            <p class="ct-sub">${ct.sub}</p>
-          </div>
+          ${videoBgHTML}
+          <div class=\"v2-ct-splash\">
+            ${location ? `<p class=\"ct-tag\">${location}</p>` : ''}
+            <h1 class=\"ct-hero\"><span data-canvas-editable data-canvas-scope=\"__section\" data-canvas-block-id=\"contact\" data-canvas-field=\"contactPanel.title\">${ctTitle}</span><br><span class=\"accent-word\" data-canvas-editable data-canvas-scope=\"__section\" data-canvas-block-id=\"contact\" data-canvas-field=\"contactPanel.titleAccent\">${ctAccent}</span></h1>
+            <p class=\"ct-sub\" data-canvas-editable data-canvas-scope=\"__section\" data-canvas-block-id=\"contact\" data-canvas-field=\"contactPanel.sub\">${ctSub}</p>\n          </div>", "oldString": "          <div class=\"v2-ct-splash\">\n            ${location ? `<p class=\"ct-tag\">${location}</p>` : ''}\n            <h1 class=\"ct-hero\" data-canvas-editable data-canvas-scope=\"__section\" data-canvas-block-id=\"contact\" data-canvas-field=\"contactPanel.title\">${ct.hero}</h1>\n            <p class=\"ct-sub\" data-canvas-editable data-canvas-scope=\"__section\" data-canvas-block-id=\"contact\" data-canvas-field=\"contactPanel.sub\">${ct.sub}</p>\n          </div>
           <div class="v2-ct-links">
             <div class="ct-email-block">
-              <p class="ct-email-label">${ct.emailLabel}</p>
+              <p class="ct-email-label" data-canvas-editable data-canvas-scope="__section" data-canvas-block-id="contact" data-canvas-field="contactPanel.emailLabel">${ct.emailLabel}</p>
               <a href="${email ? 'mailto:' + email : '#'}" class="ct-email-link">
                 <span>${email}</span>
                 <i class="ph-fill ph-arrow-up-right arr"></i>
               </a>
             </div>
             <div class="ct-social-wrap">
-              <p class="ct-social-label">${ct.socialLabel}</p>
+              <p class="ct-social-label" data-canvas-editable data-canvas-scope="__section" data-canvas-block-id="contact" data-canvas-field="contactPanel.socialLabel">${ct.socialLabel}</p>
               <div class="ct-icons">${icons}</div>
             </div>
           </div>
@@ -618,6 +637,16 @@ function clearSidebarContext() {
 
 function escapeAttr(str) {
   return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function setNestedValue(obj, path, value) {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o, k) => {
+    if (!o[k] || typeof o[k] !== 'object') o[k] = {};
+    return o[k];
+  }, obj);
+  target[last] = value;
 }
 
 // ── Media Library ──
@@ -960,7 +989,16 @@ function handleCanvasClick(e) {
   const editableEl = e.target.closest('[data-canvas-editable]');
   if (editableEl) {
     e.stopPropagation();
-    selectBlock(editableEl);
+    const scope = editableEl.getAttribute('data-canvas-scope');
+    if (scope === '__section') {
+      // Section-level inline edit — open section inspector + start editing
+      const sectionName = editableEl.getAttribute('data-canvas-block-id');
+      clearCanvasSelection();
+      const sectionEl = editableEl.closest('[data-v2-section]');
+      if (sectionEl) showAt(sectionEl, { type: 'section', sectionName });
+    } else {
+      selectBlock(editableEl);
+    }
     startEdit(editableEl);
     return;
   }

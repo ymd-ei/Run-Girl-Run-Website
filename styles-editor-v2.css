@@ -523,6 +523,26 @@ html, body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Contact background video */
+.v2-ct-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.v2-ct-bg video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.55) brightness(0.9);
+}
+.v2-ct-bg-dark {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 8, 0.5);
 }
 
 .v2-ct-splash {
@@ -531,6 +551,8 @@ html, body {
   flex-direction: column;
   justify-content: flex-end;
   padding: 3rem 3.5rem 4rem;
+  position: relative;
+  z-index: 1;
 }
 
 .v2-contact .ct-tag {
@@ -554,11 +576,15 @@ html, body {
   color: var(--ct-hi, #fff);
   text-transform: uppercase;
   white-space: nowrap;
+  opacity: 1;
+  transform: none;
+  mix-blend-mode: normal;
 }
 
 .v2-contact .ct-hero .accent-word {
   color: var(--ct-accent, #ff7828);
   font-style: normal;
+  mix-blend-mode: normal;
 }
 
 .v2-contact .ct-sub {
@@ -569,6 +595,8 @@ html, body {
   line-height: 1.8;
   max-width: 480px;
   margin-top: 1.75rem;
+  opacity: 1;
+  transform: none;
 }
 
 .v2-ct-links {
@@ -576,6 +604,8 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 4rem;
+  position: relative;
+  z-index: 1;
 }
 
 .v2-contact .ct-email-block {
@@ -940,6 +970,14 @@ html, body {
 }
 
 /* ── Inline editing ── */
+
+[data-canvas-editable] {
+  cursor: text;
+}
+[data-canvas-editable]:hover {
+  outline: 1px dashed rgba(94, 48, 235, 0.4);
+  outline-offset: 2px;
+}
 
 .v2-inline-editing {
   outline: 2px solid var(--v2-accent, #5e30eb) !important;
