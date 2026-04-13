@@ -119,7 +119,7 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       const statsHTML = (block.items || [])
         .map(
           (s, i) =>
-            `<div class="sc"><div class="sn" data-target="${s.num}"${canvasAttrs('items.num', i)}>${s.num}</div><div class="sl"${canvasAttrs('items.label', i)}>${s.num}</div><div class="sl"${canvasAttrs('items.label', i)}>${s.label}</div></div>`
+            `<div class="sc"><div class="sn" data-target="${s.num}"${canvasAttrs('items.num', i)}>${s.num}</div><div class="sl"${canvasAttrs('items.label', i)}>${s.label}</div></div>`
         )
         .join('');
       return `<div class="bl-stats" style="grid-template-columns:repeat(${cols},1fr)">${statsHTML}</div>`;
@@ -128,7 +128,9 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       const skillsHTML = (block.items || [])
         .map(
           (s, i) =>
-            `<div class="skr"><div class="skn"><span${canvasAttrs('items.name', i)}>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${s.pct / 100n('');
+            `<div class="skr"><div class="skn"><span${canvasAttrs('items.name', i)}>${s.name}</span><span>${s.pct}%</span></div><div class="skb"><div class="skf" style="--pct:${s.pct / 100}"></div></div></div>`
+        )
+        .join('');
       return `<div class="bl-skills" id="skl">${skillsHTML}</div>`;
 
     case 'divider':
@@ -145,11 +147,11 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
         .map(
           (item, i) =>
             `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${item.src || ''}" alt="${
-          (item, i) =>
-            `<figure class="bl-gallery-item"><img class="bl-gallery-open" src="${item.src || ''}" alt="${
               item.alt || ''
             }" data-full-src="${item.src || ''}" data-full-alt="${item.alt || ''}">${
-              item.caption ? `<figcaption${canvasAttrs('items.caption', i)}
+              item.caption ? `<figcaption${canvasAttrs('items.caption', i)}>${item.caption}</figcaption>` : ''
+            }</figure>`
+        )
         .join('')}</div>`;
 
     case 'process':
@@ -166,8 +168,8 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
           }</div><div class="bl-process-copy">${
             step.date ? `<div class="bl-process-meta"><span class="bl-process-date"${canvasAttrs('steps.date', index)}>${step.date}</span></div>` : ''
           }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}>${step.content || ''}</p></div></div>`
-        )${canvasAttrs('steps.date', index)}>${step.date}</span></div>` : ''
-          }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}
+        )
+        .join('')}</div>`;
 
     case 'cta':
       return `<section class="bl-cta ${block.tone || 'default'}"><div class="bl-cta-copy">${
@@ -211,9 +213,9 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
             isOpen ? 'true' : 'false'
           }" data-faq-trigger><span${canvasAttrs('items.question', index)}>${item.question || `Question ${index + 1}`}</span><span class="bl-faq-icon" aria-hidden="true">+</span></button><div class="bl-faq-panel" ${
             isOpen ? '' : 'hidden'
-          } data-faq-panel><p${canv${canvasAttrs('items.question', index)}>${item.question || `Question ${index + 1}`}</span><span class="bl-faq-icon" aria-hidden="true">+</span></button><div class="bl-faq-panel" ${
-            isOpen ? '' : 'hidden'
-          } data-faq-panel><p${canvasAttrs('items.answer', index)}
+          } data-faq-panel><p${canvasAttrs('items.answer', index)}>${item.answer || ''}</p></div></div>`;
+        })
+        .join('')}</div>`;
 
     default:
       return '';
