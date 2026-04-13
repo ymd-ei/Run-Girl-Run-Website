@@ -127,8 +127,7 @@ const CONTACT_FIELDS = [
 ];
 
 const WORK_FIELDS = [
-  { key: 'siteTitle', label: 'Site Title', type: 'text' },
-  { key: 'filters', label: 'Filters (JSON)', type: 'textarea', isJSON: true }
+  { key: 'siteTitle', label: 'Site Title', type: 'text' }
 ];
 
 const THEME_FIELDS = [
@@ -297,14 +296,22 @@ function renderSectionInspector(panel) {
     fields = WORK_FIELDS;
     data = state.global;
 
-    const filterVal = JSON.stringify(data.filters || [], null, 2);
+    const filters = data.filters || [];
+    const filterListHTML = filters.map((f, i) => `
+      <div class="v2-insp-sub-item" data-filter-idx="${i}">
+        <div class="v2-insp-sub-header"><span>#${i + 1}</span><button class="v2-insp-sub-del" data-del-filter="${i}">&times;</button></div>
+        <label>Value <input type="text" data-filter-field="value" data-filter-idx="${i}" value="${escapeHtml(f.value || '')}"></label>
+        <label>Label <input type="text" data-filter-field="label" data-filter-idx="${i}" value="${escapeHtml(f.label || '')}"></label>
+      </div>`).join('');
+
     panel.innerHTML = `
       <div class="v2-insp-header">Work</div>
       <div class="v2-insp-fields">
         ${renderField({ key: 'siteTitle', label: 'Site Title', type: 'text' }, data.siteTitle || '')}
         <div class="v2-insp-field">
-          <label for="v2-field-filters">Filters</label>
-          <textarea id="v2-field-filters" data-key="filters" rows="5">${escapeHtml(filterVal)}</textarea>
+          <label>Filters</label>
+          <div class="v2-insp-sub-items v2-filter-list">${filterListHTML}</div>
+          <button class="v2-insp-sub-add v2-add-filter">+ Add Filter</button>
         </div>
       </div>`;
 
@@ -312,16 +319,36 @@ function renderSectionInspector(panel) {
       state.global[key] = value;
       if (onChangeCallback) onChangeCallback(currentSelection, key, value);
     });
-    // Filters: parse JSON on blur
-    const filtersEl = panel.querySelector('#v2-field-filters');
-    if (filtersEl) {
-      filtersEl.addEventListener('blur', () => {
-        try {
-          state.global.filters = JSON.parse(filtersEl.value);
-          if (onChangeCallback) onChangeCallback(currentSelection, 'filters', state.global.filters);
-        } catch { /* invalid JSON, ignore */ }
-      });
-    }
+
+    const syncFilters = () => {
+      if (onChangeCallback) onChangeCallback(currentSelection, 'filters', state.global.filters);
+    };
+
+    panel.addEventListener('input', (e) => {
+      const field = e.target.dataset.filterField;
+      const idx = Number(e.target.dataset.filterIdx);
+      if (field && !isNaN(idx) && state.global.filters?.[idx]) {
+        state.global.filters[idx][field] = e.target.value;
+        syncFilters();
+      }
+    });
+
+    panel.querySelector('.v2-add-filter')?.addEventListener('click', () => {
+      if (!state.global.filters) state.global.filters = [];
+      state.global.filters.push({ value: '', label: '' });
+      syncFilters();
+      renderSectionInspector(name);
+    });
+
+    panel.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('[data-del-filter]');
+      if (delBtn) {
+        const idx = Number(delBtn.dataset.delFilter);
+        state.global.filters.splice(idx, 1);
+        syncFilters();
+        renderSectionInspector(name);
+      }
+    });
     return;
   } else {
     panel.innerHTML = `<div class="v2-insp-empty">Section: ${name}</div>`;
