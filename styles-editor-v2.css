@@ -1227,3 +1227,75 @@ html, body {
   width: 100%;
   text-align: left;
 }
+
+/* ── Upload field (image/video URL + upload button) ── */
+
+.v2-insp-upload-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.v2-insp-upload-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.v2-insp-upload-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: .8rem;
+  line-height: 1;
+  background: var(--v2-surface2);
+  border: 1px solid var(--v2-border);
+  color: var(--v2-muted);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.v2-insp-upload-btn:hover:not(:disabled) {
+  background: var(--v2-accent, #5e30eb);
+  color: #fff;
+  border-color: var(--v2-accent, #5e30eb);
+}
+
+.v2-insp-upload-btn:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+/* ── New project button (sidebar) ── */
+
+.v2-new-project-btn {
+  width: 100%;
+  text-align: left;
+  color: var(--v2-muted) !important;
+  font-style: italic;
+}
+
+.v2-new-project-btn:hover {
+  color: var(--v2-accent) !important;
+}
+
+/* ── Project delete button (panel header) ── */
+
+.v2-proj-del-btn {
+  background: none;
+  border: none;
+  color: var(--v2-muted);
+  font-size: .85rem;
+  cursor: pointer;
+  padding: .2rem .4rem;
+  border-radius: 3px;
+  margin-left: auto;
+  margin-right: .25rem;
+  transition: color .15s, background .15s;
+}
+
+.v2-proj-del-btn:hover {
+  color: #e03030;
+  background: rgba(224, 48, 48, 0.1);
+}

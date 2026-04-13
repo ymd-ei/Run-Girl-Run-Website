@@ -3,7 +3,7 @@
  * Floating contextual property editor, anchored to the selected block on the canvas.
  */
 
-import { state, loadProject } from './dataBridge.js';
+import { state, loadProject, uploadMedia } from './dataBridge.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 
 // ── Block type → field definitions ──
@@ -20,11 +20,11 @@ const BLOCK_FIELDS = {
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'image': [
-    { key: 'src', label: 'Image URL', type: 'text' },
+    { key: 'src', label: 'Image URL', type: 'image' },
     { key: 'alt', label: 'Alt Text', type: 'text' }
   ],
   'alpha-art': [
-    { key: 'src', label: 'Image URL', type: 'text' },
+    { key: 'src', label: 'Image URL', type: 'image' },
     { key: 'alt', label: 'Alt Text', type: 'text' },
     { key: 'color', label: 'Mask Color', type: 'color' },
     { key: 'bg', label: 'Background', type: 'text' },
@@ -36,7 +36,7 @@ const BLOCK_FIELDS = {
     { key: 'align', label: 'Alignment', type: 'align' }
   ],
   'video': [
-    { key: 'src', label: 'Video URL', type: 'text' }
+    { key: 'src', label: 'Video URL', type: 'image' }
   ],
   'divider': [],
   'callout': [
@@ -48,9 +48,9 @@ const BLOCK_FIELDS = {
     { key: 'tone', label: 'Tone', type: 'select', options: ['default', 'highlight'] }
   ],
   'beforeafter': [
-    { key: 'beforeSrc', label: 'Before Image', type: 'text' },
+    { key: 'beforeSrc', label: 'Before Image', type: 'image' },
     { key: 'beforeAlt', label: 'Before Alt', type: 'text' },
-    { key: 'afterSrc', label: 'After Image', type: 'text' },
+    { key: 'afterSrc', label: 'After Image', type: 'image' },
     { key: 'afterAlt', label: 'After Alt', type: 'text' },
     { key: 'caption', label: 'Caption', type: 'text' },
     { key: 'position', label: 'Position (0–100)', type: 'number', min: 0, max: 100, step: 1 }
@@ -437,6 +437,17 @@ function renderField(field, value) {
     </div>`;
   }
 
+  if (field.type === 'image') {
+    return `<div class="v2-insp-field">
+      <label for="${id}">${field.label}</label>
+      <div class="v2-insp-upload-row">
+        <input type="text" id="${id}" data-key="${field.key}" value="${escapeHtml(val)}" placeholder="URL or upload…">
+        <button class="v2-insp-upload-btn" data-upload-for="${field.key}" title="Upload file">&#8679;</button>
+        <input type="file" class="v2-insp-upload-input" data-upload-key="${field.key}" accept="image/*,video/*" hidden>
+      </div>
+    </div>`;
+  }
+
   // Default: text input
   return `<div class="v2-insp-field">
     <label for="${id}">${field.label}</label>
@@ -478,6 +489,39 @@ function bindFieldEvents(panel, fields, onEdit) {
         btn.classList.add('active');
         onEdit(group.dataset.key, btn.dataset.val);
       });
+    });
+  });
+
+  // Upload buttons (image/media fields)
+  panel.querySelectorAll('.v2-insp-upload-btn').forEach(btn => {
+    const key = btn.dataset.uploadFor;
+    const fileInput = panel.querySelector(`.v2-insp-upload-input[data-upload-key="${key}"]`);
+    if (!fileInput) return;
+
+    btn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      btn.textContent = '…';
+      btn.disabled = true;
+      try {
+        const result = await uploadMedia(file);
+        if (result.success && result.path) {
+          const textInput = panel.querySelector(`input[type="text"][data-key="${key}"]`);
+          if (textInput) textInput.value = result.path;
+          onEdit(key, result.path);
+          btn.textContent = '✓';
+          setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 1500);
+        } else {
+          btn.textContent = '✗';
+          setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000);
+        }
+      } catch {
+        btn.textContent = '✗';
+        setTimeout(() => { btn.textContent = '⇧'; btn.disabled = false; }, 2000);
+      }
     });
   });
 }

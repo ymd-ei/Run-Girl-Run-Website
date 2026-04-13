@@ -4,7 +4,8 @@
  * Uses shared renderers (displayRenderer, blockRenderer) — does NOT import main.js.
  */
 
-import { state, loadProject, markDirty } from './dataBridge.js';
+import { state, loadProject, markDirty, uploadMedia, createProject, deleteProject } from './dataBridge.js';
+import { pushState } from './history.js';
 import {
   applyTheme,
   renderWorkGrid,
@@ -30,6 +31,7 @@ let currentProjectId = null;
 export function initEditing() {
   // Inspector: when a field changes → re-render the affected block/section
   initInspector((selection, key, value) => {
+    pushState(state);
     if (selection.type === 'section') {
       markDirty('content.json');
       if (selection.sectionName === 'theme') {
@@ -47,11 +49,13 @@ export function initEditing() {
     }
   }, (action, selection, extra) => {
     // Inspector action buttons: move-up, move-down, delete, add-after
+    pushState(state);
     handleBlockAction(action, selection, extra);
   });
 
   // Floating toolbar: when inline text edit commits
   initToolbar((scope, blockId, field, value) => {
+    pushState(state);
     const block = findBlockData(scope, blockId);
     if (block) {
       block[field] = value;
@@ -359,6 +363,7 @@ function buildProjectPanelHTML() {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Back
         </button>
+        <button class="v2-proj-del-btn" id="v2-project-delete" title="Delete project">&#128465;</button>
         <button class="v2-pc v2-panel-close">&#x2715;</button>
       </div>
       <div class="v2-panel-scroll"></div>
@@ -419,6 +424,12 @@ export async function openProject(id) {
   panel.classList.add('open');
   document.getElementById('v2-backdrop')?.classList.add('open');
   updateSidebarActive();
+
+  // Wire delete button for this project
+  const delBtn = document.getElementById('v2-project-delete');
+  if (delBtn) {
+    delBtn.onclick = () => handleDeleteProject(id);
+  }
 }
 
 // ── Sidebar nav ──
@@ -469,10 +480,34 @@ export function renderSidebarProjects() {
         <span class="v2-dot ${dot}"></span>${p.title || p.id}
       </button>`;
     })
-    .join('');
+    .join('') +
+    `<button class="v2-nav-item v2-new-project-btn" id="v2-new-project">+ New Project</button>`;
 
   list.querySelectorAll('[data-v2-open-project]').forEach(btn => {
     btn.addEventListener('click', () => openProject(btn.dataset.v2OpenProject));
+  });
+
+  document.getElementById('v2-new-project')?.addEventListener('click', handleNewProject);
+}
+
+function handleNewProject() {
+  const title = prompt('Project title:');
+  if (!title || !title.trim()) return;
+  pushState(state);
+  const project = createProject(title.trim());
+  renderSidebarProjects();
+  renderCanvas();
+  openProject(project.id);
+}
+
+export function handleDeleteProject(id) {
+  if (!confirm('Delete project "' + (state.projectCache.get(id)?.title || id) + '"? This removes it from the site.')) return;
+  pushState(state);
+  deleteProject(id);
+  closePanel();
+  renderSidebarProjects();
+  renderCanvas();
+}
   });
 }
 
@@ -803,6 +838,7 @@ function handleBlockAction(action, selection, extra) {
 }
 
 function addNewBlock(scope, type) {
+  pushState(state);
   const blocks = getBlocksForScope(scope);
   const newBlock = normalizeBlock({ id: uid(), type });
   if (!newBlock) return;

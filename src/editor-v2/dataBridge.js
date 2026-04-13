@@ -191,3 +191,101 @@ export async function saveSiteData() {
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Upload a file to the media directory.
+ * @param {File} file - File object from an input
+ * @param {string} [folder='media'] - Target folder
+ * @returns {{ success: boolean, path?: string, error?: string }}
+ */
+export async function uploadMedia(file, folder = 'media') {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', folder);
+
+  const token = getSessionToken();
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/media`, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: form
+  });
+
+  const result = await res.json();
+  if (!res.ok || !result.success) {
+    return { success: false, error: result.error || 'Upload failed' };
+  }
+  return { success: true, path: result.path };
+}
+
+/**
+ * Create a new project with a generated slug.
+ * @param {string} title - Project title
+ * @returns {Object} The new project object
+ */
+export function createProject(title) {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'new-project';
+  // Ensure unique slug
+  let id = slug;
+  let n = 2;
+  while (state.projects.some(p => p.id === id)) {
+    id = slug + '-' + n++;
+  }
+
+  const project = {
+    id,
+    title,
+    type: '',
+    typeLabel: '',
+    year: new Date().getFullYear().toString(),
+    client: '',
+    duration: '',
+    tags: [],
+    thumbnail: '',
+    videoUrl: '',
+    longform: false,
+    published: false,
+    blocks: []
+  };
+
+  state.projects.push(project);
+  state.projectCache.set(id, project);
+
+  // Update the projects ID list in global config
+  if (!state.global.projects) state.global.projects = [];
+  state.global.projects.push(id);
+
+  markDirty('content.json');
+  markDirty('projects/' + id + '.json');
+  return project;
+}
+
+/**
+ * Delete a project by ID.
+ * @param {string} id - Project ID to delete
+ * @returns {boolean} True if deleted
+ */
+export function deleteProject(id) {
+  const idx = state.projects.findIndex(p => p.id === id);
+  if (idx === -1) return false;
+
+  state.projects.splice(idx, 1);
+  state.projectCache.delete(id);
+
+  // Remove from global projects array
+  if (state.global.projects) {
+    state.global.projects = state.global.projects.filter(pid => pid !== id);
+  }
+
+  // Remove from projectCards if present
+  if (state.global.projectCards) {
+    state.global.projectCards = state.global.projectCards.filter(c => c.id !== id);
+  }
+
+  markDirty('content.json');
+  // Note: the project JSON file remains on GitHub but won't be referenced
+  return true;
+}
