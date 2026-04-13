@@ -98,6 +98,17 @@ const CONTACT_FIELDS = [
   { key: 'contact.email', label: 'Email', type: 'text' }
 ];
 
+const THEME_FIELDS = [
+  { key: 'ink', label: 'Ink (Text)', type: 'color' },
+  { key: 'paper', label: 'Paper (Background)', type: 'color' },
+  { key: 'accent', label: 'Accent', type: 'color' },
+  { key: 'panelBg', label: 'Panel Background', type: 'color' },
+  { key: 'ctAccent', label: 'Contact Accent', type: 'color' },
+  { key: 'ctBg', label: 'Contact Background', type: 'color' },
+  { key: 'ctHi', label: 'Contact Highlight', type: 'color' },
+  { key: 'sensitiveColor', label: 'Sensitive Color', type: 'color' }
+];
+
 // ── State ──
 
 let currentSelection = null; // { type: 'block'|'section', scope, blockId, sectionName }
@@ -235,6 +246,20 @@ function renderSectionInspector(panel) {
   } else if (name === 'contact') {
     fields = CONTACT_FIELDS;
     data = state.global;
+  } else if (name === 'theme') {
+    fields = THEME_FIELDS;
+    data = state.global.theme || {};
+
+    panel.innerHTML = `
+      <div class="v2-insp-header">Theme</div>
+      <div class="v2-insp-fields">${fields.map(f => renderField(f, data[f.key] || '')).join('')}</div>`;
+
+    bindFieldEvents(panel, fields, (key, value) => {
+      if (!state.global.theme) state.global.theme = {};
+      state.global.theme[key] = value;
+      if (onChangeCallback) onChangeCallback(currentSelection, key, value);
+    });
+    return;
   } else {
     panel.innerHTML = `<div class="v2-insp-empty">Section: ${name}</div>`;
     return;

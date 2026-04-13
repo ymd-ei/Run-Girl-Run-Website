@@ -26,6 +26,9 @@
     <div class="v2-sidebar-section">Projects</div>
     <div id="v2-sidebar-projects"></div>
 
+    <div class="v2-sidebar-section">Settings</div>
+    <button id="v2-theme-btn" class="v2-nav-item v2-theme-btn">Theme</button>
+
     <div class="v2-sidebar-footer">
       <button id="v2-save-btn" class="v2-save-btn" disabled>Save</button>
       <div id="v2-auth-status" class="v2-auth-status"></div>
@@ -64,7 +67,7 @@
 
 <script type="module">
   import { loadSiteData, checkAuth, getLoginUrl, getLogoutUrl, saveSiteData, isDirty } from './src/editor-v2/dataBridge.js';
-  import { renderCanvas, renderSidebarProjects, initEditing } from './src/editor-v2/canvas.js';
+  import { renderCanvas, renderSidebarProjects, initEditing, showThemeEditor } from './src/editor-v2/canvas.js';
 
   // ── Toast helper ──
   function toast(msg, isError) {
@@ -139,6 +142,7 @@
       initEditing();
       initSave();
       initAuth();
+      document.getElementById('v2-theme-btn')?.addEventListener('click', showThemeEditor);
     } catch (err) {
       console.error('v2 init failed:', err);
       const inner = document.getElementById('v2-canvas-inner');

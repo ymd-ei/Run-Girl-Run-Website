@@ -1220,3 +1220,10 @@ html, body {
   border-color: var(--v2-accent, #5e30eb);
   color: #fff;
 }
+
+/* ── Theme button (sidebar) ── */
+
+.v2-theme-btn {
+  width: 100%;
+  text-align: left;
+}

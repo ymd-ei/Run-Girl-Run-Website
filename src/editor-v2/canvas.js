@@ -32,7 +32,11 @@ export function initEditing() {
   initInspector((selection, key, value) => {
     if (selection.type === 'section') {
       markDirty('content.json');
-      rerenderSection(selection.sectionName);
+      if (selection.sectionName === 'theme') {
+        applyCanvasTheme(state.global.theme || {});
+      } else {
+        rerenderSection(selection.sectionName);
+      }
     } else if (selection.type === 'block') {
       if (selection.scope && selection.scope.startsWith('proj-')) {
         markDirty('projects/' + selection.scope.replace('proj-', '') + '.json');
@@ -149,7 +153,7 @@ export function renderCanvas() {
 /**
  * Apply theme as CSS variables scoped to the canvas wrapper
  */
-function applyCanvasTheme(theme) {
+export function applyCanvasTheme(theme) {
   const root = document.getElementById('v2-canvas');
   if (!root) return;
 
@@ -515,6 +519,15 @@ export function showPanel(name) {
 
 export function closePanel() {
   showPanel(null);
+}
+
+/**
+ * Open the theme editor in the inspector panel — triggered from sidebar.
+ */
+export function showThemeEditor() {
+  clearCanvasSelection();
+  const anchor = document.getElementById('v2-theme-btn') || document.getElementById('v2-canvas');
+  showAt(anchor, { type: 'section', sectionName: 'theme' });
 }
 
 // ── Canvas selection handlers ──
