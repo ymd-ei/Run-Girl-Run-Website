@@ -57,6 +57,7 @@ let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
+const ENABLE_CURSOR_RIPPLE = false;
 const CUR_TAIL_MAX_POINTS = 9;
 const CUR_TAIL_SAMPLE_DISTANCE = 45;
 const CUR_TAIL_SAMPLE_INTERVAL_MS = 120;
@@ -1478,7 +1479,7 @@ function setupEventListeners() {
 
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
-      if (!document.body.classList.contains('ch') && (performance.now() - curTailHoverEndAt >= CUR_TAIL_HOVER_COOLDOWN_MS)) updateCursorTail(e.clientX, e.clientY);
+      if (ENABLE_CURSOR_RIPPLE && !document.body.classList.contains('ch') && (performance.now() - curTailHoverEndAt >= CUR_TAIL_HOVER_COOLDOWN_MS)) updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
 
     const isInteractive = el =>
