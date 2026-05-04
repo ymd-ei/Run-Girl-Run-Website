@@ -1475,7 +1475,7 @@ function setupEventListeners() {
 
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
-      updateCursorTail(e.clientX, e.clientY);
+      if (!document.body.classList.contains('ch')) updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
 
     const isInteractive = el =>
