@@ -393,6 +393,7 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #contact-wrapper.open .ct-scroll-cue{opacity:1}
 .ct-scroll-line{width:0;height:1px;background:var(--ct-accent);transition:width .9s .85s var(--ease)}
 #contact-wrapper.open .ct-scroll-line{width:36px}
+#ct-ticker-mid{margin-top:-3.4rem}
 #ct-links{padding:5rem 3.5rem 4rem;display:flex;flex-direction:column;gap:4rem}
 .ct-email-block{display:flex;flex-direction:column;gap:.75rem}
 .ct-email-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--ct-muted)}
