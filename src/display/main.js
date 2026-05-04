@@ -336,7 +336,7 @@ function updateCursorTail(x, y) {
   const elapsed = now - curTailLastSampleAt;
   curTailLastMoveAt = now;
 
-  if (dist >= CUR_TAIL_SAMPLE_DISTANCE && elapsed >= CUR_TAIL_SAMPLE_INTERVAL_MS * clamp(CUR_TAIL_SAMPLE_DISTANCE / dist, 1, 5)) {
+  if (dist >= CUR_TAIL_SAMPLE_DISTANCE && elapsed >= CUR_TAIL_SAMPLE_INTERVAL_MS * clamp(CUR_TAIL_SAMPLE_DISTANCE / dist, 1, 12)) {
     curTailPoints.unshift({ x, y, t: now });
     if (curTailPoints.length > CUR_TAIL_MAX_POINTS) curTailPoints.length = CUR_TAIL_MAX_POINTS;
     curTailLastSample = { x, y };
