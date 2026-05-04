@@ -300,10 +300,10 @@ function renderCursorTail(now = performance.now()) {
 
     if (i === 0) headLife = life;
 
-    const alpha = life * (1 - t * 0.82);
-    const radius = (2.8 - t * 1.5) * life;
+    const alpha = life * (1 - t * 0.88);
+    const radius = (1.0 + t * 3.2) * life;
     dot.style.opacity = alpha.toFixed(3);
-    dot.setAttribute('r', Math.max(0.65, radius).toFixed(2));
+    dot.setAttribute('r', Math.max(0.5, radius).toFixed(2));
   }
 
   if (decayProgress >= 1) {
