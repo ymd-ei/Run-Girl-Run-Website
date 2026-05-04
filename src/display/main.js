@@ -56,6 +56,7 @@ function ensureCanvasEditStyles() {
 let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
+const ENABLE_LOG_STACK = false;
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
 
@@ -168,20 +169,33 @@ function ensureAutoplayInlineVideo(video) {
   if (!video) return;
 
   // Safari can require these element properties (not just HTML attrs) for autoplay.
+  video.autoplay = true;
   video.muted = true;
   video.defaultMuted = true;
   video.playsInline = true;
+  video.setAttribute('autoplay', '');
   video.setAttribute('muted', '');
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
 
   const tryPlay = () => {
+    if (!video.src || video.readyState === 0) {
+      try {
+        video.load();
+      } catch (_) {
+        // Ignore load() errors on transient nodes.
+      }
+    }
     video.play().catch(() => {});
   };
 
   tryPlay();
-  video.addEventListener('loadedmetadata', tryPlay, { once: true });
-  video.addEventListener('canplay', tryPlay, { once: true });
+  if (!video.dataset.autoplayPrimed) {
+    video.dataset.autoplayPrimed = '1';
+    video.addEventListener('loadedmetadata', tryPlay);
+    video.addEventListener('canplay', tryPlay);
+    video.addEventListener('suspend', tryPlay);
+  }
 
   window.addEventListener(
     'pageshow',
@@ -190,6 +204,27 @@ function ensureAutoplayInlineVideo(video) {
     },
     { once: true }
   );
+}
+
+function hideLogStackIfDisabled() {
+  if (ENABLE_LOG_STACK) return;
+  const stack = document.getElementById('log-stack');
+  if (!stack) return;
+  stack.style.display = 'none';
+  stack.style.height = '0px';
+}
+
+function appendAutoplayInlineVideo(container, url, options = {}) {
+  if (!container || !url) return null;
+
+  const video = document.createElement('video');
+  video.src = encodeURI(url);
+  video.preload = options.preload || 'auto';
+  video.loop = options.loop !== false;
+  ensureAutoplayInlineVideo(video);
+
+  container.appendChild(video);
+  return video;
 }
 
 /**
@@ -315,6 +350,7 @@ function runLoaderAnimation() {
 export async function bootstrap() {
   try {
     runLoaderAnimation();
+    hideLogStackIfDisabled();
 
     // Set up bridge immediately to avoid missing the editor's first preview push.
     setupEditorPreviewBridge();
@@ -356,7 +392,7 @@ export async function bootstrap() {
     }
 
     // 5b. Render lower-right updates stack from log.json without blocking first paint.
-    void loadLogStack();
+    if (ENABLE_LOG_STACK) void loadLogStack();
 
     // 6. Render about panel
     renderAboutPanel();
@@ -550,9 +586,11 @@ function renderHero() {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
       }
     } else if (globalState.reel.type === 'video') {
-      reelEl.innerHTML = `<video autoplay muted loop playsinline webkit-playsinline preload="auto" src="${encodeURI(url)}"></video><div id="reel-block"></div>`;
-      const v = reelEl.querySelector('video');
-      if (v) ensureAutoplayInlineVideo(v);
+      reelEl.innerHTML = '';
+      appendAutoplayInlineVideo(reelEl, url, { preload: 'auto', loop: true });
+      const block = document.createElement('div');
+      block.id = 'reel-block';
+      reelEl.appendChild(block);
     }
   } else {
     reelEl.innerHTML = `<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
@@ -702,9 +740,8 @@ function renderContactSection() {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
         ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
-        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline webkit-playsinline preload="auto" src="${encodeURI(vid.url)}"></video>`;
-        const v = ctBgVideo.querySelector('video');
-        if (v) ensureAutoplayInlineVideo(v);
+        ctBgVideo.innerHTML = '';
+        appendAutoplayInlineVideo(ctBgVideo, vid.url, { preload: 'auto', loop: true });
       }
     }
   }
@@ -758,6 +795,11 @@ async function loadLogStack() {
   const inner = document.getElementById('ls-inner');
   const stack = document.getElementById('log-stack');
   if (!inner || !stack) return;
+  if (!ENABLE_LOG_STACK) {
+    stack.style.display = 'none';
+    stack.style.height = '0px';
+    return;
+  }
 
   try {
     const response = await fetch('log.json');
@@ -1390,7 +1432,7 @@ function setupEditorPreviewBridge() {
       renderWorkSection();
       renderAboutPanel();
       renderContactSection();
-      loadLogStack();
+      if (ENABLE_LOG_STACK) loadLogStack();
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
