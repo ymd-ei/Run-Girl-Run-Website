@@ -59,13 +59,17 @@ let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
 const CUR_TAIL_MAX_POINTS = 9;
 const CUR_TAIL_SAMPLE_DISTANCE = 12;
-const CUR_TAIL_DECAY_MS = 460;
+const CUR_TAIL_SAMPLE_INTERVAL_MS = 28;
+const CUR_TAIL_DECAY_MS = 900;
+const CUR_TAIL_DECAY_CASCADE = 0.78;
 
 let curTailSvg = null;
 let curTailLine = null;
 let curTailDots = [];
 let curTailPoints = [];
 let curTailLastSample = null;
+let curTailLastSampleAt = 0;
+let curTailLastMoveAt = 0;
 let curTailRaf = null;
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
@@ -240,6 +244,8 @@ function resetCursorTail() {
 
   curTailPoints = [];
   curTailLastSample = null;
+  curTailLastSampleAt = 0;
+  curTailLastMoveAt = 0;
   if (curTailLine) curTailLine.setAttribute('points', '');
   curTailDots.forEach(dot => {
     dot.setAttribute('cx', '-9999');
@@ -264,8 +270,6 @@ function ensureCursorTailLoop() {
 
 function renderCursorTail(now = performance.now()) {
   if (!curTailLine) return;
-
-  curTailPoints = curTailPoints.filter(p => now - p.t <= CUR_TAIL_DECAY_MS);
   if (!curTailPoints.length) {
     curTailLine.setAttribute('points', '');
     curTailLine.style.opacity = '0';
@@ -281,8 +285,12 @@ function renderCursorTail(now = performance.now()) {
     curTailPoints.map(p => `${p.x},${p.y}`).join(' ')
   );
 
-  const headLife = Math.max(0, 1 - (now - curTailPoints[0].t) / CUR_TAIL_DECAY_MS);
-  curTailLine.style.opacity = String(Math.max(0.12, headLife * 0.72));
+  const idleMs = Math.max(0, now - curTailLastMoveAt);
+  const decayProgress = clamp(idleMs / CUR_TAIL_DECAY_MS, 0, 1);
+  const cascadeWindow = Math.max(0.01, 1 - CUR_TAIL_DECAY_CASCADE);
+  const len = curTailPoints.length;
+
+  let headLife = 1;
 
   for (let i = 0; i < curTailDots.length; i++) {
     const dot = curTailDots[i];
@@ -296,12 +304,30 @@ function renderCursorTail(now = performance.now()) {
     dot.setAttribute('cx', String(p.x));
     dot.setAttribute('cy', String(p.y));
 
-    const life = Math.max(0, 1 - (now - p.t) / CUR_TAIL_DECAY_MS);
     const t = i / (CUR_TAIL_MAX_POINTS - 1 || 1);
+    const tailOrder = len <= 1 ? 0 : i / (len - 1);
+    const startAt = (1 - tailOrder) * CUR_TAIL_DECAY_CASCADE;
+    const pointDecay = clamp((decayProgress - startAt) / cascadeWindow, 0, 1);
+    const life = 1 - pointDecay;
+
+    if (i === 0) headLife = life;
+
     const alpha = life * (1 - t * 0.82);
     const radius = (2.8 - t * 1.5) * life;
     dot.style.opacity = alpha.toFixed(3);
     dot.setAttribute('r', Math.max(0.65, radius).toFixed(2));
+  }
+
+  curTailLine.style.opacity = String(Math.max(0.08, headLife * 0.72));
+
+  if (decayProgress >= 1) {
+    curTailPoints = [];
+    curTailLine.setAttribute('points', '');
+    curTailLine.style.opacity = '0';
+    curTailDots.forEach(dot => {
+      dot.setAttribute('cx', '-9999');
+      dot.setAttribute('cy', '-9999');
+    });
   }
 }
 
@@ -313,6 +339,8 @@ function updateCursorTail(x, y) {
   if (!curTailPoints.length) {
     curTailPoints = [{ x, y, t: now }];
     curTailLastSample = { x, y };
+    curTailLastSampleAt = now;
+    curTailLastMoveAt = now;
     renderCursorTail(now);
     return;
   }
@@ -320,11 +348,14 @@ function updateCursorTail(x, y) {
   const dx = x - curTailLastSample.x;
   const dy = y - curTailLastSample.y;
   const dist = Math.hypot(dx, dy);
+  const elapsed = now - curTailLastSampleAt;
+  curTailLastMoveAt = now;
 
-  if (dist >= CUR_TAIL_SAMPLE_DISTANCE) {
+  if (dist >= CUR_TAIL_SAMPLE_DISTANCE && elapsed >= CUR_TAIL_SAMPLE_INTERVAL_MS) {
     curTailPoints.unshift({ x, y, t: now });
     if (curTailPoints.length > CUR_TAIL_MAX_POINTS) curTailPoints.length = CUR_TAIL_MAX_POINTS;
     curTailLastSample = { x, y };
+    curTailLastSampleAt = now;
   } else {
     curTailPoints[0] = { x, y, t: now };
   }
