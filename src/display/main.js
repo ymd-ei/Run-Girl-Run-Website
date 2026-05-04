@@ -74,6 +74,31 @@ let curTailLastMoveAt = 0;
 let curTailHoverEndAt = 0;
 const CUR_TAIL_HOVER_COOLDOWN_MS = 400;
 let curTailRaf = null;
+let curWorkBadge = null;
+
+function ensureCursorWorkBadge() {
+  if (curWorkBadge) return curWorkBadge;
+  if (window.matchMedia('(pointer: coarse)').matches) return null;
+
+  curWorkBadge = document.createElement('div');
+  curWorkBadge.id = 'cur-work-badge';
+  curWorkBadge.textContent = 'Available for work';
+  document.body.appendChild(curWorkBadge);
+  return curWorkBadge;
+}
+
+function updateCursorWorkBadge(x, y, visible = true) {
+  const badge = ensureCursorWorkBadge();
+  if (!badge) return;
+
+  badge.style.transform = `translate(${x + 20}px, ${y - 22}px)`;
+  badge.classList.toggle('is-visible', visible);
+}
+
+function hideCursorWorkBadge() {
+  if (!curWorkBadge) return;
+  curWorkBadge.classList.remove('is-visible');
+}
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
 
@@ -1467,6 +1492,8 @@ function setupEventListeners() {
   // Cursor tracking
   const cur = document.getElementById('cur');
   if (cur) {
+    ensureCursorWorkBadge();
+
     document.addEventListener('mousemove', e => {
       const hiddenCursorMode =
         document.body.classList.contains('native-cursor') ||
@@ -1474,13 +1501,18 @@ function setupEventListeners() {
 
       if (hiddenCursorMode) {
         resetCursorTail();
+        hideCursorWorkBadge();
         return;
       }
 
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
+      updateCursorWorkBadge(e.clientX, e.clientY, true);
       if (ENABLE_CURSOR_RIPPLE && !document.body.classList.contains('ch') && (performance.now() - curTailHoverEndAt >= CUR_TAIL_HOVER_COOLDOWN_MS)) updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
+
+    document.addEventListener('mouseleave', hideCursorWorkBadge, { passive: true });
+    window.addEventListener('blur', hideCursorWorkBadge, { passive: true });
 
     const isInteractive = el =>
       el.closest('a, button, [onclick], [role="button"], label[for], .pp-hero-btn, .pp-like-btn, .nav-dot, .ct-scroll-cue, #watch-reel, .proj-card, .back-to-top, .faq-q');
