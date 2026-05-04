@@ -301,7 +301,7 @@ function renderCursorTail(now = performance.now()) {
     if (i === 0) headLife = life;
 
     const age = now - p.t;
-    const radius = 5 + (age / 600) * 18;
+    const radius = 5 + (age / 300) * 18;
     const alpha = life * Math.max(0, 1 - age / 700);
     dot.style.opacity = alpha.toFixed(3);
     dot.setAttribute('r', radius.toFixed(2));
