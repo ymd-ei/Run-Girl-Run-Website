@@ -57,6 +57,14 @@ let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
+const CUR_TAIL_MAX_POINTS = 9;
+const CUR_TAIL_SAMPLE_DISTANCE = 12;
+
+let curTailSvg = null;
+let curTailLine = null;
+let curTailDots = [];
+let curTailPoints = [];
+let curTailLastSample = null;
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
 
@@ -185,6 +193,98 @@ function syncCursorForFullscreen() {
   const reelPopupOpen = document.body.classList.contains('reel-popup-open');
   const fullscreenActive = !!(document.fullscreenElement || document.webkitFullscreenElement);
   setNativeCursorEnabled(reelPopupOpen || fullscreenActive);
+}
+
+function ensureCursorTail() {
+  if (curTailSvg) return;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  curTailSvg = document.createElementNS(ns, 'svg');
+  curTailSvg.setAttribute('id', 'cur-tail');
+  curTailSvg.setAttribute('aria-hidden', 'true');
+  curTailSvg.setAttribute('width', String(window.innerWidth));
+  curTailSvg.setAttribute('height', String(window.innerHeight));
+  curTailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+
+  curTailLine = document.createElementNS(ns, 'polyline');
+  curTailLine.setAttribute('id', 'cur-tail-line');
+  curTailSvg.appendChild(curTailLine);
+
+  curTailDots = [];
+  for (let i = 0; i < CUR_TAIL_MAX_POINTS; i++) {
+    const dot = document.createElementNS(ns, 'circle');
+    dot.setAttribute('class', 'cur-tail-dot');
+    dot.setAttribute('r', '2.4');
+    curTailSvg.appendChild(dot);
+    curTailDots.push(dot);
+  }
+
+  document.body.appendChild(curTailSvg);
+  window.addEventListener('resize', syncCursorTailViewport, { passive: true });
+}
+
+function syncCursorTailViewport() {
+  if (!curTailSvg) return;
+  curTailSvg.setAttribute('width', String(window.innerWidth));
+  curTailSvg.setAttribute('height', String(window.innerHeight));
+  curTailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+}
+
+function resetCursorTail() {
+  curTailPoints = [];
+  curTailLastSample = null;
+  if (curTailLine) curTailLine.setAttribute('points', '');
+  curTailDots.forEach(dot => {
+    dot.setAttribute('cx', '-9999');
+    dot.setAttribute('cy', '-9999');
+  });
+}
+
+function renderCursorTail() {
+  if (!curTailLine || !curTailPoints.length) return;
+
+  curTailLine.setAttribute(
+    'points',
+    curTailPoints.map(p => `${p.x},${p.y}`).join(' ')
+  );
+
+  for (let i = 0; i < curTailDots.length; i++) {
+    const dot = curTailDots[i];
+    const p = curTailPoints[i] || curTailPoints[curTailPoints.length - 1];
+    dot.setAttribute('cx', String(p.x));
+    dot.setAttribute('cy', String(p.y));
+
+    const t = i / (CUR_TAIL_MAX_POINTS - 1 || 1);
+    const alpha = 1 - t * 0.82;
+    const radius = 2.8 - t * 1.5;
+    dot.setAttribute('opacity', alpha.toFixed(3));
+    dot.setAttribute('r', Math.max(1.1, radius).toFixed(2));
+  }
+}
+
+function updateCursorTail(x, y) {
+  ensureCursorTail();
+
+  if (!curTailPoints.length) {
+    curTailPoints = Array.from({ length: CUR_TAIL_MAX_POINTS }, () => ({ x, y }));
+    curTailLastSample = { x, y };
+    renderCursorTail();
+    return;
+  }
+
+  const dx = x - curTailLastSample.x;
+  const dy = y - curTailLastSample.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist >= CUR_TAIL_SAMPLE_DISTANCE) {
+    curTailPoints.unshift({ x, y });
+    if (curTailPoints.length > CUR_TAIL_MAX_POINTS) curTailPoints.length = CUR_TAIL_MAX_POINTS;
+    curTailLastSample = { x, y };
+  } else {
+    curTailPoints[0] = { x, y };
+  }
+
+  renderCursorTail();
 }
 
 /**
@@ -1303,8 +1403,18 @@ function setupEventListeners() {
   const cur = document.getElementById('cur');
   if (cur) {
     document.addEventListener('mousemove', e => {
+      const hiddenCursorMode =
+        document.body.classList.contains('native-cursor') ||
+        document.body.classList.contains('reel-popup-open');
+
+      if (hiddenCursorMode) {
+        resetCursorTail();
+        return;
+      }
+
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
+      updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
 
     const isInteractive = el =>
