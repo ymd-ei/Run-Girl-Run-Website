@@ -18,7 +18,7 @@ body{font-family:var(--font-b);font-weight:300;background:var(--ink);color:var(-
 /* ─────────────────────────────────────────
    CURSOR
 ───────────────────────────────────────── */
-#cur{position:fixed;z-index:9999;width:10px;height:10px;background:var(--accent);border:1.5px solid var(--accent);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:width .28s var(--ease),height .28s var(--ease),background .28s var(--ease),border-width .28s var(--ease),opacity .2s;mix-blend-mode:difference}
+#cur{position:fixed;z-index:9999;width:10px;height:10px;background:var(--accent);border:1.5px solid var(--accent);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:width .28s var(--ease),height .28s var(--ease),background .28s var(--ease),border-width .28s var(--ease),opacity .2s;box-shadow:0 0 0 1.5px rgba(255,255,255,0.55)}
 body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 #cur-tail{position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:visible}
 #cur-tail-line{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:butt;stroke-linejoin:miter;opacity:.75}
