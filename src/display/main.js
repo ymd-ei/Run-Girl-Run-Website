@@ -160,8 +160,36 @@ function resumeMediaIn(root) {
   });
 
   root.querySelectorAll('video[autoplay]').forEach(video => {
-    video.play().catch(() => {});
+    ensureAutoplayInlineVideo(video);
   });
+}
+
+function ensureAutoplayInlineVideo(video) {
+  if (!video) return;
+
+  // Safari can require these element properties (not just HTML attrs) for autoplay.
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.setAttribute('muted', '');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+
+  const tryPlay = () => {
+    video.play().catch(() => {});
+  };
+
+  tryPlay();
+  video.addEventListener('loadedmetadata', tryPlay, { once: true });
+  video.addEventListener('canplay', tryPlay, { once: true });
+
+  window.addEventListener(
+    'pageshow',
+    () => {
+      tryPlay();
+    },
+    { once: true }
+  );
 }
 
 /**
@@ -522,9 +550,9 @@ function renderHero() {
         bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
       }
     } else if (globalState.reel.type === 'video') {
-      reelEl.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${url}"></video><div id="reel-block"></div>`;
+      reelEl.innerHTML = `<video autoplay muted loop playsinline webkit-playsinline preload="auto" src="${encodeURI(url)}"></video><div id="reel-block"></div>`;
       const v = reelEl.querySelector('video');
-      if (v) v.play().catch(() => {});
+      if (v) ensureAutoplayInlineVideo(v);
     }
   } else {
     reelEl.innerHTML = `<div id="rp"><div class="pg"></div><div class="pi"><div class="bp"><div class="bpt"></div></div><p class="pl">Demo Reel Goes Here</p></div></div>`;
@@ -674,9 +702,9 @@ function renderContactSection() {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
         ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
-        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${vid.url}"></video>`;
+        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline webkit-playsinline preload="auto" src="${encodeURI(vid.url)}"></video>`;
         const v = ctBgVideo.querySelector('video');
-        if (v) v.play().catch(() => {});
+        if (v) ensureAutoplayInlineVideo(v);
       }
     }
   }
