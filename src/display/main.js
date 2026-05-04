@@ -209,6 +209,7 @@ function ensureCursorTail() {
   const ns = 'http://www.w3.org/2000/svg';
   curTailSvg = document.createElementNS(ns, 'svg');
   curTailSvg.setAttribute('id', 'cur-tail');
+  curTailSvg.style.opacity = '0.5';
   curTailSvg.setAttribute('aria-hidden', 'true');
   curTailSvg.setAttribute('width', String(window.innerWidth));
   curTailSvg.setAttribute('height', String(window.innerHeight));
