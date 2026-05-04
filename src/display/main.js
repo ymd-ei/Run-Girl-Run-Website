@@ -70,6 +70,8 @@ let curTailPoints = [];
 let curTailLastSample = null;
 let curTailLastSampleAt = 0;
 let curTailLastMoveAt = 0;
+let curTailHoverEndAt = 0;
+const CUR_TAIL_HOVER_COOLDOWN_MS = 400;
 let curTailRaf = null;
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
@@ -1475,7 +1477,7 @@ function setupEventListeners() {
 
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
-      if (!document.body.classList.contains('ch')) updateCursorTail(e.clientX, e.clientY);
+      if (!document.body.classList.contains('ch') && (performance.now() - curTailHoverEndAt >= CUR_TAIL_HOVER_COOLDOWN_MS)) updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
 
     const isInteractive = el =>
@@ -1484,7 +1486,10 @@ function setupEventListeners() {
       if (isInteractive(e.target)) document.body.classList.add('ch');
     }, { passive: true });
     document.addEventListener('mouseout', e => {
-      if (isInteractive(e.target)) document.body.classList.remove('ch');
+      if (isInteractive(e.target)) {
+        document.body.classList.remove('ch');
+        curTailHoverEndAt = performance.now();
+      }
     }, { passive: true });
   }
 
