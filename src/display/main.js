@@ -59,12 +59,14 @@ let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
 const CUR_TAIL_MAX_POINTS = 9;
 const CUR_TAIL_SAMPLE_DISTANCE = 12;
+const CUR_TAIL_DECAY_MS = 460;
 
 let curTailSvg = null;
 let curTailLine = null;
 let curTailDots = [];
 let curTailPoints = [];
 let curTailLastSample = null;
+let curTailRaf = null;
 
 const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
 
@@ -231,6 +233,11 @@ function syncCursorTailViewport() {
 }
 
 function resetCursorTail() {
+  if (curTailRaf) {
+    cancelAnimationFrame(curTailRaf);
+    curTailRaf = null;
+  }
+
   curTailPoints = [];
   curTailLastSample = null;
   if (curTailLine) curTailLine.setAttribute('points', '');
@@ -240,35 +247,73 @@ function resetCursorTail() {
   });
 }
 
-function renderCursorTail() {
-  if (!curTailLine || !curTailPoints.length) return;
+function ensureCursorTailLoop() {
+  if (curTailRaf) return;
+
+  const tick = now => {
+    renderCursorTail(now);
+    if (curTailPoints.length) {
+      curTailRaf = requestAnimationFrame(tick);
+    } else {
+      curTailRaf = null;
+    }
+  };
+
+  curTailRaf = requestAnimationFrame(tick);
+}
+
+function renderCursorTail(now = performance.now()) {
+  if (!curTailLine) return;
+
+  curTailPoints = curTailPoints.filter(p => now - p.t <= CUR_TAIL_DECAY_MS);
+  if (!curTailPoints.length) {
+    curTailLine.setAttribute('points', '');
+    curTailLine.style.opacity = '0';
+    curTailDots.forEach(dot => {
+      dot.setAttribute('cx', '-9999');
+      dot.setAttribute('cy', '-9999');
+    });
+    return;
+  }
 
   curTailLine.setAttribute(
     'points',
     curTailPoints.map(p => `${p.x},${p.y}`).join(' ')
   );
 
+  const headLife = Math.max(0, 1 - (now - curTailPoints[0].t) / CUR_TAIL_DECAY_MS);
+  curTailLine.style.opacity = String(Math.max(0.12, headLife * 0.72));
+
   for (let i = 0; i < curTailDots.length; i++) {
     const dot = curTailDots[i];
-    const p = curTailPoints[i] || curTailPoints[curTailPoints.length - 1];
+    const p = curTailPoints[i];
+    if (!p) {
+      dot.setAttribute('cx', '-9999');
+      dot.setAttribute('cy', '-9999');
+      continue;
+    }
+
     dot.setAttribute('cx', String(p.x));
     dot.setAttribute('cy', String(p.y));
 
+    const life = Math.max(0, 1 - (now - p.t) / CUR_TAIL_DECAY_MS);
     const t = i / (CUR_TAIL_MAX_POINTS - 1 || 1);
-    const alpha = 1 - t * 0.82;
-    const radius = 2.8 - t * 1.5;
-    dot.setAttribute('opacity', alpha.toFixed(3));
-    dot.setAttribute('r', Math.max(1.1, radius).toFixed(2));
+    const alpha = life * (1 - t * 0.82);
+    const radius = (2.8 - t * 1.5) * life;
+    dot.style.opacity = alpha.toFixed(3);
+    dot.setAttribute('r', Math.max(0.65, radius).toFixed(2));
   }
 }
 
 function updateCursorTail(x, y) {
+  const now = performance.now();
   ensureCursorTail();
+  ensureCursorTailLoop();
 
   if (!curTailPoints.length) {
-    curTailPoints = Array.from({ length: CUR_TAIL_MAX_POINTS }, () => ({ x, y }));
+    curTailPoints = [{ x, y, t: now }];
     curTailLastSample = { x, y };
-    renderCursorTail();
+    renderCursorTail(now);
     return;
   }
 
@@ -277,14 +322,14 @@ function updateCursorTail(x, y) {
   const dist = Math.hypot(dx, dy);
 
   if (dist >= CUR_TAIL_SAMPLE_DISTANCE) {
-    curTailPoints.unshift({ x, y });
+    curTailPoints.unshift({ x, y, t: now });
     if (curTailPoints.length > CUR_TAIL_MAX_POINTS) curTailPoints.length = CUR_TAIL_MAX_POINTS;
     curTailLastSample = { x, y };
   } else {
-    curTailPoints[0] = { x, y };
+    curTailPoints[0] = { x, y, t: now };
   }
 
-  renderCursorTail();
+  renderCursorTail(now);
 }
 
 /**
