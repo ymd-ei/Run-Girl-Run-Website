@@ -58,8 +58,8 @@ const projectCache = new Map();
 let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
 const CUR_TAIL_MAX_POINTS = 9;
-const CUR_TAIL_SAMPLE_DISTANCE = 12;
-const CUR_TAIL_SAMPLE_INTERVAL_MS = 50;
+const CUR_TAIL_SAMPLE_DISTANCE = 30;
+const CUR_TAIL_SAMPLE_INTERVAL_MS = 80;
 const CUR_TAIL_DECAY_MS = 900;
 const CUR_TAIL_DECAY_CASCADE = 0.78;
 
