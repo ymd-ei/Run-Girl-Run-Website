@@ -59,7 +59,7 @@ let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
 const CUR_TAIL_MAX_POINTS = 9;
 const CUR_TAIL_SAMPLE_DISTANCE = 45;
-const CUR_TAIL_SAMPLE_INTERVAL_MS = 160;
+const CUR_TAIL_SAMPLE_INTERVAL_MS = 120;
 const CUR_TAIL_DECAY_MS = 900;
 const CUR_TAIL_DECAY_CASCADE = 0.78;
 
