@@ -91,7 +91,7 @@ function updateCursorWorkBadge(x, y, visible = true) {
   const badge = ensureCursorWorkBadge();
   if (!badge) return;
 
-  badge.style.transform = `translate(${x + 20}px, ${y - 22}px)`;
+  badge.style.transform = `translate(${x + 8}px, ${y}px) translateY(-50%)`;
   badge.classList.toggle('is-visible', visible);
 }
 
