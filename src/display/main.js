@@ -59,7 +59,7 @@ let activeBeforeAfter = null;
 const ENABLE_LOG_STACK = false;
 const CUR_TAIL_MAX_POINTS = 9;
 const CUR_TAIL_SAMPLE_DISTANCE = 12;
-const CUR_TAIL_SAMPLE_INTERVAL_MS = 28;
+const CUR_TAIL_SAMPLE_INTERVAL_MS = 80;
 const CUR_TAIL_DECAY_MS = 900;
 const CUR_TAIL_DECAY_CASCADE = 0.78;
 
@@ -212,10 +212,6 @@ function ensureCursorTail() {
   curTailSvg.setAttribute('height', String(window.innerHeight));
   curTailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
 
-  curTailLine = document.createElementNS(ns, 'polyline');
-  curTailLine.setAttribute('id', 'cur-tail-line');
-  curTailSvg.appendChild(curTailLine);
-
   curTailDots = [];
   for (let i = 0; i < CUR_TAIL_MAX_POINTS; i++) {
     const dot = document.createElementNS(ns, 'circle');
@@ -246,7 +242,6 @@ function resetCursorTail() {
   curTailLastSample = null;
   curTailLastSampleAt = 0;
   curTailLastMoveAt = 0;
-  if (curTailLine) curTailLine.setAttribute('points', '');
   curTailDots.forEach(dot => {
     dot.setAttribute('cx', '-9999');
     dot.setAttribute('cy', '-9999');
@@ -269,21 +264,14 @@ function ensureCursorTailLoop() {
 }
 
 function renderCursorTail(now = performance.now()) {
-  if (!curTailLine) return;
+  if (!curTailDots.length) return;
   if (!curTailPoints.length) {
-    curTailLine.setAttribute('points', '');
-    curTailLine.style.opacity = '0';
     curTailDots.forEach(dot => {
       dot.setAttribute('cx', '-9999');
       dot.setAttribute('cy', '-9999');
     });
     return;
   }
-
-  curTailLine.setAttribute(
-    'points',
-    curTailPoints.map(p => `${p.x},${p.y}`).join(' ')
-  );
 
   const idleMs = Math.max(0, now - curTailLastMoveAt);
   const decayProgress = clamp(idleMs / CUR_TAIL_DECAY_MS, 0, 1);
@@ -318,12 +306,8 @@ function renderCursorTail(now = performance.now()) {
     dot.setAttribute('r', Math.max(0.65, radius).toFixed(2));
   }
 
-  curTailLine.style.opacity = String(Math.max(0.08, headLife * 0.72));
-
   if (decayProgress >= 1) {
     curTailPoints = [];
-    curTailLine.setAttribute('points', '');
-    curTailLine.style.opacity = '0';
     curTailDots.forEach(dot => {
       dot.setAttribute('cx', '-9999');
       dot.setAttribute('cy', '-9999');
