@@ -45,6 +45,10 @@
 <link rel="modulepreload" href="src/modules/blocks/blockRenderer.js">
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
+  body.native-cursor,body.native-cursor *,body.native-cursor *::before,body.native-cursor *::after{cursor:auto !important}
+  body.native-cursor #cur{display:none !important}
+  body.reel-popup-open,body.reel-popup-open *,body.reel-popup-open *::before,body.reel-popup-open *::after{cursor:auto !important}
+  body.reel-popup-open #cur{display:none !important}
   :root{
     --ink:#1a1714;--paper:#f2ede4;--accent:#5e30eb;--accent-rgb:94,48,235;
     --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;

@@ -173,6 +173,20 @@ function hideLogStackIfDisabled() {
   stack.style.height = '0px';
 }
 
+function setNativeCursorEnabled(enabled) {
+  document.body.classList.toggle('native-cursor', !!enabled);
+}
+
+function setReelPopupCursorDisabled(disabled) {
+  document.body.classList.toggle('reel-popup-open', !!disabled);
+}
+
+function syncCursorForFullscreen() {
+  const reelPopupOpen = document.body.classList.contains('reel-popup-open');
+  const fullscreenActive = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  setNativeCursorEnabled(reelPopupOpen || fullscreenActive);
+}
+
 /**
  * Run the loader animation with randomized percentage stops.
  */
@@ -1132,6 +1146,8 @@ function setupEventListeners() {
 
       const lightbox = document.getElementById('lightbox');
       if (lightbox) lightbox.classList.add('open');
+      setReelPopupCursorDisabled(true);
+      setNativeCursorEnabled(true);
 
       if (lightboxReel.type === 'vimeo' && window.Vimeo) {
         const lbPlayer = new window.Vimeo.Player(document.getElementById('lb-iframe'));
@@ -1142,6 +1158,8 @@ function setupEventListeners() {
     closeLightbox() {
       const lightbox = document.getElementById('lightbox');
       if (lightbox) lightbox.classList.remove('open');
+      setReelPopupCursorDisabled(false);
+      syncCursorForFullscreen();
 
       setTimeout(() => {
         const lbFrame = document.getElementById('lb-frame');
@@ -1164,6 +1182,7 @@ function setupEventListeners() {
       if (lbLabel) lbLabel.textContent = 'Gallery Image';
       lightboxMode = 'image';
       lightbox.classList.add('open');
+      setNativeCursorEnabled(true);
     },
 
     openPanel(name) {
@@ -1263,6 +1282,10 @@ function setupEventListeners() {
       window.display?.closeProject({ skipHistory: true });
     }
   });
+
+  // Keep native cursor visible while browser/media fullscreen is active.
+  document.addEventListener('fullscreenchange', syncCursorForFullscreen);
+  document.addEventListener('webkitfullscreenchange', syncCursorForFullscreen);
 
   // Contact panel scroll effects
   const contactWrapper = document.getElementById('contact-wrapper');
