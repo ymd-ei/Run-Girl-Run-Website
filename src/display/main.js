@@ -102,7 +102,7 @@ function updateCursorWorkBadge(x, y, visible = true) {
       curWorkBadgeDismissTimer = setTimeout(() => {
         curWorkBadgeDismissed = true;
         badge.classList.remove('is-visible');
-      }, 45000);
+      }, 20000);
     }
   }
 }
