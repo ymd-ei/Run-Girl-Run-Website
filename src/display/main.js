@@ -75,6 +75,8 @@ let curTailHoverEndAt = 0;
 const CUR_TAIL_HOVER_COOLDOWN_MS = 400;
 let curTailRaf = null;
 let curWorkBadge = null;
+let curWorkBadgeDismissed = false;
+let curWorkBadgeDismissTimer = null;
 
 function ensureCursorWorkBadge() {
   if (curWorkBadge) return curWorkBadge;
@@ -90,13 +92,23 @@ function ensureCursorWorkBadge() {
 function updateCursorWorkBadge(x, y, visible = true) {
   const badge = ensureCursorWorkBadge();
   if (!badge) return;
+  if (curWorkBadgeDismissed) return;
 
   badge.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`;
-  badge.classList.toggle('is-visible', visible);
+
+  if (visible && !badge.classList.contains('is-visible')) {
+    badge.classList.add('is-visible');
+    if (!curWorkBadgeDismissTimer) {
+      curWorkBadgeDismissTimer = setTimeout(() => {
+        curWorkBadgeDismissed = true;
+        badge.classList.remove('is-visible');
+      }, 90000);
+    }
+  }
 }
 
 function hideCursorWorkBadge() {
-  if (!curWorkBadge) return;
+  if (!curWorkBadge || curWorkBadgeDismissed) return;
   curWorkBadge.classList.remove('is-visible');
 }
 

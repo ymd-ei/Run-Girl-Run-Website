@@ -20,7 +20,7 @@ body{font-family:var(--font-b);font-weight:300;background:var(--ink);color:var(-
 ───────────────────────────────────────── */
 #cur{position:fixed;z-index:9999;width:10px;height:10px;background:var(--accent);border:1.5px solid var(--accent);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:width .28s var(--ease),height .28s var(--ease),background .28s var(--ease),border-width .28s var(--ease),opacity .2s;box-shadow:0 0 0 1.5px rgba(255,255,255,0.55)}
 body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
-#cur-work-badge{position:fixed;left:0;top:0;z-index:9997;pointer-events:none;transform:translate(-9999px,-9999px) translateY(-50%);margin-left:18px;opacity:0;padding:.18rem .55rem;border-radius:2px;background:var(--accent);color:#fff;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-normal);text-transform:uppercase;white-space:nowrap;transition:opacity .12s var(--ease),margin-left .18s var(--ease);will-change:transform,margin-left}
+#cur-work-badge{position:fixed;left:0;top:0;z-index:9997;pointer-events:none;transform:translate(-9999px,-9999px) translateY(-50%);margin-left:18px;opacity:0;padding:.18rem .55rem;border-radius:2px;background:var(--accent);color:#fff;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-normal);text-transform:uppercase;white-space:nowrap;transition:opacity .8s var(--ease),margin-left .18s var(--ease);will-change:transform,margin-left}
 #cur-work-badge.is-visible{opacity:1}
 body.ch #cur-work-badge{margin-left:34px}
 #cur-tail{position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:visible}
