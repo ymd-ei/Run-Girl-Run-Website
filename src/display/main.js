@@ -91,8 +91,7 @@ function updateCursorWorkBadge(x, y, visible = true) {
   const badge = ensureCursorWorkBadge();
   if (!badge) return;
 
-  const horizontalOffset = document.body.classList.contains('ch') ? 34 : 18;
-  badge.style.transform = `translate(${x + horizontalOffset}px, ${y}px) translateY(-50%)`;
+  badge.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`;
   badge.classList.toggle('is-visible', visible);
 }
 
