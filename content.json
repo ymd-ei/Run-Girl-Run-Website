@@ -184,7 +184,8 @@
     "ctAccent": "#ff4361",
     "ctBg": "#080808",
     "ctHi": "#ffffff",
-    "sensitiveColor": "#e03030"
+    "sensitiveColor": "#e03030",
+    "panelStyle": "dark"
   },
   "projectCards": [
     {
