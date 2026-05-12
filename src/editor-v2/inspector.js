@@ -157,6 +157,7 @@ const THEME_FIELDS = [
   { key: 'paper', label: 'Paper (Background)', type: 'color' },
   { key: 'accent', label: 'Accent', type: 'color' },
   { key: 'panelBg', label: 'Panel Background', type: 'color' },
+  { key: 'panelStyle', label: 'Panel Style', type: 'select', options: ['light', 'dark'] },
   { key: 'ctAccent', label: 'Contact Accent', type: 'color' },
   { key: 'ctBg', label: 'Contact Background', type: 'color' },
   { key: 'ctHi', label: 'Contact Highlight', type: 'color' },

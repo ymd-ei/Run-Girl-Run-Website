@@ -29,6 +29,8 @@ export function applyTheme(theme) {
   Object.entries(vars).forEach(([key, val]) => {
     document.documentElement.style.setProperty(key, val);
   });
+
+  document.body?.classList.toggle('panel-frost', theme.panelStyle === 'dark');
 }
 
 /**

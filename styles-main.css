@@ -475,3 +475,46 @@ body.page-loading #watch-reel-wrap{filter:blur(12px);transition:filter .6s ease}
 #pp-like-icon{font-size:1rem;line-height:1;transition:transform .2s}
 .pp-hero-btn:hover #pp-like-icon{transform:scale(1.15)}
 #pp-like-count{font-size:var(--fs-xs);letter-spacing:var(--ls-normal)}
+
+/* ─────────────────────────────────────────
+   PANEL STYLE: DARK FROST
+   Applied when body.panel-frost is set via theme.panelStyle = 'dark'
+───────────────────────────────────────── */
+body.panel-frost .panel{background:rgba(var(--ink-rgb),0.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-left-color:rgba(var(--paper-rgb),0.1)}
+body.panel-frost #pp{background:rgba(var(--ink-rgb),0.82);border-left-color:rgba(var(--paper-rgb),0.1)}
+body.panel-frost .ph{border-bottom-color:rgba(var(--paper-rgb),0.08)}
+body.panel-frost .pt2{color:var(--paper)}
+body.panel-frost .pc{color:rgba(var(--paper-rgb),0.4);border-color:rgba(var(--paper-rgb),0.15)}
+body.panel-frost .pc:hover{color:var(--accent);border-color:transparent}
+body.panel-frost .pb{color:var(--paper);scrollbar-color:rgba(var(--paper-rgb),0.1) transparent}
+body.panel-frost .pb::-webkit-scrollbar-thumb{background:rgba(var(--paper-rgb),0.1)}
+body.panel-frost .ppbody{color:var(--paper);scrollbar-color:rgba(var(--paper-rgb),0.1) transparent}
+body.panel-frost .ppbody::-webkit-scrollbar-thumb{background:rgba(var(--paper-rgb),0.08)}
+body.panel-frost .backbtn{color:rgba(var(--paper-rgb),0.5)}
+body.panel-frost .backbtn:hover{color:var(--paper)}
+/* remove diagonal stripe in dark mode — looks wrong on dark backgrounds */
+body.panel-frost #panel-work .pb,body.panel-frost #panel-about .pb{background-image:none}
+body.panel-frost #pp .ppbody{background-image:none}
+/* filter buttons */
+body.panel-frost .fb{background:rgba(var(--paper-rgb),0.07);color:rgba(var(--paper-rgb),0.45);border-color:rgba(var(--paper-rgb),0.12)}
+body.panel-frost .fb.active,body.panel-frost .fb:hover{background:rgba(var(--paper-rgb),0.18);color:var(--paper);border-color:rgba(var(--paper-rgb),0.35)}
+/* work card text */
+body.panel-frost .wct{color:var(--paper)}
+body.panel-frost .wcty{color:rgba(var(--paper-rgb),0.45)}
+/* block text inside panels */
+body.panel-frost .panel .bl-text-sm,body.panel-frost .ppbody .bl-text-sm{color:rgba(var(--paper-rgb),0.5)}
+body.panel-frost .panel .bl-text-md,body.panel-frost .ppbody .bl-text-md{color:rgba(var(--paper-rgb),0.8)}
+body.panel-frost .panel .bl-text-lg,body.panel-frost .ppbody .bl-text-lg{color:var(--accent)}
+body.panel-frost .panel .bl-quote p,body.panel-frost .ppbody .bl-quote p{color:var(--paper)}
+body.panel-frost .panel .bl-stats .sc,body.panel-frost .ppbody .bl-stats .sc{background:rgba(var(--paper-rgb),0.06)}
+body.panel-frost .panel .bl-stats .sl,body.panel-frost .ppbody .bl-stats .sl{color:rgba(var(--paper-rgb),0.45)}
+body.panel-frost .panel .bl-callout,body.panel-frost .ppbody .bl-callout{background:rgba(var(--accent-rgb),0.1);border-color:rgba(var(--accent-rgb),0.25)}
+body.panel-frost .panel .bl-callout .bl-callout-title,body.panel-frost .ppbody .bl-callout .bl-callout-title{color:var(--paper)}
+body.panel-frost .panel .bl-callout .bl-callout-body,body.panel-frost .ppbody .bl-callout .bl-callout-body{color:rgba(var(--paper-rgb),0.75)}
+body.panel-frost .panel .bl-process-step,body.panel-frost .ppbody .bl-process-step{background:rgba(var(--accent-rgb),0.08);border-color:rgba(var(--paper-rgb),0.1)}
+body.panel-frost .panel .bl-process-copy h4,body.panel-frost .ppbody .bl-process-copy h4{color:var(--paper)}
+body.panel-frost .panel .bl-process-copy p,body.panel-frost .ppbody .bl-process-copy p{color:rgba(var(--paper-rgb),0.72)}
+body.panel-frost .panel .bl-cta,body.panel-frost .ppbody .bl-cta{background:rgba(var(--accent-rgb),0.08);border-color:rgba(var(--paper-rgb),0.1)}
+body.panel-frost .panel .bl-cta-headline,body.panel-frost .ppbody .bl-cta-headline{color:var(--paper)}
+body.panel-frost .panel .bl-cta-body,body.panel-frost .ppbody .bl-cta-body{color:rgba(var(--paper-rgb),0.72)}
+body.panel-frost .panel .bl-divider,body.panel-frost .ppbody .bl-divider{background:rgba(var(--paper-rgb),0.1)}

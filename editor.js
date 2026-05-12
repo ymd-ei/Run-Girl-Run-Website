@@ -261,6 +261,14 @@ function renderGlobal(){
           ${colorField('Accent','accent','#5e30eb')}
           ${colorField('Panel Background','panelBg','#f7f3ec')}
         </div>
+        <div class="field" style="margin-top:.5rem">
+          <label>Panel Style</label>
+          <select oninput="(C.theme=C.theme||{}).panelStyle=this.value;applyEditorTheme();markDirty()">
+            <option value="light" ${(C.theme?.panelStyle||'light')==='light'?'selected':''}>Light (warm cream)</option>
+            <option value="dark" ${C.theme?.panelStyle==='dark'?'selected':''}>Dark Frost</option>
+          </select>
+          <p class="hint">Dark frost: semi-transparent dark panels that reveal the background video.</p>
+        </div>
         <p class="hint" style="margin:.75rem 0 .5rem;letter-spacing:.1em;text-transform:uppercase;font-size:.55rem">Contact Panel</p>
         <div class="row2">
           ${colorField('Contact Accent','ctAccent','#ff4361')}

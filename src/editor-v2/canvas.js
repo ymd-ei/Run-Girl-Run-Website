@@ -263,6 +263,8 @@ export function applyCanvasTheme(theme) {
   };
 
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+  document.body.classList.toggle('panel-frost', (theme.panelStyle || 'light') === 'dark');
 }
 
 function hexToRgb(hex) {
