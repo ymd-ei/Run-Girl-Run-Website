@@ -35,7 +35,7 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 /* ─────────────────────────────────────────
    STAGE & REEL
 ───────────────────────────────────────── */
-#stage{position:fixed;inset:0;z-index:0;background:var(--ink);overflow:hidden}
+#stage{position:fixed;inset:0;z-index:0;background:var(--ink);overflow:hidden;transition:transform .8s var(--ease),filter .8s var(--ease)}
 #stage::after{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(var(--accent-rgb),0.06) 0%,transparent 70%),linear-gradient(to top,rgba(var(--ink-rgb),0.78) 0%,rgba(var(--ink-rgb),0.05) 50%,rgba(var(--ink-rgb),0.52) 100%);pointer-events:none}
 #reel{position:absolute;inset:0;overflow:hidden}
 #reel iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:177.78vh;height:100vh;min-width:100%;min-height:56.25vw;border:none}
