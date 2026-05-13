@@ -55,7 +55,7 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 /* ─────────────────────────────────────────
    NAV
 ───────────────────────────────────────── */
-#nav{position:fixed;z-index:100;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2.5rem;pointer-events:none}
+#nav{position:fixed;z-index:100;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2.5rem;pointer-events:none;transition:transform .8s var(--ease)}
 .nl{font-family:var(--font-s);font-size:var(--fs-lg);font-weight:400;letter-spacing:var(--ls-tight);color:var(--paper);text-decoration:none;pointer-events:all;opacity:0;animation:fdn .8s .4s var(--ease) forwards}
 .nls{display:flex;gap:.25rem;list-style:none;pointer-events:all;opacity:0;animation:fdn .8s .6s var(--ease) forwards}
 .nls button{font-family:var(--font-b);font-size:var(--fs-sm);letter-spacing:var(--ls-wide);text-transform:uppercase;background:none;border:none;color:rgba(var(--paper-rgb),0.45);padding:.5rem 1rem;transition:color .2s;position:relative}
@@ -66,13 +66,13 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 /* ─────────────────────────────────────────
    HERO TEXT & LOG STACK
 ───────────────────────────────────────── */
-#ht{position:fixed;z-index:10;bottom:3rem;left:2.5rem;pointer-events:none}
+#ht{position:fixed;z-index:10;bottom:3rem;left:2.5rem;pointer-events:none;transition:transform .8s var(--ease)}
 .htag{font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--accent);margin-bottom:.9rem;font-weight:500;opacity:1}
 .hname{font-family:var(--font-s);font-size:clamp(4rem,8vw,9rem);font-weight:700;line-height:.88;letter-spacing:.01em;opacity:1}
 .sc-char{display:inline;opacity:0;transition:opacity .08s}
 .hname em{color:var(--accent);font-style:italic;display:block}
-#sh{position:fixed;z-index:10;bottom:3rem;right:2.5rem;display:flex;align-items:center;gap:.65rem;pointer-events:none;opacity:0;animation:fup .8s 1.1s var(--ease) forwards}
-#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;pointer-events:none;overflow:hidden}
+#sh{position:fixed;z-index:10;bottom:3rem;right:2.5rem;display:flex;align-items:center;gap:.65rem;pointer-events:none;opacity:0;animation:fup .8s 1.1s var(--ease) forwards;transition:transform .8s var(--ease)}
+#log-stack{position:fixed;z-index:10;bottom:5.5rem;right:2.5rem;pointer-events:none;overflow:hidden;transition:transform .8s var(--ease)}
 .ls-inner{display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;transition:transform 1.2s var(--ease);will-change:transform;transform:translateZ(0);backface-visibility:hidden}
 .ls-entry{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:rgba(var(--paper-rgb),0.9);line-height:1.5;text-align:right;opacity:0;transition:opacity 1.2s var(--ease);white-space:normal;word-break:break-word;will-change:opacity}
 .ls-entry.show{opacity:1}
@@ -83,7 +83,7 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 /* ─────────────────────────────────────────
    WATCH REEL BUTTON
 ───────────────────────────────────────── */
-#watch-reel-wrap{position:fixed;z-index:10;top:66.666%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0;animation:fup .8s 1s var(--ease) forwards}
+#watch-reel-wrap{position:fixed;z-index:10;top:66.666%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0;animation:fup .8s 1s var(--ease) forwards;transition:transform .8s var(--ease)}
 #watch-reel{display:flex;align-items:center;justify-content:center;gap:.75rem;background:none;border:1px solid rgba(var(--paper-rgb),0.3);color:var(--paper);font-family:var(--font-b);font-size:var(--fs-sm);letter-spacing:var(--ls-wide);text-transform:uppercase;padding:.7rem 1.5rem;transition:border-color .25s,background .25s,background-image .25s}
 #watch-reel:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),0.12);background-image:repeating-linear-gradient(-55deg,transparent,transparent 15px,rgba(var(--accent-rgb),0.22) 15px,rgba(var(--accent-rgb),0.22) 16px);background-size:21px 100%}
 .wr-play{width:22px;height:22px;border:1px solid rgba(var(--paper-rgb),0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .25s}
@@ -353,6 +353,8 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 #contact-wrapper::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
 #contact-wrapper.open{transform:translateX(0)}
 #stage.contact-open{transform:translateX(calc(-1 * var(--ct-panel-w)));filter:brightness(0.38);pointer-events:none}
+#nav.contact-open,#ht.contact-open,#sh.contact-open,#log-stack.contact-open{transform:translateX(calc(-1 * var(--ct-panel-w)))}
+#watch-reel-wrap.contact-open{transform:translateX(calc(-1 * var(--ct-panel-w))) translateY(-50%)}
 #ct-bg{position:sticky;top:0;height:100vh;margin-bottom:-100vh;overflow:hidden;pointer-events:none}
 #ct-bg-video{position:absolute;inset:0;filter:saturate(0.55) brightness(0.9);transition:filter .2s ease}
 #ct-bg-video::after{content:'';position:absolute;inset:0;z-index:1}

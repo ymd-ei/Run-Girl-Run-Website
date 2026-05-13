@@ -1405,6 +1405,7 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
+        ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => document.getElementById(id)?.classList.add('contact-open'));
         // No #bd needed — contact has its own full dark background
         replayContactHeroScramble();
         if (!contactTickersStarted) startContactTickers();
@@ -1414,6 +1415,7 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.remove('open');
         if (stage) stage.classList.remove('contact-open');
+        ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => document.getElementById(id)?.classList.remove('contact-open'));
         const panel = document.getElementById('panel-' + name);
         const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
@@ -1438,6 +1440,7 @@ function setupEventListeners() {
       const bd = document.getElementById('bd');
       if (contact) contact.classList.remove('open');
       if (stage) stage.classList.remove('contact-open');
+      ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => document.getElementById(id)?.classList.remove('contact-open'));
       if (bd) {
         bd.classList.remove('open');
         bd.classList.remove('project-open');
