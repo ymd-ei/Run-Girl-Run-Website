@@ -1403,10 +1403,9 @@ function setupEventListeners() {
       if (name === 'contact') {
         const contact = document.getElementById('contact-wrapper');
         const stage = document.getElementById('stage');
-        const bd = document.getElementById('bd');
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
-        if (bd) bd.classList.add('open');
+        // No #bd needed — contact has its own full dark background
         replayContactHeroScramble();
         if (!contactTickersStarted) startContactTickers();
       } else {
