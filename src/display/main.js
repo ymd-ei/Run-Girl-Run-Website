@@ -1405,6 +1405,8 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
+        document.getElementById('ct-sliver')?.classList.add('open');
+        document.getElementById('ct-close')?.classList.add('open');
         // Slide UI elements left in sync — inline styles beat animation fills
         const _uiEls = ['nav','ht','sh','log-stack','watch-reel-wrap'].map(id => document.getElementById(id)).filter(Boolean);
         _uiEls.forEach(el => { el.style.transition = 'transform .8s cubic-bezier(0.16,1,0.3,1)'; });
@@ -1418,6 +1420,8 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.remove('open');
         if (stage) stage.classList.remove('contact-open');
+        document.getElementById('ct-sliver')?.classList.remove('open');
+        document.getElementById('ct-close')?.classList.remove('open');
         ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
         const panel = document.getElementById('panel-' + name);
         const bd = document.getElementById('bd');
@@ -1443,6 +1447,8 @@ function setupEventListeners() {
       const bd = document.getElementById('bd');
       if (contact) contact.classList.remove('open');
       if (stage) stage.classList.remove('contact-open');
+      document.getElementById('ct-sliver')?.classList.remove('open');
+      document.getElementById('ct-close')?.classList.remove('open');
       ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
       if (bd) {
         bd.classList.remove('open');
