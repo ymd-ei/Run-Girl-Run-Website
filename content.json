@@ -152,29 +152,33 @@
       "type": "video",
       "url": "media/RGR_anim_chal_clean.mp4"
     },
-    "titleAccent": "— At your service",
+    "titleAccent": "worth telling.",
     "tickerMid": [
       "3D Animation",
       "2D Animation",
       "Character Performance",
-      "Storytelling",
-      "Short Films",
-      "Original Features"
+      "Character Animation",
+      "Creature Animation",
+      "Lip Sync",
+      "Acting & Physicality",
+      "Storytelling"
     ],
     "tickerTop": [
       "Short Films",
-      "Freelance",
-      "Collaborations",
-      "Passion Projects",
       "Commercials",
       "Music Videos",
+      "Game Cinematics",
       "Independent Films",
-      "Game Cinematics"
+      "Original Features",
+      "Character Animation",
+      "Story Reels",
+      "Passion Projects"
     ],
     "sub": "We're always open to new collaborators, weird briefs, and good ideas. <rgr>Run Girl Run</rgr> is a small studio, so every project gets real attention — not handed off.<br><br> Whether you've got something fully formed or just an early idea, reach out anytime.",
-    "emailLabel": "Hit us up",
-    "socialLabel": "Here we are",
-    "title": "Character almost there?"
+    "emailLabel": "through email",
+    "socialLabel": "or social media",
+    "title": "We animate stories—",
+    "resumeLabel": ""
   },
   "theme": {
     "ink": "#1a1714",
