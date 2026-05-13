@@ -1405,10 +1405,21 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.add('open');
         if (stage) stage.classList.add('contact-open');
-        // Slide UI elements left in sync — inline styles beat animation fills
+        // Slide UI elements left in sync — cancel fup animation fill first so it releases transform
         const _uiEls = ['nav','ht','sh','log-stack','watch-reel-wrap'].map(id => document.getElementById(id)).filter(Boolean);
-        _uiEls.forEach(el => { el.style.transition = 'transform .8s cubic-bezier(0.16,1,0.3,1)'; });
-        requestAnimationFrame(() => { _uiEls.forEach(el => { el.style.transform = 'translateX(calc(-1 * var(--ct-panel-w)))'; }); });
+        _uiEls.forEach(el => {
+          el.style.opacity = '1'; // freeze visible state before cancelling animation
+          el.style.animation = 'none';
+          el.style.transition = 'transform .8s cubic-bezier(0.16,1,0.3,1)';
+        });
+        requestAnimationFrame(() => {
+          _uiEls.forEach(el => {
+            const isReel = el.id === 'watch-reel-wrap';
+            el.style.transform = isReel
+              ? 'translateX(calc(-1 * var(--ct-panel-w))) translateY(-50%)'
+              : 'translateX(calc(-1 * var(--ct-panel-w)))';
+          });
+        });
         // No #bd needed — contact has its own full dark background
         replayContactHeroScramble();
         if (!contactTickersStarted) startContactTickers();
@@ -1418,7 +1429,7 @@ function setupEventListeners() {
         const stage = document.getElementById('stage');
         if (contact) contact.classList.remove('open');
         if (stage) stage.classList.remove('contact-open');
-        ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
+        ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) { el.style.transform = ''; el.style.transition = ''; el.style.animation = ''; el.style.opacity = ''; } });
         const panel = document.getElementById('panel-' + name);
         const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
@@ -1443,7 +1454,7 @@ function setupEventListeners() {
       const bd = document.getElementById('bd');
       if (contact) contact.classList.remove('open');
       if (stage) stage.classList.remove('contact-open');
-      ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
+      ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) { el.style.transform = ''; el.style.transition = ''; el.style.animation = ''; el.style.opacity = ''; } });
       if (bd) {
         bd.classList.remove('open');
         bd.classList.remove('project-open');
