@@ -529,7 +529,7 @@ body.panel-frost #legal-card h2{color:var(--paper)}
 body.panel-frost .legal-section p{color:rgba(var(--paper-rgb),0.55)}
 #legal-modal.open #legal-card{transform:translateY(0)}
 
-#legal-card h2{font-family:var(--font-s);font-size:var(--fs-lg);font-weight:400;letter-spacing:var(--ls-tight);margin-bottom:1.5rem;color:var(--ink);text-align:left}
+#legal-card h2{font-family:var(--font-s);font-size:var(--fs-lg);font-weight:400;letter-spacing:var(--ls-tight);margin-bottom:1.5rem;color:var(--ink);text-align:center}
 .legal-section{margin-bottom:1.25rem}
 .legal-section:last-child{margin-bottom:0}
 .legal-section h3{font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
