@@ -153,7 +153,7 @@
   <div class="ph"><span class="pt2">About</span><button class="pc" onclick="window.display?.closeToRoot?.()">&#x2715;</button></div>
   <div class="pb" id="about-body"></div>
   <div class="panel-legal-footer">
-    <span>© 2026 Run Girl Run</span>
+    <span>© <span class="copyright-year"></span> Run Girl Run</span>
     <button class="legal-trigger" onclick="openLegalModal()">Privacy &amp; Legal</button>
   </div>
 </div>
@@ -204,7 +204,7 @@
       </div>
     </div>
     <div class="ct-footer">
-      <span>© 2026 Run Girl Run</span>
+      <span>© <span class="copyright-year"></span> Run Girl Run</span>
       <button class="ct-legal-trigger" onclick="openLegalModal()">Privacy &amp; Legal</button>
     </div>
   </div>
@@ -218,7 +218,7 @@
     <h2>Privacy &amp; Legal</h2>
     <div class="legal-section">
       <h3>Copyright</h3>
-      <p>All original animation, films, and creative work on this site are &copy; 2026 Run Girl Run. All rights reserved. Do not reproduce or distribute without permission.</p>
+      <p>All original animation, films, and creative work on this site are &copy; <span class="copyright-year"></span> Run Girl Run. All rights reserved. Do not reproduce or distribute without permission.</p>
     </div>
     <div class="legal-section">
       <h3>Privacy</h3>
@@ -234,6 +234,7 @@
 </div>
 
 <script>
+  document.querySelectorAll('.copyright-year').forEach(el => el.textContent = new Date().getFullYear());
   function openLegalModal() {
     const m = document.getElementById('legal-modal');
     m.style.display = 'flex';
