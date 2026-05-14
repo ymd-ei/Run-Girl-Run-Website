@@ -218,27 +218,31 @@
     <h2>Privacy &amp; Legal</h2>
     <div class="legal-section">
       <h3>Copyright</h3>
-      <p>All original animation, films, and creative work on this site are © 2026 Run Girl Run. All rights reserved. Do not reproduce or distribute without permission.</p>
+      <p>All original animation, films, and creative work on this site are &copy; 2026 Run Girl Run. All rights reserved. Do not reproduce or distribute without permission.</p>
     </div>
     <div class="legal-section">
       <h3>Privacy</h3>
-      <p>This site does not collect personal information and has no accounts, forms, or ad tracking. The like counter uses an anonymous ID stored in your browser — it is not linked to your name, email, or any identifying data.</p>
-      <p>This site loads fonts from Google Fonts. Google may log your IP address per their own privacy policy.</p>
+      <p>This site does not collect personal information and has no accounts, forms, or ad tracking. The like counter uses an anonymous ID stored in your browser &mdash; it is not linked to your name, email, or any identifying data.</p>
+      <p>This site loads fonts from <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Fonts</a>. Some videos on this site are hosted via <a href="https://vimeo.com/privacy" target="_blank" rel="noopener">Vimeo</a> or <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">YouTube</a>. These services may log your IP address per their own privacy policies. Videos served directly from this site are not tracked.</p>
       <p>Questions? Reach us at <a href="mailto:contact@rungirlrun.studio">contact@rungirlrun.studio</a>.</p>
     </div>
     <div class="legal-section">
       <h3>AI Disclosure</h3>
-      <p>This website was built with the assistance of GitHub Copilot. All animation, films, and creative work featured on this site were made entirely by humans — no AI was involved in any of the works shown.</p>
+      <p>This website was built with the assistance of GitHub Copilot. All animation, films, and creative work featured on this site were made entirely by humans &mdash; no AI was involved in any of the works shown.</p>
     </div>
   </div>
 </div>
 
 <script>
   function openLegalModal() {
-    document.getElementById('legal-modal').classList.add('open');
+    const m = document.getElementById('legal-modal');
+    m.style.display = 'flex';
+    requestAnimationFrame(() => m.classList.add('open'));
   }
   function closeLegalModal() {
-    document.getElementById('legal-modal').classList.remove('open');
+    const m = document.getElementById('legal-modal');
+    m.classList.remove('open');
+    m.addEventListener('transitionend', () => { m.style.display = 'none'; }, { once: true });
   }
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeLegalModal();
