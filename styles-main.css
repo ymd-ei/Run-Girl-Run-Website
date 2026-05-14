@@ -508,6 +508,32 @@ body.panel-frost .wcty{color:rgba(var(--paper-rgb),0.45)}
 body.panel-frost .panel .bl-text-sm,body.panel-frost .ppbody .bl-text-sm{color:rgba(var(--paper-rgb),0.5)}
 body.panel-frost .panel .bl-text-md,body.panel-frost .ppbody .bl-text-md{color:rgba(var(--paper-rgb),0.8)}
 body.panel-frost .panel .bl-text-lg,body.panel-frost .ppbody .bl-text-lg{color:var(--accent)}
+
+/* ─────────────────────────────────────────
+   LEGAL FOOTER + MODAL
+───────────────────────────────────────── */
+.panel-legal-footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:.9rem 2rem;border-top:1px solid var(--panel-border);font-family:var(--font-b);font-size:var(--fs-xs);font-weight:400;letter-spacing:var(--ls-wide);text-transform:uppercase;color:rgba(var(--ink-rgb),0.35)}
+.legal-trigger{background:none;border:none;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:400;letter-spacing:var(--ls-wide);text-transform:uppercase;color:rgba(var(--ink-rgb),0.35);text-decoration:underline;text-underline-offset:3px;transition:color .2s;padding:0}
+.legal-trigger:hover{color:var(--accent)}
+body.panel-frost .panel-legal-footer{border-top-color:rgba(var(--paper-rgb),0.08);color:rgba(var(--paper-rgb),0.25)}
+body.panel-frost .legal-trigger{color:rgba(var(--paper-rgb),0.25)}
+body.panel-frost .legal-trigger:hover{color:var(--accent)}
+.ct-legal-trigger{background:none;border:none;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--ct-muted);text-decoration:underline;text-underline-offset:3px;transition:color .2s;padding:0}
+.ct-legal-trigger:hover{color:var(--color-contact-hi,#fff)}
+#legal-modal{position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s var(--ease)}
+#legal-modal.open{opacity:1;pointer-events:all}
+#legal-card{position:relative;width:min(420px,90vw);background:var(--panel-bg);border:1px solid var(--panel-border);padding:2.25rem 2.25rem 2rem;transform:translateY(12px);transition:transform .28s var(--ease);text-align:center;color:var(--ink)}
+#legal-modal.open #legal-card{transform:translateY(0)}
+#legal-close{position:absolute;top:1rem;right:1rem;width:28px;height:28px;background:none;border:1px solid var(--border);color:rgba(var(--ink-rgb),0.4);font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:color .2s,border-color .2s,transform .2s}
+#legal-close:hover{color:var(--accent);border-color:transparent;transform:rotate(90deg)}
+#legal-card h2{font-family:var(--font-s);font-size:var(--fs-lg);font-weight:400;letter-spacing:var(--ls-tight);margin-bottom:1.5rem;color:var(--ink)}
+.legal-section{margin-bottom:1.25rem}
+.legal-section:last-child{margin-bottom:0}
+.legal-section h3{font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+.legal-section p{font-family:var(--font-b);font-size:var(--fs-sm);font-weight:300;line-height:1.65;color:rgba(var(--ink-rgb),0.65);margin-bottom:.4rem}
+.legal-section p:last-child{margin-bottom:0}
+.legal-section a{color:var(--accent);text-decoration:none}
+.legal-section a:hover{text-decoration:underline}
 body.panel-frost .panel .bl-quote p,body.panel-frost .ppbody .bl-quote p{color:var(--paper)}
 body.panel-frost .panel .bl-stats .sc,body.panel-frost .ppbody .bl-stats .sc{background:rgba(var(--paper-rgb),0.06)}
 body.panel-frost .panel .bl-stats .sl,body.panel-frost .ppbody .bl-stats .sl{color:rgba(var(--paper-rgb),0.45)}
