@@ -238,7 +238,7 @@
   function openLegalModal() {
     const m = document.getElementById('legal-modal');
     m.style.display = 'flex';
-    requestAnimationFrame(() => m.classList.add('open'));
+    requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('open')));
   }
   function closeLegalModal() {
     const m = document.getElementById('legal-modal');
