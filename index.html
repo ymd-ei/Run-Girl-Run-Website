@@ -247,7 +247,7 @@
   function closeLegalModal() {
     const m = document.getElementById('legal-modal');
     m.classList.remove('open');
-    m.addEventListener('transitionend', () => { m.style.display = 'none'; }, { once: true });
+    setTimeout(() => { m.style.display = 'none'; }, 280);
   }
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeLegalModal();
