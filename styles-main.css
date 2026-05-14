@@ -550,3 +550,7 @@ body.panel-frost .panel .bl-cta,body.panel-frost .ppbody .bl-cta{background:rgba
 body.panel-frost .panel .bl-cta-headline,body.panel-frost .ppbody .bl-cta-headline{color:var(--paper)}
 body.panel-frost .panel .bl-cta-body,body.panel-frost .ppbody .bl-cta-body{color:rgba(var(--paper-rgb),0.72)}
 body.panel-frost .panel .bl-divider,body.panel-frost .ppbody .bl-divider{background:rgba(var(--paper-rgb),0.1)}
+body.panel-frost .panel .bl-faq,body.panel-frost .ppbody .bl-faq{border-top-color:rgba(var(--paper-rgb),0.12)}
+body.panel-frost .panel .bl-faq-item,body.panel-frost .ppbody .bl-faq-item{border-bottom-color:rgba(var(--paper-rgb),0.12)}
+body.panel-frost .panel .bl-faq-trigger,body.panel-frost .ppbody .bl-faq-trigger{color:var(--paper)}
+body.panel-frost .panel .bl-faq-panel p,body.panel-frost .ppbody .bl-faq-panel p{color:rgba(var(--paper-rgb),0.72)}
