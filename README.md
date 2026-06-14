@@ -10,14 +10,17 @@ Requires **Python 3** (for a simple HTTP server).
 **Windows:** double-click `start.bat`
 
 Both launch a local server at **http://localhost:8080** and open the browser automatically.
-The editor is available at **http://localhost:8080/editor.html**.
+The editor is available at **http://localhost:8080/editor.html** (the WYSIWYG editor — edits
+the real site in an iframe). The original form-based editor is kept as a fallback at
+**editor-v1.html**.
 
 ## Project Structure
 
 ```
 index.html          → Desktop homepage (redirects mobile to mobile.html)
 mobile.html         → Mobile layout
-editor.html         → Visual content editor (GitHub OAuth for saving)
+editor.html         → WYSIWYG editor (edits the live site in an iframe; GitHub OAuth to save)
+editor-v1.html      → Legacy form-based editor (fallback)
 content.json        → Site content (hero, contact, project order)
 projects/           → Individual project data (JSON per project)
 media/              → Images and video assets

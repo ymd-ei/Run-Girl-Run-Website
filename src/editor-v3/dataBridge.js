@@ -1,11 +1,17 @@
 /**
- * Data Bridge — v2 Editor
+ * Data Bridge — v3 Editor
  * Loads content.json + project JSONs into editor state.
  * Handles dirty tracking, auth, and saving via backend API.
+ *
+ * Independent copy of the v2 data bridge so v3 does not depend on src/editor-v2/
+ * (which is being retired). Same backend worker, same endpoints.
  */
 
-// ── API config (set by editor-v2.html before module loads) ──
-const API_BASE = window.__V2_API_BASE || 'https://rgr-editor-backend.rungirlrun.workers.dev';
+// ── API config (set by the editor host page before module loads) ──
+const API_BASE =
+  window.__V3_API_BASE ||
+  window.__V2_API_BASE ||
+  'https://rgr-editor-backend.rungirlrun.workers.dev';
 
 export const state = {
   global: {},
@@ -26,8 +32,12 @@ export function isDirty() {
   return dirtyFiles.size > 0;
 }
 
+export function getDirtyFiles() {
+  return Array.from(dirtyFiles);
+}
+
 function dispatchStatusEvent() {
-  window.dispatchEvent(new CustomEvent('v2-save-status', {
+  window.dispatchEvent(new CustomEvent('v3-save-status', {
     detail: { dirty: dirtyFiles.size > 0, saving: saveInFlight }
   }));
 }
@@ -59,6 +69,10 @@ export function getLoginUrl() {
 
 export function getLogoutUrl() {
   return `${API_BASE}/auth/logout`;
+}
+
+export function getApiBase() {
+  return API_BASE;
 }
 
 /**
@@ -109,12 +123,16 @@ export async function loadProject(id) {
   if (!res.ok) return null;
   const full = await res.json();
 
-  state.projectCache.set(id, full);
-
+  // Keep ONE object shared by both state.projects and the cache so edits via
+  // either path stay in sync (saveSiteData reads the cache; pushData reads
+  // state.projects). Merge full data onto the existing card object in place.
   const idx = state.projects.findIndex(p => p.id === id);
-  if (idx >= 0) state.projects[idx] = full;
-
-  return full;
+  let obj = full;
+  if (idx >= 0) {
+    obj = Object.assign(state.projects[idx], full);
+  }
+  state.projectCache.set(id, obj);
+  return obj;
 }
 
 /**
@@ -154,7 +172,10 @@ export async function saveSiteData() {
       const m = path.match(/^projects\/(.+)\.json$/);
       if (m) {
         const proj = state.projectCache.get(m[1]);
-        if (proj) files[path] = JSON.stringify(proj, null, 2);
+        if (proj) {
+          // Strip card-only fields back out is unnecessary; project JSON keeps full shape
+          files[path] = JSON.stringify(proj, null, 2);
+        }
       }
     }
 
@@ -172,7 +193,7 @@ export async function saveSiteData() {
     const res = await fetch(`${API_BASE}/api/save`, authHeaders({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files, message: 'Editor v2: save changes' })
+      body: JSON.stringify({ files, message: 'Editor v3: save changes' })
     }));
 
     const result = await res.json();
@@ -194,9 +215,6 @@ export async function saveSiteData() {
 
 /**
  * Upload a file to the media directory.
- * @param {File} file - File object from an input
- * @param {string} [folder='media'] - Target folder
- * @returns {{ success: boolean, path?: string, error?: string }}
  */
 export async function uploadMedia(file, folder = 'media') {
   const form = new FormData();
@@ -223,7 +241,6 @@ export async function uploadMedia(file, folder = 'media') {
 
 /**
  * List all media files from the backend.
- * @returns {Array<{name: string, path: string, size: number, url: string}>}
  */
 export async function fetchMediaFiles() {
   try {
@@ -236,8 +253,6 @@ export async function fetchMediaFiles() {
 
 /**
  * Delete a media file from the backend.
- * @param {string} path - File path (must start with 'media/')
- * @returns {{ success: boolean, error?: string }}
  */
 export async function deleteMedia(path) {
   const res = await fetch(`${API_BASE}/api/media`, authHeaders({
@@ -254,12 +269,9 @@ export async function deleteMedia(path) {
 
 /**
  * Create a new project with a generated slug.
- * @param {string} title - Project title
- * @returns {Object} The new project object
  */
 export function createProject(title) {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'new-project';
-  // Ensure unique slug
+  const slug = (title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'new-project';
   let id = slug;
   let n = 2;
   while (state.projects.some(p => p.id === id)) {
@@ -268,7 +280,7 @@ export function createProject(title) {
 
   const project = {
     id,
-    title,
+    title: title || 'New Project',
     type: '',
     typeLabel: '',
     year: new Date().getFullYear().toString(),
@@ -285,7 +297,6 @@ export function createProject(title) {
   state.projects.push(project);
   state.projectCache.set(id, project);
 
-  // Update the projects ID list in global config
   if (!state.global.projects) state.global.projects = [];
   state.global.projects.push(id);
 
@@ -296,8 +307,6 @@ export function createProject(title) {
 
 /**
  * Delete a project by ID.
- * @param {string} id - Project ID to delete
- * @returns {boolean} True if deleted
  */
 export function deleteProject(id) {
   const idx = state.projects.findIndex(p => p.id === id);
@@ -306,17 +315,13 @@ export function deleteProject(id) {
   state.projects.splice(idx, 1);
   state.projectCache.delete(id);
 
-  // Remove from global projects array
   if (state.global.projects) {
     state.global.projects = state.global.projects.filter(pid => pid !== id);
   }
-
-  // Remove from projectCards if present
   if (state.global.projectCards) {
     state.global.projectCards = state.global.projectCards.filter(c => c.id !== id);
   }
 
   markDirty('content.json');
-  // Note: the project JSON file remains on GitHub but won't be referenced
   return true;
 }

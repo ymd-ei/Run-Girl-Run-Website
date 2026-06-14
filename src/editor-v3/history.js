@@ -1,7 +1,9 @@
 /**
- * Undo/Redo History — v2 Editor
+ * Undo/Redo History — v3 Editor
  * Captures JSON snapshots of state on each mutation.
  * Provides undo/redo with state restoration.
+ *
+ * Independent copy of the v2 history module (v2 is being retired).
  */
 
 const MAX_STACK = 50;
@@ -33,7 +35,6 @@ export function pushState(state) {
 
 /**
  * Undo: restore the previous state.
- * @param {Object} state - Current state (snapshot taken before reverting)
  */
 export function undo(state) {
   if (undoStack.length === 0) return false;
@@ -46,7 +47,6 @@ export function undo(state) {
 
 /**
  * Redo: reapply the last undone state.
- * @param {Object} state - Current state (snapshot taken before reapplying)
  */
 export function redo(state) {
   if (redoStack.length === 0) return false;
@@ -81,7 +81,7 @@ function restoreSnapshot(state, snap) {
 }
 
 function dispatchHistoryEvent() {
-  window.dispatchEvent(new CustomEvent('v2-history', {
+  window.dispatchEvent(new CustomEvent('v3-history', {
     detail: { canUndo: canUndo(), canRedo: canRedo() }
   }));
 }

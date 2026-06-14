@@ -62,7 +62,8 @@ export function renderDisplayBlock(block) {
 export function renderDisplayBlocks(blocks, options = {}) {
   return renderBlocks(blocks || [], {}, {
     canvasScope: options.scope || '',
-    canvasProjectId: options.projectId || ''
+    canvasProjectId: options.projectId || '',
+    canvasEditor: !!options.editor
   });
 }
 

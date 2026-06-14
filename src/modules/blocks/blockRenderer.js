@@ -231,8 +231,23 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
 export function renderBlocks(blocks, theme = {}, renderOptions = {}) {
   if (!Array.isArray(blocks)) return '';
 
-  const blocksHTML = blocks.map(b => renderBlock(b, theme, renderOptions)).join('');
-  return `<div class="block-canvas">${blocksHTML}</div>`;
+  // In editor mode, wrap each block in a selection root that carries its
+  // identity. This is layout-safe: .block-canvas uses flex `gap`, so the
+  // wrapper simply becomes the flex item. Gated behind canvasEditor so normal
+  // visitor DOM is unchanged.
+  const editor = !!renderOptions.canvasEditor;
+  const scope = renderOptions.canvasScope || '';
+  const projAttr = renderOptions.canvasProjectId
+    ? ` data-canvas-project-id="${renderOptions.canvasProjectId}"`
+    : '';
+
+  const blocksHTML = blocks.map(b => {
+    const inner = renderBlock(b, theme, renderOptions);
+    if (!editor) return inner;
+    return `<div class="cv-block" data-canvas-block-root data-canvas-block-id="${b.id || ''}" data-canvas-block-type="${b.type || ''}" data-canvas-scope="${scope}"${projAttr}>${inner}</div>`;
+  }).join('');
+
+  return `<div class="block-canvas${editor ? ' cv-editing' : ''}">${blocksHTML}</div>`;
 }
 
 /**

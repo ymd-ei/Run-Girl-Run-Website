@@ -30,6 +30,11 @@ let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
 let canvasEditListenersBound = false;
 
+// Editor v3 mode: the site is running inside the v3 editor iframe. Enables
+// block-root wrappers + the in-iframe selection overlay. Visitor renders are
+// unaffected (this is false unless ?editor=v3 is present).
+const EDITOR_V3 = new URLSearchParams(location.search).get('editor') === 'v3';
+
 function ensureCanvasEditStyles() {
   if (document.getElementById('canvas-edit-style')) return;
 
@@ -795,7 +800,7 @@ function renderWorkSection({ showAll = false } = {}) {
 function renderAboutPanel() {
   const aboutEl = document.getElementById('about-body');
   if (aboutEl) {
-    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about' });
+    aboutEl.innerHTML = renderDisplayBlocks(normalizeBlocks(globalState.about || []), { scope: 'about', editor: EDITOR_V3 });
     // Trigger skill bar animation when about is visible
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
@@ -1223,7 +1228,8 @@ function setupEventListeners() {
       if (ppb) {
         ppb.innerHTML = heroHTML + renderDisplayBlocks(normalizeBlocks(project.blocks || []), {
           scope: 'proj-' + id,
-          projectId: id
+          projectId: id,
+          editor: EDITOR_V3
         });
       }
 
@@ -1612,6 +1618,11 @@ function setupEditorPreviewBridge() {
   if (new URLSearchParams(location.search).has('preview') && window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'preview-ready' }, '*');
     setupCanvasEditListeners();
+    if (EDITOR_V3) {
+      import('../editor-v3/canvasOverlay.js')
+        .then(m => m.initCanvasOverlay())
+        .catch(err => console.warn('v3 canvas overlay failed to load', err));
+    }
   }
 
   window.addEventListener('message', e => {
@@ -1652,11 +1663,14 @@ function getCanvasEditPayload(el) {
   const field = el.getAttribute('data-canvas-field') || '';
   if (!scope || !field) return null;
 
+  const rawItem = el.getAttribute('data-canvas-item');
+
   return {
     scope,
     field,
     blockId: el.getAttribute('data-canvas-block-id') || '',
-    projectId: el.getAttribute('data-canvas-project-id') || ''
+    projectId: el.getAttribute('data-canvas-project-id') || '',
+    item: rawItem == null || rawItem === '' ? null : Number(rawItem)
   };
 }
 
