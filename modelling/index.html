@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run Girl Run</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply saved theme before first paint (avoids flash)
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- 3D canvas — fixed full-screen background -->
+  <canvas id="main-canvas"></canvas>
+  <div class="loader" id="loader">Loading&hellip;</div>
+
+  <!-- Brand title — centered, non-interactive -->
+  <h1 class="page-brand" id="page-brand">Run Girl Run</h1>
+
+  <!-- Top-right nav -->
+  <nav class="site-nav" style="gap:18px">
+    <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
+    <button class="site-nav-btn" id="open-home">Home</button>
+    <button class="site-nav-btn" id="open-contact">Contact</button>
+    <button class="site-nav-btn" id="open-works">Works</button>
+  </nav>
+
+  <!-- Contact overlay -->
+  <div class="contact-overlay" id="contact-overlay">
+    <div class="contact-panel" id="contact-panel">
+      <button class="contact-panel-close" id="contact-close" aria-label="Close">✕</button>
+      <div class="contact-panel-header-img" id="contact-panel-header-img"></div>
+      <div class="contact-panel-body">
+        <p class="contact-panel-eyebrow">About</p>
+        <p class="contact-panel-bio" id="contact-panel-bio"></p>
+        <hr class="contact-panel-rule">
+        <p class="contact-panel-eyebrow" style="margin-top:0;margin-bottom:16px">Contact</p>
+        <div class="contact-panel-socials" id="contact-panel-socials"></div>
+        <a href="#" class="contact-panel-resume" id="contact-panel-resume" target="_blank" rel="noopener" style="margin-top:24px;display:inline-block">View Résumé →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Works dropdown -->
+  <div class="works-overlay" id="works-overlay"></div>
+  <div class="works-widget" id="works-widget">
+    <div class="works-widget-list" id="works-list"></div>
+  </div>
+
+  <!-- Work detail — fades in over canvas -->
+  <div class="work-detail" id="work-detail">
+    <div id="work-spacer"></div>
+    <button class="work-detail-back" id="detail-back">&larr;&ensp;back</button>
+    <p class="work-detail-eyebrow" id="detail-eyebrow"></p>
+    <h2 class="work-detail-title" id="detail-title"></h2>
+    <hr class="work-divider">
+    <p class="work-detail-desc" id="detail-desc"></p>
+    <div class="work-images">
+      <div class="work-image-block"><span class="work-image-block-label">01</span></div>
+      <div class="work-image-block"><span class="work-image-block-label">02</span></div>
+      <div class="work-image-block"><span class="work-image-block-label">03</span></div>
+      <div class="work-image-block"><span class="work-image-block-label">04</span></div>
+    </div>
+    <hr class="work-divider-thin">
+    <div class="tags" id="detail-tags"></div>
+  </div>
+
+  <!-- Tokyo data widget — bottom-right -->
+  <div class="geo-widget" id="geo-widget">
+    <div class="geo-row"><span class="geo-label">LOC</span><span class="geo-value">TOKYO, JP</span></div>
+    <div class="geo-row"><span class="geo-label">LAT</span><span class="geo-value">35.6762° N</span></div>
+    <div class="geo-row"><span class="geo-label">LNG</span><span class="geo-value">139.6503° E</span></div>
+    <div class="geo-divider"></div>
+    <div class="geo-row"><span class="geo-label">TMP</span><span class="geo-value" id="geo-temp">—°C</span></div>
+    <div class="geo-row"><span class="geo-label">TYO</span><span class="geo-value" id="geo-time">—</span></div>
+  </div>
+
+  <!-- Splash card — bottom-left, home state -->
+  <div class="splash-content" id="splash-content">
+    <div class="splash-card">
+      <p class="splash-eyebrow" id="splash-eyebrow">Featured Work</p>
+      <hr class="splash-rule">
+      <h1 class="splash-headline" id="splash-title">&mdash;</h1>
+      <hr class="splash-rule">
+      <p class="splash-meta" id="splash-tags">&mdash;</p>
+      <button class="btn" id="view-work">View Work &rarr;</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+    import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
+    import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+    // ── Works data ────────────────────────────────────────────────────────────
+    // Reads from localStorage (set by editor.html) — falls back to defaults.
+    // To edit content, open editor.html.
+    const DEFAULT_WORKS = [
+      {
+        id: 'akali',
+        title: 'Akali',
+        model: '../media/models/AKALI.glb',
+        description: 'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
+        tags: ['character', 'game-art'],
+        featured: true,
+      },
+      {
+        id: 'cone',
+        title: 'Cone',
+        model: '../media/models/cone.glb',
+        description: 'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
+        tags: ['primitive', 'geometry'],
+      },
+      {
+        id: 'cube',
+        title: 'Cube',
+        model: '../media/models/cube.glb',
+        description: 'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
+        tags: ['primitive', 'geometry'],
+      },
+      {
+        id: 'ico',
+        title: 'Ico',
+        model: '../media/models/ico.glb',
+        description: 'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
+        tags: ['primitive', 'geometry'],
+      },
+    ];
+
+    function loadWorks() {
+      try {
+        const s = localStorage.getItem('rgr_works');
+        if (s) return JSON.parse(s);
+      } catch (e) {}
+      return DEFAULT_WORKS;
+    }
+    const WORKS = loadWorks();
+
+    // Apply brand title from localStorage
+    (function() {
+      const brand = localStorage.getItem('rgr_brand');
+      if (brand) {
+        const el = document.getElementById('page-brand');
+        if (el) el.textContent = brand;
+        document.title = brand;
+      }
+    })();
+
+    // ── Tokyo weather ─────────────────────────────────────────────────────────
+    (async () => {
+      try {
+        const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6762&longitude=139.6503&current=temperature_2m&timezone=Asia%2FTokyo');
+        const d = await r.json();
+        const t = d.current?.temperature_2m;
+        if (t != null) document.getElementById('geo-temp').textContent = t + '°C';
+      } catch (_) {}
+    })();
+
+    // Tokyo clock — updates every second
+    (function tickTokyo() {
+      const el = document.getElementById('geo-time');
+      if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo', hour12: false });
+      setTimeout(tickTokyo, 1000);
+    })();
+
+    // ── App state ─────────────────────────────────────────────────────────────
+    let currentWork  = WORKS.find(w => w.featured) || WORKS[0];
+    let panelOpen    = false;
+    let activeModel      = null;
+    let activeMixer      = null;            // plays embedded GLB animation, if any
+    const animClock      = new THREE.Clock();
+
+    // Viewport offset animation (setViewOffset — doesn't touch world positions)
+    const baseTarget   = new THREE.Vector3();
+    let targetOffsetX  = 0;  // pixels; negative = model shifts right
+    let currentOffsetX = 0;
+
+    // ── Three.js ──────────────────────────────────────────────────────────────
+    const canvas   = document.getElementById('main-canvas');
+    // QUALITY DIAL: halftone cost scales with this squared — raise toward 2 for
+    // crisper dots, lower toward 1 for less GPU. 1.5 ≈ 44% less work than 2×.
+    const RENDER_SCALE = 1.5;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDER_SCALE));
+
+    const scene = new THREE.Scene();
+    // Pure white (light) / pure black (dark) so the canvas blend mode dissolves
+    // the background into --paper: multiply drops white, screen drops black.
+    // See style.css #main-canvas.
+    const BG_LIGHT = 0xffffff;
+    const BG_DARK  = 0x000000;
+    scene.background = new THREE.Color(
+      document.documentElement.getAttribute('data-theme') === 'dark' ? BG_DARK : BG_LIGHT
+    );
+
+    // Dark mode toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    function applyTheme(dark) {
+      const t = dark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      themeBtn.textContent = dark ? '●' : '○';
+      scene.background.set(dark ? BG_DARK : BG_LIGHT);
+    }
+    // Init button state
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark');
+    themeBtn.addEventListener('click', () => {
+      applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+    });
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(0, 1.5, 5.5);
+
+    // Lighting
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.4);
+    keyLight.position.set(5, 9, 5);
+    // keyLight.castShadow = true;
+    keyLight.shadow.mapSize.setScalar(1024);
+    scene.add(keyLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    fillLight.position.set(-5, 2, 3);
+    scene.add(fillLight);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.35);
+    rimLight.position.set(-2, 6, -6);
+    scene.add(rimLight);
+
+    // Controls
+    const controls = new OrbitControls(camera, canvas);
+    controls.autoRotate      = true;
+    controls.autoRotateSpeed = 1.2;
+    controls.enablePan       = false;
+    controls.enableDamping   = true;
+    controls.dampingFactor   = 0.05;
+    controls.minDistance     = 2;
+    controls.maxDistance     = 12;
+
+    // Pause the turntable while interacting; resume after a spell of no input.
+    // The turntable rests after a long spell of no interaction; any interaction
+    // wakes it and restarts the countdown.
+    const SPIN_TIMEOUT = 240000;   // 4 min of inactivity before it stops
+    let spinTimer = null;
+    function armSpinTimeout() {
+      if (spinTimer) clearTimeout(spinTimer);
+      spinTimer = setTimeout(() => { controls.autoRotate = false; }, SPIN_TIMEOUT);
+    }
+    controls.addEventListener('start', () => {
+      controls.autoRotate = false;            // manual orbit takes over
+      if (spinTimer) { clearTimeout(spinTimer); spinTimer = null; }
+    });
+    controls.addEventListener('end', () => {
+      controls.autoRotate = true;             // interaction re-activates the spin
+      armSpinTimeout();                       // and restarts the 4-min countdown
+    });
+    armSpinTimeout();                         // start the countdown on load
+
+    // Post-processing
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const halftonePass = new HalftonePass(window.innerWidth, window.innerHeight, {
+      shape: 1, radius: 3,
+      rotateR: Math.PI / 4,
+      rotateG: (Math.PI * 5) / 12,
+      rotateB: Math.PI / 6,
+      scatter: 0, blending: 1, blendingMode: 1,
+      greyscale: true, disable: false,
+    });
+    // `samples` is hardcoded in HalftoneShader (no ctor param). Patch 8 -> 3 to cut
+    // the per-pixel texture reads — greyscale does 4×(1+samples): 36 -> 16 reads/px.
+    halftonePass.material.fragmentShader =
+      halftonePass.material.fragmentShader.replace('const int samples = 8;', 'const int samples = 3;');
+    halftonePass.material.needsUpdate = true;
+    composer.addPass(halftonePass);
+    composer.addPass(new OutputPass());
+
+    // ── Model loader ──────────────────────────────────────────────────────────
+    const gltfLoader = new GLTFLoader();
+
+    const FADE_MS = 300;
+    let canvasOpacity = 1;
+    let fadingOut = false;
+    let fadeTarget = 1;
+    let fadeStart = 0;
+    let fadeFrom = 1;
+    let onFadeOutDone = null;
+
+    function startFade(to, doneCallback) {
+      fadeFrom = canvasOpacity;
+      fadeTarget = to;
+      fadeStart = performance.now();
+      fadingOut = to === 0;
+      onFadeOutDone = (to === 0) ? doneCallback : null;
+    }
+
+    function loadWork(work) {
+      // loader hidden during transitions — fade handles the visual
+
+      const doLoad = () => {
+        // Dispose old model
+        if (activeMixer) { activeMixer.stopAllAction(); activeMixer = null; }
+        if (activeModel) {
+          scene.remove(activeModel);
+          activeModel.traverse(c => {
+            if (c.isMesh) { c.geometry.dispose(); c.material.dispose(); }
+          });
+          activeModel = null;
+        }
+
+        gltfLoader.load(work.model, (gltf) => {
+          const model  = gltf.scene;
+          const box    = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size   = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale  = 3.8 / maxDim;
+          const baseX  = -center.x * scale;
+          model.scale.setScalar(scale);
+          model.position.set(baseX, -center.y * scale, -center.z * scale);
+
+          model.traverse(child => {
+            if (child.isMesh) {
+              const src = child.material;
+              // Keep original material if it has a diffuse texture; fall back to grey
+              if (!src || !src.map) {
+                child.material = new THREE.MeshStandardMaterial({
+                  color: 0xcccccc, roughness: 0.88, metalness: 0.0,
+                  normalMap: (src && src.normalMap) || null,
+                });
+                if (src && src.normalScale) child.material.normalScale.copy(src.normalScale);
+              }
+            }
+          });
+
+          scene.add(model);
+          activeModel = model;
+
+          // Play any animation clips baked into the GLB
+          if (gltf.animations && gltf.animations.length) {
+            activeMixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+            animClock.getDelta(); // reset delta so first frame doesn't jump
+          }
+
+          // Set orbit pivot to model centre; camera slightly above
+          const yMid = (-center.y * scale) + (size.y * scale * 0.5);
+          baseTarget.set(baseX, yMid, 0);
+          controls.target.copy(baseTarget);
+          camera.position.set(baseX, yMid + 0.8, 5.5);
+          controls.update();
+
+          document.getElementById('loader').classList.add('hidden');
+          startFade(1, null);
+        },
+        undefined,
+        () => { document.getElementById('loader').textContent = 'Model unavailable.'; }
+        );
+      };
+
+      // If a model is visible, fade it out first; otherwise load immediately
+      if (activeModel) {
+        onFadeOutDone = null; // cancel any pending callback
+        startFade(0, doLoad);
+      } else {
+        doLoad();
+      }
+    }
+
+    // ── Camera shift helper ───────────────────────────────────────────────────
+    function calcShiftX() {
+      const panelEl = document.getElementById('work-panel');
+      const panelW  = panelEl.offsetWidth;
+      const dist    = camera.position.distanceTo(controls.target);
+      const hFov    = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
+      const worldW  = 2 * Math.tan(hFov / 2) * dist;
+      return -((panelW * 0.5) / window.innerWidth) * worldW;
+    }
+
+    // ── Detail ────────────────────────────────────────────────────────────────
+    function openPanel(work) {
+      document.getElementById('detail-eyebrow').textContent = work.tags.join(' / ').toUpperCase();
+      document.getElementById('detail-title').textContent   = work.title.toUpperCase();
+      document.getElementById('detail-desc').textContent    = work.description;
+      document.getElementById('detail-tags').innerHTML      =
+        work.tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+      document.getElementById('work-detail').classList.add('visible');
+      document.getElementById('splash-content').classList.add('hidden');
+      document.querySelector('.page-brand').classList.add('hidden');
+
+      // Shift viewport left so model appears centred in the right portion
+      const detailW = Math.min(window.innerWidth * 0.44, 520);
+      targetOffsetX = -detailW / 2;
+
+      panelOpen = true;
+      controls.enableRotate = true;
+      controls.enableZoom   = false;
+
+      const detailEl  = document.getElementById('work-detail');
+      const spacer    = document.getElementById('work-spacer');
+      const imagesEl  = detailEl.querySelector('.work-images');
+      const dividerEl = detailEl.querySelector('.work-divider-thin');
+
+      // Show/hide image section based on whether any images are saved
+      const hasImages = [0,1,2,3].some(i => localStorage.getItem(`img_${work.id}_${i}`));
+      imagesEl.style.display  = hasImages ? '' : 'none';
+      dividerEl.style.display = hasImages ? '' : 'none';
+
+      spacer.style.minHeight = '0';
+      detailEl.style.overflowY = 'hidden'; // reset before measuring
+      initImageBlocks(work.id, detailEl);
+
+      // Push text to bottom; only enable scrolling when overflow is substantial
+      const SCROLL_THRESHOLD = 100;
+      requestAnimationFrame(() => {
+        const textEndY = hasImages ? imagesEl.offsetTop : detailEl.scrollHeight;
+        const gap      = detailEl.clientHeight - textEndY;
+        // Minimum spacer ensures back button always clears the top mask fade
+        const minSpacer = detailEl.clientHeight * 0.05;
+        spacer.style.minHeight = Math.max(minSpacer, gap) + 'px';
+        detailEl.scrollTop = 0;
+
+        // Only allow scrolling if images cause meaningful overflow
+        const overflow = detailEl.scrollHeight - detailEl.clientHeight;
+        detailEl.style.overflowY = overflow > SCROLL_THRESHOLD ? 'auto' : 'hidden';
+      });
+    }
+
+    function closePanel() {
+      document.getElementById('work-detail').classList.remove('visible');
+
+      // Splash card reflects whatever model is currently loaded — no revert
+      updateSplashCard(currentWork);
+      document.getElementById('splash-content').classList.remove('hidden');
+
+      targetOffsetX = 0;
+      panelOpen     = false;
+      controls.enableRotate = true;
+      controls.enableZoom   = true;
+      document.querySelector('.page-brand').classList.remove('hidden');
+    }
+
+    // ── Splash card ───────────────────────────────────────────────────────────
+    function updateSplashCard(work) {
+      document.getElementById('splash-eyebrow').textContent = work.id === (WORKS.find(w => w.featured) || WORKS[0]).id
+        ? 'Featured Work' : 'Current Work';
+      document.getElementById('splash-title').textContent = work.title.toUpperCase();
+      document.getElementById('splash-tags').textContent  = work.tags.join(' · ').toUpperCase();
+    }
+
+    // ── Works widget ──────────────────────────────────────────────────────────
+    function buildWidgetList() {
+      const list = document.getElementById('works-list');
+      list.innerHTML = '';
+      WORKS.forEach((w, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'widget-card' + (w.id === currentWork.id ? ' current' : '');
+        btn.innerHTML = `
+          <div class="widget-card-num">${String(i + 1).padStart(2, '0')}</div>
+          <hr class="widget-card-rule">
+          <div class="widget-card-title">${w.title}</div>
+          <div class="widget-card-tags">${w.tags.join(' · ')}</div>
+        `;
+        btn.addEventListener('click', () => {
+          closeWidget();
+
+          if (w.id !== currentWork.id) {
+            currentWork = w;
+            loadWork(w);
+            buildWidgetList(); // refresh current highlight
+          }
+
+          openPanel(w);
+        });
+        list.appendChild(btn);
+      });
+    }
+
+    const widgetEl  = document.getElementById('works-widget');
+    const overlayEl = document.getElementById('works-overlay');
+    let   closeTimer = null;
+
+    const openWidget  = () => { clearTimeout(closeTimer); widgetEl.classList.add('open'); };
+    const scheduleClose = () => { closeTimer = setTimeout(() => widgetEl.classList.remove('open'), 180); };
+    const closeWidget = () => { clearTimeout(closeTimer); widgetEl.classList.remove('open'); };
+
+    // Hover on button opens; hover on dropdown keeps it open
+    document.getElementById('open-works').addEventListener('mouseenter', openWidget);
+    document.getElementById('open-works').addEventListener('mouseleave', scheduleClose);
+    widgetEl.addEventListener('mouseenter', openWidget);
+    widgetEl.addEventListener('mouseleave', scheduleClose);
+
+    document.getElementById('detail-back').addEventListener('click', closePanel);
+    document.getElementById('view-work').addEventListener('click', () => openPanel(currentWork));
+
+    // Home — close any open work and return to the home splash, keeping the
+    // currently rendered model in place.
+    document.getElementById('open-home').addEventListener('click', () => {
+      if (panelOpen) closePanel();
+    });
+
+    // Click the model area (right of the detail panel) to exit the work page.
+    // Distinguish a click from an orbit drag by tracking pointer travel.
+    (function() {
+      let downX = 0, downY = 0, moved = false;
+      canvas.addEventListener('pointerdown', e => {
+        downX = e.clientX; downY = e.clientY; moved = false;
+      });
+      canvas.addEventListener('pointermove', e => {
+        if (Math.abs(e.clientX - downX) > 6 || Math.abs(e.clientY - downY) > 6) moved = true;
+      });
+      canvas.addEventListener('pointerup', () => {
+        if (panelOpen && !moved) closePanel();
+      });
+    })();
+
+    // ── Resize ────────────────────────────────────────────────────────────────
+    function onResize() {
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+      halftonePass.uniforms['width'].value  = w;
+      halftonePass.uniforms['height'].value = h;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+
+      if (panelOpen) {
+        const detailW = Math.min(w * 0.44, 520);
+        targetOffsetX = -detailW / 2;
+      }
+    }
+    onResize();
+    window.addEventListener('resize', onResize);
+
+    // ── Image blocks ──────────────────────────────────────────────────────────
+    let lightboxEl = null;
+
+    function getLightbox() {
+      if (lightboxEl) return lightboxEl;
+      lightboxEl = document.createElement('div');
+      lightboxEl.id = 'lightbox';
+      lightboxEl.innerHTML = '<button class="lightbox-close">&#215;</button><img alt="">';
+      lightboxEl.addEventListener('click', e => {
+        if (e.target === lightboxEl || e.target.matches('.lightbox-close'))
+          lightboxEl.classList.remove('open');
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') lightboxEl?.classList.remove('open');
+      });
+      document.body.appendChild(lightboxEl);
+      return lightboxEl;
+    }
+
+    function setBlockImage(block, dataUrl) {
+      block.style.backgroundImage = `url("${dataUrl}")`;
+      block.style.backgroundSize  = 'cover';
+      block.style.backgroundPosition = 'center';
+      block.setAttribute('data-img', dataUrl);
+      block.classList.add('has-image');
+    }
+
+    function clearBlockImage(block, key) {
+      block.style.backgroundImage = '';
+      block.removeAttribute('data-img');
+      block.classList.remove('has-image');
+      localStorage.removeItem(key);
+    }
+
+    function initImageBlocks(workId, container) {
+      container.querySelectorAll('.work-image-block').forEach((block, i) => {
+        const key = `img_${workId}_${i}`;
+
+        // Load saved image
+        const saved = localStorage.getItem(key);
+        if (saved) setBlockImage(block, saved);
+
+        // Skip re-init if already wired for this work
+        if (block.dataset.init === workId) return;
+        block.dataset.init = workId;
+
+        // Hidden file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.cssText = 'position:absolute;opacity:0;pointer-events:none';
+        block.appendChild(input);
+
+        block.addEventListener('click', e => {
+          if (e.target.matches('.block-remove')) return;
+          const img = block.getAttribute('data-img');
+          if (img) {
+            const lb = getLightbox();
+            lb.querySelector('img').src = img;
+            lb.classList.add('open');
+          } else {
+            input.click();
+          }
+        });
+
+        input.addEventListener('change', () => {
+          const file = input.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            localStorage.setItem(key, ev.target.result);
+            setBlockImage(block, ev.target.result);
+          };
+          reader.readAsDataURL(file);
+          input.value = '';
+        });
+
+        // Remove button — visible on hover when filled
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'block-remove';
+        removeBtn.innerHTML = '&#215;';
+        removeBtn.addEventListener('click', () => clearBlockImage(block, key));
+        block.appendChild(removeBtn);
+      });
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    updateSplashCard(currentWork);
+    buildWidgetList();
+    loadWork(currentWork);
+
+    // ── Animate ───────────────────────────────────────────────────────────────
+    let pageVisible = !document.hidden;
+    document.addEventListener('visibilitychange', () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) lastTime = 0;
+    });
+
+    let lastTime = 0;
+    (function animate(time) {
+      requestAnimationFrame(animate);
+      if (!pageVisible) return;                  // pause render while tab hidden
+      if (time - lastTime < 1000 / 30) return;
+      lastTime = time;
+
+      // Shift the projection viewport so model appears right-of-centre when panel is open
+      currentOffsetX += (targetOffsetX - currentOffsetX) * 0.08;
+      if (Math.abs(currentOffsetX) < 0.5) {
+        camera.clearViewOffset();
+      } else {
+        camera.setViewOffset(
+          window.innerWidth, window.innerHeight,
+          currentOffsetX, 0,
+          window.innerWidth, window.innerHeight
+        );
+      }
+
+      controls.update();
+      if (activeMixer) activeMixer.update(animClock.getDelta());
+
+      // Fade canvas in/out
+      const elapsed = performance.now() - fadeStart;
+      const t = Math.min(elapsed / FADE_MS, 1);
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      canvasOpacity = fadeFrom + (fadeTarget - fadeFrom) * eased;
+      canvas.style.opacity = canvasOpacity;
+      if (t >= 1 && fadingOut && onFadeOutDone) {
+        const cb = onFadeOutDone;
+        onFadeOutDone = null;
+        fadingOut = false;
+        cb();
+      }
+
+      composer.render();
+    })();
+
+    // ── Contact overlay ───────────────────────────────────────────────────────
+    (function() {
+      const overlay  = document.getElementById('contact-overlay');
+      const panel    = document.getElementById('contact-panel');
+      const closeBtn = document.getElementById('contact-close');
+      const socialsEl = document.getElementById('contact-panel-socials');
+      const resumeEl  = document.getElementById('contact-panel-resume');
+
+      const DEFAULT_CONTACT = {
+        email: 'hello@rungirl.run',
+        resumeUrl: '',
+        bio: '3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.',
+        socials: [
+          { label: 'Instagram',  handle: '@rungirl.run',            url: '#' },
+          { label: 'ArtStation', handle: 'artstation.com/rungirl',  url: '#' },
+          { label: 'Twitter',    handle: '@rungirl_run',            url: '#' },
+        ],
+      };
+
+      function populateOverlay() {
+        let ct = DEFAULT_CONTACT;
+        try { const s = localStorage.getItem('rgr_contact'); if (s) ct = JSON.parse(s); } catch(e) {}
+
+        // Header image
+        const headerEl = document.getElementById('contact-panel-header-img');
+        const headerImg = localStorage.getItem('rgr_contact_header_img');
+        if (headerImg) {
+          headerEl.style.backgroundImage = `url("${headerImg}")`;
+          headerEl.style.display = '';
+        } else {
+          headerEl.style.display = 'none';
+        }
+
+        // Bio
+        document.getElementById('contact-panel-bio').textContent =
+          ct.bio || DEFAULT_CONTACT.bio;
+
+        // Socials
+        socialsEl.innerHTML = '';
+        const socials = (ct.socials && ct.socials.length) ? ct.socials : DEFAULT_CONTACT.socials;
+        socials.forEach(s => {
+          if (!s.handle && !s.label) return;
+          const row = document.createElement('div');
+          row.className = 'cpanel-social-row';
+          row.innerHTML = `<span class="cpanel-social-label">${s.label || ''}</span>`
+                        + `<a href="${s.url || '#'}" class="cpanel-social-link" target="_blank" rel="noopener">${s.handle || ''}</a>`;
+          socialsEl.appendChild(row);
+        });
+
+        // Resume
+        const resumeUrl = ct.resumeUrl || DEFAULT_CONTACT.resumeUrl || '#';
+        resumeEl.href = resumeUrl;
+        resumeEl.style.display = resumeUrl && resumeUrl !== '#' ? '' : '';
+      }
+
+      function openContact() { populateOverlay(); overlay.classList.add('open'); }
+      function closeContact() { overlay.classList.remove('open'); }
+
+      document.getElementById('open-contact').addEventListener('click', openContact);
+      closeBtn.addEventListener('click', closeContact);
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeContact(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContact(); });
+    })();
+  </script>
+</body>
+</html>

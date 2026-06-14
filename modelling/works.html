@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Works — Portfolio</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <nav class="site-nav" style="gap:18px">
+    <a href="index.html">Home</a>
+    <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
+    <a href="works.html" class="active">Works</a>
+  </nav>
+
+  <div class="page-header">
+    <span class="page-header-title">Works</span>
+    <span class="page-header-count" id="work-count"></span>
+  </div>
+
+  <div class="works-grid" id="works-grid"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+    import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
+    import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+    // ── Works data ──────────────────────────────────────────────────────────
+    const WORKS = [
+      {
+        id: 'akali',
+        title: 'Akali',
+        model: 'AKALI.glb',
+        description: 'High-detail 3D character model.',
+        tags: ['character', 'game-art'],
+        featured: true,
+      },
+      // Add more works here to populate the grid
+    ];
+
+    // ── Dark mode toggle ─────────────────────────────────────────────────────
+    const BG_LIGHT = 0xf0ede8;
+    const BG_DARK  = 0x191714;
+    const cardScenes = []; // collect all card scenes for bg sync
+
+    const themeBtn = document.getElementById('theme-toggle');
+    function applyTheme(dark) {
+      const t = dark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      themeBtn.textContent = dark ? '●' : '○';
+      const bg = dark ? BG_DARK : BG_LIGHT;
+      cardScenes.forEach(s => s.background.set(bg));
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark');
+    themeBtn.addEventListener('click', () => {
+      applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+    });
+
+    // ── Build grid ───────────────────────────────────────────────────────────
+    const grid = document.getElementById('works-grid');
+    document.getElementById('work-count').textContent = `${WORKS.length} work${WORKS.length !== 1 ? 's' : ''}`;
+
+    WORKS.forEach(work => {
+      // Card wrapper — navigate on click unless user dragged on canvas
+      const card = document.createElement('div');
+      card.className = 'work-card';
+
+      // Canvas wrapper
+      const canvasWrap = document.createElement('div');
+      canvasWrap.className = 'work-card-canvas-wrap';
+
+      const canvas = document.createElement('canvas');
+      canvasWrap.appendChild(canvas);
+
+      const loaderEl = document.createElement('div');
+      loaderEl.className = 'loader';
+      loaderEl.textContent = 'Loading…';
+      canvasWrap.appendChild(loaderEl);
+
+      // Info strip
+      const info = document.createElement('div');
+      info.className = 'work-card-info';
+      info.innerHTML = `
+        <div class="work-card-title">${work.title}</div>
+        <div class="work-card-sub">${work.tags[0] ?? ''}</div>
+        <div class="tags">${work.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      `;
+
+      card.appendChild(canvasWrap);
+      card.appendChild(info);
+      grid.appendChild(card);
+
+      // Navigate on click (but not if user dragged)
+      let dragged = false;
+      canvas.addEventListener('pointerdown', () => { dragged = false; });
+      canvas.addEventListener('pointermove', () => { dragged = true; });
+      canvas.addEventListener('pointerup',   () => {
+        if (!dragged) window.location.href = `work.html?id=${work.id}`;
+      });
+      info.addEventListener('click', () => { window.location.href = `work.html?id=${work.id}`; });
+
+      // Init 3D scene for this card
+      initCard(canvas, work, loaderEl);
+    });
+
+    // ── Per-card 3D scene ────────────────────────────────────────────────────
+    function initCard(canvas, work, loaderEl) {
+      const wrap = canvas.parentElement;
+      const W = wrap.clientWidth  || 340;
+      const H = wrap.clientHeight || 300;
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+      renderer.setPixelRatio(1);
+      renderer.setSize(W, H);
+
+      const scene = new THREE.Scene();
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      scene.background = new THREE.Color(isDark ? BG_DARK : BG_LIGHT);
+      cardScenes.push(scene);
+
+      const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+      camera.position.set(0, 1.5, 5.5);
+
+      // Lighting — lifted fill preserves shadow detail
+      const key = new THREE.DirectionalLight(0xffffff, 2.8);
+      key.position.set(5, 9, 5);
+      // key.castShadow = true;
+      scene.add(key);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const fill = new THREE.DirectionalLight(0xffffff, 0.6);
+      fill.position.set(-5, 2, 3);
+      scene.add(fill);
+      const rim = new THREE.DirectionalLight(0xffffff, 0.3);
+      rim.position.set(-2, 6, -6);
+      scene.add(rim);
+
+      // Turntable controls (no zoom — this is a thumbnail)
+      const controls = new OrbitControls(camera, canvas);
+      controls.autoRotate      = true;
+      controls.autoRotateSpeed = 1.5;
+      controls.enablePan       = false;
+      controls.enableZoom      = false;
+      controls.enableDamping   = true;
+      controls.dampingFactor   = 0.05;
+
+      // Post-processing
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const hp = new HalftonePass(W, H, {
+        shape: 1, radius: 3,
+        rotateR: Math.PI / 4,
+        rotateG: (Math.PI * 5) / 12,
+        rotateB: Math.PI / 6,
+        scatter: 0, blending: 1, blendingMode: 1,
+        greyscale: true, disable: false,
+      });
+      composer.addPass(hp);
+      composer.addPass(new OutputPass());
+
+      // Load model
+      let mixer = null;
+      const clock = new THREE.Clock();
+      new GLTFLoader().load(work.model, (gltf) => {
+        const model = gltf.scene;
+        const box    = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size   = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale  = 3.5 / maxDim;
+        model.scale.setScalar(scale);
+        model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+
+        model.traverse(child => {
+          if (child.isMesh) {
+            // child.castShadow = true;
+            // Keep original material if it has a diffuse texture; fall back to grey
+            if (!child.material || !child.material.map) {
+              child.material = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.88, metalness: 0.0 });
+            }
+          }
+        });
+        scene.add(model);
+
+        // Play any animation clips baked into the GLB
+        if (gltf.animations && gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+          clock.getDelta();
+        }
+
+        const yMid = (-center.y * scale) + (size.y * scale * 0.5);
+        controls.target.set(0, yMid, 0);
+        camera.position.set(0, yMid + 0.6, 5.5);
+        controls.update();
+
+        loaderEl.classList.add('hidden');
+      });
+
+      // Pause animation when card is off-screen
+      let visible = true;
+      new IntersectionObserver(entries => { visible = entries[0].isIntersecting; }).observe(canvas);
+
+      // Handle canvas resize when window changes
+      window.addEventListener('resize', () => {
+        const nW = wrap.clientWidth;
+        const nH = wrap.clientHeight;
+        renderer.setSize(nW, nH);
+        composer.setSize(nW, nH);
+        hp.uniforms['width'].value  = nW;
+        hp.uniforms['height'].value = nH;
+        camera.aspect = nW / nH;
+        camera.updateProjectionMatrix();
+      });
+
+      let lastTime = 0;
+      (function animate(time) {
+        requestAnimationFrame(animate);
+        if (!visible) return;
+        if (time - lastTime < 1000 / 30) return;
+        lastTime = time;
+        controls.update();
+        if (mixer) mixer.update(clock.getDelta());
+        composer.render();
+      })();
+    }
+  </script>
+</body>
+</html>

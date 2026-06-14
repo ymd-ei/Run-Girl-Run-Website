@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work — Portfolio</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Fixed 3D canvas background -->
+  <canvas id="work-canvas" class="work-fullbg"></canvas>
+  <div class="loader" id="loader" style="position:fixed;z-index:50">Loading&hellip;</div>
+  <div id="perf" style="position:fixed;left:14px;bottom:12px;z-index:300;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0.04em;padding:5px 8px;border-radius:5px;background:rgba(0,0,0,0.55);color:#fff;pointer-events:none">LITE · — fps</div>
+
+  <!-- Floating nav -->
+  <nav class="site-nav" style="gap:18px">
+    <a href="index.html">Home</a>
+    <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
+    <button class="site-nav-btn" id="open-works">Works</button>
+  </nav>
+
+  <!-- Works slide-in widget -->
+  <div class="works-overlay" id="works-overlay"></div>
+  <aside class="works-widget" id="works-widget">
+    <div class="works-widget-head">
+      <span class="works-widget-label">Works</span>
+      <button class="works-widget-close" id="close-works">&times;</button>
+    </div>
+    <div class="works-widget-list" id="works-list"></div>
+  </aside>
+
+  <!-- Scrollable content layer -->
+  <div class="work-scroll-wrap">
+
+    <!-- Hero: full-height, giant title top-left -->
+    <section class="work-hero">
+      <div>
+        <p class="work-hero-eyebrow" id="work-category">—</p>
+        <h1 class="work-hero-title" id="work-title">—</h1>
+      </div>
+      <p class="scroll-hint">&#8595;&ensp;scroll</p>
+    </section>
+
+    <!-- Info: slides up on scroll -->
+    <section class="work-info-section" id="work-info">
+      <p class="work-info-label" id="work-info-label">—</p>
+      <h2 class="work-info-title" id="work-info-title">—</h2>
+      <hr class="work-divider">
+      <p class="work-desc" id="work-desc">—</p>
+      <div class="work-images">
+        <div class="work-image-block wide"><span class="work-image-block-label">01</span></div>
+        <div class="work-image-block"><span class="work-image-block-label">02</span></div>
+        <div class="work-image-block"><span class="work-image-block-label">03</span></div>
+      </div>
+      <hr class="work-divider-thin">
+      <div class="tags" id="work-tags"></div>
+      <a href="index.html" class="work-back">&#8592;&ensp;Home</a>
+    </section>
+
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+    import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
+    import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+    // ── Works data ────────────────────────────────────────────────────────────
+    const WORKS = [
+      {
+        id: 'akali',
+        title: 'Akali',
+        model: 'AKALI.glb',
+        description: 'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
+        tags: ['character', 'game-art'],
+        featured: true,
+      },
+      {
+        id: 'cone',
+        title: 'Cone',
+        model: 'cone.glb',
+        description: 'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
+        tags: ['primitive', 'geometry'],
+      },
+      {
+        id: 'cube',
+        title: 'Cube',
+        model: 'cube.glb',
+        description: 'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
+        tags: ['primitive', 'geometry'],
+      },
+      {
+        id: 'ico',
+        title: 'Ico',
+        model: 'ico.glb',
+        description: 'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
+        tags: ['primitive', 'geometry'],
+      },
+    ];
+
+    // ── Resolve work from URL ─────────────────────────────────────────────────
+    const id   = new URLSearchParams(location.search).get('id') || WORKS[0].id;
+    const work = WORKS.find(w => w.id === id) || WORKS[0];
+
+    document.title = `${work.title} — Portfolio`;
+    document.getElementById('work-category').textContent   = work.tags.join(' / ').toUpperCase();
+    document.getElementById('work-title').textContent      = work.title.toUpperCase();
+    document.getElementById('work-info-label').textContent = work.tags.join(' / ').toUpperCase();
+    document.getElementById('work-info-title').textContent = work.title;
+    document.getElementById('work-desc').textContent       = work.description;
+    document.getElementById('work-tags').innerHTML         =
+      work.tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+    // ── Image blocks ──────────────────────────────────────────────────────────
+    let lightboxEl = null;
+
+    function getLightbox() {
+      if (lightboxEl) return lightboxEl;
+      lightboxEl = document.createElement('div');
+      lightboxEl.id = 'lightbox';
+      lightboxEl.innerHTML = '<button class="lightbox-close">&#215;</button><img alt="">';
+      lightboxEl.addEventListener('click', e => {
+        if (e.target === lightboxEl || e.target.matches('.lightbox-close'))
+          lightboxEl.classList.remove('open');
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') lightboxEl?.classList.remove('open');
+      });
+      document.body.appendChild(lightboxEl);
+      return lightboxEl;
+    }
+
+    function setBlockImage(block, dataUrl) {
+      block.style.backgroundImage = `url("${dataUrl}")`;
+      block.style.backgroundSize  = 'cover';
+      block.style.backgroundPosition = 'center';
+      block.setAttribute('data-img', dataUrl);
+      block.classList.add('has-image');
+    }
+
+    function clearBlockImage(block, key) {
+      block.style.backgroundImage = '';
+      block.removeAttribute('data-img');
+      block.classList.remove('has-image');
+      localStorage.removeItem(key);
+    }
+
+    function initImageBlocks(workId, container) {
+      container.querySelectorAll('.work-image-block').forEach((block, i) => {
+        const key = `img_${workId}_${i}`;
+        const saved = localStorage.getItem(key);
+        if (saved) setBlockImage(block, saved);
+        if (block.dataset.init === workId) return;
+        block.dataset.init = workId;
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.cssText = 'position:absolute;opacity:0;pointer-events:none';
+        block.appendChild(input);
+
+        block.addEventListener('click', e => {
+          if (e.target.matches('.block-remove')) return;
+          const img = block.getAttribute('data-img');
+          if (img) {
+            const lb = getLightbox();
+            lb.querySelector('img').src = img;
+            lb.classList.add('open');
+          } else {
+            input.click();
+          }
+        });
+
+        input.addEventListener('change', () => {
+          const file = input.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = ev => {
+            localStorage.setItem(key, ev.target.result);
+            setBlockImage(block, ev.target.result);
+          };
+          reader.readAsDataURL(file);
+          input.value = '';
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'block-remove';
+        removeBtn.innerHTML = '&#215;';
+        removeBtn.addEventListener('click', () => clearBlockImage(block, key));
+        block.appendChild(removeBtn);
+      });
+    }
+
+    initImageBlocks(work.id, document.getElementById('work-info'));
+
+    // ── Works widget ──────────────────────────────────────────────────────────
+    const widgetList = document.getElementById('works-list');
+    WORKS.forEach((w, i) => {
+      const card = document.createElement('a');
+      card.href      = `work.html?id=${w.id}`;
+      card.className = 'widget-card' + (w.id === id ? ' current' : '');
+      card.innerHTML = `
+        <div class="widget-card-num">${String(i + 1).padStart(2, '0')}</div>
+        <hr class="widget-card-rule">
+        <div class="widget-card-title">${w.title}</div>
+        <div class="widget-card-tags">${w.tags.join(' · ')}</div>
+      `;
+      widgetList.appendChild(card);
+    });
+
+    const widget  = document.getElementById('works-widget');
+    const overlay = document.getElementById('works-overlay');
+    const openW   = () => { widget.classList.add('open'); overlay.classList.add('open'); };
+    const closeW  = () => { widget.classList.remove('open'); overlay.classList.remove('open'); };
+
+    document.getElementById('open-works').addEventListener('click', openW);
+    document.getElementById('close-works').addEventListener('click', closeW);
+    overlay.addEventListener('click', closeW);
+
+    // ── Scroll reveal + viewport shift ───────────────────────────────────────
+    let targetOffsetX  = 0;
+    let currentOffsetX = 0;
+
+    new IntersectionObserver(entries => {
+      const visible = entries[0].isIntersecting;
+      if (visible) document.getElementById('work-info').classList.add('revealed');
+      const infoW = Math.min(window.innerWidth * 0.5, 680);
+      targetOffsetX = visible ? -infoW / 2 : 0;
+    }, { threshold: 0.05 }).observe(document.getElementById('work-info'));
+
+    // ── Three.js ──────────────────────────────────────────────────────────────
+    const canvas   = document.getElementById('work-canvas');
+    // LITE: antialias off, no shadow maps.
+    // QUALITY DIAL: halftone cost scales with this squared — raise toward 2 for
+    // crisper dots, lower toward 1 for less GPU. 1.5 ≈ 44% less work than 2×.
+    const RENDER_SCALE = 1.5;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDER_SCALE));
+
+    const scene = new THREE.Scene();
+    // Pure white (light) / pure black (dark). The canvas CSS blend mode dissolves
+    // this into the page: multiply drops white, screen drops black — so the
+    // inter-dot gaps and empty space merge with --paper (no cutout edge).
+    // See style.css .work-fullbg.
+    const BG_LIGHT = 0xffffff;
+    const BG_DARK  = 0x000000;
+    scene.background = new THREE.Color(
+      document.documentElement.getAttribute('data-theme') === 'dark' ? BG_DARK : BG_LIGHT
+    );
+
+    // Dark mode toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    function applyTheme(dark) {
+      const t = dark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      themeBtn.textContent = dark ? '●' : '○';
+      scene.background.set(dark ? BG_DARK : BG_LIGHT);
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark');
+    themeBtn.addEventListener('click', () => {
+      applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+    });
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(0, 1.5, 5.5);
+
+    // Lighting — LITE: key + ambient + one fill (rim dropped, no shadow casting).
+    // Under the greyscale halftone the rim's subtle contribution isn't missed.
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.4);
+    keyLight.position.set(5, 9, 5);
+    scene.add(keyLight);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    fillLight.position.set(-5, 2, 3);
+    scene.add(fillLight);
+
+    // Controls — turntable; drag to orbit, stops auto-rotate
+    const controls = new OrbitControls(camera, canvas);
+    controls.autoRotate      = true;
+    controls.autoRotateSpeed = 1.2;
+    controls.enablePan       = false;
+    controls.enableDamping   = true;
+    controls.dampingFactor   = 0.05;
+    controls.minDistance     = 2;
+    controls.maxDistance     = 14;
+    // Pause the turntable while the user is interacting; resume after a spell of
+    // no input. With render-on-demand below, the idle pause stops rendering too.
+    // The turntable rests after a long spell of no interaction; any interaction
+    // wakes it and restarts the countdown.
+    const SPIN_TIMEOUT = 240000;   // 4 min of inactivity before it stops
+    let spinTimer = null;
+    function armSpinTimeout() {
+      if (spinTimer) clearTimeout(spinTimer);
+      spinTimer = setTimeout(() => { controls.autoRotate = false; }, SPIN_TIMEOUT);
+    }
+    controls.addEventListener('start', () => {
+      controls.autoRotate = false;            // manual orbit takes over
+      if (spinTimer) { clearTimeout(spinTimer); spinTimer = null; }
+    });
+    controls.addEventListener('end', () => {
+      controls.autoRotate = true;             // interaction re-activates the spin
+      armSpinTimeout();                       // and restarts the 4-min countdown
+    });
+    armSpinTimeout();                         // start the countdown on load
+
+    // ── Post-processing (exact index.html HalftonePass look) ──────────────────
+    // The model is rendered opaque on a pure white/black scene background; the
+    // canvas blends into --paper via CSS mix-blend-mode (multiply light / screen
+    // dark), so no transparency machinery is needed and there's no cutout edge.
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+
+    const halftonePass = new HalftonePass(window.innerWidth, window.innerHeight, {
+      shape: 1, radius: 3,
+      rotateR: Math.PI / 4,
+      rotateG: (Math.PI * 5) / 12,
+      rotateB: Math.PI / 6,
+      scatter: 0, blending: 1, blendingMode: 1,
+      greyscale: true, disable: false,
+    });
+    composer.addPass(halftonePass);
+    composer.addPass(new OutputPass());
+
+    function onResize() {
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+      halftonePass.uniforms['width'].value  = w;
+      halftonePass.uniforms['height'].value = h;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    onResize();
+    window.addEventListener('resize', onResize);
+
+    // Keep original material if it has a diffuse texture; fall back to flat grey.
+    const makeModelMaterial = (src) => {
+      if (src && src.map) return src;  // textured — use as-is
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xcccccc, roughness: 0.88, metalness: 0.0,
+        normalMap: (src && src.normalMap) || null,
+      });
+      if (src && src.normalScale) mat.normalScale.copy(src.normalScale);
+      return mat;
+    };
+
+    // Load model
+    new GLTFLoader().load(work.model, (gltf) => {
+      const model  = gltf.scene;
+      const box    = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const size   = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale  = 3.8 / maxDim;
+      model.scale.setScalar(scale);
+      model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+
+      model.traverse(child => {
+        if (child.isMesh) child.material = makeModelMaterial(child.material);   // per-mesh normal map
+      });
+      scene.add(model);
+      needsRender = true;
+
+      const yMid = (-center.y * scale) + (size.y * scale * 0.5);
+      controls.target.set(0, yMid, 0);
+      camera.position.set(0, yMid + 0.8, 5.5);
+      controls.update();
+
+      document.getElementById('loader').classList.add('hidden');
+    },
+    undefined,
+    () => { document.getElementById('loader').textContent = 'Model unavailable.'; }
+    );
+
+    // ── LITE render loop ──────────────────────────────────────────────────────
+    // 30fps cap · pause while the tab is hidden · render-on-demand: when the
+    // turntable is stopped and nothing is easing, we skip rendering entirely.
+    let needsRender = true;
+    controls.addEventListener('change', () => { needsRender = true; });
+
+    let pageVisible = !document.hidden;
+    document.addEventListener('visibilitychange', () => {
+      pageVisible = !document.hidden;
+      if (pageVisible) { lastTime = 0; needsRender = true; }
+    });
+
+    // FPS / frame-time readout
+    const perfEl = document.getElementById('perf');
+    let frames = 0, fpsAccum = 0, fpsLast = performance.now(), lastDraw = 0;
+    function perfTick(now) {
+      frames++;
+      fpsAccum += now - lastDraw; lastDraw = now;
+      if (now - fpsLast >= 500) {
+        const fps = Math.round((frames * 1000) / (now - fpsLast));
+        const ms  = (fpsAccum / frames).toFixed(1);
+        perfEl.textContent = `LITE · ${fps} fps · ${ms} ms`;
+        frames = 0; fpsAccum = 0; fpsLast = now;
+      }
+    }
+
+    let lastTime = 0;
+    (function frame(time) {
+      requestAnimationFrame(frame);
+      if (!pageVisible) return;                  // pause when tab hidden
+      if (time - lastTime < 1000 / 30) return;   // 30fps cap
+      lastTime = time;
+
+      // viewport-shift easing (scroll reveal) needs frames while settling
+      const easing = Math.abs(targetOffsetX - currentOffsetX) > 0.5;
+      currentOffsetX += (targetOffsetX - currentOffsetX) * 0.06;
+      if (Math.abs(currentOffsetX) < 0.5) {
+        camera.clearViewOffset();
+      } else {
+        camera.setViewOffset(
+          window.innerWidth, window.innerHeight,
+          currentOffsetX, 0,
+          window.innerWidth, window.innerHeight
+        );
+      }
+
+      const moved = controls.update();   // true while auto-rotating or damping
+      if (controls.autoRotate || moved || easing || needsRender) {
+        composer.render();
+        needsRender = false;
+        perfTick(time);
+      }
+    })(0);
+  </script>
+</body>
+</html>

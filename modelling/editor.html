@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f1;
+      --surface:  #ffffff;
+      --border:   #e2e0db;
+      --border2:  #c8c5be;
+      --text:     #1a1a1a;
+      --text-mid: #6b6860;
+      --text-dim: #a09d97;
+      --accent:   #d4501a;
+      --accent-bg:#fff3ee;
+      --nav-w:    200px;
+      --top-h:    48px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Top bar ─────────────────────────────────── */
+    .topbar {
+      height: var(--top-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .topbar-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+    }
+    .topbar-title span {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    .save-indicator {
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .save-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .save-dot.show { opacity: 1; }
+
+    .btn {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.12s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--bg); border-color: var(--text); }
+    .btn.primary {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+    .btn.primary:hover { background: #333; }
+    .btn.danger { color: var(--accent); border-color: #fca592; }
+    .btn.danger:hover { background: #fff3ee; }
+
+    /* ── Layout ──────────────────────────────────── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Nav ─────────────────────────────────────── */
+    .nav {
+      width: var(--nav-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 12px 0 20px;
+    }
+
+    .nav-section {
+      margin-top: 4px;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 10px 14px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      color: var(--text-mid);
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      border-radius: 0;
+      transition: color 0.1s, background 0.1s;
+      position: relative;
+    }
+    .nav-item:hover { color: var(--text); background: var(--bg); }
+    .nav-item.active {
+      color: var(--text);
+      font-weight: 500;
+      background: var(--accent-bg);
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--accent);
+    }
+
+    .nav-item-icon { font-size: 14px; flex-shrink: 0; opacity: 0.6; }
+    .nav-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nav-item-badge {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--accent);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .nav-add {
+      margin: 8px 10px 0;
+      padding: 6px 10px;
+      border: 1px dashed var(--border2);
+      border-radius: 6px;
+      background: none;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      width: calc(100% - 20px);
+      text-align: left;
+      transition: all 0.12s;
+    }
+    .nav-add:hover { border-color: var(--text-mid); color: var(--text); }
+
+    /* Drag indicator */
+    .nav-item[draggable] { cursor: grab; }
+    .nav-item.drag-over { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+    /* ── Content ─────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px 80px;
+      max-width: 720px;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Section labels ──────────────────────────── */
+    .section-head {
+      margin-bottom: 6px;
+      margin-top: 32px;
+    }
+    .section-head:first-child { margin-top: 0; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* ── Fields ──────────────────────────────────── */
+    .field-group {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .field {
+      display: flex;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+    }
+    .field:last-child { border-bottom: none; }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--text-mid);
+      font-weight: 500;
+      width: 110px;
+      flex-shrink: 0;
+      padding: 11px 12px;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    .field-input {
+      flex: 1;
+      border: none;
+      background: none;
+      font-size: 13px;
+      color: var(--text);
+      font-family: inherit;
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+      transition: background 0.1s;
+    }
+    .field-input:focus { background: #f9f8f6; }
+    .field-input::placeholder { color: var(--text-dim); }
+    textarea.field-input {
+      resize: none;
+      line-height: 1.6;
+      overflow-y: auto;
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 0 12px 8px 110px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .field-hint:last-child { border-bottom: none; }
+
+    /* ── Hero image slot ─────────────────────────── */
+    .hero-slot {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      margin-top: 8px;
+      transition: border-color 0.12s;
+    }
+    .hero-slot:hover { border-color: var(--border2); }
+    .hero-slot::after { content: ''; display: block; padding-top: 33%; }
+
+    .hero-slot-inner {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px;
+      font-size: 12px; color: var(--text-dim);
+    }
+    .hero-slot img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .hero-slot.has-img img { display: block; }
+    .hero-slot.has-img .hero-slot-inner { display: none; }
+
+    .hero-rm {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.5); border: none;
+      color: #fff; width: 24px; height: 24px;
+      border-radius: 4px; font-size: 12px;
+      cursor: pointer; display: none;
+      align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .hero-slot.has-img:hover .hero-rm { display: flex; }
+
+    /* ── Social rows ─────────────────────────────── */
+    .social-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 1fr 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .social-row:last-child { border-bottom: none; }
+    .social-row .field-input { padding: 9px 10px; font-size: 12px; }
+    .social-row .field-input + .field-input { border-left: 1px solid var(--border); }
+    .social-rm {
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; border-left: 1px solid var(--border);
+      color: var(--text-dim); font-size: 13px;
+      cursor: pointer; transition: color 0.1s;
+    }
+    .social-rm:hover { color: var(--accent); }
+
+    .socials-header {
+      display: grid;
+      grid-template-columns: 100px 1fr 1fr 32px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+    }
+    .socials-header span {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── Work panel header ───────────────────────── */
+    .work-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .work-header-title {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+      color: var(--text);
+    }
+    .work-header-title.empty { color: var(--text-dim); }
+
+    /* ── Image grid ──────────────────────────────── */
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .img-slot {
+      position: relative;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color 0.12s;
+    }
+    .img-slot:hover { border-color: var(--border2); }
+    .img-slot::after { content: ''; display: block; padding-top: 56.25%; /* 16:9 */ }
+
+    .img-slot-inner {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px;
+    }
+    .img-slot-num {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+    .img-slot-cta {
+      font-size: 10px; color: var(--text-dim);
+      opacity: 0; transition: opacity 0.12s;
+    }
+    .img-slot:hover .img-slot-cta { opacity: 1; }
+
+    .img-slot img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .img-slot.has-img img { display: block; }
+    .img-slot.has-img .img-slot-inner { display: none; }
+
+    .img-rm {
+      position: absolute; top: 5px; right: 5px;
+      background: rgba(0,0,0,0.5); border: none;
+      color: #fff; width: 20px; height: 20px;
+      border-radius: 3px; font-size: 11px;
+      cursor: pointer; display: none;
+      align-items: center; justify-content: center;
+      z-index: 2;
+    }
+    .img-slot.has-img:hover .img-rm { display: flex; }
+
+    /* ── Page title ──────────────────────────────── */
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+    }
+
+    /* ── Featured badge toggle ───────────────────── */
+    .featured-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-mid);
+      cursor: pointer;
+      user-select: none;
+    }
+    .featured-toggle input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+    .featured-toggle.active { color: var(--accent); font-weight: 500; }
+
+    /* ── Brand page big input ────────────────────── */
+    .brand-big {
+      font-size: 36px;
+      font-weight: 800;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      background: none;
+      color: var(--text);
+      outline: none;
+      padding: 4px 0 12px;
+      width: 100%;
+      font-family: inherit;
+      transition: border-color 0.14s;
+      margin-top: 8px;
+    }
+    .brand-big:focus { border-bottom-color: var(--accent); }
+    .brand-big::placeholder { color: var(--text-dim); }
+
+    /* ── Divider ─────────────────────────────────── */
+    .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+    /* ── Empty state ─────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-dim);
+    }
+    .empty-state-icon { font-size: 32px; margin-bottom: 12px; }
+    .empty-state p { font-size: 13px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<header class="topbar">
+  <div class="topbar-title" id="topbar-title">Portfolio <span>/ Editor</span></div>
+  <div class="save-indicator">
+    <div class="save-dot" id="save-dot"></div>
+    <span id="save-label">All changes saved</span>
+  </div>
+  <a href="index.html" class="btn primary" target="_blank">View Site ↗</a>
+</header>
+
+<div class="layout">
+
+  <!-- Left nav -->
+  <nav class="nav" id="nav">
+
+    <div class="nav-section">
+      <div class="nav-section-label">Site</div>
+      <button class="nav-item active" data-panel="brand">
+        <span class="nav-item-icon">◈</span>
+        <span class="nav-item-label">Brand</span>
+      </button>
+      <button class="nav-item" data-panel="profile">
+        <span class="nav-item-icon">◉</span>
+        <span class="nav-item-label">Profile</span>
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Works</div>
+      <div id="works-nav"></div>
+      <button class="nav-add" id="add-work-btn">+ Add Work</button>
+    </div>
+
+  </nav>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- ── Brand ── -->
+    <div class="panel active" id="panel-brand">
+      <p class="page-title">Brand</p>
+      <p class="page-subtitle">The site name shown in the header and browser tab.</p>
+
+      <input class="brand-big" id="brand-field"
+             type="text" spellcheck="false"
+             placeholder="Your Name or Studio">
+
+      <div class="section-head" style="margin-top:28px">
+        <div class="section-title">Preview</div>
+        <div class="section-desc">This is how the brand name appears on the site.</div>
+      </div>
+      <div style="margin-top:8px; padding:20px 24px; border:1px solid var(--border); border-radius:8px; background:var(--surface);">
+        <div id="brand-preview" style="font-size:18px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim)">—</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Page title · Nav header</div>
+      </div>
+    </div>
+
+    <!-- ── Profile ── -->
+    <div class="panel" id="panel-profile">
+      <p class="page-title">Profile</p>
+      <p class="page-subtitle">Your About panel and contact details. Opens when visitors click "Contact".</p>
+
+      <div class="section-head">
+        <div class="section-title">Header Image</div>
+        <div class="section-desc">Wide banner shown at the top of the About panel.</div>
+      </div>
+      <div class="hero-slot" id="hero-slot">
+        <div class="hero-slot-inner">⊕ Click to upload image</div>
+        <img id="hero-img" alt="">
+        <button class="hero-rm" id="hero-rm">✕</button>
+        <input type="file" id="hero-input" accept="image/*"
+               style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+      </div>
+
+      <div class="section-head">
+        <div class="section-title">About</div>
+        <div class="section-desc">A short bio shown in the About panel.</div>
+      </div>
+      <div class="field-group">
+        <div class="field">
+          <label class="field-label" for="bio-field">Bio</label>
+          <textarea class="field-input" id="bio-field" rows="3"
+            placeholder="3D artist & creative director…"></textarea>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-title">Contact</div>
+        <div class="section-desc">Email and résumé link shown in the About panel.</div>
+      </div>
+      <div class="field-group">
+        <div class="field">
+          <label class="field-label" for="email-field">Email</label>
+          <input class="field-input" id="email-field" type="email"
+                 placeholder="hello@example.com" spellcheck="false">
+        </div>
+        <div class="field">
+          <label class="field-label" for="resume-field">Résumé URL</label>
+          <input class="field-input" id="resume-field" type="url"
+                 placeholder="https://…" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-title">Social Links</div>
+        <div class="section-desc">Platform links shown at the bottom of the About panel.</div>
+      </div>
+      <div class="field-group" id="socials-wrap">
+        <div class="socials-header">
+          <span>Platform</span>
+          <span>Handle</span>
+          <span>URL</span>
+          <span></span>
+        </div>
+        <div id="socials-list"></div>
+      </div>
+      <button class="btn" style="margin-top:8px" id="add-social-btn">+ Add Link</button>
+    </div>
+
+    <!-- ── Work (dynamic) ── -->
+    <div class="panel" id="panel-work"></div>
+
+  </main>
+</div>
+
+<script>
+  // ── Storage keys ─────────────────────────────────────────────────────────
+  const K_BRAND   = 'rgr_brand';
+  const K_WORKS   = 'rgr_works';
+  const K_CONTACT = 'rgr_contact';
+  const K_HEADER  = 'rgr_contact_header_img';
+
+  const DEFAULT_WORKS = [
+    { id:'akali', title:'Akali', model:'../media/models/AKALI.glb',
+      description:'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
+      tags:['character','game-art'], featured:true },
+    { id:'cone',  title:'Cone',  model:'../media/models/cone.glb',
+      description:'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
+      tags:['primitive','geometry'], featured:false },
+    { id:'cube',  title:'Cube',  model:'../media/models/cube.glb',
+      description:'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
+      tags:['primitive','geometry'], featured:false },
+    { id:'ico',   title:'Ico',   model:'../media/models/ico.glb',
+      description:'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
+      tags:['primitive','geometry'], featured:false },
+  ];
+
+  const DEFAULT_CONTACT = {
+    email:'hello@rungirl.run',
+    resumeUrl:'',
+    bio:'3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.',
+    socials:[
+      { label:'Instagram',  handle:'@rungirl.run',           url:'#' },
+      { label:'ArtStation', handle:'artstation.com/rungirl', url:'#' },
+      { label:'Twitter',    handle:'@rungirl_run',           url:'#' },
+    ],
+  };
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let works    = [];
+  let contact  = {};
+  let activeId = 'brand';   // 'brand' | 'profile' | work.id
+  let dragSrc  = null;
+
+  function load(key, def) {
+    try { const s = localStorage.getItem(key); if (s) return JSON.parse(s); } catch(e){}
+    return JSON.parse(JSON.stringify(def));
+  }
+
+  // ── Save helpers ──────────────────────────────────────────────────────────
+  let saveTimer;
+  function flashSave() {
+    const dot   = document.getElementById('save-dot');
+    const label = document.getElementById('save-label');
+    dot.classList.add('show');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      dot.classList.remove('show');
+      label.textContent = 'Saved ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    }, 600);
+  }
+
+  function saveWorks()   { localStorage.setItem(K_WORKS,   JSON.stringify(works));   flashSave(); }
+  function saveContact() { localStorage.setItem(K_CONTACT, JSON.stringify(contact)); flashSave(); }
+  function saveBrand(v)  {
+    localStorage.setItem(K_BRAND, v);
+    const label = document.getElementById('topbar-title');
+    label.innerHTML = esc(v||'Portfolio') + ' <span>/ Editor</span>';
+    document.title = 'Editor — ' + (v||'Portfolio');
+    document.getElementById('brand-preview').textContent = v || '—';
+    flashSave();
+  }
+
+  function esc(s) {
+    return String(s??'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function slugify(t) {
+    return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'work-'+Date.now();
+  }
+  function imgKey(id,i) { return `img_${id}_${i}`; }
+
+  // ── Panel switching ───────────────────────────────────────────────────────
+  function showPanel(id) {
+    activeId = id;
+
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+    if (id === 'brand' || id === 'profile') {
+      document.getElementById('panel-' + id).classList.add('active');
+      document.querySelector(`.nav-item[data-panel="${id}"]`).classList.add('active');
+    } else {
+      const w = works.find(x => x.id === id);
+      if (!w) { showPanel('brand'); return; }
+      renderWorkPanel(w);
+      document.getElementById('panel-work').classList.add('active');
+    }
+
+    renderWorksNav();
+  }
+
+  // ── Works nav ─────────────────────────────────────────────────────────────
+  function renderWorksNav() {
+    const list = document.getElementById('works-nav');
+    list.innerHTML = '';
+    if (!works.length) return;
+
+    works.forEach((w, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'nav-item' + (activeId === w.id ? ' active' : '');
+      btn.draggable = true;
+      btn.dataset.id = w.id;
+      btn.innerHTML = `
+        <span class="nav-item-label">${esc(w.title) || '<em style="opacity:.4;font-style:normal">Untitled</em>'}</span>
+        ${w.featured ? '<span class="nav-item-badge">★</span>' : ''}
+      `;
+      btn.addEventListener('click', () => showPanel(w.id));
+
+      // Drag to reorder
+      btn.addEventListener('dragstart', e => {
+        dragSrc = idx; btn.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      btn.addEventListener('dragend', () => {
+        btn.style.opacity = '';
+        list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over'));
+      });
+      btn.addEventListener('dragover', e => {
+        e.preventDefault();
+        list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over'));
+        if (dragSrc !== idx) btn.classList.add('drag-over');
+      });
+      btn.addEventListener('drop', e => {
+        e.preventDefault();
+        btn.classList.remove('drag-over');
+        if (dragSrc === null || dragSrc === idx) return;
+        const [moved] = works.splice(dragSrc, 1);
+        works.splice(idx, 0, moved);
+        dragSrc = null;
+        saveWorks();
+        renderWorksNav();
+      });
+
+      list.appendChild(btn);
+    });
+  }
+
+  // ── Work panel ────────────────────────────────────────────────────────────
+  function renderWorkPanel(w) {
+    const pane = document.getElementById('panel-work');
+    pane.innerHTML = '';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'work-header';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'work-header-title' + (w.title ? '' : ' empty');
+    titleEl.textContent = w.title || 'Untitled Work';
+    header.appendChild(titleEl);
+
+    // Featured toggle
+    const featLabel = document.createElement('label');
+    featLabel.className = 'featured-toggle' + (w.featured ? ' active' : '');
+    const featCheck = document.createElement('input');
+    featCheck.type    = 'checkbox';
+    featCheck.checked = !!w.featured;
+    featCheck.addEventListener('change', () => {
+      if (featCheck.checked) works.forEach(x => x.featured = false);
+      w.featured = featCheck.checked;
+      featLabel.className = 'featured-toggle' + (w.featured ? ' active' : '');
+      renderWorksNav();
+      saveWorks();
+    });
+    featLabel.appendChild(featCheck);
+    featLabel.appendChild(document.createTextNode(w.featured ? '★ Featured' : 'Set as Featured'));
+    header.appendChild(featLabel);
+
+    // Delete
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn danger';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => {
+      if (!confirm(`Delete "${w.title || 'this work'}"?`)) return;
+      works.splice(works.findIndex(x => x.id === w.id), 1);
+      saveWorks();
+      showPanel('brand');
+    });
+    header.appendChild(delBtn);
+    pane.appendChild(header);
+
+    // ── Details section ──
+    const detailHead = sectionHead('Details', 'Title, model file, tags, and description.');
+    pane.appendChild(detailHead);
+
+    const fieldset = document.createElement('div');
+    fieldset.className = 'field-group';
+
+    const fields = [
+      { id:'f-title', label:'Title',        key:'title',       type:'input',    ph:'e.g. Akali' },
+      { id:'f-model', label:'Model File',   key:'model',       type:'input',    ph:'e.g. ../media/models/AKALI.glb', hint:'Path to .glb relative to this page (models live in media/models/)' },
+      { id:'f-tags',  label:'Tags',         key:'tags',        type:'input',    ph:'character, game-art', hint:'Comma-separated' },
+      { id:'f-desc',  label:'Description',  key:'description', type:'textarea', ph:'Describe this work…', rows:5 },
+    ];
+
+    fields.forEach(({ id, label, key, type, ph, hint, rows }) => {
+      const row = document.createElement('div');
+      row.className = 'field';
+
+      const lbl = document.createElement('label');
+      lbl.className = 'field-label';
+      lbl.setAttribute('for', id);
+      lbl.textContent = label;
+
+      const inp = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+      inp.className = 'field-input';
+      inp.id        = id;
+      inp.placeholder = ph;
+      inp.spellcheck = false;
+      if (type === 'textarea') { inp.rows = rows || 3; inp.value = w[key] || ''; }
+      else { inp.value = key === 'tags' ? w.tags.join(', ') : (w[key] || ''); }
+
+      inp.addEventListener('input', () => {
+        if (key === 'tags') {
+          w.tags = inp.value.split(',').map(t => t.trim()).filter(Boolean);
+        } else {
+          w[key] = inp.value;
+        }
+        if (key === 'title') {
+          titleEl.textContent = w.title || 'Untitled Work';
+          titleEl.classList.toggle('empty', !w.title);
+          renderWorksNav();
+        }
+        saveWorks();
+      });
+
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      fieldset.appendChild(row);
+
+      if (hint) {
+        const h = document.createElement('div');
+        h.className = 'field-hint';
+        h.textContent = hint;
+        fieldset.appendChild(h);
+      }
+    });
+
+    pane.appendChild(fieldset);
+
+    // ── Images section ──
+    const imgHead = sectionHead('Images', 'Up to 4 images shown in the work detail view. Click a slot to upload.');
+    pane.appendChild(imgHead);
+
+    const grid = document.createElement('div');
+    grid.className = 'img-grid';
+
+    for (let i = 0; i < 4; i++) {
+      grid.appendChild(buildImgSlot(w.id, i));
+    }
+    pane.appendChild(grid);
+
+    // ── Danger zone ──
+    pane.appendChild(document.createElement('div')).className = 'divider';
+  }
+
+  function sectionHead(title, desc) {
+    const el = document.createElement('div');
+    el.className = 'section-head';
+    el.innerHTML = `<div class="section-title">${esc(title)}</div>`
+                 + (desc ? `<div class="section-desc">${esc(desc)}</div>` : '');
+    return el;
+  }
+
+  // ── Image slot ────────────────────────────────────────────────────────────
+  function buildImgSlot(workId, idx) {
+    const key   = imgKey(workId, idx);
+    const saved = localStorage.getItem(key);
+
+    const slot = document.createElement('div');
+    slot.className = 'img-slot' + (saved ? ' has-img' : '');
+
+    const img = document.createElement('img'); img.alt = '';
+    if (saved) img.src = saved;
+
+    const inner = document.createElement('div');
+    inner.className = 'img-slot-inner';
+    inner.innerHTML = `<span class="img-slot-num">${String(idx+1).padStart(2,'0')}</span>`
+                    + `<span class="img-slot-cta">Upload</span>`;
+
+    const rm = document.createElement('button');
+    rm.className = 'img-rm';
+    rm.innerHTML = '✕';
+    rm.addEventListener('click', e => {
+      e.stopPropagation();
+      localStorage.removeItem(key);
+      img.src = '';
+      slot.classList.remove('has-img');
+      flashSave();
+    });
+
+    const fi = document.createElement('input');
+    fi.type = 'file'; fi.accept = 'image/*';
+    fi.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0';
+    fi.addEventListener('change', () => {
+      const file = fi.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try { localStorage.setItem(key, ev.target.result); }
+        catch(e) { alert('Image too large for browser storage.'); return; }
+        img.src = ev.target.result;
+        slot.classList.add('has-img');
+        flashSave();
+      };
+      reader.readAsDataURL(file);
+      fi.value = '';
+    });
+
+    slot.addEventListener('click', () => {
+      if (!slot.classList.contains('has-img')) fi.click();
+    });
+
+    slot.appendChild(img);
+    slot.appendChild(inner);
+    slot.appendChild(rm);
+    slot.appendChild(fi);
+    return slot;
+  }
+
+  // ── Socials ───────────────────────────────────────────────────────────────
+  function renderSocials() {
+    const list = document.getElementById('socials-list');
+    list.innerHTML = '';
+    contact.socials.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'social-row';
+
+      ['label','handle','url'].forEach((f, fi) => {
+        const inp = document.createElement('input');
+        inp.className = 'field-input';
+        inp.value = s[f] || '';
+        inp.placeholder = ['Platform','Handle','URL'][fi];
+        inp.spellcheck = false;
+        inp.addEventListener('input', () => { s[f] = inp.value; saveContact(); });
+        row.appendChild(inp);
+      });
+
+      const rm = document.createElement('button');
+      rm.className = 'social-rm'; rm.innerHTML = '✕';
+      rm.addEventListener('click', () => {
+        contact.socials.splice(i, 1);
+        saveContact(); renderSocials();
+      });
+      row.appendChild(rm);
+      list.appendChild(row);
+    });
+  }
+
+  // ── Header image ──────────────────────────────────────────────────────────
+  function initHeroSlot() {
+    const slot  = document.getElementById('hero-slot');
+    const img   = document.getElementById('hero-img');
+    const rm    = document.getElementById('hero-rm');
+    const input = document.getElementById('hero-input');
+    const saved = localStorage.getItem(K_HEADER);
+
+    if (saved) { img.src = saved; slot.classList.add('has-img'); }
+
+    slot.addEventListener('click', e => {
+      if (e.target === rm) return;
+      if (!slot.classList.contains('has-img')) input.click();
+    });
+
+    rm.addEventListener('click', e => {
+      e.stopPropagation();
+      localStorage.removeItem(K_HEADER);
+      img.src = '';
+      slot.classList.remove('has-img');
+      flashSave();
+    });
+
+    input.addEventListener('change', () => {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try { localStorage.setItem(K_HEADER, ev.target.result); }
+        catch(e) { alert('Image too large.'); return; }
+        img.src = ev.target.result;
+        slot.classList.add('has-img');
+        flashSave();
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  works   = load(K_WORKS,   DEFAULT_WORKS);
+  contact = load(K_CONTACT, DEFAULT_CONTACT);
+
+  // Brand
+  const savedBrand = localStorage.getItem(K_BRAND) || '';
+  const brandField = document.getElementById('brand-field');
+  brandField.value = savedBrand;
+  document.getElementById('brand-preview').textContent = savedBrand || '—';
+  if (savedBrand) {
+    document.getElementById('topbar-title').innerHTML = esc(savedBrand) + ' <span>/ Editor</span>';
+    document.title = 'Editor — ' + savedBrand;
+  }
+  brandField.addEventListener('input', () => saveBrand(brandField.value));
+
+  // Profile
+  document.getElementById('bio-field').value    = contact.bio       || '';
+  document.getElementById('email-field').value  = contact.email     || '';
+  document.getElementById('resume-field').value = contact.resumeUrl || '';
+
+  document.getElementById('bio-field').addEventListener('input',    e => { contact.bio       = e.target.value; saveContact(); });
+  document.getElementById('email-field').addEventListener('input',  e => { contact.email     = e.target.value; saveContact(); });
+  document.getElementById('resume-field').addEventListener('input', e => { contact.resumeUrl = e.target.value; saveContact(); });
+
+  document.getElementById('add-social-btn').addEventListener('click', () => {
+    contact.socials.push({ label:'', handle:'', url:'' });
+    saveContact();
+    renderSocials();
+    document.getElementById('socials-list').lastElementChild?.querySelector('input')?.focus();
+  });
+
+  // Works
+  document.getElementById('add-work-btn').addEventListener('click', () => {
+    const nw = {
+      id: 'work-' + Date.now(),
+      title: '', model: '', description: '', tags: [],
+      featured: works.length === 0,
+    };
+    works.push(nw);
+    saveWorks();
+    renderWorksNav();
+    showPanel(nw.id);
+  });
+
+  // Nav tabs
+  document.querySelectorAll('.nav-item[data-panel]').forEach(btn => {
+    btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+  });
+
+  initHeroSlot();
+  renderSocials();
+  renderWorksNav();
+</script>
+</body>
+</html>

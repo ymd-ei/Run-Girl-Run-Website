@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — Run Girl Run</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Nav ── */
+    .contact-nav {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 500;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    /* ── Layout ── */
+    .contact-wrap {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Left column ── */
+    .contact-left {
+      padding: 64px 56px 64px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: var(--rule-thick);
+    }
+
+    .contact-logo {
+      font-family: var(--font-head);
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--ink);
+      display: inline-block;
+      margin-bottom: 80px;
+      transition: color 0.12s;
+    }
+    .contact-logo:hover { color: var(--accent); }
+
+    .contact-heading-wrap { flex: 1; display: flex; align-items: flex-end; }
+
+    .contact-heading {
+      font-family: var(--font-head);
+      font-size: clamp(4rem, 9vw, 9rem);
+      font-weight: 900;
+      line-height: 0.87;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 40px;
+    }
+
+    .contact-info {
+      margin-top: auto;
+      padding-top: 48px;
+    }
+
+    .contact-info-label {
+      font-family: var(--font-ui);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      margin-bottom: 6px;
+    }
+
+    .contact-email {
+      font-family: var(--font-head);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.14s, color 0.14s;
+      display: inline-block;
+    }
+    .contact-email:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .contact-socials {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .contact-social-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .contact-social-label {
+      font-family: var(--font-ui);
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      min-width: 52px;
+    }
+
+    .contact-social-link {
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+    .contact-social-link:hover { color: var(--accent); }
+
+    .contact-rule {
+      border: none;
+      border-top: var(--rule-thick);
+      margin: 28px 0;
+    }
+
+    /* ── Right column (form) ── */
+    .contact-right {
+      padding: 64px 48px 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-eyebrow {
+      font-family: var(--font-ui);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      margin-bottom: 36px;
+    }
+
+    .contact-form { width: 100%; max-width: 480px; }
+
+    .form-row {
+      margin-bottom: 28px;
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-ui);
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(28,28,30,0.28);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--ink);
+      padding: 8px 0;
+      outline: none;
+      transition: border-color 0.18s;
+      -webkit-appearance: none;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--ink-mid); opacity: 0.4; }
+
+    textarea.form-input {
+      resize: none;
+      height: 130px;
+      line-height: 1.75;
+      border: 1px solid rgba(28,28,30,0.2);
+      padding: 12px;
+      border-radius: 0;
+      margin-top: 4px;
+    }
+    textarea.form-input:focus { border-color: var(--accent); }
+
+    [data-theme="dark"] .form-input { border-color: rgba(240,237,232,0.22); }
+    [data-theme="dark"] textarea.form-input { border-color: rgba(240,237,232,0.18); }
+
+    .form-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ink);
+      border: none;
+      font-family: var(--font-ui);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--paper);
+      padding: 13px 28px;
+      cursor: pointer;
+      transition: background 0.16s;
+      margin-top: 8px;
+    }
+    .form-submit:hover { background: var(--accent); }
+    .form-submit:disabled {
+      opacity: 0.45;
+      cursor: default;
+      background: var(--ink);
+    }
+
+    .form-arrow {
+      font-size: 1rem;
+      transition: transform 0.18s;
+    }
+    .form-submit:hover .form-arrow { transform: translateX(4px); }
+
+    /* Success state */
+    .form-success {
+      display: none;
+      padding: 28px 0;
+    }
+    .form-success.visible { display: block; }
+    .contact-form.sent { display: none; }
+
+    .success-icon {
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .success-title {
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .success-body {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      line-height: 1.75;
+      color: var(--ink-mid);
+    }
+
+    /* ── Footer strip ── */
+    .contact-footer {
+      grid-column: 1 / -1;
+      border-top: var(--rule);
+      padding: 14px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-copy {
+      font-family: var(--font-ui);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .footer-link {
+      font-family: var(--font-ui);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+      text-decoration: none;
+      transition: color 0.12s;
+    }
+    .footer-link:hover { color: var(--ink); }
+
+    /* ── Responsive ── */
+    @media (max-width: 760px) {
+      .contact-wrap {
+        grid-template-columns: 1fr;
+      }
+      .contact-left {
+        border-right: none;
+        border-bottom: var(--rule-thick);
+        padding: 48px 28px 40px;
+      }
+      .contact-heading { font-size: clamp(3rem, 14vw, 5rem); }
+      .contact-right { padding: 40px 28px 56px; }
+      .contact-footer { padding: 14px 28px; flex-direction: column; gap: 8px; }
+      .contact-nav { gap: 14px; right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="contact-nav">
+    <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
+    <a href="index.html" class="site-nav-btn" style="text-decoration:none">← Back</a>
+  </nav>
+
+  <div class="contact-wrap">
+
+    <!-- Left: identity + info -->
+    <div class="contact-left">
+      <div>
+        <a href="index.html" class="contact-logo" id="contact-logo">Run Girl Run</a>
+      </div>
+
+      <div class="contact-heading-wrap">
+        <h1 class="contact-heading">Get in<br>Touch.</h1>
+      </div>
+
+      <div class="contact-info">
+        <hr class="contact-rule">
+
+        <div class="contact-info-label">Email</div>
+        <a href="mailto:hello@rungirl.run" class="contact-email" id="contact-email">
+          hello@rungirl.run
+        </a>
+
+        <div class="contact-socials" id="contact-socials">
+          <div class="contact-social-row">
+            <span class="contact-social-label">Instagram</span>
+            <a href="#" class="contact-social-link">@rungirl.run</a>
+          </div>
+          <div class="contact-social-row">
+            <span class="contact-social-label">ArtStation</span>
+            <a href="#" class="contact-social-link">artstation.com/rungirl</a>
+          </div>
+          <div class="contact-social-row">
+            <span class="contact-social-label">Twitter</span>
+            <a href="#" class="contact-social-link">@rungirl_run</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: form -->
+    <div class="contact-right">
+      <p class="form-eyebrow">Send a Message</p>
+
+      <form class="contact-form" id="contact-form" novalidate>
+        <div class="form-row">
+          <label class="form-label" for="f-name">Name</label>
+          <input class="form-input" id="f-name" name="name" type="text" placeholder="Your name" autocomplete="name" required>
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="f-email">Email</label>
+          <input class="form-input" id="f-email" name="email" type="email" placeholder="your@email.com" autocomplete="email" required>
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="f-subject">Subject</label>
+          <input class="form-input" id="f-subject" name="subject" type="text" placeholder="What's this about?">
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="f-message">Message</label>
+          <textarea class="form-input" id="f-message" name="message" placeholder="Tell me about your project…" required></textarea>
+        </div>
+        <button type="submit" class="form-submit" id="submit-btn">
+          Send Message <span class="form-arrow">→</span>
+        </button>
+      </form>
+
+      <div class="form-success" id="form-success">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Message Sent</div>
+        <p class="success-body">Thanks for reaching out — I'll get back to you as soon as possible.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="contact-footer">
+      <span class="footer-copy" id="footer-copy">© 2025 Run Girl Run</span>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Works</a>
+        <a href="editor.html" class="footer-link">Editor</a>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // ── Brand + Contact from localStorage ────────────────────────────────────
+    (function() {
+      const brand = localStorage.getItem('rgr_brand') || 'Run Girl Run';
+      document.getElementById('contact-logo').textContent = brand;
+      document.title = 'Contact — ' + brand;
+      document.getElementById('footer-copy').textContent =
+        '© ' + new Date().getFullYear() + ' ' + brand;
+
+      // Contact info
+      const DEFAULT_CONTACT = {
+        email: 'hello@rungirl.run',
+        socials: [
+          { label: 'Instagram', handle: '@rungirl.run',           url: '#' },
+          { label: 'ArtStation', handle: 'artstation.com/rungirl', url: '#' },
+          { label: 'Twitter',   handle: '@rungirl_run',           url: '#' },
+        ],
+      };
+
+      let ct = DEFAULT_CONTACT;
+      try {
+        const s = localStorage.getItem('rgr_contact');
+        if (s) ct = JSON.parse(s);
+      } catch(e) {}
+
+      // Email
+      const emailEl = document.getElementById('contact-email');
+      const email   = ct.email || DEFAULT_CONTACT.email;
+      emailEl.href        = 'mailto:' + email;
+      emailEl.textContent = email;
+
+      // Socials
+      const socialsEl = document.getElementById('contact-socials');
+      socialsEl.innerHTML = '';
+      const socials = (ct.socials && ct.socials.length) ? ct.socials : DEFAULT_CONTACT.socials;
+      socials.forEach(s => {
+        if (!s.handle && !s.label) return;
+        const row = document.createElement('div');
+        row.className = 'contact-social-row';
+        row.innerHTML = `
+          <span class="contact-social-label">${s.label || ''}</span>
+          <a href="${s.url || '#'}" class="contact-social-link">${s.handle || ''}</a>
+        `;
+        socialsEl.appendChild(row);
+      });
+    })();
+
+    // ── Theme ────────────────────────────────────────────────────────────────
+    const themeBtn = document.getElementById('theme-toggle');
+    function applyTheme(dark) {
+      const t = dark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      themeBtn.textContent = dark ? '●' : '○';
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark');
+    themeBtn.addEventListener('click', () => {
+      applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+    });
+
+    // ── Form ─────────────────────────────────────────────────────────────────
+    const form    = document.getElementById('contact-form');
+    const success = document.getElementById('form-success');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const name    = document.getElementById('f-name').value.trim();
+      const email   = document.getElementById('f-email').value.trim();
+      const subject = document.getElementById('f-subject').value.trim();
+      const message = document.getElementById('f-message').value.trim();
+
+      if (!name || !email || !message) {
+        // Shake invalid fields
+        [['f-name', name], ['f-email', email], ['f-message', message]].forEach(([id, val]) => {
+          if (!val) {
+            const el = document.getElementById(id);
+            el.style.borderColor = 'var(--accent)';
+            setTimeout(() => el.style.borderColor = '', 1800);
+          }
+        });
+        return;
+      }
+
+      // Open mailto as fallback (works without a backend)
+      const mailtoSubject = encodeURIComponent(subject || 'Portfolio Enquiry');
+      const mailtoBody    = encodeURIComponent(`Hi,\n\n${message}\n\n— ${name} (${email})`);
+      const emailAddr     = document.getElementById('contact-email').href.replace('mailto:', '');
+      window.location.href = `mailto:${emailAddr}?subject=${mailtoSubject}&body=${mailtoBody}`;
+
+      // Show success state
+      form.classList.add('sent');
+      success.classList.add('visible');
+    });
+  </script>
+</body>
+</html>
