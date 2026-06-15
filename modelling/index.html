@@ -30,13 +30,35 @@
   <!-- Brand title — centered, non-interactive -->
   <h1 class="page-brand" id="page-brand">Run Girl Run</h1>
 
-  <!-- Top-right nav -->
+  <!-- Top-right nav (desktop) -->
   <nav class="site-nav" style="gap:18px">
     <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
-    <button class="site-nav-btn" id="open-home">Home</button>
     <button class="site-nav-btn" id="open-contact">Contact</button>
     <button class="site-nav-btn" id="open-works">Works</button>
   </nav>
+
+  <!-- Burger + slide-in drawer (mobile / narrow) -->
+  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="mobile-scrim" id="mobile-scrim"></div>
+  <aside class="mobile-menu" id="mobile-menu" aria-hidden="true">
+    <div class="mobile-menu-top">
+      <span class="mobile-menu-brand">Menu</span>
+      <button class="mobile-menu-close" id="mobile-close" aria-label="Close menu">✕</button>
+    </div>
+    <nav class="mobile-nav">
+      <button class="mobile-nav-link" id="m-contact">Contact</button>
+    </nav>
+    <div class="mobile-works">
+      <p class="mobile-works-head">Works</p>
+      <div class="mobile-works-list" id="mobile-works-list"></div>
+    </div>
+    <button class="mobile-theme" id="m-theme" aria-label="Toggle dark mode">
+      <span class="mobile-theme-dot" id="m-theme-dot">○</span>
+      <span id="m-theme-label">Dark mode</span>
+    </button>
+  </aside>
 
   <!-- Contact overlay -->
   <div class="contact-overlay" id="contact-overlay">
@@ -332,10 +354,13 @@
       document.getElementById('work-detail').classList.add('visible');
       document.getElementById('splash-content').classList.add('hidden');
       document.querySelector('.page-brand').classList.add('hidden');
+      document.body.classList.add('detail-open');
 
-      // Shift viewport left so model appears centred in the right portion
+      // Desktop: shift viewport left so model sits centred in the right portion.
+      // Mobile: detail is a bottom sheet — keep the model centred (no shift).
+      const mobile = isMobile();
       const detailW = Math.min(window.innerWidth * 0.44, 520);
-      targetOffsetX = -detailW / 2;
+      targetOffsetX = mobile ? 0 : -detailW / 2;
 
       panelOpen = true;
       controls.enableRotate = true;
@@ -355,6 +380,14 @@
       spacer.style.minHeight = '0';
       detailEl.style.overflowY = 'hidden'; // reset before measuring
       renderDetailImages(imagesEl, imgs);
+
+      // Mobile bottom sheet: content flows from the top and scrolls freely —
+      // skip the desktop "push text to bottom" spacer measurement.
+      if (mobile) {
+        detailEl.style.overflowY = 'auto';
+        detailEl.scrollTop = 0;
+        return;
+      }
 
       // Push text to bottom; only enable scrolling when overflow is substantial
       const SCROLL_THRESHOLD = 100;
@@ -384,6 +417,7 @@
       controls.enableRotate = true;
       controls.enableZoom   = true;
       document.querySelector('.page-brand').classList.remove('hidden');
+      document.body.classList.remove('detail-open');
     }
 
     // ── Splash card ───────────────────────────────────────────────────────────
@@ -396,9 +430,35 @@
 
     // ── Works widget ──────────────────────────────────────────────────────────
     function buildWidgetList() {
-      const list = document.getElementById('works-list');
+      const list  = document.getElementById('works-list');
+      const mlist = document.getElementById('mobile-works-list');
       list.innerHTML = '';
+      if (mlist) mlist.innerHTML = '';
+
       WORKS.forEach((w, i) => {
+        // Shared selection: works the same from desktop dropdown or mobile drawer
+        const select = () => {
+          closeWidget();
+          closeMobileMenu();
+
+          if (w.id !== currentWork.id) {
+            currentWork = w;
+            loadWork(w);
+            buildWidgetList(); // refresh current highlight
+          }
+
+          // Desktop opens the detail immediately. Mobile lands on the work itself
+          // (splash state) so the model is seen before the words — the splash
+          // "View Work" button summons the info sheet on demand.
+          if (isMobile()) {
+            if (panelOpen) closePanel();
+            else updateSplashCard(w);
+          } else {
+            openPanel(w);
+          }
+        };
+
+        // Desktop dropdown card
         const btn = document.createElement('button');
         btn.className = 'widget-card' + (w.id === currentWork.id ? ' current' : '');
         btn.innerHTML = `
@@ -407,18 +467,21 @@
           <div class="widget-card-title">${w.title}</div>
           <div class="widget-card-tags">${w.tags.join(' · ')}</div>
         `;
-        btn.addEventListener('click', () => {
-          closeWidget();
-
-          if (w.id !== currentWork.id) {
-            currentWork = w;
-            loadWork(w);
-            buildWidgetList(); // refresh current highlight
-          }
-
-          openPanel(w);
-        });
+        btn.addEventListener('click', select);
         list.appendChild(btn);
+
+        // Mobile drawer card
+        if (mlist) {
+          const mbtn = document.createElement('button');
+          mbtn.className = 'm-work-card' + (w.id === currentWork.id ? ' current' : '');
+          mbtn.innerHTML = `
+            <span class="m-work-num">${String(i + 1).padStart(2, '0')}</span>
+            <span class="m-work-title">${w.title}</span>
+            <span class="m-work-tags">${w.tags.join(' · ')}</span>
+          `;
+          mbtn.addEventListener('click', select);
+          mlist.appendChild(mbtn);
+        }
       });
     }
 
@@ -430,6 +493,52 @@
     const scheduleClose = () => { closeTimer = setTimeout(() => widgetEl.classList.remove('open'), 180); };
     const closeWidget = () => { clearTimeout(closeTimer); widgetEl.classList.remove('open'); };
 
+    // ── Mobile burger drawer ────────────────────────────────────────────────────
+    // Narrow / tall viewports get a slide-in drawer (nav + works list) instead of
+    // the hover dropdown, and the work detail renders as a bottom sheet.
+    const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+
+    const burgerEl = document.getElementById('burger');
+    const menuEl   = document.getElementById('mobile-menu');
+    const scrimEl  = document.getElementById('mobile-scrim');
+
+    function openMobileMenu() {
+      menuEl.classList.add('open');
+      scrimEl.classList.add('open');
+      burgerEl.classList.add('open');
+      burgerEl.setAttribute('aria-expanded', 'true');
+      menuEl.setAttribute('aria-hidden', 'false');
+    }
+    function closeMobileMenu() {
+      menuEl.classList.remove('open');
+      scrimEl.classList.remove('open');
+      burgerEl.classList.remove('open');
+      burgerEl.setAttribute('aria-expanded', 'false');
+      menuEl.setAttribute('aria-hidden', 'true');
+    }
+
+    burgerEl.addEventListener('click', () =>
+      menuEl.classList.contains('open') ? closeMobileMenu() : openMobileMenu());
+    scrimEl.addEventListener('click', closeMobileMenu);
+    document.getElementById('mobile-close').addEventListener('click', closeMobileMenu);
+
+    // Drawer nav links reuse the existing desktop handlers
+    document.getElementById('m-contact').addEventListener('click', () => {
+      closeMobileMenu();
+      document.getElementById('open-contact').click();
+    });
+    const mThemeBtn = document.getElementById('m-theme');
+    function syncThemeLabel() {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.getElementById('m-theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+      document.getElementById('m-theme-dot').textContent   = dark ? '●' : '○';
+    }
+    syncThemeLabel();
+    mThemeBtn.addEventListener('click', () => {
+      document.getElementById('theme-toggle').click();
+      syncThemeLabel();
+    });
+
     // Hover on button opens; hover on dropdown keeps it open
     document.getElementById('open-works').addEventListener('mouseenter', openWidget);
     document.getElementById('open-works').addEventListener('mouseleave', scheduleClose);
@@ -438,12 +547,6 @@
 
     document.getElementById('detail-back').addEventListener('click', closePanel);
     document.getElementById('view-work').addEventListener('click', () => openPanel(currentWork));
-
-    // Home — close any open work and return to the home splash, keeping the
-    // currently rendered model in place.
-    document.getElementById('open-home').addEventListener('click', () => {
-      if (panelOpen) closePanel();
-    });
 
     // Click the model area (right of the detail panel) to exit the work page.
     // Distinguish a click from an orbit drag by tracking pointer travel.
@@ -472,7 +575,7 @@
 
       if (panelOpen) {
         const detailW = Math.min(w * 0.44, 520);
-        targetOffsetX = -detailW / 2;
+        targetOffsetX = isMobile() ? 0 : -detailW / 2;
       }
     }
     onResize();

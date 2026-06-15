@@ -937,7 +937,206 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 800px) {
-  .works-widget        { width: 100%; border-left: none; border-top: var(--rule-thick); top: auto; }
   .work-info-section   { padding: 40px 28px 72px; }
   .splash-headline     { font-size: 2.8rem; }
+}
+
+/* ── Mobile / tall window — burger drawer + bottom-sheet works ── */
+.burger,
+.mobile-menu,
+.mobile-scrim { display: none; }
+
+@media (max-width: 760px) {
+  /* Swap the desktop inline nav + hover dropdown for the burger drawer */
+  .site-nav     { display: none; }
+  .works-widget { display: none !important; }
+
+  /* Burger button — top-right, ink-coloured so it tracks the theme */
+  .burger {
+    display: flex;
+    position: fixed;
+    top: 20px; right: 22px;
+    z-index: 950;
+    width: 22px; height: 14px;
+    flex-direction: column;
+    justify-content: space-between;
+    background: none; border: none; padding: 0;
+    cursor: pointer;
+  }
+  .burger span {
+    display: block;
+    width: 100%; height: 1.5px;
+    background: var(--ink);
+    transform-origin: center;
+    transition: transform 0.28s ease, opacity 0.18s ease;
+  }
+  .burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .burger.open span:nth-child(2) { opacity: 0; }
+  .burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  /* Scrim behind the drawer */
+  .mobile-scrim {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: 940;
+    background: rgba(0,0,0,0);
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+    pointer-events: none;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease;
+  }
+  .mobile-scrim.open {
+    background: rgba(0,0,0,0.18);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    pointer-events: all;
+  }
+
+  /* Slide-in drawer from the right */
+  .mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    z-index: 960;
+    width: min(82vw, 340px);
+    padding: 22px 26px 36px;
+    background: var(--paper);
+    border-left: var(--rule-thick);
+    transform: translateX(100%);
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .mobile-menu::-webkit-scrollbar { display: none; }
+  .mobile-menu.open { transform: translateX(0); }
+
+  .mobile-menu-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .mobile-menu-brand {
+    font-family: var(--font-ui);
+    font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-mid);
+  }
+  .mobile-menu-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.85rem; color: var(--ink-mid); padding: 4px; line-height: 1;
+  }
+
+  .mobile-nav { display: flex; flex-direction: column; margin-bottom: 30px; }
+  .mobile-nav-link {
+    text-align: left;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-head);
+    font-size: 1.55rem; line-height: 1.1;
+    text-transform: uppercase; letter-spacing: 0.01em;
+    color: var(--ink);
+    padding: 11px 0;
+    border-bottom: var(--rule);
+    transition: color 0.14s;
+  }
+  .mobile-nav-link:active,
+  .mobile-nav-link:hover { color: var(--accent); }
+
+  .mobile-works-head {
+    font-family: var(--font-ui);
+    font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 8px;
+  }
+  .mobile-works-list { display: flex; flex-direction: column; }
+
+  .m-work-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    align-items: baseline;
+    text-align: left;
+    background: none; border: none; cursor: pointer;
+    padding: 12px 0;
+    border-top: var(--rule);
+    color: var(--ink);
+  }
+  .m-work-card:last-child { border-bottom: var(--rule); }
+  .m-work-num {
+    font-family: var(--font-mono);
+    font-size: 0.62rem; letter-spacing: 0.1em;
+    color: var(--ink-mid);
+  }
+  .m-work-title {
+    font-family: var(--font-head);
+    font-size: 1.1rem; text-transform: uppercase; line-height: 1;
+  }
+  .m-work-tags {
+    grid-column: 2;
+    margin-top: 4px;
+    font-family: var(--font-ui);
+    font-size: 0.58rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-mid);
+  }
+  .m-work-card.current .m-work-title,
+  .m-work-card.current .m-work-num { color: var(--accent); }
+
+  /* Theme toggle — quiet footer control, pushed to the bottom of the drawer */
+  .mobile-theme {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding: 18px 0 2px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-mid);
+    opacity: 0.7;
+    transition: opacity 0.14s, color 0.14s;
+  }
+  .mobile-theme:hover,
+  .mobile-theme:active { opacity: 1; color: var(--ink); }
+  .mobile-theme-dot { font-size: 0.72rem; line-height: 1; }
+
+  /* ── Work detail → bottom sheet ── */
+  .work-detail {
+    top: auto; bottom: 0; left: 0; right: 0;
+    width: 100%;
+    height: 78vh;
+    padding: 30px 26px 40px;
+    transform: translateY(100%);
+    background: rgba(240, 237, 232, 0.92);
+    -webkit-backdrop-filter: blur(16px) saturate(0.9);
+    backdrop-filter: blur(16px) saturate(0.9);
+    border-top: var(--rule-thick);
+    /* sheet manages its own edges — drop the desktop top/bottom mask */
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  [data-theme="dark"] .work-detail { background: rgba(25, 23, 20, 0.92); }
+  .work-detail.visible { transform: translateY(0); }
+
+  /* Grab handle (absolute, so it isn't a flex item) */
+  .work-detail::before {
+    content: '';
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 42px; height: 4px;
+    border-radius: 2px;
+    background: var(--ink-mid);
+    opacity: 0.4;
+  }
+
+  .work-detail-back   { margin-top: 6px; margin-bottom: 18px; }
+  .work-detail-eyebrow { white-space: normal; }
+  .work-detail-title {
+    white-space: normal;
+    font-size: clamp(2.4rem, 13vw, 3.4rem);
+    line-height: 0.92;
+  }
+  .work-detail-desc { font-size: 0.95rem; }
+
+  /* Geo widget would clash with the sheet — fade it out while one is open */
+  .geo-widget { transition: opacity 0.3s ease; }
+  body.detail-open .geo-widget { opacity: 0; }
 }
