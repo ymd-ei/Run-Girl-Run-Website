@@ -637,6 +637,8 @@ body {
   text-transform: uppercase;
   letter-spacing: -0.01em;
   color: var(--ink);
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .scroll-hint {
@@ -808,8 +810,8 @@ body {
   text-transform: uppercase;
   letter-spacing: -0.01em;
   margin-bottom: 0;
-  width: max-content;
-  max-width: 70vw;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .work-detail-desc {
