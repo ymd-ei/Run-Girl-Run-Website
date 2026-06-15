@@ -13,6 +13,7 @@ let cache = null;
 
 function isImage(p) { return /\.(png|jpe?g|webp|gif|svg|avif)$/i.test(p); }
 function isVideo(p) { return /\.(mp4|webm|mov|m4v)$/i.test(p); }
+function isModel(p) { return /\.(glb|gltf)$/i.test(p); }
 
 function build() {
   modal = document.createElement('div');
@@ -24,7 +25,7 @@ function build() {
         <span>Media Library</span>
         <div class="v3-media-head-tools">
           <label class="v3-media-upload"><i class="ph-fill ph-upload-simple"></i> Upload
-            <input type="file" accept="image/*,video/*" hidden></label>
+            <input type="file" accept="image/*,video/*,.glb,.gltf,model/gltf-binary,model/gltf+json" hidden></label>
           <button class="v3-media-close" title="Close"><i class="ph-fill ph-x"></i></button>
         </div>
       </div>
@@ -68,7 +69,9 @@ function renderGrid(filter = '') {
       ? `<img src="${url}" loading="lazy" alt="">`
       : isVideo(p)
         ? `<div class="v3-media-vid"><i class="ph-fill ph-film-strip"></i></div>`
-        : `<div class="v3-media-file"><i class="ph-fill ph-file"></i></div>`;
+        : isModel(p)
+          ? `<div class="v3-media-vid"><i class="ph-fill ph-cube"></i></div>`
+          : `<div class="v3-media-file"><i class="ph-fill ph-file"></i></div>`;
     return `<div class="v3-media-item" data-path="${p}" title="${p}">
       ${thumb}
       <div class="v3-media-name">${(f.name || p).split('/').pop()}</div>
@@ -82,7 +85,9 @@ async function onUpload(e) {
   if (!file) return;
   const grid = modal.querySelector('.v3-media-grid');
   grid.insertAdjacentHTML('afterbegin', `<div class="v3-media-empty" id="v3-upm">Uploading ${file.name}…</div>`);
-  const res = await uploadMedia(file);
+  // Keep 3D models in media/models/ so the work picker and viewer find them.
+  const folder = isModel(file.name) ? 'media/models' : 'media';
+  const res = await uploadMedia(file, folder);
   e.target.value = '';
   document.getElementById('v3-upm')?.remove();
   if (res.success) {

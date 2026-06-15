@@ -90,7 +90,7 @@ export async function fetchMediaFiles(token, path) {
 
   for (const item of items) {
     // Include files: images and videos
-    if (item.type === 'file' && /\.(jpe?g|png|gif|webp|bmp|svg|mp4|webm|mov)$/i.test(item.name)) {
+    if (item.type === 'file' && /\.(jpe?g|png|gif|webp|bmp|svg|mp4|webm|mov|glb|gltf)$/i.test(item.name)) {
       files.push({
         name: item.name,
         path: item.path,
