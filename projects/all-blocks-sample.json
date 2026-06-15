@@ -4,6 +4,12 @@
   "type": "Design",
   "typeLabel": "Design",
   "year": "2026",
+  "thumbnail": "media/woke-up_hero.webp",
+  "published": false,
+  "sensitive": false,
+  "sensitiveLabel": "",
+  "sensitiveColor": "",
+  "longform": true,
   "client": "Internal Demo",
   "duration": "Case Study",
   "tags": [
@@ -11,9 +17,7 @@
     "Editor",
     "Markdown"
   ],
-  "thumbnail": "media/woke-up_hero.webp",
   "videoUrl": "",
-  "longform": true,
   "blocks": [
     {
       "id": "b1",
@@ -134,7 +138,7 @@
     {
       "id": "b10",
       "type": "video",
-      "src": "https://www.youtube.com/embed/F7V800bxczU"
+      "src": "https://www.youtube.com/embed/wTziIhu8yvU?si=W9pnBLqXa4FBT-fM"
     },
     {
       "id": "b10a",
@@ -202,6 +206,5 @@
       "title": "Parser Test",
       "content": "Try importing and exporting this project as markdown to verify round-trip behavior."
     }
-  ],
-  "published": false
+  ]
 }
