@@ -204,6 +204,14 @@
     .field-input::placeholder { color: var(--text-dim); }
     textarea.field-input { resize: vertical; line-height: 1.6; min-height: 80px; }
     .field-hint { font-size: 11px; color: var(--text-dim); padding: 0 12px 9px 116px; background: var(--surface); }
+    .field-action {
+      align-self: center; margin: 0 8px 0 4px; flex-shrink: 0;
+      font-family: var(--font-ui); font-size: 11.5px; font-weight: 500;
+      padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border2);
+      background: var(--surface); color: var(--text-mid); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px; transition: all 0.12s;
+    }
+    .field-action:hover { background: var(--bg); border-color: var(--text); color: var(--text); }
 
     .brand-big {
       font-family: var(--font-head);
@@ -806,7 +814,7 @@
     const fieldset = document.createElement('div'); fieldset.className = 'field-group';
     const fields = [
       { id: 'f-title', label: 'Title', key: 'title', type: 'input', ph: 'e.g. Akali' },
-      { id: 'f-model', label: 'Model File', key: 'model', type: 'input', ph: 'media/models/AKALI.glb', hint: 'Repo-relative path to the .glb (models live in media/models/ — add large files via git).' },
+      { id: 'f-model', label: 'Model File', key: 'model', type: 'input', ph: 'media/models/AKALI.glb', hint: 'Pick a .glb with Browse, or type a repo-relative path. Large models are added to media/models/ via git.' },
       { id: 'f-tags', label: 'Tags', key: 'tags', type: 'input', ph: 'character, game-art', hint: 'Comma-separated' },
       { id: 'f-desc', label: 'Description', key: 'description', type: 'textarea', ph: 'Describe this work…' },
     ];
@@ -823,7 +831,9 @@
         if (key === 'model') Preview.mount(pane.querySelector('.cam-stage'), w);  // reload preview on path change
         markDirty();
       });
-      row.appendChild(lbl); row.appendChild(inp); fieldset.appendChild(row);
+      row.appendChild(lbl); row.appendChild(inp);
+      if (key === 'model') row.appendChild(makeBrowseBtn(inp, w));
+      fieldset.appendChild(row);
       if (hint) { const h = document.createElement('div'); h.className = 'field-hint'; h.textContent = hint; fieldset.appendChild(h); }
     });
     pane.appendChild(fieldset);
@@ -885,6 +895,23 @@
       Preview.reapply(); markDirty();
     });
     return wrap;
+  }
+
+  // Browse button for the Model File field — pick a .glb from the media library.
+  function makeBrowseBtn(inp, w) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'field-action';
+    b.innerHTML = '<i class="ph-fill ph-folder-open"></i> Browse';
+    b.addEventListener('click', () => {
+      if (!authed) { toast('Log in to manage media.', true); return; }
+      openMediaPicker(p => {
+        if (!p) return;
+        inp.value = p; w.model = p;
+        Preview.mount($('panel-work').querySelector('.cam-stage'), w);
+        markDirty();
+      });
+    });
+    return b;
   }
 
   // ── Images block ──────────────────────────────────────────────────────────
