@@ -84,6 +84,17 @@
         "lift": 0,
         "dolly": 6.9
       }
+    },
+    {
+      "id": "work-1781485503333",
+      "title": "Pancakes",
+      "model": "media/models/pancakebeauty.glb",
+      "description": "",
+      "tags": [],
+      "featured": false,
+      "images": [
+        "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
+      ]
     }
   ]
 }
