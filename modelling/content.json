@@ -34,7 +34,11 @@
         "Rigging"
       ],
       "featured": true,
-      "images": []
+      "images": [],
+      "camera": {
+        "lift": 2,
+        "dolly": 30
+      }
     },
     {
       "id": "work-1781485503333",
