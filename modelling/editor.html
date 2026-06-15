@@ -277,6 +277,40 @@
     }
     [data-theme] .cam-stage { background: #efede9; }
     .cam-canvas { display: block; width: 100%; height: 100%; }
+    /* Placeholder home-page chrome over the preview — shows where the model sits
+       relative to the brand title, nav, geo readout and splash card. Purely a
+       framing aid: pointer-events:none so it never blocks the turntable orbit. */
+    .cam-chrome { position: absolute; inset: 0; z-index: 3; pointer-events: none; font-family: var(--font-ui); }
+    .cam-stage.hide-chrome .cam-chrome { display: none; }
+    .cam-chrome .cc-brand {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--font-head); font-weight: 900; text-transform: uppercase;
+      letter-spacing: -0.02em; line-height: 0.85; font-size: 34px; text-align: center;
+      white-space: nowrap; color: var(--accent); opacity: 0.18; mix-blend-mode: multiply;
+    }
+    .cam-chrome .cc-nav {
+      position: absolute; top: 11px; right: 14px; font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-mid); opacity: 0.75;
+    }
+    .cam-chrome .cc-geo {
+      position: absolute; bottom: 12px; right: 14px; text-align: right; font-size: 8px;
+      line-height: 1.55; letter-spacing: 0.05em; color: var(--text-dim);
+      font-variant-numeric: tabular-nums; opacity: 0.8;
+    }
+    .cam-chrome .cc-splash { position: absolute; bottom: 14px; left: 14px; max-width: 46%; }
+    .cam-chrome .cc-eyebrow {
+      font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 4px;
+    }
+    .cam-chrome .cc-title {
+      font-family: var(--font-head); font-weight: 700; font-size: 15px; line-height: 1.05;
+      color: var(--text); margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cam-chrome .cc-tags { font-size: 8px; letter-spacing: 0.04em; color: var(--text-mid); margin-bottom: 7px; min-height: 1px; }
+    .cam-chrome .cc-btn {
+      display: inline-block; font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1px solid currentColor; color: var(--text-mid); border-radius: 999px; padding: 3px 8px; opacity: 0.85;
+    }
     .cam-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-dim); font-size: 12px; }
     .cam-empty i { font-size: 26px; opacity: 0.6; }
     .cam-loading {
@@ -285,7 +319,7 @@
     }
     .cam-loading.show { display: block; }
     .cam-hint {
-      position: absolute; bottom: 10px; left: 12px; font-size: 10.5px; color: var(--text-dim);
+      position: absolute; top: 10px; left: 12px; font-size: 10.5px; color: var(--text-dim);
       background: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 6px; pointer-events: none;
     }
     .cam-controls { padding: 14px 16px; border-top: 1px solid var(--border); }
@@ -828,6 +862,12 @@
         if (key === 'tags') w.tags = inp.value.split(',').map(t => t.trim()).filter(Boolean);
         else w[key] = inp.value;
         if (key === 'title') { titleEl.textContent = w.title || 'Untitled Work'; titleEl.classList.toggle('empty', !w.title); renderWorksNav(); }
+        if (key === 'title' || key === 'tags') {
+          // Keep the preview's placeholder splash card in sync while editing.
+          const ccTitle = pane.querySelector('.cc-title'), ccTags = pane.querySelector('.cc-tags');
+          if (ccTitle) ccTitle.textContent = w.title || 'Untitled Work';
+          if (ccTags) ccTags.textContent = (w.tags || []).join(' · ');
+        }
         if (key === 'model') Preview.mount(pane.querySelector('.cam-stage'), w);  // reload preview on path change
         markDirty();
       });
@@ -859,6 +899,17 @@
     const cam = w.camera || CAMERA_DEFAULTS;
     wrap.innerHTML = `
       <div class="cam-stage">
+        <div class="cam-chrome">
+          <div class="cc-brand">${esc(state.brand || 'Run Girl Run')}</div>
+          <div class="cc-nav">Home&ensp;Contact&ensp;Works</div>
+          <div class="cc-geo">LOC&nbsp;&nbsp;TOKYO, JP<br>LAT&nbsp;&nbsp;35.6762° N<br>LNG&nbsp;&nbsp;139.6503° E</div>
+          <div class="cc-splash">
+            <div class="cc-eyebrow">Featured Work</div>
+            <div class="cc-title">${esc(w.title || 'Untitled Work')}</div>
+            <div class="cc-tags">${esc((w.tags || []).join(' · '))}</div>
+            <span class="cc-btn">View Work →</span>
+          </div>
+        </div>
         <div class="cam-empty"><i class="ph-fill ph-cube"></i><span>No model set — add a model file above</span></div>
         <div class="cam-loading">Loading model…</div>
         <div class="cam-hint">drag to look · scroll to zoom</div>
@@ -876,6 +927,7 @@
         </div>
         <div class="cam-actions">
           <label class="featured-toggle"><input type="checkbox" id="cam-spin" checked> Turntable preview</label>
+          <label class="featured-toggle"><input type="checkbox" id="cam-chrome-toggle" checked> Page layout</label>
           <span class="spacer"></span>
           <button class="btn ghost" id="cam-reset"><i class="ph-fill ph-arrow-counter-clockwise"></i> Reset</button>
         </div>
@@ -888,6 +940,9 @@
     lift.addEventListener('input', () => { const c = ensureCam(w); c.lift = +lift.value; liftVal.textContent = c.lift.toFixed(2); Preview.reapply(); markDirty(); });
     dolly.addEventListener('input', () => { const c = ensureCam(w); c.dolly = +dolly.value; dollyVal.textContent = c.dolly.toFixed(1); Preview.reapply(); markDirty(); });
     wrap.querySelector('#cam-spin').addEventListener('change', e => Preview.setAutoRotate(e.target.checked));
+    wrap.querySelector('#cam-chrome-toggle').addEventListener('change', e => {
+      wrap.querySelector('.cam-stage').classList.toggle('hide-chrome', !e.target.checked);
+    });
     wrap.querySelector('#cam-reset').addEventListener('click', () => {
       delete w.camera;
       lift.value = CAMERA_DEFAULTS.lift; dolly.value = CAMERA_DEFAULTS.dolly;
