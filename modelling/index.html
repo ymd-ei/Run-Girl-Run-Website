@@ -102,65 +102,24 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
     import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
     import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
     import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+    import { loadContent, mediaUrl, featuredWork } from './site-data.js';
+    import { loadModel, applyCamera } from './model-view.js';
 
-    // ── Works data ────────────────────────────────────────────────────────────
-    // Reads from localStorage (set by editor.html) — falls back to defaults.
-    // To edit content, open editor.html.
-    const DEFAULT_WORKS = [
-      {
-        id: 'akali',
-        title: 'Akali',
-        model: '../media/models/AKALI.glb',
-        description: 'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
-        tags: ['character', 'game-art'],
-        featured: true,
-      },
-      {
-        id: 'cone',
-        title: 'Cone',
-        model: '../media/models/cone.glb',
-        description: 'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
-        tags: ['primitive', 'geometry'],
-      },
-      {
-        id: 'cube',
-        title: 'Cube',
-        model: '../media/models/cube.glb',
-        description: 'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
-        tags: ['primitive', 'geometry'],
-      },
-      {
-        id: 'ico',
-        title: 'Ico',
-        model: '../media/models/ico.glb',
-        description: 'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
-        tags: ['primitive', 'geometry'],
-      },
-    ];
+    // ── Site data (top-level await: pauses until content.json loads) ───────────
+    // Edit content via editor.html, which commits content.json to the repo.
+    const content = await loadContent();
+    const WORKS   = content.works;
 
-    function loadWorks() {
-      try {
-        const s = localStorage.getItem('rgr_works');
-        if (s) return JSON.parse(s);
-      } catch (e) {}
-      return DEFAULT_WORKS;
-    }
-    const WORKS = loadWorks();
-
-    // Apply brand title from localStorage
+    // Apply brand title from content.json
     (function() {
-      const brand = localStorage.getItem('rgr_brand');
-      if (brand) {
-        const el = document.getElementById('page-brand');
-        if (el) el.textContent = brand;
-        document.title = brand;
-      }
+      const el = document.getElementById('page-brand');
+      if (el) el.textContent = content.brand;
+      document.title = content.brand;
     })();
 
     // ── Tokyo weather ─────────────────────────────────────────────────────────
@@ -181,7 +140,7 @@
     })();
 
     // ── App state ─────────────────────────────────────────────────────────────
-    let currentWork  = WORKS.find(w => w.featured) || WORKS[0];
+    let currentWork  = featuredWork(WORKS);
     let panelOpen    = false;
     let activeModel      = null;
     let activeMixer      = null;            // plays embedded GLB animation, if any
@@ -291,8 +250,6 @@
     composer.addPass(new OutputPass());
 
     // ── Model loader ──────────────────────────────────────────────────────────
-    const gltfLoader = new GLTFLoader();
-
     const FADE_MS = 300;
     let canvasOpacity = 1;
     let fadingOut = false;
@@ -323,54 +280,26 @@
           activeModel = null;
         }
 
-        gltfLoader.load(work.model, (gltf) => {
-          const model  = gltf.scene;
-          const box    = new THREE.Box3().setFromObject(model);
-          const center = box.getCenter(new THREE.Vector3());
-          const size   = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scale  = 3.8 / maxDim;
-          const baseX  = -center.x * scale;
-          model.scale.setScalar(scale);
-          model.position.set(baseX, -center.y * scale, -center.z * scale);
-
-          model.traverse(child => {
-            if (child.isMesh) {
-              const src = child.material;
-              // Keep original material if it has a diffuse texture; fall back to grey
-              if (!src || !src.map) {
-                child.material = new THREE.MeshStandardMaterial({
-                  color: 0xcccccc, roughness: 0.88, metalness: 0.0,
-                  normalMap: (src && src.normalMap) || null,
-                });
-                if (src && src.normalScale) child.material.normalScale.copy(src.normalScale);
-              }
-            }
-          });
-
+        loadModel(mediaUrl(work.model)).then(({ model, animations, frame }) => {
           scene.add(model);
           activeModel = model;
 
           // Play any animation clips baked into the GLB
-          if (gltf.animations && gltf.animations.length) {
+          if (animations.length) {
             activeMixer = new THREE.AnimationMixer(model);
-            gltf.animations.forEach(clip => activeMixer.clipAction(clip).play());
+            animations.forEach(clip => activeMixer.clipAction(clip).play());
             animClock.getDelta(); // reset delta so first frame doesn't jump
           }
 
-          // Set orbit pivot to model centre; camera slightly above
-          const yMid = (-center.y * scale) + (size.y * scale * 0.5);
-          baseTarget.set(baseX, yMid, 0);
-          controls.target.copy(baseTarget);
-          camera.position.set(baseX, yMid + 0.8, 5.5);
-          controls.update();
+          // Orbit pivot at model centre; honour the work's curated camera
+          baseTarget.set(frame.baseX, frame.yMid, 0);
+          applyCamera(camera, controls, frame, work);
 
           document.getElementById('loader').classList.add('hidden');
           startFade(1, null);
-        },
-        undefined,
-        () => { document.getElementById('loader').textContent = 'Model unavailable.'; }
-        );
+        }).catch(() => {
+          document.getElementById('loader').textContent = 'Model unavailable.';
+        });
       };
 
       // If a model is visible, fade it out first; otherwise load immediately
@@ -417,14 +346,15 @@
       const imagesEl  = detailEl.querySelector('.work-images');
       const dividerEl = detailEl.querySelector('.work-divider-thin');
 
-      // Show/hide image section based on whether any images are saved
-      const hasImages = [0,1,2,3].some(i => localStorage.getItem(`img_${work.id}_${i}`));
+      // Show/hide image section based on curated images (content.json)
+      const imgs = (work.images || []).filter(Boolean);
+      const hasImages = imgs.length > 0;
       imagesEl.style.display  = hasImages ? '' : 'none';
       dividerEl.style.display = hasImages ? '' : 'none';
 
       spacer.style.minHeight = '0';
       detailEl.style.overflowY = 'hidden'; // reset before measuring
-      initImageBlocks(work.id, detailEl);
+      renderDetailImages(imagesEl, imgs);
 
       // Push text to bottom; only enable scrolling when overflow is substantial
       const SCROLL_THRESHOLD = 100;
@@ -548,7 +478,7 @@
     onResize();
     window.addEventListener('resize', onResize);
 
-    // ── Image blocks ──────────────────────────────────────────────────────────
+    // ── Image blocks (display-only, from content.json) ──────────────────────────
     let lightboxEl = null;
 
     function getLightbox() {
@@ -567,70 +497,21 @@
       return lightboxEl;
     }
 
-    function setBlockImage(block, dataUrl) {
-      block.style.backgroundImage = `url("${dataUrl}")`;
-      block.style.backgroundSize  = 'cover';
-      block.style.backgroundPosition = 'center';
-      block.setAttribute('data-img', dataUrl);
-      block.classList.add('has-image');
-    }
-
-    function clearBlockImage(block, key) {
-      block.style.backgroundImage = '';
-      block.removeAttribute('data-img');
-      block.classList.remove('has-image');
-      localStorage.removeItem(key);
-    }
-
-    function initImageBlocks(workId, container) {
-      container.querySelectorAll('.work-image-block').forEach((block, i) => {
-        const key = `img_${workId}_${i}`;
-
-        // Load saved image
-        const saved = localStorage.getItem(key);
-        if (saved) setBlockImage(block, saved);
-
-        // Skip re-init if already wired for this work
-        if (block.dataset.init === workId) return;
-        block.dataset.init = workId;
-
-        // Hidden file input
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.style.cssText = 'position:absolute;opacity:0;pointer-events:none';
-        block.appendChild(input);
-
-        block.addEventListener('click', e => {
-          if (e.target.matches('.block-remove')) return;
-          const img = block.getAttribute('data-img');
-          if (img) {
-            const lb = getLightbox();
-            lb.querySelector('img').src = img;
-            lb.classList.add('open');
-          } else {
-            input.click();
-          }
+    function renderDetailImages(container, images) {
+      container.innerHTML = '';
+      images.forEach(src => {
+        const url = mediaUrl(src);
+        const block = document.createElement('div');
+        block.className = 'work-image-block has-image';
+        block.style.backgroundImage = `url("${url}")`;
+        block.style.backgroundSize  = 'cover';
+        block.style.backgroundPosition = 'center';
+        block.addEventListener('click', () => {
+          const lb = getLightbox();
+          lb.querySelector('img').src = url;
+          lb.classList.add('open');
         });
-
-        input.addEventListener('change', () => {
-          const file = input.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            localStorage.setItem(key, ev.target.result);
-            setBlockImage(block, ev.target.result);
-          };
-          reader.readAsDataURL(file);
-          input.value = '';
-        });
-
-        // Remove button — visible on hover when filled
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'block-remove';
-        removeBtn.innerHTML = '&#215;';
-        removeBtn.addEventListener('click', () => clearBlockImage(block, key));
-        block.appendChild(removeBtn);
+        container.appendChild(block);
       });
     }
 
@@ -692,24 +573,12 @@
       const socialsEl = document.getElementById('contact-panel-socials');
       const resumeEl  = document.getElementById('contact-panel-resume');
 
-      const DEFAULT_CONTACT = {
-        email: 'hello@rungirl.run',
-        resumeUrl: '',
-        bio: '3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.',
-        socials: [
-          { label: 'Instagram',  handle: '@rungirl.run',            url: '#' },
-          { label: 'ArtStation', handle: 'artstation.com/rungirl',  url: '#' },
-          { label: 'Twitter',    handle: '@rungirl_run',            url: '#' },
-        ],
-      };
+      const profile = content.profile;
 
       function populateOverlay() {
-        let ct = DEFAULT_CONTACT;
-        try { const s = localStorage.getItem('rgr_contact'); if (s) ct = JSON.parse(s); } catch(e) {}
-
         // Header image
         const headerEl = document.getElementById('contact-panel-header-img');
-        const headerImg = localStorage.getItem('rgr_contact_header_img');
+        const headerImg = profile.headerImage ? mediaUrl(profile.headerImage) : '';
         if (headerImg) {
           headerEl.style.backgroundImage = `url("${headerImg}")`;
           headerEl.style.display = '';
@@ -718,13 +587,11 @@
         }
 
         // Bio
-        document.getElementById('contact-panel-bio').textContent =
-          ct.bio || DEFAULT_CONTACT.bio;
+        document.getElementById('contact-panel-bio').textContent = profile.bio || '';
 
         // Socials
         socialsEl.innerHTML = '';
-        const socials = (ct.socials && ct.socials.length) ? ct.socials : DEFAULT_CONTACT.socials;
-        socials.forEach(s => {
+        (profile.socials || []).forEach(s => {
           if (!s.handle && !s.label) return;
           const row = document.createElement('div');
           row.className = 'cpanel-social-row';
@@ -734,9 +601,9 @@
         });
 
         // Resume
-        const resumeUrl = ct.resumeUrl || DEFAULT_CONTACT.resumeUrl || '#';
-        resumeEl.href = resumeUrl;
-        resumeEl.style.display = resumeUrl && resumeUrl !== '#' ? '' : '';
+        const resumeUrl = profile.resumeUrl || '';
+        if (resumeUrl) { resumeEl.href = resumeUrl; resumeEl.style.display = ''; }
+        else { resumeEl.style.display = 'none'; }
       }
 
       function openContact() { populateOverlay(); overlay.classList.add('open'); }

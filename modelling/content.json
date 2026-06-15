@@ -1,0 +1,52 @@
+{
+  "brand": "Run Girl Run",
+  "profile": {
+    "bio": "3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.",
+    "email": "hello@rungirl.run",
+    "resumeUrl": "",
+    "headerImage": "",
+    "socials": [
+      { "label": "Instagram", "handle": "@rungirl.run", "url": "#" },
+      { "label": "ArtStation", "handle": "artstation.com/rungirl", "url": "#" },
+      { "label": "Twitter", "handle": "@rungirl_run", "url": "#" }
+    ]
+  },
+  "works": [
+    {
+      "id": "akali",
+      "title": "Akali",
+      "model": "media/models/AKALI.glb",
+      "description": "High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.",
+      "tags": ["character", "game-art"],
+      "featured": true,
+      "images": []
+    },
+    {
+      "id": "cone",
+      "title": "Cone",
+      "model": "media/models/cone.glb",
+      "description": "A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.",
+      "tags": ["primitive", "geometry"],
+      "featured": false,
+      "images": []
+    },
+    {
+      "id": "cube",
+      "title": "Cube",
+      "model": "media/models/cube.glb",
+      "description": "A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.",
+      "tags": ["primitive", "geometry"],
+      "featured": false,
+      "images": []
+    },
+    {
+      "id": "ico",
+      "title": "Ico",
+      "model": "media/models/ico.glb",
+      "description": "Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.",
+      "tags": ["primitive", "geometry"],
+      "featured": false,
+      "images": []
+    }
+  ]
+}

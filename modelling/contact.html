@@ -398,42 +398,30 @@
 
   </div>
 
-  <script>
-    // ── Brand + Contact from localStorage ────────────────────────────────────
-    (function() {
-      const brand = localStorage.getItem('rgr_brand') || 'Run Girl Run';
+  <script type="module">
+    import { loadContent } from './site-data.js';
+
+    // ── Brand + Contact from content.json ─────────────────────────────────────
+    const content = await loadContent();
+    {
+      const brand = content.brand;
       document.getElementById('contact-logo').textContent = brand;
       document.title = 'Contact — ' + brand;
       document.getElementById('footer-copy').textContent =
         '© ' + new Date().getFullYear() + ' ' + brand;
 
-      // Contact info
-      const DEFAULT_CONTACT = {
-        email: 'hello@rungirl.run',
-        socials: [
-          { label: 'Instagram', handle: '@rungirl.run',           url: '#' },
-          { label: 'ArtStation', handle: 'artstation.com/rungirl', url: '#' },
-          { label: 'Twitter',   handle: '@rungirl_run',           url: '#' },
-        ],
-      };
-
-      let ct = DEFAULT_CONTACT;
-      try {
-        const s = localStorage.getItem('rgr_contact');
-        if (s) ct = JSON.parse(s);
-      } catch(e) {}
+      const profile = content.profile;
 
       // Email
       const emailEl = document.getElementById('contact-email');
-      const email   = ct.email || DEFAULT_CONTACT.email;
+      const email   = profile.email || '';
       emailEl.href        = 'mailto:' + email;
       emailEl.textContent = email;
 
       // Socials
       const socialsEl = document.getElementById('contact-socials');
       socialsEl.innerHTML = '';
-      const socials = (ct.socials && ct.socials.length) ? ct.socials : DEFAULT_CONTACT.socials;
-      socials.forEach(s => {
+      (profile.socials || []).forEach(s => {
         if (!s.handle && !s.label) return;
         const row = document.createElement('div');
         row.className = 'contact-social-row';
@@ -443,7 +431,7 @@
         `;
         socialsEl.appendChild(row);
       });
-    })();
+    }
 
     // ── Theme ────────────────────────────────────────────────────────────────
     const themeBtn = document.getElementById('theme-toggle');

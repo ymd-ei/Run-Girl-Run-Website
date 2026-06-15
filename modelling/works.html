@@ -37,25 +37,17 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
     import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
     import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
     import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+    import { loadContent, mediaUrl } from './site-data.js';
+    import { loadModel, applyCamera } from './model-view.js';
 
-    // ── Works data ──────────────────────────────────────────────────────────
-    const WORKS = [
-      {
-        id: 'akali',
-        title: 'Akali',
-        model: 'AKALI.glb',
-        description: 'High-detail 3D character model.',
-        tags: ['character', 'game-art'],
-        featured: true,
-      },
-      // Add more works here to populate the grid
-    ];
+    // ── Works data (top-level await: pauses until content.json loads) ─────────
+    const content = await loadContent();
+    const WORKS   = content.works;
 
     // ── Dark mode toggle ─────────────────────────────────────────────────────
     const BG_LIGHT = 0xf0ede8;
@@ -177,44 +169,22 @@
       composer.addPass(hp);
       composer.addPass(new OutputPass());
 
-      // Load model
+      // Load model (shared loader; thumbnails normalise to 3.5 + honour curated camera)
       let mixer = null;
       const clock = new THREE.Clock();
-      new GLTFLoader().load(work.model, (gltf) => {
-        const model = gltf.scene;
-        const box    = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size   = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale  = 3.5 / maxDim;
-        model.scale.setScalar(scale);
-        model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-
-        model.traverse(child => {
-          if (child.isMesh) {
-            // child.castShadow = true;
-            // Keep original material if it has a diffuse texture; fall back to grey
-            if (!child.material || !child.material.map) {
-              child.material = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.88, metalness: 0.0 });
-            }
-          }
-        });
+      loadModel(mediaUrl(work.model), { targetSize: 3.5 }).then(({ model, animations, frame }) => {
         scene.add(model);
 
         // Play any animation clips baked into the GLB
-        if (gltf.animations && gltf.animations.length) {
+        if (animations.length) {
           mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+          animations.forEach(clip => mixer.clipAction(clip).play());
           clock.getDelta();
         }
 
-        const yMid = (-center.y * scale) + (size.y * scale * 0.5);
-        controls.target.set(0, yMid, 0);
-        camera.position.set(0, yMid + 0.6, 5.5);
-        controls.update();
-
+        applyCamera(camera, controls, frame, work, 0.6);
         loaderEl.classList.add('hidden');
-      });
+      }).catch(() => { loaderEl.textContent = 'Model unavailable.'; });
 
       // Pause animation when card is off-screen
       let visible = true;

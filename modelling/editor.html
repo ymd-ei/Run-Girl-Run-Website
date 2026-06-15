@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio Editor</title>
+  <title>Portfolio Editor — Modelling</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -17,12 +29,25 @@
       --text-dim: #a09d97;
       --accent:   #d4501a;
       --accent-bg:#fff3ee;
-      --nav-w:    200px;
-      --top-h:    48px;
+      --good:     #22c55e;
+      --nav-w:    210px;
+      --top-h:    52px;
+      --font-ui:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-head:'Space Grotesk', var(--font-ui);
+      /* Media library modal (shared markup from src/editor-v3/media.js) — mapped
+         from v3's dark palette onto this light theme. */
+      --v3-panel:   #ffffff;
+      --v3-panel-2: #f5f4f1;
+      --v3-line:    #e2e0db;
+      --v3-text:    #1a1a1a;
+      --v3-muted:   #a09d97;
+      --v3-accent:  #d4501a;
+      --v3-accent-2:#bb4314;
+      --v3-warn:    #c0392b;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: var(--font-ui);
       background: var(--bg);
       color: var(--text);
       height: 100vh;
@@ -31,6 +56,7 @@
       flex-direction: column;
       font-size: 14px;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── Top bar ─────────────────────────────────── */
@@ -41,560 +67,396 @@
       display: flex;
       align-items: center;
       padding: 0 16px;
-      gap: 12px;
+      gap: 14px;
       flex-shrink: 0;
       z-index: 10;
     }
-
-    .topbar-title {
+    .topbar-brand {
+      font-family: var(--font-head);
       font-weight: 600;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text);
-      flex: 1;
+      letter-spacing: -0.01em;
     }
-    .topbar-title span {
-      color: var(--text-dim);
-      font-weight: 400;
-    }
+    .topbar-brand b { color: var(--accent); font-weight: 600; }
+    .topbar-brand span { color: var(--text-dim); font-weight: 400; }
+    .topbar-spacer { flex: 1; }
 
-    .save-indicator {
+    .deploy {
       font-size: 11px;
       color: var(--text-dim);
-      display: flex;
-      align-items: center;
-      gap: 5px;
+      letter-spacing: 0.02em;
     }
-    .save-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #22c55e;
-      opacity: 0;
-      transition: opacity 0.3s;
+    .deploy.building { color: var(--accent); }
+    .deploy.live { color: var(--good); }
+
+    .auth { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .auth-user { display: inline-flex; align-items: center; gap: 5px; color: var(--text-mid); }
+    .auth-user i { color: var(--good); }
+
+    .link {
+      font-size: 12px; color: var(--text-mid); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: color 0.12s;
     }
-    .save-dot.show { opacity: 1; }
+    .link:hover { color: var(--text); }
+    .link.login { color: var(--accent); font-weight: 500; }
 
     .btn {
-      font-size: 12px;
-      font-weight: 500;
-      padding: 6px 14px;
-      border-radius: 6px;
+      font-family: var(--font-ui);
+      font-size: 12px; font-weight: 500;
+      padding: 7px 14px; border-radius: 7px;
       border: 1px solid var(--border2);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.12s;
+      background: var(--surface); color: var(--text);
+      cursor: pointer; transition: all 0.12s;
       text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+      display: inline-flex; align-items: center; gap: 6px;
       white-space: nowrap;
     }
     .btn:hover { background: var(--bg); border-color: var(--text); }
-    .btn.primary {
-      background: var(--text);
-      color: #fff;
-      border-color: var(--text);
-    }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn:disabled:hover { background: var(--surface); border-color: var(--border2); }
+    .btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
     .btn.primary:hover { background: #333; }
+    .btn.primary:disabled:hover { background: var(--text); }
+    .btn.primary.dirty { background: var(--accent); border-color: var(--accent); }
+    .btn.primary.dirty:hover { background: #b8431510; background: #bb4314; }
     .btn.danger { color: var(--accent); border-color: #fca592; }
     .btn.danger:hover { background: #fff3ee; }
+    .btn.ghost { border-color: var(--border); color: var(--text-mid); }
 
     /* ── Layout ──────────────────────────────────── */
-    .layout {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    .layout { display: flex; flex: 1; overflow: hidden; }
 
-    /* ── Nav ─────────────────────────────────────── */
     .nav {
-      width: var(--nav-w);
-      flex-shrink: 0;
+      width: var(--nav-w); flex-shrink: 0;
       background: var(--surface);
       border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      padding: 12px 0 20px;
+      display: flex; flex-direction: column;
+      overflow-y: auto; padding: 12px 0 20px;
     }
-
-    .nav-section {
-      margin-top: 4px;
-    }
-
+    .nav-section { margin-top: 4px; }
     .nav-section-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      padding: 10px 14px 4px;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-dim); padding: 12px 16px 4px;
     }
-
     .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 14px;
-      font-size: 13px;
-      color: var(--text-mid);
-      cursor: pointer;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-      border-radius: 0;
-      transition: color 0.1s, background 0.1s;
-      position: relative;
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 16px; font-size: 13px;
+      color: var(--text-mid); cursor: pointer;
+      border: none; background: none; width: 100%;
+      text-align: left; font-family: inherit;
+      transition: color 0.1s, background 0.1s; position: relative;
     }
     .nav-item:hover { color: var(--text); background: var(--bg); }
-    .nav-item.active {
-      color: var(--text);
-      font-weight: 500;
-      background: var(--accent-bg);
-    }
+    .nav-item.active { color: var(--text); font-weight: 500; background: var(--accent-bg); }
     .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 2px;
-      background: var(--accent);
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 2px; background: var(--accent);
     }
-
-    .nav-item-icon { font-size: 14px; flex-shrink: 0; opacity: 0.6; }
+    .nav-item i { font-size: 15px; flex-shrink: 0; opacity: 0.7; }
     .nav-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .nav-item-badge {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: var(--accent);
-      color: #fff;
-      flex-shrink: 0;
-    }
+    .nav-item-badge { font-size: 11px; color: var(--accent); flex-shrink: 0; }
 
     .nav-add {
-      margin: 8px 10px 0;
-      padding: 6px 10px;
-      border: 1px dashed var(--border2);
-      border-radius: 6px;
-      background: none;
-      font-size: 12px;
-      color: var(--text-dim);
-      cursor: pointer;
-      width: calc(100% - 20px);
-      text-align: left;
-      transition: all 0.12s;
+      margin: 10px 12px 0; padding: 7px 10px;
+      border: 1px dashed var(--border2); border-radius: 7px;
+      background: none; font-size: 12px; color: var(--text-dim);
+      cursor: pointer; width: calc(100% - 24px); text-align: left;
+      font-family: inherit; transition: all 0.12s;
     }
     .nav-add:hover { border-color: var(--text-mid); color: var(--text); }
-
-    /* Drag indicator */
     .nav-item[draggable] { cursor: grab; }
     .nav-item.drag-over { outline: 1px solid var(--accent); outline-offset: -1px; }
 
     /* ── Content ─────────────────────────────────── */
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px 40px 80px;
-      max-width: 720px;
-    }
-
+    .content { flex: 1; overflow-y: auto; padding: 36px 44px 96px; }
+    .content-inner { max-width: 760px; margin: 0 auto; }
     .panel { display: none; }
     .panel.active { display: block; }
 
-    /* ── Section labels ──────────────────────────── */
-    .section-head {
-      margin-bottom: 6px;
-      margin-top: 32px;
-    }
-    .section-head:first-child { margin-top: 0; }
-    .section-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-    .section-desc {
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 2px;
-    }
+    .page-title { font-family: var(--font-head); font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .page-subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 30px; }
+
+    .section-head { margin-bottom: 6px; margin-top: 34px; }
+    .section-head:first-of-type { margin-top: 0; }
+    .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+    .section-desc { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
 
     /* ── Fields ──────────────────────────────────── */
     .field-group {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      overflow: hidden;
-      margin-top: 8px;
+      border: 1px solid var(--border); border-radius: 9px;
+      background: var(--surface); overflow: hidden; margin-top: 8px;
     }
-
-    .field {
-      display: flex;
-      align-items: flex-start;
-      border-bottom: 1px solid var(--border);
-    }
+    .field { display: flex; align-items: flex-start; border-bottom: 1px solid var(--border); }
     .field:last-child { border-bottom: none; }
-
     .field-label {
-      font-size: 12px;
-      color: var(--text-mid);
-      font-weight: 500;
-      width: 110px;
-      flex-shrink: 0;
-      padding: 11px 12px;
-      line-height: 1.4;
-      user-select: none;
+      font-size: 12px; color: var(--text-mid); font-weight: 500;
+      width: 116px; flex-shrink: 0; padding: 12px 12px; line-height: 1.4; user-select: none;
     }
-
     .field-input {
-      flex: 1;
-      border: none;
-      background: none;
-      font-size: 13px;
-      color: var(--text);
-      font-family: inherit;
-      padding: 10px 12px;
-      outline: none;
-      width: 100%;
-      transition: background 0.1s;
+      flex: 1; border: none; background: none; font-size: 13px;
+      color: var(--text); font-family: inherit; padding: 11px 12px;
+      outline: none; width: 100%; transition: background 0.1s;
     }
     .field-input:focus { background: #f9f8f6; }
     .field-input::placeholder { color: var(--text-dim); }
-    textarea.field-input {
-      resize: none;
-      line-height: 1.6;
-      overflow-y: auto;
-    }
+    textarea.field-input { resize: vertical; line-height: 1.6; min-height: 80px; }
+    .field-hint { font-size: 11px; color: var(--text-dim); padding: 0 12px 9px 116px; background: var(--surface); }
 
-    .field-hint {
-      font-size: 11px;
-      color: var(--text-dim);
-      padding: 0 12px 8px 110px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .field-hint:last-child { border-bottom: none; }
-
-    /* ── Hero image slot ─────────────────────────── */
-    .hero-slot {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-      margin-top: 8px;
-      transition: border-color 0.12s;
-    }
-    .hero-slot:hover { border-color: var(--border2); }
-    .hero-slot::after { content: ''; display: block; padding-top: 33%; }
-
-    .hero-slot-inner {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      gap: 6px;
-      font-size: 12px; color: var(--text-dim);
-    }
-    .hero-slot img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-    .hero-slot.has-img img { display: block; }
-    .hero-slot.has-img .hero-slot-inner { display: none; }
-
-    .hero-rm {
-      position: absolute; top: 8px; right: 8px;
-      background: rgba(0,0,0,0.5); border: none;
-      color: #fff; width: 24px; height: 24px;
-      border-radius: 4px; font-size: 12px;
-      cursor: pointer; display: none;
-      align-items: center; justify-content: center;
-      z-index: 2;
-    }
-    .hero-slot.has-img:hover .hero-rm { display: flex; }
-
-    /* ── Social rows ─────────────────────────────── */
-    .social-row {
-      display: grid;
-      grid-template-columns: 100px 1fr 1fr 32px;
-      border-bottom: 1px solid var(--border);
-    }
-    .social-row:last-child { border-bottom: none; }
-    .social-row .field-input { padding: 9px 10px; font-size: 12px; }
-    .social-row .field-input + .field-input { border-left: 1px solid var(--border); }
-    .social-rm {
-      display: flex; align-items: center; justify-content: center;
-      background: none; border: none; border-left: 1px solid var(--border);
-      color: var(--text-dim); font-size: 13px;
-      cursor: pointer; transition: color 0.1s;
-    }
-    .social-rm:hover { color: var(--accent); }
-
-    .socials-header {
-      display: grid;
-      grid-template-columns: 100px 1fr 1fr 32px;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 6px 10px;
-    }
-    .socials-header span {
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-dim);
-    }
-
-    /* ── Work panel header ───────────────────────── */
-    .work-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-    .work-header-title {
-      font-size: 20px;
-      font-weight: 700;
-      flex: 1;
-      color: var(--text);
-    }
-    .work-header-title.empty { color: var(--text-dim); }
-
-    /* ── Image grid ──────────────────────────────── */
-    .img-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .img-slot {
-      position: relative;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      overflow: hidden;
-      transition: border-color 0.12s;
-    }
-    .img-slot:hover { border-color: var(--border2); }
-    .img-slot::after { content: ''; display: block; padding-top: 56.25%; /* 16:9 */ }
-
-    .img-slot-inner {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 3px;
-    }
-    .img-slot-num {
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.08em;
-      color: var(--text-dim);
-    }
-    .img-slot-cta {
-      font-size: 10px; color: var(--text-dim);
-      opacity: 0; transition: opacity 0.12s;
-    }
-    .img-slot:hover .img-slot-cta { opacity: 1; }
-
-    .img-slot img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-    .img-slot.has-img img { display: block; }
-    .img-slot.has-img .img-slot-inner { display: none; }
-
-    .img-rm {
-      position: absolute; top: 5px; right: 5px;
-      background: rgba(0,0,0,0.5); border: none;
-      color: #fff; width: 20px; height: 20px;
-      border-radius: 3px; font-size: 11px;
-      cursor: pointer; display: none;
-      align-items: center; justify-content: center;
-      z-index: 2;
-    }
-    .img-slot.has-img:hover .img-rm { display: flex; }
-
-    /* ── Page title ──────────────────────────────── */
-    .page-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-    .page-subtitle {
-      font-size: 13px;
-      color: var(--text-dim);
-      margin-bottom: 28px;
-    }
-
-    /* ── Featured badge toggle ───────────────────── */
-    .featured-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--text-mid);
-      cursor: pointer;
-      user-select: none;
-    }
-    .featured-toggle input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
-    .featured-toggle.active { color: var(--accent); font-weight: 500; }
-
-    /* ── Brand page big input ────────────────────── */
     .brand-big {
-      font-size: 36px;
-      font-weight: 800;
-      border: none;
-      border-bottom: 2px solid var(--border);
-      background: none;
-      color: var(--text);
-      outline: none;
-      padding: 4px 0 12px;
-      width: 100%;
-      font-family: inherit;
-      transition: border-color 0.14s;
-      margin-top: 8px;
+      font-family: var(--font-head);
+      font-size: 34px; font-weight: 600; border: none;
+      border-bottom: 2px solid var(--border); background: none;
+      color: var(--text); outline: none; padding: 4px 0 12px;
+      width: 100%; transition: border-color 0.14s; margin-top: 8px;
     }
     .brand-big:focus { border-bottom-color: var(--accent); }
     .brand-big::placeholder { color: var(--text-dim); }
 
-    /* ── Divider ─────────────────────────────────── */
-    .divider { height: 1px; background: var(--border); margin: 28px 0; }
-
-    /* ── Empty state ─────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 48px 24px;
-      color: var(--text-dim);
+    /* ── Header / hero image ─────────────────────── */
+    .hero-slot {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 9px; overflow: hidden; cursor: pointer; position: relative;
+      margin-top: 8px; transition: border-color 0.12s;
     }
-    .empty-state-icon { font-size: 32px; margin-bottom: 12px; }
-    .empty-state p { font-size: 13px; margin-top: 6px; }
+    .hero-slot:hover { border-color: var(--border2); }
+    .hero-slot::after { content: ''; display: block; padding-top: 30%; }
+    .hero-slot-inner {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      gap: 7px; font-size: 12px; color: var(--text-dim);
+    }
+    .hero-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+    .hero-slot.has-img img { display: block; }
+    .hero-slot.has-img .hero-slot-inner { display: none; }
+    .img-rm {
+      position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); border: none;
+      color: #fff; width: 24px; height: 24px; border-radius: 5px; font-size: 12px;
+      cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 2;
+    }
+    .hero-slot.has-img:hover .img-rm, .img-slot.has-img:hover .img-rm { display: flex; }
+
+    /* ── Socials ─────────────────────────────────── */
+    .social-row { display: grid; grid-template-columns: 110px 1fr 1fr 34px; border-bottom: 1px solid var(--border); }
+    .social-row:last-child { border-bottom: none; }
+    .social-row .field-input { padding: 9px 10px; font-size: 12px; }
+    .social-row .field-input + .field-input { border-left: 1px solid var(--border); }
+    .social-rm {
+      display: flex; align-items: center; justify-content: center; background: none; border: none;
+      border-left: 1px solid var(--border); color: var(--text-dim); font-size: 13px; cursor: pointer; transition: color 0.1s;
+    }
+    .social-rm:hover { color: var(--accent); }
+    .socials-header { display: grid; grid-template-columns: 110px 1fr 1fr 34px; background: var(--bg); border-bottom: 1px solid var(--border); padding: 7px 10px; }
+    .socials-header span { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+
+    /* ── Work header ─────────────────────────────── */
+    .work-header { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+    .work-header-title { font-family: var(--font-head); font-size: 22px; font-weight: 600; flex: 1; }
+    .work-header-title.empty { color: var(--text-dim); }
+    .featured-toggle { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-mid); cursor: pointer; user-select: none; }
+    .featured-toggle input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+    .featured-toggle.active { color: var(--accent); font-weight: 500; }
+
+    /* ── Camera curation ─────────────────────────── */
+    .cam-wrap {
+      margin-top: 8px; border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--surface);
+    }
+    .cam-stage {
+      position: relative; width: 100%; height: 340px; background: #efede9;
+      display: flex; align-items: center; justify-content: center;
+    }
+    [data-theme] .cam-stage { background: #efede9; }
+    .cam-canvas { display: block; width: 100%; height: 100%; }
+    .cam-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-dim); font-size: 12px; }
+    .cam-empty i { font-size: 26px; opacity: 0.6; }
+    .cam-loading {
+      position: absolute; top: 10px; left: 12px; font-size: 11px; color: var(--text-mid);
+      background: rgba(255,255,255,0.85); padding: 4px 9px; border-radius: 6px; display: none;
+    }
+    .cam-loading.show { display: block; }
+    .cam-hint {
+      position: absolute; bottom: 10px; left: 12px; font-size: 10.5px; color: var(--text-dim);
+      background: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 6px; pointer-events: none;
+    }
+    .cam-controls { padding: 14px 16px; border-top: 1px solid var(--border); }
+    .cam-slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .cam-slider-row:last-of-type { margin-bottom: 0; }
+    .cam-slider-label { width: 74px; flex-shrink: 0; font-size: 12px; color: var(--text-mid); font-weight: 500; }
+    .cam-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
+    .cam-slider-val { width: 52px; text-align: right; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .cam-actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+    .cam-actions .spacer { flex: 1; }
+
+    /* ── Image grid ──────────────────────────────── */
+    .img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+    .img-slot {
+      position: relative; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; overflow: hidden; transition: border-color 0.12s;
+    }
+    .img-slot:hover { border-color: var(--border2); }
+    .img-slot::after { content: ''; display: block; padding-top: 75%; }
+    .img-slot-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-dim); }
+    .img-slot-inner i { font-size: 20px; opacity: 0.7; }
+    .img-slot-inner span { font-size: 10px; }
+    .img-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+    .img-slot.has-img img { display: block; }
+    .img-slot.has-img .img-slot-inner { display: none; }
+    .img-slot.busy .img-slot-inner span { color: var(--accent); }
+
+    .divider { height: 1px; background: var(--border); margin: 30px 0; }
+
+    /* ── Toast ───────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--text); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 8px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 100; max-width: 80vw;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.err { background: #b8431500; background: #c0392b; }
+
+    .auth-banner {
+      margin: 0 0 24px; padding: 12px 16px; border-radius: 9px;
+      background: var(--accent-bg); border: 1px solid #fca592; color: #8a3210;
+      font-size: 13px; display: flex; align-items: center; gap: 8px;
+    }
+    .auth-banner a { color: var(--accent); font-weight: 600; }
+
+    /* ── Media library modal (markup built by src/editor-v3/media.js) ─────────── */
+    #v3-media-modal { position: fixed; inset: 0; z-index: 200; display: none; }
+    #v3-media-modal.show { display: block; }
+    .v3-media-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(2px); }
+    .v3-media-dialog {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: min(760px, 92vw); height: min(560px, 86vh);
+      background: var(--v3-panel); border: 1px solid var(--v3-line); border-radius: 14px;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .v3-media-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--v3-line);
+      font-family: var(--font-head); font-weight: 600;
+    }
+    .v3-media-head-tools { display: flex; align-items: center; gap: 8px; }
+    .v3-media-upload {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--v3-accent); color: #fff; padding: 6px 12px; border-radius: 7px;
+      font-size: 12.5px; cursor: pointer;
+    }
+    .v3-media-upload:hover { background: var(--v3-accent-2); }
+    .v3-media-close {
+      width: 30px; height: 30px; display: grid; place-items: center;
+      background: var(--v3-panel-2); border: 1px solid var(--v3-line); border-radius: 7px;
+      color: var(--v3-muted); cursor: pointer;
+    }
+    .v3-media-close:hover { color: var(--v3-text); }
+    .v3-media-search { padding: 12px 18px 0; }
+    .v3-media-search input {
+      width: 100%; background: var(--v3-panel-2); border: 1px solid var(--v3-line);
+      color: var(--v3-text); border-radius: 8px; padding: 9px 11px; font-size: 13px; outline: none;
+    }
+    .v3-media-grid {
+      flex: 1 1 auto; overflow-y: auto; padding: 14px 18px 18px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+      align-content: start;
+    }
+    .v3-media-empty { grid-column: 1/-1; text-align: center; color: var(--v3-muted); padding: 40px; font-size: 13px; }
+    .v3-media-item {
+      position: relative; background: var(--v3-panel-2); border: 1px solid var(--v3-line);
+      border-radius: 9px; overflow: hidden; cursor: pointer; transition: border-color .12s;
+    }
+    .v3-media-item:hover { border-color: var(--v3-accent); }
+    .v3-media-item img, .v3-media-vid, .v3-media-file {
+      width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: #e6e4df;
+    }
+    .v3-media-vid, .v3-media-file { display: grid; place-items: center; color: var(--v3-muted); font-size: 26px; }
+    .v3-media-name {
+      font-size: 10.5px; color: var(--v3-muted); padding: 6px 7px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .v3-media-del {
+      position: absolute; top: 5px; right: 5px; width: 24px; height: 24px;
+      background: rgba(0,0,0,.6); border: 0; border-radius: 6px; color: #fff;
+      cursor: pointer; opacity: 0; transition: opacity .12s; display: grid; place-items: center;
+    }
+    .v3-media-item:hover .v3-media-del { opacity: 1; }
+    .v3-media-del:hover { background: var(--v3-warn); }
   </style>
 </head>
 <body>
 
 <!-- Top bar -->
 <header class="topbar">
-  <div class="topbar-title" id="topbar-title">Portfolio <span>/ Editor</span></div>
-  <div class="save-indicator">
-    <div class="save-dot" id="save-dot"></div>
-    <span id="save-label">All changes saved</span>
-  </div>
-  <a href="index.html" class="btn primary" target="_blank">View Site ↗</a>
+  <div class="topbar-brand" id="topbar-brand">Run Girl Run <span>/ Modelling</span> <b>Editor</b></div>
+  <div class="topbar-spacer"></div>
+  <span id="deploy" class="deploy"></span>
+  <div id="auth" class="auth"></div>
+  <a href="index.html" class="link" target="_blank">View Site <i class="ph-fill ph-arrow-up-right"></i></a>
+  <button id="save-btn" class="btn primary" disabled>
+    <i class="ph-fill ph-cloud-arrow-up"></i> <span id="save-label">Saved</span>
+  </button>
 </header>
 
 <div class="layout">
 
   <!-- Left nav -->
   <nav class="nav" id="nav">
-
     <div class="nav-section">
       <div class="nav-section-label">Site</div>
-      <button class="nav-item active" data-panel="brand">
-        <span class="nav-item-icon">◈</span>
-        <span class="nav-item-label">Brand</span>
-      </button>
-      <button class="nav-item" data-panel="profile">
-        <span class="nav-item-icon">◉</span>
-        <span class="nav-item-label">Profile</span>
-      </button>
+      <button class="nav-item active" data-panel="brand"><i class="ph-fill ph-diamond"></i><span class="nav-item-label">Brand</span></button>
+      <button class="nav-item" data-panel="profile"><i class="ph-fill ph-user-circle"></i><span class="nav-item-label">Profile</span></button>
     </div>
-
     <div class="nav-section">
       <div class="nav-section-label">Works</div>
       <div id="works-nav"></div>
       <button class="nav-add" id="add-work-btn">+ Add Work</button>
     </div>
-
   </nav>
 
   <!-- Content -->
   <main class="content">
+   <div class="content-inner">
 
     <!-- ── Brand ── -->
     <div class="panel active" id="panel-brand">
       <p class="page-title">Brand</p>
-      <p class="page-subtitle">The site name shown in the header and browser tab.</p>
-
-      <input class="brand-big" id="brand-field"
-             type="text" spellcheck="false"
-             placeholder="Your Name or Studio">
-
-      <div class="section-head" style="margin-top:28px">
-        <div class="section-title">Preview</div>
-        <div class="section-desc">This is how the brand name appears on the site.</div>
-      </div>
-      <div style="margin-top:8px; padding:20px 24px; border:1px solid var(--border); border-radius:8px; background:var(--surface);">
-        <div id="brand-preview" style="font-size:18px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim)">—</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Page title · Nav header</div>
-      </div>
+      <p class="page-subtitle">The site name shown in the splash header, contact page, and browser tab.</p>
+      <input class="brand-big" id="brand-field" type="text" spellcheck="false" placeholder="Your Name or Studio">
     </div>
 
     <!-- ── Profile ── -->
     <div class="panel" id="panel-profile">
       <p class="page-title">Profile</p>
-      <p class="page-subtitle">Your About panel and contact details. Opens when visitors click "Contact".</p>
+      <p class="page-subtitle">Your About panel and contact details, shown on the contact page and the home "Contact" overlay.</p>
 
-      <div class="section-head">
-        <div class="section-title">Header Image</div>
-        <div class="section-desc">Wide banner shown at the top of the About panel.</div>
-      </div>
+      <div class="section-head"><div class="section-title">Header Image</div><div class="section-desc">Wide banner shown at the top of the About overlay.</div></div>
       <div class="hero-slot" id="hero-slot">
-        <div class="hero-slot-inner">⊕ Click to upload image</div>
+        <div class="hero-slot-inner"><i class="ph-fill ph-image"></i> Click to choose from media</div>
         <img id="hero-img" alt="">
-        <button class="hero-rm" id="hero-rm">✕</button>
-        <input type="file" id="hero-input" accept="image/*"
-               style="position:absolute;opacity:0;pointer-events:none;width:0;height:0">
+        <button class="img-rm" id="hero-rm">✕</button>
       </div>
 
-      <div class="section-head">
-        <div class="section-title">About</div>
-        <div class="section-desc">A short bio shown in the About panel.</div>
-      </div>
+      <div class="section-head"><div class="section-title">About</div></div>
       <div class="field-group">
         <div class="field">
           <label class="field-label" for="bio-field">Bio</label>
-          <textarea class="field-input" id="bio-field" rows="3"
-            placeholder="3D artist & creative director…"></textarea>
+          <textarea class="field-input" id="bio-field" placeholder="3D artist & creative director…"></textarea>
         </div>
       </div>
 
-      <div class="section-head">
-        <div class="section-title">Contact</div>
-        <div class="section-desc">Email and résumé link shown in the About panel.</div>
-      </div>
+      <div class="section-head"><div class="section-title">Contact</div></div>
       <div class="field-group">
-        <div class="field">
-          <label class="field-label" for="email-field">Email</label>
-          <input class="field-input" id="email-field" type="email"
-                 placeholder="hello@example.com" spellcheck="false">
-        </div>
-        <div class="field">
-          <label class="field-label" for="resume-field">Résumé URL</label>
-          <input class="field-input" id="resume-field" type="url"
-                 placeholder="https://…" spellcheck="false">
-        </div>
+        <div class="field"><label class="field-label" for="email-field">Email</label>
+          <input class="field-input" id="email-field" type="email" placeholder="hello@example.com" spellcheck="false"></div>
+        <div class="field"><label class="field-label" for="resume-field">Résumé URL</label>
+          <input class="field-input" id="resume-field" type="url" placeholder="https://…" spellcheck="false"></div>
       </div>
 
-      <div class="section-head">
-        <div class="section-title">Social Links</div>
-        <div class="section-desc">Platform links shown at the bottom of the About panel.</div>
-      </div>
-      <div class="field-group" id="socials-wrap">
-        <div class="socials-header">
-          <span>Platform</span>
-          <span>Handle</span>
-          <span>URL</span>
-          <span></span>
-        </div>
+      <div class="section-head"><div class="section-title">Social Links</div></div>
+      <div class="field-group">
+        <div class="socials-header"><span>Platform</span><span>Handle</span><span>URL</span><span></span></div>
         <div id="socials-list"></div>
       </div>
       <button class="btn" style="margin-top:8px" id="add-social-btn">+ Add Link</button>
@@ -603,454 +465,551 @@
     <!-- ── Work (dynamic) ── -->
     <div class="panel" id="panel-work"></div>
 
+   </div>
   </main>
 </div>
 
+<div id="toast"></div>
+
+<!-- API config + session capture (same pattern + same backend as the main editor) -->
 <script>
-  // ── Storage keys ─────────────────────────────────────────────────────────
-  const K_BRAND   = 'rgr_brand';
-  const K_WORKS   = 'rgr_works';
-  const K_CONTACT = 'rgr_contact';
-  const K_HEADER  = 'rgr_contact_header_img';
+  const params = new URLSearchParams(location.search);
+  const apiParam = params.get('api');
+  const tokenParam = params.get('session_token');
+  if (tokenParam) {
+    localStorage.setItem('editor_session_token', tokenParam);
+    params.delete('session_token');
+    const next = `${location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    history.replaceState({}, '', next);
+  }
+  if (apiParam) localStorage.setItem('editor_api_base', apiParam);
+  window.__V3_API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://rgr-editor-backend.rungirlrun.workers.dev';
+</script>
 
-  const DEFAULT_WORKS = [
-    { id:'akali', title:'Akali', model:'../media/models/AKALI.glb',
-      description:'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
-      tags:['character','game-art'], featured:true },
-    { id:'cone',  title:'Cone',  model:'../media/models/cone.glb',
-      description:'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
-      tags:['primitive','geometry'], featured:false },
-    { id:'cube',  title:'Cube',  model:'../media/models/cube.glb',
-      description:'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
-      tags:['primitive','geometry'], featured:false },
-    { id:'ico',   title:'Ico',   model:'../media/models/ico.glb',
-      description:'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
-      tags:['primitive','geometry'], featured:false },
-  ];
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
+  import { HalftonePass }   from 'three/addons/postprocessing/HalftonePass.js';
+  import { OutputPass }     from 'three/addons/postprocessing/OutputPass.js';
+  import { loadModel, applyCamera, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
+  import { mediaUrl, DEFAULTS } from './site-data.js';
+  import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
+  import { openMediaPicker } from '../src/editor-v3/media.js';
 
-  const DEFAULT_CONTACT = {
-    email:'hello@rungirl.run',
-    resumeUrl:'',
-    bio:'3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.',
-    socials:[
-      { label:'Instagram',  handle:'@rungirl.run',           url:'#' },
-      { label:'ArtStation', handle:'artstation.com/rungirl', url:'#' },
-      { label:'Twitter',    handle:'@rungirl_run',           url:'#' },
-    ],
-  };
-
-  // ── State ─────────────────────────────────────────────────────────────────
-  let works    = [];
-  let contact  = {};
-  let activeId = 'brand';   // 'brand' | 'profile' | work.id
+  // ── State ───────────────────────────────────────────────────────────────
+  let state    = null;
+  let activeId = 'brand';     // 'brand' | 'profile' | work.id
   let dragSrc  = null;
+  let dirty    = false;
+  let authed   = false;
 
-  function load(key, def) {
-    try { const s = localStorage.getItem(key); if (s) return JSON.parse(s); } catch(e){}
-    return JSON.parse(JSON.stringify(def));
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  // ── Load content.json ───────────────────────────────────────────────────
+  async function loadState() {
+    try {
+      const r = await fetch('content.json', { cache: 'no-cache' });
+      if (r.ok) return await r.json();
+    } catch (_) {}
+    return JSON.parse(JSON.stringify(DEFAULTS));
   }
 
-  // ── Save helpers ──────────────────────────────────────────────────────────
-  let saveTimer;
-  function flashSave() {
-    const dot   = document.getElementById('save-dot');
-    const label = document.getElementById('save-label');
-    dot.classList.add('show');
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      dot.classList.remove('show');
-      label.textContent = 'Saved ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    }, 600);
+  // ── Dirty + Save ──────────────────────────────────────────────────────────
+  function markDirty() { dirty = true; updateSaveUI(); }
+  function updateSaveUI() {
+    const btn = $('save-btn');
+    btn.classList.toggle('dirty', dirty && authed);
+    btn.disabled = !dirty || !authed;
+    $('save-label').textContent = dirty ? 'Publish' : 'Saved';
   }
 
-  function saveWorks()   { localStorage.setItem(K_WORKS,   JSON.stringify(works));   flashSave(); }
-  function saveContact() { localStorage.setItem(K_CONTACT, JSON.stringify(contact)); flashSave(); }
-  function saveBrand(v)  {
-    localStorage.setItem(K_BRAND, v);
-    const label = document.getElementById('topbar-title');
-    label.innerHTML = esc(v||'Portfolio') + ' <span>/ Editor</span>';
-    document.title = 'Editor — ' + (v||'Portfolio');
-    document.getElementById('brand-preview').textContent = v || '—';
-    flashSave();
+  async function publish() {
+    if (!dirty || !authed) return;
+    const btn = $('save-btn');
+    btn.disabled = true;
+    $('save-label').textContent = 'Publishing…';
+    try {
+      const token = localStorage.getItem('editor_session_token') || '';
+      const files = { 'modelling/content.json': JSON.stringify(state, null, 2) };
+      const res = await fetch(getApiBase() + '/api/save', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+        body: JSON.stringify({ files, message: 'Modelling editor: save changes' })
+      });
+      const r = await res.json();
+      if (!res.ok || !r.success) throw new Error(r.error || 'Save failed');
+      dirty = false;
+      toast('Published ✓');
+      if (r.commit) startDeployPolling();
+    } catch (e) {
+      toast('Error: ' + e.message, true);
+      if (/unauthor/i.test(e.message)) initAuth();
+    }
+    updateSaveUI();
   }
 
-  function esc(s) {
-    return String(s??'')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function slugify(t) {
-    return (t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'work-'+Date.now();
-  }
-  function imgKey(id,i) { return `img_${id}_${i}`; }
-
-  // ── Panel switching ───────────────────────────────────────────────────────
-  function showPanel(id) {
-    activeId = id;
-
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-    if (id === 'brand' || id === 'profile') {
-      document.getElementById('panel-' + id).classList.add('active');
-      document.querySelector(`.nav-item[data-panel="${id}"]`).classList.add('active');
+  // ── Auth ────────────────────────────────────────────────────────────────
+  async function initAuth() {
+    const auth = await checkAuth();
+    const el = $('auth');
+    if (auth) {
+      authed = true;
+      el.innerHTML = `<span class="auth-user"><i class="ph-fill ph-check-circle"></i> ${esc(auth.user || 'Logged in')}</span> <a href="${getLogoutUrl()}" class="link">Logout</a>`;
     } else {
-      const w = works.find(x => x.id === id);
-      if (!w) { showPanel('brand'); return; }
-      renderWorkPanel(w);
-      document.getElementById('panel-work').classList.add('active');
+      authed = false;
+      el.innerHTML = `<a href="${getLoginUrl()}" class="link login">Log in to publish</a>`;
+    }
+    updateSaveUI();
+    refreshAuthBanner();
+  }
+
+  function refreshAuthBanner() {
+    // Banner only on Brand panel, when logged out
+    document.querySelectorAll('.auth-banner').forEach(b => b.remove());
+    if (authed) return;
+    const host = $('panel-brand');
+    const b = document.createElement('div');
+    b.className = 'auth-banner';
+    b.innerHTML = `<i class="ph-fill ph-warning-circle"></i><div>You're viewing in read-only mode. <a href="${getLoginUrl()}">Log in with GitHub</a> to publish changes. (Uses the same sign-in as the main site editor.)</div>`;
+    host.insertBefore(b, host.firstChild);
+  }
+
+  // ── Deploy polling (GitHub Pages builds API) ──────────────────────────────
+  let deployTimer = null;
+  function setDeploy(msg, cls) { const el = $('deploy'); el.textContent = msg; el.className = 'deploy' + (cls ? ' ' + cls : ''); }
+  function startDeployPolling() {
+    if (deployTimer) clearInterval(deployTimer);
+    setDeploy('publishing…', 'building');
+    let tries = 0;
+    deployTimer = setInterval(async () => {
+      tries++;
+      try {
+        const r = await fetch('https://api.github.com/repos/ymd-ei/Run-Girl-Run-Website/pages/builds/latest', { headers: { Accept: 'application/vnd.github.v3+json' } });
+        if (r.ok) {
+          const b = await r.json();
+          const st = (b.status || '').toLowerCase();
+          if (st === 'built') { setDeploy('live ✓', 'live'); clearInterval(deployTimer); deployTimer = null; return; }
+          if (st === 'errored') { setDeploy('deploy error', ''); clearInterval(deployTimer); deployTimer = null; return; }
+          setDeploy('building…', 'building');
+        }
+      } catch (_) {}
+      if (tries >= 24) { setDeploy('saved ✓', 'live'); clearInterval(deployTimer); deployTimer = null; }
+    }, 10000);
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function toast(msg, err) {
+    const t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+  window.__v3toast = toast;   // media.js (the shared library modal) reports here
+
+  // ── Camera preview (live model) ─────────────────────────────────────────────
+  const Preview = (() => {
+    let renderer, scene, camera, controls, composer, halftone, clock;
+    let canvas, model = null, mixer = null, frame = null, work = null;
+    let token = 0, raf = null, needs = true, ready = false;
+
+    function ensure() {
+      if (renderer) return;
+      canvas = document.createElement('canvas');
+      canvas.className = 'cam-canvas';
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff);
+      camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+      camera.position.set(0, 1.5, 5.5);
+      const key = new THREE.DirectionalLight(0xffffff, 3.4); key.position.set(5, 9, 5); scene.add(key);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+      const fill = new THREE.DirectionalLight(0xffffff, 0.7); fill.position.set(-5, 2, 3); scene.add(fill);
+      controls = new OrbitControls(camera, canvas);
+      controls.autoRotate = true; controls.autoRotateSpeed = 1.2;
+      controls.enablePan = false; controls.enableZoom = false;
+      controls.enableDamping = true; controls.dampingFactor = 0.05;
+      controls.addEventListener('change', () => { needs = true; });
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      halftone = new HalftonePass(1, 1, { shape: 1, radius: 3, rotateR: Math.PI/4, rotateG: (Math.PI*5)/12, rotateB: Math.PI/6, scatter: 0, blending: 1, blendingMode: 1, greyscale: true, disable: false });
+      composer.addPass(halftone);
+      composer.addPass(new OutputPass());
+      clock = new THREE.Clock();
+      // Wheel = dolly (distance)
+      canvas.addEventListener('wheel', e => {
+        if (!work) return;
+        e.preventDefault();
+        const cam = ensureCam(work);
+        cam.dolly = clamp(cam.dolly + (e.deltaY > 0 ? 0.4 : -0.4), DOLLY_MIN, DOLLY_MAX);
+        syncSliders(); reapply(); markDirty();
+      }, { passive: false });
+      loop();
     }
 
+    function size() {
+      const stage = canvas.parentElement; if (!stage) return;
+      const w = stage.clientWidth || 600, h = stage.clientHeight || 340;
+      renderer.setSize(w, h); composer.setSize(w, h);
+      halftone.uniforms['width'].value = w; halftone.uniforms['height'].value = h;
+      camera.aspect = w / h; camera.updateProjectionMatrix(); needs = true;
+    }
+
+    function disposeModel() {
+      if (mixer) { mixer.stopAllAction(); mixer = null; }
+      if (model) { scene.remove(model); model.traverse(c => { if (c.isMesh) { c.geometry.dispose(); c.material.dispose(); } }); model = null; }
+      frame = null; ready = false;
+    }
+
+    function reapply() { if (ready && frame) { applyCamera(camera, controls, frame, work); needs = true; } }
+
+    async function mount(stage, w) {
+      ensure();
+      work = w;
+      stage.appendChild(canvas);
+      size();
+      disposeModel();
+      const my = ++token;
+      const loadingEl = stage.querySelector('.cam-loading');
+      const emptyEl = stage.querySelector('.cam-empty');
+      if (!w.model) { if (emptyEl) emptyEl.style.display = 'flex'; return; }
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (loadingEl) loadingEl.classList.add('show');
+      try {
+        const res = await loadModel(mediaUrl(w.model));
+        if (my !== token) return; // a newer work was selected
+        model = res.model; frame = res.frame;
+        scene.add(model);
+        if (res.animations.length) { mixer = new THREE.AnimationMixer(model); res.animations.forEach(c => mixer.clipAction(c).play()); clock.getDelta(); }
+        ready = true; reapply();
+      } catch (_) {
+        if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('span').textContent = 'Model failed to load'; }
+      } finally {
+        if (my === token && loadingEl) loadingEl.classList.remove('show');
+      }
+    }
+
+    function setAutoRotate(on) { if (controls) { controls.autoRotate = on; needs = true; } }
+
+    function loop() {
+      raf = requestAnimationFrame(loop);
+      if (!canvas || !canvas.isConnected) return;       // not mounted — idle
+      if (document.hidden) return;
+      const moved = controls.update();
+      if (mixer) mixer.update(clock.getDelta());
+      if (controls.autoRotate || moved || needs || mixer) { composer.render(); needs = false; }
+    }
+
+    window.addEventListener('resize', () => { if (canvas && canvas.isConnected) size(); });
+    return { mount, reapply, setAutoRotate };
+  })();
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+  function ensureCam(w) { if (!w.camera) w.camera = { ...CAMERA_DEFAULTS }; return w.camera; }
+
+  // Re-read current sliders into the active work + reflect values
+  let camSliders = null;
+  function syncSliders() {
+    if (!camSliders) return;
+    const w = currentWork(); if (!w) return;
+    const cam = w.camera || CAMERA_DEFAULTS;
+    camSliders.lift.value = cam.lift; camSliders.dolly.value = cam.dolly;
+    camSliders.liftVal.textContent = (+cam.lift).toFixed(2);
+    camSliders.dollyVal.textContent = (+cam.dolly).toFixed(1);
+  }
+  function currentWork() { return state.works.find(w => w.id === activeId) || null; }
+
+  // ── Panels ──────────────────────────────────────────────────────────────
+  function showPanel(id) {
+    activeId = id;
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (id === 'brand' || id === 'profile') {
+      $('panel-' + id).classList.add('active');
+      document.querySelector(`.nav-item[data-panel="${id}"]`)?.classList.add('active');
+    } else {
+      const w = state.works.find(x => x.id === id);
+      if (!w) { showPanel('brand'); return; }
+      renderWorkPanel(w);
+      $('panel-work').classList.add('active');
+    }
     renderWorksNav();
   }
 
   // ── Works nav ─────────────────────────────────────────────────────────────
   function renderWorksNav() {
-    const list = document.getElementById('works-nav');
-    list.innerHTML = '';
-    if (!works.length) return;
-
-    works.forEach((w, idx) => {
+    const list = $('works-nav'); list.innerHTML = '';
+    state.works.forEach((w, idx) => {
       const btn = document.createElement('button');
       btn.className = 'nav-item' + (activeId === w.id ? ' active' : '');
-      btn.draggable = true;
-      btn.dataset.id = w.id;
-      btn.innerHTML = `
-        <span class="nav-item-label">${esc(w.title) || '<em style="opacity:.4;font-style:normal">Untitled</em>'}</span>
-        ${w.featured ? '<span class="nav-item-badge">★</span>' : ''}
-      `;
+      btn.draggable = true; btn.dataset.id = w.id;
+      btn.innerHTML = `<i class="ph-fill ph-cube"></i><span class="nav-item-label">${esc(w.title) || '<em style="opacity:.5;font-style:normal">Untitled</em>'}</span>${w.featured ? '<span class="nav-item-badge">★</span>' : ''}`;
       btn.addEventListener('click', () => showPanel(w.id));
-
-      // Drag to reorder
-      btn.addEventListener('dragstart', e => {
-        dragSrc = idx; btn.style.opacity = '0.4';
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      btn.addEventListener('dragend', () => {
-        btn.style.opacity = '';
-        list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over'));
-      });
-      btn.addEventListener('dragover', e => {
-        e.preventDefault();
-        list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over'));
-        if (dragSrc !== idx) btn.classList.add('drag-over');
-      });
+      btn.addEventListener('dragstart', e => { dragSrc = idx; btn.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+      btn.addEventListener('dragend', () => { btn.style.opacity = ''; list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over')); });
+      btn.addEventListener('dragover', e => { e.preventDefault(); list.querySelectorAll('.nav-item').forEach(n => n.classList.remove('drag-over')); if (dragSrc !== idx) btn.classList.add('drag-over'); });
       btn.addEventListener('drop', e => {
-        e.preventDefault();
-        btn.classList.remove('drag-over');
+        e.preventDefault(); btn.classList.remove('drag-over');
         if (dragSrc === null || dragSrc === idx) return;
-        const [moved] = works.splice(dragSrc, 1);
-        works.splice(idx, 0, moved);
-        dragSrc = null;
-        saveWorks();
-        renderWorksNav();
+        const [moved] = state.works.splice(dragSrc, 1);
+        state.works.splice(idx, 0, moved);
+        dragSrc = null; markDirty(); renderWorksNav();
       });
-
       list.appendChild(btn);
     });
   }
 
-  // ── Work panel ────────────────────────────────────────────────────────────
+  function sectionHead(title, desc) {
+    const el = document.createElement('div'); el.className = 'section-head';
+    el.innerHTML = `<div class="section-title">${esc(title)}</div>` + (desc ? `<div class="section-desc">${esc(desc)}</div>` : '');
+    return el;
+  }
+
+  // ── Work panel ──────────────────────────────────────────────────────────
   function renderWorkPanel(w) {
-    const pane = document.getElementById('panel-work');
-    pane.innerHTML = '';
+    const pane = $('panel-work'); pane.innerHTML = ''; camSliders = null;
 
     // Header
-    const header = document.createElement('div');
-    header.className = 'work-header';
-
+    const header = document.createElement('div'); header.className = 'work-header';
     const titleEl = document.createElement('div');
     titleEl.className = 'work-header-title' + (w.title ? '' : ' empty');
     titleEl.textContent = w.title || 'Untitled Work';
     header.appendChild(titleEl);
 
-    // Featured toggle
     const featLabel = document.createElement('label');
     featLabel.className = 'featured-toggle' + (w.featured ? ' active' : '');
-    const featCheck = document.createElement('input');
-    featCheck.type    = 'checkbox';
-    featCheck.checked = !!w.featured;
+    const featCheck = document.createElement('input'); featCheck.type = 'checkbox'; featCheck.checked = !!w.featured;
     featCheck.addEventListener('change', () => {
-      if (featCheck.checked) works.forEach(x => x.featured = false);
+      if (featCheck.checked) state.works.forEach(x => x.featured = false);
       w.featured = featCheck.checked;
       featLabel.className = 'featured-toggle' + (w.featured ? ' active' : '');
-      renderWorksNav();
-      saveWorks();
+      featLabel.lastChild.textContent = w.featured ? '★ Featured' : 'Set as Featured';
+      renderWorksNav(); markDirty();
     });
     featLabel.appendChild(featCheck);
     featLabel.appendChild(document.createTextNode(w.featured ? '★ Featured' : 'Set as Featured'));
     header.appendChild(featLabel);
 
-    // Delete
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn danger';
-    delBtn.textContent = 'Delete';
+    const delBtn = document.createElement('button'); delBtn.className = 'btn danger'; delBtn.innerHTML = '<i class="ph-fill ph-trash"></i> Delete';
     delBtn.addEventListener('click', () => {
       if (!confirm(`Delete "${w.title || 'this work'}"?`)) return;
-      works.splice(works.findIndex(x => x.id === w.id), 1);
-      saveWorks();
-      showPanel('brand');
+      state.works.splice(state.works.findIndex(x => x.id === w.id), 1);
+      markDirty(); showPanel('brand');
     });
     header.appendChild(delBtn);
     pane.appendChild(header);
 
-    // ── Details section ──
-    const detailHead = sectionHead('Details', 'Title, model file, tags, and description.');
-    pane.appendChild(detailHead);
-
-    const fieldset = document.createElement('div');
-    fieldset.className = 'field-group';
-
+    // Details
+    pane.appendChild(sectionHead('Details', 'Title, model file, tags, and description.'));
+    const fieldset = document.createElement('div'); fieldset.className = 'field-group';
     const fields = [
-      { id:'f-title', label:'Title',        key:'title',       type:'input',    ph:'e.g. Akali' },
-      { id:'f-model', label:'Model File',   key:'model',       type:'input',    ph:'e.g. ../media/models/AKALI.glb', hint:'Path to .glb relative to this page (models live in media/models/)' },
-      { id:'f-tags',  label:'Tags',         key:'tags',        type:'input',    ph:'character, game-art', hint:'Comma-separated' },
-      { id:'f-desc',  label:'Description',  key:'description', type:'textarea', ph:'Describe this work…', rows:5 },
+      { id: 'f-title', label: 'Title', key: 'title', type: 'input', ph: 'e.g. Akali' },
+      { id: 'f-model', label: 'Model File', key: 'model', type: 'input', ph: 'media/models/AKALI.glb', hint: 'Repo-relative path to the .glb (models live in media/models/ — add large files via git).' },
+      { id: 'f-tags', label: 'Tags', key: 'tags', type: 'input', ph: 'character, game-art', hint: 'Comma-separated' },
+      { id: 'f-desc', label: 'Description', key: 'description', type: 'textarea', ph: 'Describe this work…' },
     ];
-
-    fields.forEach(({ id, label, key, type, ph, hint, rows }) => {
-      const row = document.createElement('div');
-      row.className = 'field';
-
-      const lbl = document.createElement('label');
-      lbl.className = 'field-label';
-      lbl.setAttribute('for', id);
-      lbl.textContent = label;
-
+    fields.forEach(({ id, label, key, type, ph, hint }) => {
+      const row = document.createElement('div'); row.className = 'field';
+      const lbl = document.createElement('label'); lbl.className = 'field-label'; lbl.setAttribute('for', id); lbl.textContent = label;
       const inp = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-      inp.className = 'field-input';
-      inp.id        = id;
-      inp.placeholder = ph;
-      inp.spellcheck = false;
-      if (type === 'textarea') { inp.rows = rows || 3; inp.value = w[key] || ''; }
-      else { inp.value = key === 'tags' ? w.tags.join(', ') : (w[key] || ''); }
-
+      inp.className = 'field-input'; inp.id = id; inp.placeholder = ph; inp.spellcheck = false;
+      inp.value = key === 'tags' ? (w.tags || []).join(', ') : (w[key] || '');
       inp.addEventListener('input', () => {
-        if (key === 'tags') {
-          w.tags = inp.value.split(',').map(t => t.trim()).filter(Boolean);
-        } else {
-          w[key] = inp.value;
-        }
-        if (key === 'title') {
-          titleEl.textContent = w.title || 'Untitled Work';
-          titleEl.classList.toggle('empty', !w.title);
-          renderWorksNav();
-        }
-        saveWorks();
+        if (key === 'tags') w.tags = inp.value.split(',').map(t => t.trim()).filter(Boolean);
+        else w[key] = inp.value;
+        if (key === 'title') { titleEl.textContent = w.title || 'Untitled Work'; titleEl.classList.toggle('empty', !w.title); renderWorksNav(); }
+        if (key === 'model') Preview.mount(pane.querySelector('.cam-stage'), w);  // reload preview on path change
+        markDirty();
       });
-
-      row.appendChild(lbl);
-      row.appendChild(inp);
-      fieldset.appendChild(row);
-
-      if (hint) {
-        const h = document.createElement('div');
-        h.className = 'field-hint';
-        h.textContent = hint;
-        fieldset.appendChild(h);
-      }
+      row.appendChild(lbl); row.appendChild(inp); fieldset.appendChild(row);
+      if (hint) { const h = document.createElement('div'); h.className = 'field-hint'; h.textContent = hint; fieldset.appendChild(h); }
     });
-
     pane.appendChild(fieldset);
 
-    // ── Images section ──
-    const imgHead = sectionHead('Images', 'Up to 4 images shown in the work detail view. Click a slot to upload.');
-    pane.appendChild(imgHead);
+    // Default Camera
+    pane.appendChild(sectionHead('Default Camera', 'The framing visitors see when this model first loads. Drag the model to look around; the sliders set the saved default.'));
+    pane.appendChild(buildCamera(w));
 
-    const grid = document.createElement('div');
-    grid.className = 'img-grid';
+    // Images
+    pane.appendChild(sectionHead('Images', 'Shown in the work detail view. Pick from the media library (browse existing files or upload there).'));
+    pane.appendChild(buildImages(w));
 
-    for (let i = 0; i < 4; i++) {
-      grid.appendChild(buildImgSlot(w.id, i));
-    }
-    pane.appendChild(grid);
-
-    // ── Danger zone ──
     pane.appendChild(document.createElement('div')).className = 'divider';
+
+    // Mount live preview
+    Preview.mount(pane.querySelector('.cam-stage'), w);
+    syncSliders();
   }
 
-  function sectionHead(title, desc) {
-    const el = document.createElement('div');
-    el.className = 'section-head';
-    el.innerHTML = `<div class="section-title">${esc(title)}</div>`
-                 + (desc ? `<div class="section-desc">${esc(desc)}</div>` : '');
-    return el;
+  // ── Camera control block ──────────────────────────────────────────────────
+  function buildCamera(w) {
+    const wrap = document.createElement('div'); wrap.className = 'cam-wrap';
+    const cam = w.camera || CAMERA_DEFAULTS;
+    wrap.innerHTML = `
+      <div class="cam-stage">
+        <div class="cam-empty"><i class="ph-fill ph-cube"></i><span>No model set — add a model file above</span></div>
+        <div class="cam-loading">Loading model…</div>
+        <div class="cam-hint">drag to look · scroll to zoom</div>
+      </div>
+      <div class="cam-controls">
+        <div class="cam-slider-row">
+          <span class="cam-slider-label">Vertical</span>
+          <input type="range" class="cam-slider" id="cam-lift" min="-2" max="2" step="0.05" value="${cam.lift}">
+          <span class="cam-slider-val" id="cam-lift-val">${(+cam.lift).toFixed(2)}</span>
+        </div>
+        <div class="cam-slider-row">
+          <span class="cam-slider-label">Distance</span>
+          <input type="range" class="cam-slider" id="cam-dolly" min="${DOLLY_MIN}" max="${DOLLY_MAX}" step="0.1" value="${cam.dolly}">
+          <span class="cam-slider-val" id="cam-dolly-val">${(+cam.dolly).toFixed(1)}</span>
+        </div>
+        <div class="cam-actions">
+          <label class="featured-toggle"><input type="checkbox" id="cam-spin" checked> Turntable preview</label>
+          <span class="spacer"></span>
+          <button class="btn ghost" id="cam-reset"><i class="ph-fill ph-arrow-counter-clockwise"></i> Reset</button>
+        </div>
+      </div>`;
+
+    const lift = wrap.querySelector('#cam-lift'), dolly = wrap.querySelector('#cam-dolly');
+    const liftVal = wrap.querySelector('#cam-lift-val'), dollyVal = wrap.querySelector('#cam-dolly-val');
+    camSliders = { lift, dolly, liftVal, dollyVal };
+
+    lift.addEventListener('input', () => { const c = ensureCam(w); c.lift = +lift.value; liftVal.textContent = c.lift.toFixed(2); Preview.reapply(); markDirty(); });
+    dolly.addEventListener('input', () => { const c = ensureCam(w); c.dolly = +dolly.value; dollyVal.textContent = c.dolly.toFixed(1); Preview.reapply(); markDirty(); });
+    wrap.querySelector('#cam-spin').addEventListener('change', e => Preview.setAutoRotate(e.target.checked));
+    wrap.querySelector('#cam-reset').addEventListener('click', () => {
+      delete w.camera;
+      lift.value = CAMERA_DEFAULTS.lift; dolly.value = CAMERA_DEFAULTS.dolly;
+      liftVal.textContent = CAMERA_DEFAULTS.lift.toFixed(2); dollyVal.textContent = CAMERA_DEFAULTS.dolly.toFixed(1);
+      Preview.reapply(); markDirty();
+    });
+    return wrap;
   }
 
-  // ── Image slot ────────────────────────────────────────────────────────────
-  function buildImgSlot(workId, idx) {
-    const key   = imgKey(workId, idx);
-    const saved = localStorage.getItem(key);
+  // ── Images block ──────────────────────────────────────────────────────────
+  const MAX_IMAGES = 6;
+  function buildImages(w) {
+    if (!Array.isArray(w.images)) w.images = [];
+    const grid = document.createElement('div'); grid.className = 'img-grid';
 
-    const slot = document.createElement('div');
-    slot.className = 'img-slot' + (saved ? ' has-img' : '');
+    w.images.forEach((path, i) => grid.appendChild(filledSlot(w, path, i)));
+    if (w.images.length < MAX_IMAGES) grid.appendChild(addSlot(w, grid));
+    return grid;
+  }
 
-    const img = document.createElement('img'); img.alt = '';
-    if (saved) img.src = saved;
-
-    const inner = document.createElement('div');
-    inner.className = 'img-slot-inner';
-    inner.innerHTML = `<span class="img-slot-num">${String(idx+1).padStart(2,'0')}</span>`
-                    + `<span class="img-slot-cta">Upload</span>`;
-
-    const rm = document.createElement('button');
-    rm.className = 'img-rm';
-    rm.innerHTML = '✕';
-    rm.addEventListener('click', e => {
-      e.stopPropagation();
-      localStorage.removeItem(key);
-      img.src = '';
-      slot.classList.remove('has-img');
-      flashSave();
-    });
-
-    const fi = document.createElement('input');
-    fi.type = 'file'; fi.accept = 'image/*';
-    fi.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0';
-    fi.addEventListener('change', () => {
-      const file = fi.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try { localStorage.setItem(key, ev.target.result); }
-        catch(e) { alert('Image too large for browser storage.'); return; }
-        img.src = ev.target.result;
-        slot.classList.add('has-img');
-        flashSave();
-      };
-      reader.readAsDataURL(file);
-      fi.value = '';
-    });
-
+  function filledSlot(w, path, i) {
+    const slot = document.createElement('div'); slot.className = 'img-slot has-img';
+    const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(path);
+    const inner = document.createElement('div'); inner.className = 'img-slot-inner';
+    const rm = document.createElement('button'); rm.className = 'img-rm'; rm.innerHTML = '✕';
+    rm.addEventListener('click', e => { e.stopPropagation(); w.images.splice(i, 1); markDirty(); refreshImages(w); });
     slot.addEventListener('click', () => {
-      if (!slot.classList.contains('has-img')) fi.click();
+      if (!authed) { toast('Log in to manage media.', true); return; }
+      openMediaPicker(p => { if (!p) return; w.images[i] = p; markDirty(); refreshImages(w); });
     });
-
-    slot.appendChild(img);
-    slot.appendChild(inner);
-    slot.appendChild(rm);
-    slot.appendChild(fi);
+    slot.append(img, inner, rm);
     return slot;
   }
 
-  // ── Socials ───────────────────────────────────────────────────────────────
-  function renderSocials() {
-    const list = document.getElementById('socials-list');
-    list.innerHTML = '';
-    contact.socials.forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'social-row';
+  function addSlot(w, grid) {
+    const slot = document.createElement('div'); slot.className = 'img-slot';
+    const inner = document.createElement('div'); inner.className = 'img-slot-inner';
+    inner.innerHTML = '<i class="ph-fill ph-images"></i><span>Add image</span>';
+    slot.appendChild(inner);
+    slot.addEventListener('click', () => {
+      if (!authed) { toast('Log in to manage media.', true); return; }
+      openMediaPicker(p => { if (!p) return; w.images.push(p); markDirty(); refreshImages(w); });
+    });
+    return slot;
+  }
 
-      ['label','handle','url'].forEach((f, fi) => {
-        const inp = document.createElement('input');
-        inp.className = 'field-input';
-        inp.value = s[f] || '';
-        inp.placeholder = ['Platform','Handle','URL'][fi];
-        inp.spellcheck = false;
-        inp.addEventListener('input', () => { s[f] = inp.value; saveContact(); });
-        row.appendChild(inp);
-      });
+  function refreshImages(w) {
+    const pane = $('panel-work');
+    const old = pane.querySelector('.img-grid');
+    if (old) old.replaceWith(buildImages(w));
+  }
 
-      const rm = document.createElement('button');
-      rm.className = 'social-rm'; rm.innerHTML = '✕';
-      rm.addEventListener('click', () => {
-        contact.socials.splice(i, 1);
-        saveContact(); renderSocials();
-      });
-      row.appendChild(rm);
-      list.appendChild(row);
+  // ── Brand + Profile wiring ──────────────────────────────────────────────────
+  function bindBrand() {
+    const f = $('brand-field');
+    f.value = state.brand || '';
+    $('topbar-brand').innerHTML = `${esc(state.brand || 'Untitled')} <span>/ Modelling</span> <b>Editor</b>`;
+    f.addEventListener('input', () => {
+      state.brand = f.value;
+      $('topbar-brand').innerHTML = `${esc(f.value || 'Untitled')} <span>/ Modelling</span> <b>Editor</b>`;
+      document.title = 'Editor — ' + (f.value || 'Modelling');
+      markDirty();
     });
   }
 
-  // ── Header image ──────────────────────────────────────────────────────────
-  function initHeroSlot() {
-    const slot  = document.getElementById('hero-slot');
-    const img   = document.getElementById('hero-img');
-    const rm    = document.getElementById('hero-rm');
-    const input = document.getElementById('hero-input');
-    const saved = localStorage.getItem(K_HEADER);
+  function bindProfile() {
+    const p = state.profile;
+    $('bio-field').value = p.bio || '';
+    $('email-field').value = p.email || '';
+    $('resume-field').value = p.resumeUrl || '';
+    $('bio-field').addEventListener('input', e => { p.bio = e.target.value; markDirty(); });
+    $('email-field').addEventListener('input', e => { p.email = e.target.value; markDirty(); });
+    $('resume-field').addEventListener('input', e => { p.resumeUrl = e.target.value; markDirty(); });
 
-    if (saved) { img.src = saved; slot.classList.add('has-img'); }
-
+    // Header image
+    const slot = $('hero-slot'), img = $('hero-img'), rm = $('hero-rm');
+    function paintHero() {
+      if (p.headerImage) { img.src = mediaUrl(p.headerImage); slot.classList.add('has-img'); }
+      else { img.src = ''; slot.classList.remove('has-img'); }
+    }
+    paintHero();
     slot.addEventListener('click', e => {
       if (e.target === rm) return;
-      if (!slot.classList.contains('has-img')) input.click();
+      if (!authed) { toast('Log in to manage media.', true); return; }
+      openMediaPicker(path => { if (!path) return; p.headerImage = path; paintHero(); markDirty(); });
     });
+    rm.addEventListener('click', e => { e.stopPropagation(); p.headerImage = ''; paintHero(); markDirty(); });
 
-    rm.addEventListener('click', e => {
-      e.stopPropagation();
-      localStorage.removeItem(K_HEADER);
-      img.src = '';
-      slot.classList.remove('has-img');
-      flashSave();
-    });
-
-    input.addEventListener('change', () => {
-      const file = input.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try { localStorage.setItem(K_HEADER, ev.target.result); }
-        catch(e) { alert('Image too large.'); return; }
-        img.src = ev.target.result;
-        slot.classList.add('has-img');
-        flashSave();
-      };
-      reader.readAsDataURL(file);
-      input.value = '';
-    });
-  }
-
-  // ── Init ──────────────────────────────────────────────────────────────────
-  works   = load(K_WORKS,   DEFAULT_WORKS);
-  contact = load(K_CONTACT, DEFAULT_CONTACT);
-
-  // Brand
-  const savedBrand = localStorage.getItem(K_BRAND) || '';
-  const brandField = document.getElementById('brand-field');
-  brandField.value = savedBrand;
-  document.getElementById('brand-preview').textContent = savedBrand || '—';
-  if (savedBrand) {
-    document.getElementById('topbar-title').innerHTML = esc(savedBrand) + ' <span>/ Editor</span>';
-    document.title = 'Editor — ' + savedBrand;
-  }
-  brandField.addEventListener('input', () => saveBrand(brandField.value));
-
-  // Profile
-  document.getElementById('bio-field').value    = contact.bio       || '';
-  document.getElementById('email-field').value  = contact.email     || '';
-  document.getElementById('resume-field').value = contact.resumeUrl || '';
-
-  document.getElementById('bio-field').addEventListener('input',    e => { contact.bio       = e.target.value; saveContact(); });
-  document.getElementById('email-field').addEventListener('input',  e => { contact.email     = e.target.value; saveContact(); });
-  document.getElementById('resume-field').addEventListener('input', e => { contact.resumeUrl = e.target.value; saveContact(); });
-
-  document.getElementById('add-social-btn').addEventListener('click', () => {
-    contact.socials.push({ label:'', handle:'', url:'' });
-    saveContact();
     renderSocials();
-    document.getElementById('socials-list').lastElementChild?.querySelector('input')?.focus();
-  });
+    $('add-social-btn').addEventListener('click', () => {
+      p.socials = p.socials || []; p.socials.push({ label: '', handle: '', url: '' });
+      markDirty(); renderSocials();
+      $('socials-list').lastElementChild?.querySelector('input')?.focus();
+    });
+  }
 
-  // Works
-  document.getElementById('add-work-btn').addEventListener('click', () => {
-    const nw = {
-      id: 'work-' + Date.now(),
-      title: '', model: '', description: '', tags: [],
-      featured: works.length === 0,
-    };
-    works.push(nw);
-    saveWorks();
-    renderWorksNav();
-    showPanel(nw.id);
-  });
+  function renderSocials() {
+    const list = $('socials-list'); list.innerHTML = '';
+    (state.profile.socials || []).forEach((s, i) => {
+      const row = document.createElement('div'); row.className = 'social-row';
+      ['label', 'handle', 'url'].forEach((f, fi) => {
+        const inp = document.createElement('input'); inp.className = 'field-input';
+        inp.value = s[f] || ''; inp.placeholder = ['Platform', 'Handle', 'URL'][fi]; inp.spellcheck = false;
+        inp.addEventListener('input', () => { s[f] = inp.value; markDirty(); });
+        row.appendChild(inp);
+      });
+      const rm = document.createElement('button'); rm.className = 'social-rm'; rm.innerHTML = '✕';
+      rm.addEventListener('click', () => { state.profile.socials.splice(i, 1); markDirty(); renderSocials(); });
+      row.appendChild(rm); list.appendChild(row);
+    });
+  }
 
-  // Nav tabs
-  document.querySelectorAll('.nav-item[data-panel]').forEach(btn => {
-    btn.addEventListener('click', () => showPanel(btn.dataset.panel));
-  });
+  // ── Init ────────────────────────────────────────────────────────────────
+  state = await loadState();
+  if (!Array.isArray(state.works)) state.works = [];
+  if (!state.profile) state.profile = JSON.parse(JSON.stringify(DEFAULTS.profile));
 
-  initHeroSlot();
-  renderSocials();
+  bindBrand();
+  bindProfile();
   renderWorksNav();
+  document.querySelectorAll('.nav-item[data-panel]').forEach(b => b.addEventListener('click', () => showPanel(b.dataset.panel)));
+
+  $('add-work-btn').addEventListener('click', () => {
+    const nw = { id: 'work-' + Date.now(), title: '', model: '', description: '', tags: [], featured: state.works.length === 0, images: [] };
+    state.works.push(nw); markDirty(); renderWorksNav(); showPanel(nw.id);
+  });
+
+  $('save-btn').addEventListener('click', publish);
+  document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); publish(); } });
+  window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  initAuth();
 </script>
 </body>
 </html>

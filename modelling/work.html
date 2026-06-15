@@ -61,11 +61,7 @@
       <h2 class="work-info-title" id="work-info-title">—</h2>
       <hr class="work-divider">
       <p class="work-desc" id="work-desc">—</p>
-      <div class="work-images">
-        <div class="work-image-block wide"><span class="work-image-block-label">01</span></div>
-        <div class="work-image-block"><span class="work-image-block-label">02</span></div>
-        <div class="work-image-block"><span class="work-image-block-label">03</span></div>
-      </div>
+      <div class="work-images" id="work-images"></div>
       <hr class="work-divider-thin">
       <div class="tags" id="work-tags"></div>
       <a href="index.html" class="work-back">&#8592;&ensp;Home</a>
@@ -75,48 +71,20 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
     import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
     import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
     import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+    import { loadContent, mediaUrl } from './site-data.js';
+    import { loadModel, applyCamera } from './model-view.js';
 
-    // ── Works data ────────────────────────────────────────────────────────────
-    const WORKS = [
-      {
-        id: 'akali',
-        title: 'Akali',
-        model: 'AKALI.glb',
-        description: 'High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.',
-        tags: ['character', 'game-art'],
-        featured: true,
-      },
-      {
-        id: 'cone',
-        title: 'Cone',
-        model: 'cone.glb',
-        description: 'A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.',
-        tags: ['primitive', 'geometry'],
-      },
-      {
-        id: 'cube',
-        title: 'Cube',
-        model: 'cube.glb',
-        description: 'A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.',
-        tags: ['primitive', 'geometry'],
-      },
-      {
-        id: 'ico',
-        title: 'Ico',
-        model: 'ico.glb',
-        description: 'Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.',
-        tags: ['primitive', 'geometry'],
-      },
-    ];
+    // ── Works data (top-level await: pauses until content.json loads) ──────────
+    const content = await loadContent();
+    const WORKS   = content.works;
 
     // ── Resolve work from URL ─────────────────────────────────────────────────
-    const id   = new URLSearchParams(location.search).get('id') || WORKS[0].id;
+    const id   = new URLSearchParams(location.search).get('id') || (WORKS[0] && WORKS[0].id);
     const work = WORKS.find(w => w.id === id) || WORKS[0];
 
     document.title = `${work.title} — Portfolio`;
@@ -128,9 +96,8 @@
     document.getElementById('work-tags').innerHTML         =
       work.tags.map(t => `<span class="tag">${t}</span>`).join('');
 
-    // ── Image blocks ──────────────────────────────────────────────────────────
+    // ── Curated images (display-only, from content.json) ──────────────────────
     let lightboxEl = null;
-
     function getLightbox() {
       if (lightboxEl) return lightboxEl;
       lightboxEl = document.createElement('div');
@@ -147,68 +114,27 @@
       return lightboxEl;
     }
 
-    function setBlockImage(block, dataUrl) {
-      block.style.backgroundImage = `url("${dataUrl}")`;
-      block.style.backgroundSize  = 'cover';
-      block.style.backgroundPosition = 'center';
-      block.setAttribute('data-img', dataUrl);
-      block.classList.add('has-image');
-    }
-
-    function clearBlockImage(block, key) {
-      block.style.backgroundImage = '';
-      block.removeAttribute('data-img');
-      block.classList.remove('has-image');
-      localStorage.removeItem(key);
-    }
-
-    function initImageBlocks(workId, container) {
-      container.querySelectorAll('.work-image-block').forEach((block, i) => {
-        const key = `img_${workId}_${i}`;
-        const saved = localStorage.getItem(key);
-        if (saved) setBlockImage(block, saved);
-        if (block.dataset.init === workId) return;
-        block.dataset.init = workId;
-
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.style.cssText = 'position:absolute;opacity:0;pointer-events:none';
-        block.appendChild(input);
-
-        block.addEventListener('click', e => {
-          if (e.target.matches('.block-remove')) return;
-          const img = block.getAttribute('data-img');
-          if (img) {
-            const lb = getLightbox();
-            lb.querySelector('img').src = img;
-            lb.classList.add('open');
-          } else {
-            input.click();
-          }
+    function renderImages(container, images) {
+      container.innerHTML = '';
+      const list = (images || []).filter(Boolean);
+      if (!list.length) { container.style.display = 'none'; return; }
+      list.forEach((src, i) => {
+        const url = mediaUrl(src);
+        const block = document.createElement('div');
+        // First image spans wide, like the original layout
+        block.className = 'work-image-block has-image' + (i === 0 ? ' wide' : '');
+        block.style.backgroundImage = `url("${url}")`;
+        block.style.backgroundSize = 'cover';
+        block.style.backgroundPosition = 'center';
+        block.addEventListener('click', () => {
+          const lb = getLightbox();
+          lb.querySelector('img').src = url;
+          lb.classList.add('open');
         });
-
-        input.addEventListener('change', () => {
-          const file = input.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = ev => {
-            localStorage.setItem(key, ev.target.result);
-            setBlockImage(block, ev.target.result);
-          };
-          reader.readAsDataURL(file);
-          input.value = '';
-        });
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'block-remove';
-        removeBtn.innerHTML = '&#215;';
-        removeBtn.addEventListener('click', () => clearBlockImage(block, key));
-        block.appendChild(removeBtn);
+        container.appendChild(block);
       });
     }
-
-    initImageBlocks(work.id, document.getElementById('work-info'));
+    renderImages(document.getElementById('work-images'), work.images);
 
     // ── Works widget ──────────────────────────────────────────────────────────
     const widgetList = document.getElementById('works-list');
@@ -352,55 +278,28 @@
     onResize();
     window.addEventListener('resize', onResize);
 
-    // Keep original material if it has a diffuse texture; fall back to flat grey.
-    const makeModelMaterial = (src) => {
-      if (src && src.map) return src;  // textured — use as-is
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xcccccc, roughness: 0.88, metalness: 0.0,
-        normalMap: (src && src.normalMap) || null,
-      });
-      if (src && src.normalScale) mat.normalScale.copy(src.normalScale);
-      return mat;
-    };
-
     let needsRender = true;
     let mixer = null;
     const animClock = new THREE.Clock();
 
-    // Load model
-    new GLTFLoader().load(work.model, (gltf) => {
-      const model  = gltf.scene;
-      const box    = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      const size   = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const scale  = 3.8 / maxDim;
-      model.scale.setScalar(scale);
-      model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-
-      model.traverse(child => {
-        if (child.isMesh) child.material = makeModelMaterial(child.material);   // per-mesh normal map
-      });
+    // Load model (shared loader → identical framing to the editor preview)
+    loadModel(mediaUrl(work.model)).then(({ model, animations, frame }) => {
       scene.add(model);
 
       // Play any animation clips baked into the GLB
-      if (gltf.animations && gltf.animations.length) {
+      if (animations.length) {
         mixer = new THREE.AnimationMixer(model);
-        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+        animations.forEach(clip => mixer.clipAction(clip).play());
         animClock.getDelta();
       }
 
-      const yMid = (-center.y * scale) + (size.y * scale * 0.5);
-      controls.target.set(0, yMid, 0);
-      camera.position.set(0, yMid + 0.8, 5.5);
-      controls.update();
+      applyCamera(camera, controls, frame, work);
 
       needsRender = true;
       document.getElementById('loader').classList.add('hidden');
-    },
-    undefined,
-    () => { document.getElementById('loader').textContent = 'Model unavailable.'; }
-    );
+    }).catch(() => {
+      document.getElementById('loader').textContent = 'Model unavailable.';
+    });
 
     // ── Render loop ───────────────────────────────────────────────────────────
     // 30fps cap · pause while the tab is hidden · render-on-demand: when the
