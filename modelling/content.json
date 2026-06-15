@@ -1,5 +1,5 @@
 {
-  "brand": "Run Girl Run Modelling",
+  "brand": "Run Girl Run Studio.",
   "profile": {
     "bio": "3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.",
     "email": "hello@rungirl.run",
@@ -30,7 +30,7 @@
       "model": "media/models/moomei.glb",
       "description": "",
       "tags": [],
-      "featured": false,
+      "featured": true,
       "images": [],
       "camera": {
         "lift": 0,
@@ -43,7 +43,7 @@
       "model": "media/models/pancakebeauty.glb",
       "description": "",
       "tags": [],
-      "featured": true,
+      "featured": false,
       "images": [
         "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
       ]
