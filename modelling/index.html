@@ -602,7 +602,7 @@
 
         // Resume
         const resumeUrl = profile.resumeUrl || '';
-        if (resumeUrl) { resumeEl.href = resumeUrl; resumeEl.style.display = ''; }
+        if (resumeUrl) { resumeEl.href = mediaUrl(resumeUrl); resumeEl.style.display = ''; }
         else { resumeEl.style.display = 'none'; }
       }
 
