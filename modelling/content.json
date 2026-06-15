@@ -37,7 +37,7 @@
       "images": [],
       "camera": {
         "lift": -0.05,
-        "dolly": 11.1
+        "dolly": 8.5
       }
     },
     {
@@ -47,12 +47,10 @@
       "description": "",
       "tags": [],
       "featured": false,
-      "images": [
-        "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
-      ],
+      "images": [],
       "camera": {
         "lift": 0,
-        "dolly": 11.599999999999998
+        "dolly": 5.448963619092496
       }
     },
     {
