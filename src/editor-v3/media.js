@@ -65,6 +65,9 @@ function renderGrid(filter = '') {
   grid.innerHTML = files.map(f => {
     const p = f.path || f.name;
     const url = f.url || p;
+    const basename = (f.name || p).split('/').pop();
+    const ext = basename.includes('.') ? basename.split('.').pop() : '';
+    const stem = ext ? basename.slice(0, -(ext.length + 1)) : basename;
     const thumb = isImage(p)
       ? `<img src="${url}" loading="lazy" alt="">`
       : isVideo(p)
@@ -74,7 +77,8 @@ function renderGrid(filter = '') {
           : `<div class="v3-media-file"><i class="ph-fill ph-file"></i></div>`;
     return `<div class="v3-media-item" data-path="${p}" title="${p}">
       ${thumb}
-      <div class="v3-media-name">${(f.name || p).split('/').pop()}</div>
+      <div class="v3-media-name">${stem}</div>
+      ${ext ? `<span class="v3-media-ext">${ext}</span>` : ''}
       <button class="v3-media-del" data-del="${p}" title="Delete"><i class="ph-fill ph-trash"></i></button>
     </div>`;
   }).join('');

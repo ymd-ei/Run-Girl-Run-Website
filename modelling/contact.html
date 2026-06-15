@@ -337,6 +337,11 @@
           hello@rungirl.run
         </a>
 
+        <div id="resume-wrap" style="display:none; margin-top:20px;">
+          <div class="contact-info-label">Résumé</div>
+          <a href="#" class="contact-email" id="resume-link" target="_blank" rel="noopener">Download PDF</a>
+        </div>
+
         <div class="contact-socials" id="contact-socials">
           <div class="contact-social-row">
             <span class="contact-social-label">Instagram</span>
@@ -399,7 +404,7 @@
   </div>
 
   <script type="module">
-    import { loadContent } from './site-data.js';
+    import { loadContent, mediaUrl } from './site-data.js';
 
     // ── Brand + Contact from content.json ─────────────────────────────────────
     const content = await loadContent();
@@ -417,6 +422,14 @@
       const email   = profile.email || '';
       emailEl.href        = 'mailto:' + email;
       emailEl.textContent = email;
+
+      // Resume
+      const resumeWrap = document.getElementById('resume-wrap');
+      const resumeLink = document.getElementById('resume-link');
+      if (profile.resumeUrl) {
+        resumeLink.href = mediaUrl(profile.resumeUrl);
+        resumeWrap.style.display = '';
+      }
 
       // Socials
       const socialsEl = document.getElementById('contact-socials');

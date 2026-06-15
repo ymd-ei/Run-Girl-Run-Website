@@ -415,8 +415,14 @@
     }
     .v3-media-vid, .v3-media-file { display: grid; place-items: center; color: var(--v3-muted); font-size: 26px; }
     .v3-media-name {
-      font-size: 10.5px; color: var(--v3-muted); padding: 6px 7px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 11px; color: var(--v3-text); padding: 5px 7px 2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.35;
+    }
+    .v3-media-ext {
+      display: inline-block; font-size: 9.5px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase; background: var(--v3-line); color: var(--v3-muted);
+      border-radius: 3px; padding: 1px 4px; margin: 0 7px 5px; line-height: 1.5;
     }
     .v3-media-del {
       position: absolute; top: 5px; right: 5px; width: 24px; height: 24px;
@@ -492,8 +498,9 @@
       <div class="field-group">
         <div class="field"><label class="field-label" for="email-field">Email</label>
           <input class="field-input" id="email-field" type="email" placeholder="hello@example.com" spellcheck="false"></div>
-        <div class="field"><label class="field-label" for="resume-field">Résumé URL</label>
-          <input class="field-input" id="resume-field" type="url" placeholder="https://…" spellcheck="false"></div>
+        <div class="field"><label class="field-label" for="resume-field">Résumé</label>
+          <input class="field-input" id="resume-field" type="text" placeholder="media/resume.pdf" spellcheck="false">
+          <button class="field-action" id="resume-pick-btn" title="Pick from media library">Pick</button></div>
       </div>
 
       <div class="section-head"><div class="section-title">Social Links</div></div>
@@ -1064,6 +1071,10 @@
     $('bio-field').addEventListener('input', e => { p.bio = e.target.value; markDirty(); });
     $('email-field').addEventListener('input', e => { p.email = e.target.value; markDirty(); });
     $('resume-field').addEventListener('input', e => { p.resumeUrl = e.target.value; markDirty(); });
+    $('resume-pick-btn').addEventListener('click', () => {
+      if (!authed) { toast('Log in to manage media.', true); return; }
+      openMediaPicker(path => { if (!path) return; p.resumeUrl = path; $('resume-field').value = path; markDirty(); });
+    });
 
     // Header image
     const slot = $('hero-slot'), img = $('hero-img'), rm = $('hero-rm');
