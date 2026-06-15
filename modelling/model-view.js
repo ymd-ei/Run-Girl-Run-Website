@@ -16,9 +16,11 @@ const loader = new GLTFLoader();
 // Per-work camera defaults. lift=0, dolly=5.5 reproduce the original framing.
 export const CAMERA_DEFAULTS = { lift: 0, dolly: 5.5 };
 
-// Distance limits — also used to bound the editor's Distance slider.
+// Distance limits — also used to bound the editor's Distance slider. The max is
+// generous so tall/elongated models (and portrait viewports) can be pulled far
+// enough back to contain the whole silhouette.
 export const DOLLY_MIN = 2;
-export const DOLLY_MAX = 14;
+export const DOLLY_MAX = 30;
 
 /**
  * Flat grey material with optional normal map — the portfolio's house look.
@@ -36,9 +38,10 @@ export function makeGreyMaterial(src) {
 
 /**
  * Load a .glb, normalise scale + position, and apply the grey material.
- * Resolves { model, animations, frame:{ baseX, yMid } } where `frame` is what
- * applyCamera() needs. `targetSize` controls the normalised max dimension
- * (3.8 for full views, smaller for thumbnails).
+ * Resolves { model, animations, frame:{ baseX, yMid, half } } where `frame` is
+ * what applyCamera()/fitDolly() need (`half` = normalised half-extents on each
+ * axis). `targetSize` controls the normalised max dimension (3.8 for full views,
+ * smaller for thumbnails).
  */
 export function loadModel(url, { targetSize = 3.8 } = {}) {
   return new Promise((resolve, reject) => {
@@ -56,9 +59,32 @@ export function loadModel(url, { targetSize = 3.8 } = {}) {
         if (child.isMesh) child.material = makeGreyMaterial(child.material);
       });
       const yMid = (-center.y * scale) + (size.y * scale * 0.5);
-      resolve({ model, animations: gltf.animations || [], frame: { baseX, yMid } });
+      // Half-extents of the normalised model — fitDolly() needs these to work
+      // out how far back the camera must sit to contain the whole silhouette.
+      const half = {
+        x: size.x * scale * 0.5,
+        y: size.y * scale * 0.5,
+        z: size.z * scale * 0.5,
+      };
+      resolve({ model, animations: gltf.animations || [], frame: { baseX, yMid, half } });
     }, undefined, reject);
   });
+}
+
+/**
+ * Distance the camera must sit from the model centre to contain its full
+ * height AND width given the camera's vertical FOV and current viewport aspect.
+ * `margin` (>1) leaves breathing room; the result is clamped to the dolly range.
+ * Falls back gracefully when `frame.half` is missing (older callers).
+ */
+export function fitDolly(camera, frame, margin = 1.18) {
+  const half = (frame && frame.half) || { x: 1.9, y: 1.9, z: 1.9 };
+  const vFov = (camera.fov * Math.PI) / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * (camera.aspect || 1));
+  const distV = half.y / Math.tan(vFov / 2);   // fit the height
+  const distH = half.x / Math.tan(hFov / 2);   // fit the width
+  const dist  = Math.max(distV, distH) * margin + half.z;  // +half.z clears the near face
+  return Math.min(DOLLY_MAX, Math.max(DOLLY_MIN, dist));
 }
 
 /**
@@ -70,7 +96,8 @@ export function loadModel(url, { targetSize = 3.8 } = {}) {
  */
 export function applyCamera(camera, controls, frame, work, baseHeight = 0.8) {
   const lift  = work?.camera?.lift  ?? CAMERA_DEFAULTS.lift;
-  const dolly = work?.camera?.dolly ?? CAMERA_DEFAULTS.dolly;
+  // No curated distance → auto-fit so the whole model is contained.
+  const dolly = work?.camera?.dolly ?? fitDolly(camera, frame);
   controls.target.set(frame.baseX, frame.yMid + lift, 0);
   camera.position.set(frame.baseX, frame.yMid + baseHeight + lift, dolly);
   controls.update();

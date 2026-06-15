@@ -535,7 +535,7 @@
   import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
   import { HalftonePass }   from 'three/addons/postprocessing/HalftonePass.js';
   import { OutputPass }     from 'three/addons/postprocessing/OutputPass.js';
-  import { loadModel, applyCamera, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
+  import { loadModel, applyCamera, fitDolly, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
   import { mediaUrl, DEFAULTS } from './site-data.js';
   import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
   import { openMediaPicker } from '../src/editor-v3/media.js';
@@ -707,6 +707,14 @@
 
     function reapply() { if (ready && frame) { applyCamera(camera, controls, frame, work); needs = true; } }
 
+    // The distance actually in use for the current model: the curated value if
+    // set, otherwise the auto-fit distance. Lets the slider show the real number.
+    function effectiveDolly() {
+      if (work?.camera?.dolly != null) return work.camera.dolly;
+      if (ready && frame) return fitDolly(camera, frame);
+      return null;
+    }
+
     async function mount(stage, w) {
       ensure();
       work = w;
@@ -726,6 +734,7 @@
         scene.add(model);
         if (res.animations.length) { mixer = new THREE.AnimationMixer(model); res.animations.forEach(c => mixer.clipAction(c).play()); clock.getDelta(); }
         ready = true; reapply();
+        syncSliders();   // reflect the auto-fit distance in the Distance slider
       } catch (_) {
         if (emptyEl) { emptyEl.style.display = 'flex'; emptyEl.querySelector('span').textContent = 'Model failed to load'; }
       } finally {
@@ -745,21 +754,30 @@
     }
 
     window.addEventListener('resize', () => { if (canvas && canvas.isConnected) size(); });
-    return { mount, reapply, setAutoRotate };
+    return { mount, reapply, setAutoRotate, effectiveDolly };
   })();
 
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
-  function ensureCam(w) { if (!w.camera) w.camera = { ...CAMERA_DEFAULTS }; return w.camera; }
+  // Seed a fresh curated camera from what's on screen now — the auto-fit
+  // distance, not a hard-coded default — so the first drag/scroll starts there.
+  function ensureCam(w) {
+    if (!w.camera) {
+      const fit = Preview.effectiveDolly();
+      w.camera = { lift: CAMERA_DEFAULTS.lift, dolly: fit != null ? fit : CAMERA_DEFAULTS.dolly };
+    }
+    return w.camera;
+  }
 
   // Re-read current sliders into the active work + reflect values
   let camSliders = null;
   function syncSliders() {
     if (!camSliders) return;
     const w = currentWork(); if (!w) return;
-    const cam = w.camera || CAMERA_DEFAULTS;
-    camSliders.lift.value = cam.lift; camSliders.dolly.value = cam.dolly;
-    camSliders.liftVal.textContent = (+cam.lift).toFixed(2);
-    camSliders.dollyVal.textContent = (+cam.dolly).toFixed(1);
+    const lift  = w.camera?.lift ?? CAMERA_DEFAULTS.lift;
+    const dolly = Preview.effectiveDolly() ?? w.camera?.dolly ?? CAMERA_DEFAULTS.dolly;
+    camSliders.lift.value = lift; camSliders.dolly.value = dolly;
+    camSliders.liftVal.textContent = (+lift).toFixed(2);
+    camSliders.dollyVal.textContent = (+dolly).toFixed(1);
   }
   function currentWork() { return state.works.find(w => w.id === activeId) || null; }
 
@@ -944,10 +962,10 @@
       wrap.querySelector('.cam-stage').classList.toggle('hide-chrome', !e.target.checked);
     });
     wrap.querySelector('#cam-reset').addEventListener('click', () => {
-      delete w.camera;
-      lift.value = CAMERA_DEFAULTS.lift; dolly.value = CAMERA_DEFAULTS.dolly;
-      liftVal.textContent = CAMERA_DEFAULTS.lift.toFixed(2); dollyVal.textContent = CAMERA_DEFAULTS.dolly.toFixed(1);
-      Preview.reapply(); markDirty();
+      delete w.camera;          // back to auto-fit (lift 0, fitted distance)
+      Preview.reapply();        // re-frame first so effectiveDolly() is current
+      syncSliders();            // then mirror the fitted values onto the sliders
+      markDirty();
     });
     return wrap;
   }
