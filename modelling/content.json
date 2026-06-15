@@ -27,7 +27,7 @@
     {
       "id": "work-1781485420687",
       "title": "Mumei",
-      "model": "media/models/mumei_walk-ymd.glb",
+      "model": "media/models/mumei_walk-cycle.glb",
       "description": "Inspired by the character design from Mumei MV by Mumei.",
       "tags": [
         "Character",
