@@ -25,16 +25,28 @@
   },
   "works": [
     {
-      "id": "akali",
-      "title": "Akali",
-      "model": "media/models/AKALI.glb",
-      "description": "High-detail 3D character model. Sculpted with focus on anatomy, silhouette, and surface texture. An exploration of game-art aesthetics translated into a full 3D asset — balancing stylisation with structural believability.",
-      "tags": [
-        "character",
-        "game-art"
-      ],
+      "id": "work-1781485420687",
+      "title": "Mumei",
+      "model": "media/models/moomei.glb",
+      "description": "",
+      "tags": [],
+      "featured": true,
+      "images": [],
+      "camera": {
+        "lift": 0,
+        "dolly": 6.9
+      }
+    },
+    {
+      "id": "work-1781485503333",
+      "title": "Pancakes",
+      "model": "media/models/pancakebeauty.glb",
+      "description": "",
+      "tags": [],
       "featured": false,
-      "images": []
+      "images": [
+        "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
+      ]
     },
     {
       "id": "cone",
@@ -71,30 +83,6 @@
       ],
       "featured": false,
       "images": []
-    },
-    {
-      "id": "work-1781485420687",
-      "title": "Mumei",
-      "model": "media/models/moomei.glb",
-      "description": "",
-      "tags": [],
-      "featured": true,
-      "images": [],
-      "camera": {
-        "lift": 0,
-        "dolly": 6.9
-      }
-    },
-    {
-      "id": "work-1781485503333",
-      "title": "Pancakes",
-      "model": "media/models/pancakebeauty.glb",
-      "description": "",
-      "tags": [],
-      "featured": false,
-      "images": [
-        "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
-      ]
     }
   ]
 }
