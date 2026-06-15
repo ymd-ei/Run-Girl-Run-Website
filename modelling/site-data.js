@@ -36,8 +36,9 @@ export const DEFAULTS = {
 export function mediaUrl(p) {
   if (!p) return '';
   if (/^(https?:|data:|blob:|\.\.\/|\/)/.test(p)) return p;
-  if (p.startsWith('media/')) return '../' + p;
-  return p;
+  // Anything left is a repo-relative path (media/…, resume/…). Pages live in
+  // /modelling/, so step up one level to reach the repo root.
+  return '../' + p;
 }
 
 /** Fetch + normalise content.json. Always resolves (falls back to DEFAULTS). */
