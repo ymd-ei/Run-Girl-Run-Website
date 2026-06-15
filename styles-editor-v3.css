@@ -399,22 +399,25 @@ select.v3-f { cursor: pointer; }
 .v3-media-item {
   position: relative; background: var(--v3-panel-2); border: 1px solid var(--v3-line);
   border-radius: 9px; overflow: hidden; cursor: pointer; transition: border-color .12s;
-  display: flex; flex-direction: column;
 }
 .v3-media-item:hover { border-color: var(--v3-accent); }
 .v3-media-item img, .v3-media-vid, .v3-media-file {
   width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: #0c0c0f;
-  flex: none;
 }
 .v3-media-vid, .v3-media-file { display: grid; place-items: center; color: var(--v3-muted); font-size: 26px; }
+.v3-media-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.62); padding: 5px 7px;
+  display: flex; align-items: center; gap: 5px;
+}
 .v3-media-name {
-  font-size: 11px; color: var(--v3-text); padding: 5px 7px 2px;
-  word-break: break-word; line-height: 1.35;
+  font-size: 10.5px; color: #fff; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
 }
 .v3-media-ext {
-  display: inline-block; font-size: 9.5px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; background: var(--v3-line); color: var(--v3-muted);
-  border-radius: 3px; padding: 1px 4px; margin: 0 7px 6px; line-height: 1.5;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  background: rgba(255,255,255,0.2); color: #fff;
+  border-radius: 3px; padding: 1px 4px; flex-shrink: 0; line-height: 1.5;
 }
 .v3-media-del {
   position: absolute; top: 5px; right: 5px; width: 24px; height: 24px;

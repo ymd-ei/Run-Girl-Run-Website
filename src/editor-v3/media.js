@@ -77,8 +77,10 @@ function renderGrid(filter = '') {
           : `<div class="v3-media-file"><i class="ph-fill ph-file"></i></div>`;
     return `<div class="v3-media-item" data-path="${p}" title="${p}">
       ${thumb}
-      <div class="v3-media-name">${stem}</div>
-      ${ext ? `<span class="v3-media-ext">${ext}</span>` : ''}
+      <div class="v3-media-label">
+        <span class="v3-media-name">${stem || basename}</span>
+        ${ext ? `<span class="v3-media-ext">${ext}</span>` : ''}
+      </div>
       <button class="v3-media-del" data-del="${p}" title="Delete"><i class="ph-fill ph-trash"></i></button>
     </div>`;
   }).join('');
