@@ -30,7 +30,7 @@
       "model": "media/models/moomei.glb",
       "description": "",
       "tags": [],
-      "featured": true,
+      "featured": false,
       "images": [],
       "camera": {
         "lift": 0,
@@ -43,7 +43,7 @@
       "model": "media/models/pancakebeauty.glb",
       "description": "",
       "tags": [],
-      "featured": false,
+      "featured": true,
       "images": [
         "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
       ]
