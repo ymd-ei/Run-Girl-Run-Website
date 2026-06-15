@@ -36,8 +36,8 @@
       "featured": true,
       "images": [],
       "camera": {
-        "lift": 2,
-        "dolly": 30
+        "lift": -0.05,
+        "dolly": 11.1
       }
     },
     {
