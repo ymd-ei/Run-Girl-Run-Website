@@ -46,7 +46,11 @@
       "featured": true,
       "images": [
         "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
-      ]
+      ],
+      "camera": {
+        "lift": 0,
+        "dolly": 11.599999999999998
+      }
     },
     {
       "id": "cone",
@@ -70,7 +74,11 @@
         "geometry"
       ],
       "featured": false,
-      "images": []
+      "images": [],
+      "camera": {
+        "lift": -2,
+        "dolly": 12
+      }
     },
     {
       "id": "ico",
@@ -82,7 +90,11 @@
         "geometry"
       ],
       "featured": false,
-      "images": []
+      "images": [],
+      "camera": {
+        "lift": -2,
+        "dolly": 9
+      }
     }
   ]
 }
