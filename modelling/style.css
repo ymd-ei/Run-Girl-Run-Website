@@ -637,7 +637,6 @@ body {
   text-transform: uppercase;
   letter-spacing: -0.01em;
   color: var(--ink);
-  max-width: 80vw;
 }
 
 .scroll-hint {
