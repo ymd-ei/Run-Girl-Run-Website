@@ -33,11 +33,11 @@
         "Character",
         "Rigging"
       ],
-      "featured": false,
+      "featured": true,
       "images": [],
       "camera": {
         "lift": 2,
-        "dolly": 25.5
+        "dolly": 26
       }
     },
     {
@@ -46,7 +46,7 @@
       "model": "media/models/pancakebeauty.glb",
       "description": "",
       "tags": [],
-      "featured": true,
+      "featured": false,
       "images": [
         "media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp"
       ],
