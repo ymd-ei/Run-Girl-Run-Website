@@ -399,10 +399,12 @@ select.v3-f { cursor: pointer; }
 .v3-media-item {
   position: relative; background: var(--v3-panel-2); border: 1px solid var(--v3-line);
   border-radius: 9px; overflow: hidden; cursor: pointer; transition: border-color .12s;
+  display: flex; flex-direction: column;
 }
 .v3-media-item:hover { border-color: var(--v3-accent); }
 .v3-media-item img, .v3-media-vid, .v3-media-file {
   width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: #0c0c0f;
+  flex: none;
 }
 .v3-media-vid, .v3-media-file { display: grid; place-items: center; color: var(--v3-muted); font-size: 26px; }
 .v3-media-name {
