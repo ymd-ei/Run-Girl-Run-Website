@@ -47,6 +47,11 @@ export function loadModel(url, { targetSize = 3.8 } = {}) {
   return new Promise((resolve, reject) => {
     loader.load(url, (gltf) => {
       const model  = gltf.scene;
+      // Propagate world matrices before measuring. Rigged/skinned models (e.g.
+      // Auto-Rig Pro exports) bake transforms into the bind pose; without this
+      // Box3.setFromObject reads un-updated matrices and returns a too-small box,
+      // which over-scales the model and pushes it out of frame.
+      model.updateMatrixWorld(true);
       const box    = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size   = box.getSize(new THREE.Vector3());

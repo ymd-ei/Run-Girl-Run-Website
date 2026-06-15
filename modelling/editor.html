@@ -715,6 +715,10 @@
       return null;
     }
 
+    // The pure geometric fit distance for the current model (ignores any
+    // curated value) — what the Auto-fit button snaps the distance to.
+    function fitDistance() { return (ready && frame) ? fitDolly(camera, frame) : null; }
+
     async function mount(stage, w) {
       ensure();
       work = w;
@@ -754,7 +758,7 @@
     }
 
     window.addEventListener('resize', () => { if (canvas && canvas.isConnected) size(); });
-    return { mount, reapply, setAutoRotate, effectiveDolly };
+    return { mount, reapply, setAutoRotate, effectiveDolly, fitDistance };
   })();
 
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -947,6 +951,7 @@
           <label class="featured-toggle"><input type="checkbox" id="cam-spin" checked> Turntable preview</label>
           <label class="featured-toggle"><input type="checkbox" id="cam-chrome-toggle" checked> Page layout</label>
           <span class="spacer"></span>
+          <button class="btn ghost" id="cam-autofit"><i class="ph-fill ph-frame-corners"></i> Auto-fit</button>
           <button class="btn ghost" id="cam-reset"><i class="ph-fill ph-arrow-counter-clockwise"></i> Reset</button>
         </div>
       </div>`;
@@ -960,6 +965,14 @@
     wrap.querySelector('#cam-spin').addEventListener('change', e => Preview.setAutoRotate(e.target.checked));
     wrap.querySelector('#cam-chrome-toggle').addEventListener('change', e => {
       wrap.querySelector('.cam-stage').classList.toggle('hide-chrome', !e.target.checked);
+    });
+    wrap.querySelector('#cam-autofit').addEventListener('click', () => {
+      const fit = Preview.fitDistance();
+      if (fit == null) return;   // model not loaded yet
+      const c = ensureCam(w);    // snap distance to contain the model; keep lift
+      c.dolly = fit;
+      dolly.value = c.dolly; dollyVal.textContent = (+c.dolly).toFixed(1);
+      Preview.reapply(); markDirty();
     });
     wrap.querySelector('#cam-reset').addEventListener('click', () => {
       delete w.camera;          // back to auto-fit (lift 0, fitted distance)
