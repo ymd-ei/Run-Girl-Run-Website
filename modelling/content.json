@@ -27,14 +27,17 @@
     {
       "id": "work-1781485420687",
       "title": "Mumei",
-      "model": "media/models/moomei.glb",
-      "description": "",
-      "tags": [],
+      "model": "media/models/mumei_walk-ymd.glb",
+      "description": "Inspired by the character design from Mumei MV by Mumei.",
+      "tags": [
+        "Character",
+        "Rigging"
+      ],
       "featured": false,
       "images": [],
       "camera": {
         "lift": 0,
-        "dolly": 6.9
+        "dolly": 4.099999999999998
       }
     },
     {
