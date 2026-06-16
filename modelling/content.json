@@ -28,7 +28,7 @@
       "id": "work-1781485420687",
       "title": "Mumei",
       "model": "media/models/Mumei_Walk_Cycle.glb",
-      "description": "Inspired by the character design from Mumei MV by Mumei.",
+      "description": "Inspired by the character design from Mumei MV by Nanashi Mumei of hololive English -Council-",
       "tags": [
         "Character",
         "Rigging"
@@ -44,59 +44,21 @@
       "id": "work-1781485503333",
       "title": "Pancakes",
       "model": "media/models/mdl.pancake-syrup.glb",
-      "description": "",
-      "tags": [],
+      "description": "A quick exercise to develop internal studio pipeline.",
+      "tags": [
+        "Low-Poly",
+        "Prop",
+        "Rigging"
+      ],
       "featured": false,
-      "images": [],
+      "images": [
+        "media/pancake_syyrup.png"
+      ],
       "camera": {
         "lift": -0.95,
         "dolly": 5.448963619092496
       },
       "material": "original"
-    },
-    {
-      "id": "cone",
-      "title": "Cone",
-      "model": "media/models/cone.glb",
-      "description": "A geometric study in pure form. Exploring the language of primitives as a foundation for more complex structures.",
-      "tags": [
-        "primitive",
-        "geometry"
-      ],
-      "featured": false,
-      "images": []
-    },
-    {
-      "id": "cube",
-      "title": "Cube",
-      "model": "media/models/cube.glb",
-      "description": "A geometric study in pure form. The cube as a starting point — a meditation on mass and edge.",
-      "tags": [
-        "primitive",
-        "geometry"
-      ],
-      "featured": false,
-      "images": [],
-      "camera": {
-        "lift": -2,
-        "dolly": 12
-      }
-    },
-    {
-      "id": "ico",
-      "title": "Ico",
-      "model": "media/models/ico.glb",
-      "description": "Icosphere geometry. Uniform triangulation distributed across a sphere — a recurring motif in computational form.",
-      "tags": [
-        "primitive",
-        "geometry"
-      ],
-      "featured": false,
-      "images": [],
-      "camera": {
-        "lift": -2,
-        "dolly": 9
-      }
     }
   ]
 }
