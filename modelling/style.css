@@ -810,8 +810,6 @@ body {
   text-transform: uppercase;
   letter-spacing: -0.01em;
   margin-bottom: 0;
-  white-space: nowrap;
-  overflow: visible;
 }
 
 .work-detail-desc {

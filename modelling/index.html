@@ -351,9 +351,20 @@
     }
 
     // ── Detail ────────────────────────────────────────────────────────────────
+    function fitTitle(el) {
+      el.style.fontSize = '';
+      const availW = el.parentElement.clientWidth - 104; // 52px padding × 2
+      if (el.scrollWidth > availW) {
+        const cur = parseFloat(getComputedStyle(el).fontSize);
+        el.style.fontSize = Math.max(cur * (availW / el.scrollWidth) * 0.98, 40) + 'px';
+      }
+    }
+
     function openPanel(work) {
       document.getElementById('detail-eyebrow').textContent = work.tags.join(' / ').toUpperCase();
-      document.getElementById('detail-title').textContent   = work.title.toUpperCase();
+      const titleEl = document.getElementById('detail-title');
+      titleEl.textContent = work.title.toUpperCase();
+      fitTitle(titleEl);
       document.getElementById('detail-desc').textContent    = work.description;
       document.getElementById('detail-tags').innerHTML      =
         work.tags.map(t => `<span class="tag">${t}</span>`).join('');
