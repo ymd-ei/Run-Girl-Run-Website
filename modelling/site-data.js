@@ -71,6 +71,9 @@ function normalizeWork(w) {
     images: Array.isArray(w.images) ? w.images : [],
     // camera is optional; absent ⇒ viewer auto-frames (see model-view.applyCamera)
     ...(w.camera ? { camera: { lift: +w.camera.lift || 0, dolly: +w.camera.dolly || 5.5 } } : {}),
+    // material is optional; 'original' ⇒ render the authored material instead of
+    // the portfolio grey (see model-view.applyMaterialMode). Absent ⇒ grey.
+    ...(w.material === 'original' ? { material: 'original' } : {}),
   };
 }
 
