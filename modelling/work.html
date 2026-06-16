@@ -97,18 +97,22 @@
       work.tags.map(t => `<span class="tag">${t}</span>`).join('');
 
     // ── Curated images (display-only, from content.json) ──────────────────────
+    const isVideo = p => /\.(mp4|webm|mov|ogg)$/i.test(p);
+
     let lightboxEl = null;
     function getLightbox() {
       if (lightboxEl) return lightboxEl;
       lightboxEl = document.createElement('div');
       lightboxEl.id = 'lightbox';
-      lightboxEl.innerHTML = '<button class="lightbox-close">&#215;</button><img alt="">';
+      lightboxEl.innerHTML = '<button class="lightbox-close">&#215;</button><img alt="" style="display:none"><video controls style="display:none"></video>';
       lightboxEl.addEventListener('click', e => {
-        if (e.target === lightboxEl || e.target.matches('.lightbox-close'))
+        if (e.target === lightboxEl || e.target.matches('.lightbox-close')) {
           lightboxEl.classList.remove('open');
+          lightboxEl.querySelector('video').pause();
+        }
       });
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') lightboxEl?.classList.remove('open');
+        if (e.key === 'Escape') { lightboxEl?.classList.remove('open'); lightboxEl?.querySelector('video')?.pause(); }
       });
       document.body.appendChild(lightboxEl);
       return lightboxEl;
@@ -121,14 +125,26 @@
       list.forEach((src, i) => {
         const url = mediaUrl(src);
         const block = document.createElement('div');
-        // First image spans wide, like the original layout
         block.className = 'work-image-block has-image' + (i === 0 ? ' wide' : '');
-        block.style.backgroundImage = `url("${url}")`;
-        block.style.backgroundSize = 'cover';
-        block.style.backgroundPosition = 'center';
+        if (isVideo(src)) {
+          const vid = document.createElement('video');
+          vid.src = url; vid.muted = true; vid.loop = true; vid.autoplay = true; vid.playsInline = true;
+          block.appendChild(vid);
+        } else {
+          block.style.backgroundImage = `url("${url}")`;
+          block.style.backgroundSize = 'cover';
+          block.style.backgroundPosition = 'center';
+        }
         block.addEventListener('click', () => {
           const lb = getLightbox();
-          lb.querySelector('img').src = url;
+          const img = lb.querySelector('img'), vid = lb.querySelector('video');
+          if (isVideo(src)) {
+            img.style.display = 'none'; vid.style.display = 'block';
+            vid.src = url; vid.play();
+          } else {
+            img.style.display = 'block'; vid.style.display = 'none'; vid.pause();
+            img.src = url;
+          }
           lb.classList.add('open');
         });
         container.appendChild(block);

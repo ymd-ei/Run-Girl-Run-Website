@@ -342,8 +342,8 @@
     .img-slot-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-dim); }
     .img-slot-inner i { font-size: 20px; opacity: 0.7; }
     .img-slot-inner span { font-size: 10px; }
-    .img-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
-    .img-slot.has-img img { display: block; }
+    .img-slot img, .img-slot video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+    .img-slot.has-img img, .img-slot.has-img video { display: block; }
     .img-slot.has-img .img-slot-inner { display: none; }
     .img-slot.busy .img-slot-inner span { color: var(--accent); }
 
@@ -1048,9 +1048,17 @@
     return grid;
   }
 
+  const isVideo = p => /\.(mp4|webm|mov|ogg)$/i.test(p);
+
   function filledSlot(w, path, i) {
     const slot = document.createElement('div'); slot.className = 'img-slot has-img';
-    const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(path);
+    let media;
+    if (isVideo(path)) {
+      media = document.createElement('video');
+      media.src = mediaUrl(path); media.muted = true; media.preload = 'metadata';
+    } else {
+      media = document.createElement('img'); media.alt = ''; media.src = mediaUrl(path);
+    }
     const inner = document.createElement('div'); inner.className = 'img-slot-inner';
     const rm = document.createElement('button'); rm.className = 'img-rm'; rm.innerHTML = '✕';
     rm.addEventListener('click', e => { e.stopPropagation(); w.images.splice(i, 1); markDirty(); refreshImages(w); });
@@ -1058,14 +1066,14 @@
       if (!authed) { toast('Log in to manage media.', true); return; }
       openMediaPicker(p => { if (!p) return; w.images[i] = p; markDirty(); refreshImages(w); });
     });
-    slot.append(img, inner, rm);
+    slot.append(media, inner, rm);
     return slot;
   }
 
   function addSlot(w, grid) {
     const slot = document.createElement('div'); slot.className = 'img-slot';
     const inner = document.createElement('div'); inner.className = 'img-slot-inner';
-    inner.innerHTML = '<i class="ph-fill ph-images"></i><span>Add image</span>';
+    inner.innerHTML = '<i class="ph-fill ph-images"></i><span>Add media</span>';
     slot.appendChild(inner);
     slot.addEventListener('click', () => {
       if (!authed) { toast('Log in to manage media.', true); return; }
