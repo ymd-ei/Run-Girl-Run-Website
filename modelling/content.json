@@ -49,7 +49,7 @@
       "featured": false,
       "images": [],
       "camera": {
-        "lift": 0,
+        "lift": -0.95,
         "dolly": 5.448963619092496
       }
     },
