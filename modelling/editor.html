@@ -546,7 +546,7 @@
   import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
   import { HalftonePass }   from 'three/addons/postprocessing/HalftonePass.js';
   import { OutputPass }     from 'three/addons/postprocessing/OutputPass.js';
-  import { loadModel, applyCamera, fitDolly, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
+  import { loadModel, applyCamera, applyMaterialMode, fitDolly, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
   import { mediaUrl, DEFAULTS } from './site-data.js';
   import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
   import { openMediaPicker } from '../src/editor-v3/media.js';
@@ -712,8 +712,25 @@
 
     function disposeModel() {
       if (mixer) { mixer.stopAllAction(); mixer = null; }
-      if (model) { scene.remove(model); model.traverse(c => { if (c.isMesh) { c.geometry.dispose(); c.material.dispose(); } }); model = null; }
+      if (model) {
+        scene.remove(model);
+        model.traverse(c => {
+          if (!c.isMesh) return;
+          c.geometry.dispose();
+          // Both house + authored materials are stashed on the mesh (model-view.js).
+          const o = c.userData.origMat, g = c.userData.greyMat;
+          if (o) o.dispose();
+          if (g && g !== o) g.dispose();
+        });
+        model = null;
+      }
       frame = null; ready = false;
+    }
+
+    // Swap every mesh between the portfolio grey and its authored material.
+    function setMaterial(mode) {
+      if (model) applyMaterialMode(model, mode);
+      needs = true;
     }
 
     function reapply() { if (ready && frame) { applyCamera(camera, controls, frame, work); needs = true; } }
@@ -747,6 +764,7 @@
         if (my !== token) return; // a newer work was selected
         model = res.model; frame = res.frame;
         scene.add(model);
+        setMaterial(work?.material === 'original' ? 'original' : 'grey');   // saved per-work choice
         if (res.animations.length) { mixer = new THREE.AnimationMixer(model); res.animations.forEach(c => mixer.clipAction(c).play()); clock.getDelta(); }
         ready = true; reapply();
         syncSliders();   // reflect the auto-fit distance in the Distance slider
@@ -769,7 +787,7 @@
     }
 
     window.addEventListener('resize', () => { if (canvas && canvas.isConnected) size(); });
-    return { mount, reapply, setAutoRotate, effectiveDolly, fitDistance };
+    return { mount, reapply, setAutoRotate, effectiveDolly, fitDistance, setMaterial };
   })();
 
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -961,6 +979,7 @@
         <div class="cam-actions">
           <label class="featured-toggle"><input type="checkbox" id="cam-spin" checked> Turntable preview</label>
           <label class="featured-toggle"><input type="checkbox" id="cam-chrome-toggle" checked> Page layout</label>
+          <label class="featured-toggle" title="Show the model's authored material instead of the portfolio grey"><input type="checkbox" id="cam-original"> Original material</label>
           <span class="spacer"></span>
           <button class="btn ghost" id="cam-autofit"><i class="ph-fill ph-frame-corners"></i> Auto-fit</button>
           <button class="btn ghost" id="cam-reset"><i class="ph-fill ph-arrow-counter-clockwise"></i> Reset</button>
@@ -976,6 +995,13 @@
     wrap.querySelector('#cam-spin').addEventListener('change', e => Preview.setAutoRotate(e.target.checked));
     wrap.querySelector('#cam-chrome-toggle').addEventListener('change', e => {
       wrap.querySelector('.cam-stage').classList.toggle('hide-chrome', !e.target.checked);
+    });
+    const origToggle = wrap.querySelector('#cam-original');
+    origToggle.checked = w.material === 'original';   // saved per work → ships to the live site
+    origToggle.addEventListener('change', e => {
+      if (e.target.checked) w.material = 'original'; else delete w.material;
+      Preview.setMaterial(e.target.checked ? 'original' : 'grey');
+      markDirty();
     });
     wrap.querySelector('#cam-autofit').addEventListener('click', () => {
       const fit = Preview.fitDistance();

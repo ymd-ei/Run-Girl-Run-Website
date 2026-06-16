@@ -37,6 +37,19 @@ export function makeGreyMaterial(src) {
 }
 
 /**
+ * Swap every mesh in a loaded model between the portfolio grey ('grey') and its
+ * authored material ('original'). Relies on loadModel() having stashed both on
+ * each mesh's userData. No-op for meshes that didn't go through loadModel().
+ */
+export function applyMaterialMode(model, mode) {
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    const m = mode === 'original' ? child.userData.origMat : child.userData.greyMat;
+    if (m) child.material = m;
+  });
+}
+
+/**
  * Load a .glb, normalise scale + position, and apply the grey material.
  * Resolves { model, animations, frame:{ baseX, yMid, half } } where `frame` is
  * what applyCamera()/fitDolly() need (`half` = normalised half-extents on each
@@ -61,7 +74,10 @@ export function loadModel(url, { targetSize = 3.8 } = {}) {
       model.scale.setScalar(scale);
       model.position.set(baseX, -center.y * scale, -center.z * scale);
       model.traverse(child => {
-        if (child.isMesh) child.material = makeGreyMaterial(child.material);
+        if (!child.isMesh) return;
+        child.userData.origMat = child.material;
+        child.userData.greyMat = makeGreyMaterial(child.material);
+        child.material = child.userData.greyMat;
       });
       const yMid = (-center.y * scale) + (size.y * scale * 0.5);
       // Half-extents of the normalised model — fitDolly() needs these to work

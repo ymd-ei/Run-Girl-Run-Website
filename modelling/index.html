@@ -130,7 +130,7 @@
     import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
     import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
     import { loadContent, mediaUrl, featuredWork } from './site-data.js';
-    import { loadModel, applyCamera } from './model-view.js';
+    import { loadModel, applyCamera, applyMaterialMode } from './model-view.js';
 
     // ── Site data (top-level await: pauses until content.json loads) ───────────
     // Edit content via editor.html, which commits content.json to the repo.
@@ -297,7 +297,12 @@
         if (activeModel) {
           scene.remove(activeModel);
           activeModel.traverse(c => {
-            if (c.isMesh) { c.geometry.dispose(); c.material.dispose(); }
+            if (!c.isMesh) return;
+            c.geometry.dispose();
+            // Both house + authored materials are stashed (model-view.js).
+            const o = c.userData.origMat, g = c.userData.greyMat;
+            if (o) o.dispose();
+            if (g && g !== o) g.dispose();
           });
           activeModel = null;
         }
@@ -305,6 +310,8 @@
         loadModel(mediaUrl(work.model)).then(({ model, animations, frame }) => {
           scene.add(model);
           activeModel = model;
+          // Honour the work's curated render material (default: portfolio grey).
+          applyMaterialMode(model, work.material === 'original' ? 'original' : 'grey');
 
           // Play any animation clips baked into the GLB
           if (animations.length) {
