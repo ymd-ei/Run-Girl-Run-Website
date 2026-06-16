@@ -51,7 +51,8 @@
       "camera": {
         "lift": -0.95,
         "dolly": 5.448963619092496
-      }
+      },
+      "material": "original"
     },
     {
       "id": "cone",
