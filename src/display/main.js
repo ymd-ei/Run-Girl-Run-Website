@@ -1203,6 +1203,9 @@ function setupEventListeners() {
     contactWrapper.addEventListener(
       'scroll',
       () => {
+        // The panel only scrolls vertically; undo any sideways shift (e.g. a
+        // trackpad swipe in Safari) so content is never cut off on the left.
+        if (contactWrapper.scrollLeft) contactWrapper.scrollLeft = 0;
         updateContactPanelBackground(contactWrapper.scrollTop);
       },
       { passive: true }
