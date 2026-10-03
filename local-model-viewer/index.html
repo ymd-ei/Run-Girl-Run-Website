@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Troubleshooter — local</title>
+<!-- Match the portfolio EXACTLY: same three version + addons path as
+     modelling/index.html so what renders here == what renders on the site. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="panel">
+    <header class="panel-head">
+      <p class="eyebrow">Local · matches portfolio pipeline</p>
+      <h1>Model Troubleshooter</h1>
+    </header>
+
+    <!-- ── Source ───────────────────────────────────────────── -->
+    <section class="group">
+      <h2>Model</h2>
+      <select id="bundled" class="field">
+        <option value="">— bundled models —</option>
+      </select>
+      <div class="row">
+        <label class="btn" for="file-input">Open file…</label>
+        <input id="file-input" type="file" accept=".glb,.gltf" hidden>
+        <button id="reset-btn" class="btn" type="button">Reframe</button>
+      </div>
+      <p id="file-name" class="muted">No model loaded</p>
+      <p id="status" class="muted">Drop a .glb on the canvas, pick one, or choose a bundled model.</p>
+    </section>
+
+    <!-- ── Look ─────────────────────────────────────────────── -->
+    <section class="group">
+      <h2>Render</h2>
+      <label class="lbl">Material
+        <select id="material" class="field">
+          <option value="grey">Portfolio grey (house look)</option>
+          <option value="original">Original (as authored)</option>
+          <option value="normals">Normals debug</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="wireframe"> Wireframe</label>
+      <label class="lbl">Background
+        <select id="theme" class="field">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="mid">Neutral grey</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="halftone" checked> Halftone (site look)</label>
+      <label class="check"><input type="checkbox" id="composite" checked> Site compositing (blend over paper)</label>
+      <label class="check"><input type="checkbox" id="grid" checked> Grid</label>
+      <label class="check"><input type="checkbox" id="axes"> Axes (R=x, G=y, B=z)</label>
+      <label class="check"><input type="checkbox" id="bbox"> Bounding box</label>
+    </section>
+
+    <!-- ── Camera ───────────────────────────────────────────── -->
+    <section class="group">
+      <h2>Camera</h2>
+      <label class="check"><input type="checkbox" id="zoom" checked> Zoom</label>
+      <label class="check"><input type="checkbox" id="pan" checked> Pan</label>
+      <label class="check"><input type="checkbox" id="autorotate"> Auto-rotate</label>
+    </section>
+
+    <!-- ── Animation ────────────────────────────────────────── -->
+    <section class="group" id="anim-group" hidden>
+      <h2>Animation</h2>
+      <label class="lbl">Clip
+        <select id="clip" class="field"></select>
+      </label>
+      <div class="row">
+        <button id="play-btn" class="btn" type="button">Pause</button>
+        <span id="anim-time" class="muted mono">0.00s</span>
+      </div>
+      <label class="lbl">Speed <span id="speed-val" class="mono">1.0×</span>
+        <input type="range" id="speed" min="0" max="2" step="0.05" value="1">
+      </label>
+    </section>
+
+    <!-- ── Report ───────────────────────────────────────────── -->
+    <section class="group">
+      <h2>Report</h2>
+      <div id="warnings" class="warnings"></div>
+      <dl id="info" class="info"></dl>
+    </section>
+  </aside>
+
+  <main id="stage" class="stage">
+    <canvas id="viewer"></canvas>
+    <div id="empty-state" class="empty">
+      <div class="empty-title">Drop a .glb here</div>
+      <div class="empty-text">or use “Open file…” / pick a bundled model</div>
+    </div>
+    <div id="hud" class="hud mono"></div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
