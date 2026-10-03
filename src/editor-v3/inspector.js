@@ -487,6 +487,9 @@ const SITE_GROUPS_2 = [
     { label: 'Contact highlight', key: 'theme.ctHi', kind: 'color' },
     { label: 'Panel style', key: 'theme.panelStyle', kind: 'select', options: [['light', 'Light'], ['dark', 'Dark'], ['frost', 'Frost']] }
   ] },
+  { title: 'Social feed', note: 'Posts tagged #rgr on the accounts in Social links join the Work grid. Add #rgr-<filter value> (or a filter’s feed hashtags) to place them under a filter.', fields: [
+    { label: 'Default banner (text-only posts)', key: 'postBanner', kind: 'media' }
+  ] },
   { title: 'Mature content', note: 'Defaults for projects marked sensitive. Each project can still override these.', fields: [
     { label: 'Warning label', key: 'sensitiveLabel', placeholder: 'MATURE' },
     { label: 'Warning color', key: 'theme.sensitiveColor', kind: 'color' }

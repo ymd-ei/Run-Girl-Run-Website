@@ -16,7 +16,7 @@ Quick reference for image/video dimensions. Pick the template that matches your 
 - In the stacked Work grid, a card thumbnail can be **any shape from 4:5 (portrait) to 2:1 (wide)**, at least **1200 px wide**. It shows whole, and the columns stack around it.
 - Taller than 4:5 or wider than 2:1 is cropped from the centre to that limit.
 - **16:9 is the default**: a card sits at 16:9 until its image loads, and More work cards in the post panel are always 16:9.
-- Live so far on the feed sample (`/samples/feed/`). The main Work grid still crops thumbnails to 16:9 until the social feed is built into it, so keep exporting 16:9 for projects until then.
+- Applies to project thumbnails and social feed posts alike. A text-only feed post shows as a slim quote strip instead of a thumbnail.
 
 ### Socials notes
 

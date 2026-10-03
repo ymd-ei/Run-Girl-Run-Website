@@ -33,6 +33,11 @@
         "label": "Pixiv",
         "url": "https://www.pixiv.net/en/users/92179210",
         "ref": "pixiv"
+      },
+      {
+        "label": "Bluesky",
+        "url": "https://bsky.app/profile/ymd-ei.bsky.social",
+        "ref": "bluesky"
       }
     ],
     "resume": "resume/RJ_RGR_anim-02_W25.pdf"

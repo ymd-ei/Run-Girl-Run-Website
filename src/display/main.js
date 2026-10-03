@@ -23,12 +23,24 @@ import { setRefContext } from '../utils/refs.js';
 import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
+import {
+  loadFeed, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey,
+  masonry, cardPositions, initThumbShapes, SOURCES
+} from './feed.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
 let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
+// Social feed (#rgr posts) shown in the Work grid next to projects
+let feedPosts = [];
+let workShowAll = false;
+let workFilter = 'all';
+let workSort = 'newest';        // 'newest' | 'likes'
+const likeCounts = new Map();   // likes API key -> count, filled when sorting by likes
+let openItem = null;            // { kind: 'project' | 'post', id } in the #pp panel
+const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let canvasEditEnabled = false;
 let canvasEditActiveElement = null;
 let canvasEditOriginalText = '';
@@ -383,14 +395,8 @@ export async function bootstrap() {
       indicator.style = 'position:fixed;bottom:1rem;right:1rem;background:#1a1a1a;color:#fff;padding:.5em 1em;border-radius:6px;font-size:.75rem;z-index:9999;opacity:.85;pointer-events:none;';
       document.body.appendChild(indicator);
     } else {
-      // Default: filter to only published projects
-      const publishedProjects = projects.filter(p => p.published);
-      const origProjects = [...projects];
-      projects.length = 0;
-      projects.push(...publishedProjects);
+      // Default: only published projects (renderWorkSection filters them)
       renderWorkSection();
-      projects.length = 0;
-      projects.push(...origProjects);
     }
 
     // 6. Render about panel
@@ -421,6 +427,14 @@ export async function bootstrap() {
     if (projectParam) {
       window.display?.openProject?.(projectParam);
     }
+
+    // 10. Social feed: tagged posts join the Work grid once they arrive.
+    //     ?post=id deep links open after that.
+    initThumbShapes();
+    refreshFeed().then(() => {
+      const postParam = params.get('post');
+      if (postParam) window.display?.openPost?.(postParam, { skipHistory: true });
+    });
 
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
@@ -626,7 +640,8 @@ function renderHero() {
 /**
  * Render work section with project grid and filters
  */
-function renderWorkSection({ showAll = false } = {}) {
+function renderWorkSection({ showAll = workShowAll } = {}) {
+  workShowAll = showAll;
   const filtersEl = document.getElementById('work-filters');
   const gridEl = document.getElementById('wg');
 
@@ -635,20 +650,128 @@ function renderWorkSection({ showAll = false } = {}) {
   const filters = globalState.filters || DEFAULT_FILTERS;
 
   const visibleProjects = projects.filter(p => showAll || p.published !== false);
-  const activeTypes = new Set(visibleProjects.flatMap(projectTypes));
+  const activeTypes = new Set([...visibleProjects.flatMap(projectTypes), ...feedPosts.flatMap(p => p.filters)]);
   const visibleFilters = filters.filter(f => activeTypes.has(f.value));
+  if (workFilter !== 'all' && !activeTypes.has(workFilter)) workFilter = 'all';
 
-  filtersEl.innerHTML =
-    `<button class="fb active" onclick="window.display?.filterWork?.(this, 'all')">All</button>` +
-    visibleFilters.map(f => `<button class="fb" onclick="window.display?.filterWork?.(this, '${f.value}')">${f.label}</button>`).join('');
+  const chip = (value, label) =>
+    `<button class="fb${workFilter === value ? ' active' : ''}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
+  const sortBtn = (value, label) =>
+    `<button class="fb${workSort === value ? ' active' : ''}" onclick="window.display?.sortWork?.('${value}')">${label}</button>`;
+  filtersEl.innerHTML = chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')
+    + (feedPosts.length ? `<span class="wf-sort">${sortBtn('newest', 'Newest')}${sortBtn('likes', 'Most liked')}</span>` : '');
 
-  gridEl.innerHTML = renderWorkGrid(projects, globalState.theme, { showAll });
+  // Projects keep their hand-set order up front; feed posts follow, newest first.
+  // Most liked ranks both together.
+  let items = [
+    ...visibleProjects.map(p => ({ key: p.id, html: renderWorkGrid([p], globalState.theme, { showAll }) })),
+    ...feedPosts.map(p => ({ key: likeKey(p.id), html: postCardHTML(p, filters) })),
+  ];
+  if (workSort === 'likes') items = items.map((x, i) => [x, i])
+    .sort((a, b) => (likeCounts.get(b[0].key) || 0) - (likeCounts.get(a[0].key) || 0) || a[1] - b[1])
+    .map(([x]) => x);
+
+  const before = cardPositions(gridEl);
+  gridEl.innerHTML = items.map(x => x.html).join('');
+  // Project cards need the same key the stacking uses to animate them
+  [...gridEl.children].forEach((el, i) => { if (!el.dataset.key) el.dataset.key = items[i]?.key; });
+  if (workSort === 'likes') {
+    [...gridEl.children].forEach((el, i) => {
+      el.querySelector('.wcty')?.insertAdjacentHTML('beforeend',
+        `<span class="wc-likes"><i class="ph-fill ph-heart"></i> ${likeCounts.get(items[i].key) || 0}</span>`);
+    });
+  }
+  applyWorkFilter();
+  masonry(gridEl, before);
 
   // Initialize sensitive tapes
   initSensitiveTapes(projects, { showAll });
 
   // Initialize countup animations (lazy)
   setTimeout(initCountUps, 100);
+}
+
+function applyWorkFilter() {
+  document.querySelectorAll('#wg .wc').forEach(c => {
+    let types = [];
+    try { types = JSON.parse(c.dataset.types || '[]'); } catch (e) {}
+    const show = workFilter === 'all' || types.includes(workFilter);
+    c.style.opacity = show ? '' : '0.15';
+    c.style.pointerEvents = show ? '' : 'none';
+  });
+}
+
+async function refreshFeed() {
+  try {
+    feedPosts = await loadFeed(globalState);
+  } catch (e) {
+    console.warn('Feed failed to load:', e);
+    feedPosts = [];
+  }
+  renderWorkSection();
+}
+
+/** Counts for every card, fetched once when someone sorts by likes. */
+async function loadAllLikes() {
+  if (new URLSearchParams(location.search).has('preview')) return;
+  const keys = [...document.querySelectorAll('#wg .wc')].map(el => el.dataset.key).filter(k => k && !likeCounts.has(k));
+  const vid = getVisitorId();
+  await Promise.allSettled(keys.map(async key => {
+    const res = await fetch(`${LIKES_API}/${encodeURIComponent(key)}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    likeCounts.set(key, (await res.json()).count || 0);
+  }));
+}
+
+/** End of a post: two more pieces (same filter first), all 16:9. */
+function moreWorkHTML(post) {
+  const filters = globalState.filters || DEFAULT_FILTERS;
+  const candidates = [
+    ...feedPosts.filter(p => p.id !== post.id).map(p => ({ types: p.filters, date: p.date, html: postCardHTML(p, filters, { uniform: true }) })),
+    ...projects.filter(p => workShowAll || p.published !== false).map(p => ({ types: projectTypes(p), date: (p.year || '0') + '-12-31', html: renderWorkGrid([p], globalState.theme, { showAll: workShowAll }) })),
+  ];
+  const same = candidates.filter(x => x.types.some(t => post.filters.includes(t)));
+  const picks = [...same, ...candidates.filter(x => !same.includes(x)).sort((a, b) => new Date(b.date) - new Date(a.date))].slice(0, 2);
+  if (!picks.length) return '';
+  const label = post.filters.length === 1 && picks.every(x => x.types.includes(post.filters[0]))
+    ? (filters.find(f => f.value === post.filters[0])?.label || '') + ' ' : '';
+  return `<div class="more-work"><p class="more-head">More ${label}work</p><div class="wg">${picks.map(x => x.html).join('')}</div></div>`;
+}
+
+function contactPromptHTML() {
+  const avail = availability(globalState);
+  const headline = avail.enabled && avail.text ? avail.text : `Work with ${globalState.name || 'us'}`;
+  return `<div class="bl-cta post-contact">
+    <div class="bl-cta-copy">
+      <p class="bl-cta-headline">${headline}</p>
+      <p class="bl-cta-body">${globalState.name || ''} is an animation studio${globalState.location ? ' in ' + globalState.location : ''}. Got a project in mind?</p>
+    </div>
+    <button class="bl-cta-link" onclick="window.display?.openPanel?.('contact')">Get in touch</button>
+  </div>`;
+}
+
+/** Open #pp with its usual slide-in (shared by projects and posts). */
+function showProjectPanel(isLongform) {
+  const pp = document.getElementById('pp');
+  if (pp) {
+    // Reset to base state so the next open animation always starts from
+    // the correct origin (bottom for longform, right side for default).
+    pp.classList.remove('open');
+    pp.classList.add('no-transition');
+    pp.classList.toggle('longform', isLongform);
+    // Force style flush before re-opening so CSS transitions reliably run.
+    void pp.offsetWidth;
+    pp.classList.remove('no-transition');
+    requestAnimationFrame(() => {
+      pp.classList.add('open');
+    });
+  }
+
+  const bd = document.getElementById('bd');
+  if (bd) {
+    bd.classList.add('open');
+    bd.classList.add('project-open');
+  }
 }
 
 /**
@@ -867,16 +990,59 @@ function setupEventListeners() {
   // Filter work by type
   window.display = {
     filterWork(btn, type) {
-      document.querySelectorAll('.fb').forEach(b => b.classList.remove('active'));
+      workFilter = type;
+      document.querySelectorAll('#work-filters > .fb').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      applyWorkFilter();
+    },
 
-      document.querySelectorAll('#wg .wc').forEach(c => {
-        let types = [];
-        try { types = JSON.parse(c.dataset.types || '[]'); } catch (e) {}
-        const show = type === 'all' || types.includes(type);
-        c.style.opacity = show ? '1' : '0.15';
-        c.style.pointerEvents = show ? '' : 'none';
-      });
+    async sortWork(sort) {
+      workSort = sort;
+      if (sort === 'likes') await loadAllLikes();
+      renderWorkSection();
+    },
+
+    openPost(id, options) {
+      const post = feedPosts.find(p => p.id === id);
+      if (!post) return;
+      openItem = { kind: 'post', id };
+      const ppb = document.getElementById('ppb');
+      const s = SOURCES[post.source] || { label: post.source };
+      const filters = globalState.filters || DEFAULT_FILTERS;
+      // Text-only posts use the site's default banner (Site settings) if one is set
+      const heroImg = postHero(post)?.url || globalState.postBanner || '';
+      const heroHTML = `<div class="pp-hero${heroImg ? '' : ' pp-hero-plain'}" style="${heroImg ? `background-image:url('${heroImg.replace(/'/g, '%27')}')` : ''}">
+        <div class="pp-hero-overlay"></div>
+        <div class="pp-hero-actions">
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
+          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+        </div>
+        <div class="pp-hero-content">
+          <div class="pp-hero-left">
+            <h2 class="pp-hero-title">${escHtml(postTitle(post))}</h2>
+            <div class="pp-hero-meta">
+              <span class="pp-hero-tag">${s.label}</span>
+              ${post.filters.map(v => `<span class="pp-hero-tag">${escHtml(filters.find(f => f.value === v)?.label || v)}</span>`).join('')}
+              <span class="pp-hero-tag">${fmtDate(post.date)}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+      if (ppb) {
+        ppb.innerHTML = heroHTML + postBodyHTML(post) + `<div class="block-canvas post-end">${moreWorkHTML(post)}${contactPromptHTML()}</div>`;
+        ppb.scrollTop = 0;
+      }
+
+      fetchLikeCount(likeKey(id));
+      showProjectPanel(false);
+
+      if (!options?.skipHistory) {
+        const url = new URL(window.location);
+        url.searchParams.delete('project');
+        url.searchParams.set('post', id);
+        history.pushState({ post: id }, '', url);
+      }
     },
 
     async openProject(id, options) {
@@ -886,6 +1052,7 @@ function setupEventListeners() {
         ppb.scrollTop = 0;
       }
 
+      openItem = { kind: 'project', id };
       const project = await fetchProjectById(id);
       if (!project) {
         if (ppb) ppb.innerHTML = '<p style="font-size:.75rem;color:var(--muted)">Unable to load this project right now.</p>';
@@ -925,31 +1092,12 @@ function setupEventListeners() {
       // Fetch like count
       fetchLikeCount(id);
 
-      const pp = document.getElementById('pp');
-      if (pp) {
-        const isLongform = project.longform === true;
-        // Reset to base state so the next open animation always starts from
-        // the correct origin (bottom for longform, right side for default).
-        pp.classList.remove('open');
-        pp.classList.add('no-transition');
-        pp.classList.toggle('longform', isLongform);
-        // Force style flush before re-opening so CSS transitions reliably run.
-        void pp.offsetWidth;
-        pp.classList.remove('no-transition');
-        requestAnimationFrame(() => {
-          pp.classList.add('open');
-        });
-      }
-
-      const bd = document.getElementById('bd');
-      if (bd) {
-        bd.classList.add('open');
-        bd.classList.add('project-open');
-      }
+      showProjectPanel(project.longform === true);
 
       // Update URL bar so the link is shareable
       if (!options?.skipHistory) {
         const url = new URL(window.location);
+        url.searchParams.delete('post');
         url.searchParams.set('project', id);
         history.pushState({ project: id }, '', url);
       }
@@ -970,19 +1118,23 @@ function setupEventListeners() {
         if (!anyPanelOpen) bd.classList.remove('open');
       }
 
-      // Clear project from URL bar
+      openItem = null;
+
+      // Clear project / post from URL bar
       if (!options?.skipHistory) {
         const url = new URL(window.location);
         url.searchParams.delete('project');
+        url.searchParams.delete('post');
         history.pushState({}, '', url);
       }
     },
 
     copyShareLink() {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get('project');
-      if (!id) return;
-      const shareUrl = `https://rungirlrun.studio/p/${id}/`;
+      if (!openItem) return;
+      // Projects have static share pages (p/<id>/) for link previews; posts link to the site itself
+      const shareUrl = openItem.kind === 'post'
+        ? `https://rungirlrun.studio/?post=${encodeURIComponent(openItem.id)}`
+        : `https://rungirlrun.studio/p/${openItem.id}/`;
       navigator.clipboard.writeText(shareUrl).then(() => {
         const btn = document.querySelector('.pp-hero-btn:last-child') || document.getElementById('pp-share');
         if (btn) {
@@ -994,9 +1146,8 @@ function setupEventListeners() {
     },
 
     async toggleLike() {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get('project');
-      if (!id) return;
+      if (!openItem) return;
+      const id = openItem.kind === 'post' ? likeKey(openItem.id) : openItem.id;
       const vid = getVisitorId(true);
       try {
         const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
@@ -1007,6 +1158,7 @@ function setupEventListeners() {
         const data = await res.json();
         sessionStorage.setItem(`rgr_likes_${id}`, JSON.stringify({ count: data.count, liked: data.liked }));
         updateLikeUI(data.count, data.liked);
+        if (likeCounts.has(id)) likeCounts.set(id, data.count);
       } catch (e) {
         console.warn('Like failed:', e);
       }
@@ -1181,13 +1333,17 @@ function setupEventListeners() {
 
   // Browser back/forward navigation
   window.addEventListener('popstate', () => {
-    const id = new URLSearchParams(location.search).get('project');
+    const params = new URLSearchParams(location.search);
+    const id = params.get('project');
+    const postId = params.get('post');
     const pp = document.getElementById('pp');
     const isOpen = pp && pp.classList.contains('open');
 
-    if (id && !isOpen) {
+    if (id && openItem?.id !== id) {
       window.display?.openProject(id, { skipHistory: true });
-    } else if (!id && isOpen) {
+    } else if (postId && openItem?.id !== postId) {
+      window.display?.openPost(postId, { skipHistory: true });
+    } else if (!id && !postId && isOpen) {
       window.display?.closeProject({ skipHistory: true });
     }
   });
@@ -1336,6 +1492,7 @@ function setupEditorPreviewBridge() {
       renderWorkSection();
       renderAboutPanel();
       renderContactSection();
+      refreshFeed();
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
