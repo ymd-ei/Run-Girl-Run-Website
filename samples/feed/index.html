@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Social Feed Sample</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!-- Uses the live site's stylesheet so cards and the post panel match real projects -->
+<link rel="stylesheet" href="../../styles-main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+<style>
+/* Standalone prototype for the RGR Social Feed spec. Not linked from the live site. */
+html body *{cursor:auto !important}
+html body button,html body a,html body .wc,html body select,html body label{cursor:pointer !important}
+:root{--c-bluesky:#1185fe;--c-substack:#ff6719;--c-instagram:#d62976;--c-x:#111}
+
+/* Sample controls, sitting on the dark stage left of the Work panel */
+.ctl{position:fixed;left:1.5rem;bottom:1.5rem;z-index:150;width:min(300px,calc(100vw - 3rem));display:flex;flex-direction:column;gap:.7rem;font-family:var(--font-b);font-size:.72rem;color:rgba(var(--paper-rgb),.7)}
+.ctl b{font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.ctl p{line-height:1.5;color:rgba(var(--paper-rgb),.45)}
+.ctl label{display:flex;flex-direction:column;gap:.3rem}
+.ctl label.row{flex-direction:row;align-items:center;gap:.5rem}
+.ctl select,.ctl input[type=text]{font:inherit;background:#2a2622;border:1px solid #403a34;padding:.4rem .5rem;border-radius:2px;color:var(--paper)}
+.ctl .bsky{display:flex;gap:.4rem}.ctl .bsky input{flex:1;min-width:0}
+.ctl button{font:inherit;background:var(--accent);border:none;padding:.4rem .8rem;border-radius:2px;color:#fff}
+#status{color:rgba(var(--paper-rgb),.45);min-height:1em}
+#panel-work .pc,#panel-work .backbtn{display:none}
+
+/* Feed cards inside the real .wc card */
+.wci .src-dot{position:absolute;top:.55rem;left:.55rem;z-index:2;display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;border-radius:2px;background:rgba(10,8,6,.6);color:#fff;font-family:var(--font-b);font-size:.55rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase}
+.src-dot i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.wci .textthumb{position:absolute;inset:0;display:flex;align-items:center;padding:1.4rem 1.2rem 1rem;font-family:var(--font-s);font-size:1.15rem;line-height:1.2;color:var(--paper);background:linear-gradient(135deg,rgba(var(--accent-rgb),.55),rgba(var(--ink-rgb),.95))}
+.wci .textthumb span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.wct{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;padding-right:.6rem}
+.wcm{gap:.5rem}.wcty{white-space:nowrap}
+
+
+/* Post panel extras */
+.pp-hero.noimg{background:linear-gradient(135deg,rgba(var(--accent-rgb),.9),rgba(var(--ink-rgb),1))}
+.post-text{white-space:pre-line}
+.post-text .h,.log .h{color:var(--accent)}
+/* Post ending */
+.origin{align-self:flex-start;font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted);text-decoration:none;border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+.origin:hover{color:var(--accent);border-color:var(--accent)}
+.more-work{border-top:1px solid var(--border);padding-top:1.4rem;margin-top:.6rem}
+.more-head{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+body.panel-frost .origin,body.panel-frost .more-head{color:rgba(var(--paper-rgb),.45)}
+body.panel-frost .more-work{border-top-color:rgba(var(--paper-rgb),.1)}
+.wf .sort{margin-left:auto;display:flex;gap:.4rem}
+.wcty .likes{color:var(--accent);margin-left:.35rem}
+.wcty .likes i{font-size:.7rem;vertical-align:-.05em}
+/* Editor-only: daily schedule + manual "Check now" */
+.check-now{display:none;align-items:center;justify-content:space-between;gap:1rem;margin-top:2.5rem;padding:.8rem 1rem;border:1px dashed rgba(var(--accent-rgb),.5);font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted)}
+body.editor .check-now{display:flex}
+body.editor .check-now + .log{margin-top:1rem}
+.manual-note{font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted)}
+
+/* Full article body (Substack) in the post panel */
+.post-dek{font-family:var(--font-s);font-size:1.45rem;line-height:1.3;color:var(--ink)}
+.post-article{display:flex;flex-direction:column;gap:1.1rem;font-size:var(--fs-body);line-height:1.85;color:rgba(var(--ink-rgb),.75)}
+.post-article h2,.post-article h3{font-family:var(--font-s);font-weight:500;font-size:1.7rem;line-height:1.15;color:var(--ink);margin-top:.8rem}
+.post-article h3{font-size:1.35rem}
+.post-article strong,.post-article b{color:var(--accent);font-weight:600}
+.post-article a{color:var(--accent)}
+.post-article img,.post-article video{width:100%;display:block;background:var(--surface)}
+.post-article figcaption{font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted);margin-top:.4rem}
+.post-article ol,.post-article ul{padding-left:1.3rem;display:flex;flex-direction:column;gap:.4rem}
+.post-article blockquote{border-left:2px solid var(--accent);padding:.2rem 0 .2rem 1.1rem;font-family:var(--font-s);font-size:1.35rem;line-height:1.35;color:var(--ink)}
+.bl-image video{width:100%;height:100%;display:block;object-fit:cover}
+.bl-image.auto{aspect-ratio:auto}.bl-image.auto img,.bl-image.auto video{height:auto}
+body.panel-frost .post-dek,body.panel-frost .post-article h2,body.panel-frost .post-article h3,body.panel-frost .post-article blockquote{color:var(--paper)}
+body.panel-frost .post-article{color:rgba(var(--paper-rgb),.75)}
+
+/* Fetch log at the end of the Work panel: editor view only, never shown to visitors */
+.log{display:none}
+body.editor .log{display:block}
+body.editor .log{margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1rem;font-size:.72rem;color:var(--muted);list-style:none}
+.log li{padding:.2rem 0;line-height:1.5}
+.log li:first-child{color:var(--ink);font-weight:500;letter-spacing:var(--ls-normal);text-transform:uppercase;font-size:var(--fs-xs);margin-bottom:.3rem}
+.log .out{opacity:.55;text-decoration:line-through}
+.log .src-dot{display:inline-flex;align-items:center;gap:.3rem;margin-right:.3rem}
+body.panel-frost .log li:first-child{color:var(--paper)}
+body.panel-frost .log{border-top-color:rgba(var(--paper-rgb),.1);color:rgba(var(--paper-rgb),.45)}
+
+@media(max-width:900px){.ctl{display:none}}
+</style>
+</head>
+<body>
+
+<div id="stage"><div id="rp"><div class="pg"></div></div></div>
+
+<div class="ctl">
+  <b>Feed sample</b>
+  <p>Tagged posts fill the Work grid next to your projects. Click any card to open it.</p>
+  <label class="row"><input type="checkbox" id="editor"> Editor view (fetch log)</label>
+  <label>Live Bluesky handle
+    <span class="bsky"><input type="text" id="bsky" placeholder="handle.bsky.social" value="ymd-ei.bsky.social"><button id="bskyGo">Load</button></span>
+  </label>
+  <span id="status"></span>
+</div>
+
+<div id="bd" class="open" onclick="closePost()"></div>
+
+<!-- WORK (same markup as index.html) -->
+<div class="panel wide open" id="panel-work">
+  <div class="ph"><span class="pt2">Work</span></div>
+  <div class="pb">
+    <div class="wf" id="work-filters"></div>
+    <div class="wg" id="wg"></div>
+    <div class="check-now"><span id="lastChecked"></span><button class="fb" id="checkNow">Check now</button></div>
+    <ul class="log" id="log"></ul>
+  </div>
+</div>
+
+<!-- POST DETAIL (same panel projects open in) -->
+<div class="panel" id="pp">
+  <div class="ph">
+    <button class="backbtn" onclick="closePost()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span>Back</span>
+    </button>
+    <button class="pc" onclick="closePost()">&#x2715;</button>
+  </div>
+  <div class="ppbody" id="ppb"></div>
+</div>
+
+<script src="../../site-config.js"></script>
+<script>
+const SRC = {
+  bluesky:   { label: 'Bluesky',   color: 'var(--c-bluesky)' },
+  substack:  { label: 'Substack',  color: 'var(--c-substack)' },
+  instagram: { label: 'Instagram', color: 'var(--c-instagram)' },
+  x:         { label: 'X',         color: 'var(--c-x)' },
+};
+
+const state = {
+  site: null,          // content.json
+  posts: [],           // raw fetched posts (mock or live)
+  filter: 'all',
+  sort: 'newest',      // 'newest' | 'likes'
+  likes: {},           // likeKey -> count, from the Cloudflare likes API
+  liked: new Set(),    // likeKeys this visitor has liked
+};
+
+/* Likes go through the same Cloudflare Worker as project likes (site-config.js apiBase) */
+const LIKES_API = `${window.RGR_CONFIG?.apiBase || ''}/api/likes`;
+// Same anonymous visitor id the live site uses; only created on first like
+function getVisitorId(create = false) {
+  let vid = null;
+  try { vid = localStorage.getItem('rgr_vid'); } catch {}
+  if (!vid && create) {
+    vid = crypto.randomUUID();
+    try { localStorage.setItem('rgr_vid', vid); } catch {}
+  }
+  return vid;
+}
+// The likes API only accepts [a-zA-Z0-9_-] ids, so "bsky:3lx9a1" is stored as "bsky-3lx9a1"
+const likeKey = id => id.replace(/[^a-zA-Z0-9_-]/g, '-');
+const likeCount = id => state.likes[likeKey(id)] || 0;
+function setLike(id, data) {
+  const k = likeKey(id);
+  state.likes[k] = data.count || 0;
+  data.liked ? state.liked.add(k) : state.liked.delete(k);
+}
+// No bulk endpoint yet, so this asks for every card's count in parallel
+async function loadLikes() {
+  const ids = [
+    ...(state.site.projectCards || []).filter(c => c.published !== false && c.thumbnail).map(c => c.id),
+    ...accepted().map(a => a.p.id),
+  ];
+  const vid = getVisitorId();
+  const results = await Promise.allSettled(ids.map(async id => {
+    const r = await fetch(`${LIKES_API}/${encodeURIComponent(likeKey(id))}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    setLike(id, await r.json());
+  }));
+  const failed = results.filter(r => r.status === 'rejected');
+  if (failed.length) $('status').textContent = `Likes: ${failed.length} of ${ids.length} counts failed to load (${failed[0].reason.message}).`;
+  render();
+}
+const likeBadge = id => state.sort === 'likes' ? `<span class="likes"><i class="ph-fill ph-heart"></i> ${likeCount(id)}</span>` : '';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tagify = s => esc(s).replace(/(^|\s)(#[\w-]+)/g, (_, pre, tag) => `${pre}<span class="h">${tag}</span>`);
+const fmtDate = d => new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+const shortDate = d => new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+const stripTags = s => s.replace(/(^|\s)#[\w-]+/g, '').trim();
+const postTitle = p => {
+  if (p.title) return p.title;
+  const first = stripTags(p.text).split(/[.!?\n]/)[0].trim();
+  if (!first) return SRC[p.source].label + ' post';
+  return first.length <= 48 ? first : first.slice(0, 48).replace(/\s+\S*$/, '') + '…';
+};
+const cardTypes = c => (Array.isArray(c.types) && c.types.length ? c.types : (c.type ? [c.type] : []));
+const filterLabel = v => state.site.filters.find(f => f.value === v)?.label || v;
+
+/* Filter rules (decided): a post goes on the site only with an #rgr tag (#rgr is also
+   the call to action everywhere). Filters then come from:
+   - #rgr-<filter value>  (Value, not Label, so renaming "3D" never breaks #rgr-3d)
+   - the filter's own hashtags set in Site settings, e.g. 3D: [3danimation, blender3d]
+   Several matches = several filters. Same rule as classifyPostTags in src/utils/projectTypes.js.
+   The platform is the only control: retag or delete there and the site follows.
+   Returns null when the post stays off the site, otherwise { filters: [values] }. */
+const normTag = t => String(t ?? '').trim().replace(/^#+/, '').toLowerCase();
+const filterTags = f => [...new Set((Array.isArray(f?.tags) ? f.tags : String(f?.tags || '').split(/[\s,]+/)).map(normTag).filter(Boolean))];
+function classify(post) {
+  const all = post.tags.map(normTag).filter(Boolean);
+  if (!all.some(t => t === 'rgr' || t.startsWith('rgr-'))) return null;
+  const filters = (state.site.filters || []).filter(f => f && f.value).filter(f =>
+    all.includes('rgr-' + normTag(f.value)) || filterTags(f).some(t => all.includes(t))
+  ).map(f => f.value);
+  return { filters };
+}
+const filterLabels = cls => cls.filters.map(v => esc(filterLabel(v))).join(' / ');
+
+function postCard({ p, cls }) {
+  const s = SRC[p.source];
+  const img = p.media?.[0];
+  return `<div class="wc" data-open="${esc(p.id)}">
+    <div class="wci">
+      ${!img ? `<div class="textthumb"><span>${esc(stripTags(p.text))}</span></div>`
+        : img.type === 'video' ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
+        : `<img src="${esc(img.url)}" alt="${esc(img.alt)}">`}
+      ${p.media.length > 1 ? `<span class="src-dot" style="left:auto;right:.55rem">${p.media.length} items</span>` : ''}
+      <span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span>
+      <div class="wco">View post</div>
+    </div>
+    <div class="wcm">
+      <p class="wct">${esc(postTitle(p))}</p>
+      <p class="wcty">${cls.filters.length ? filterLabels(cls) + ' &middot; ' : ''}${shortDate(p.date)}${likeBadge(p.id)}</p>
+    </div>
+  </div>`;
+}
+
+function projectCard(c) {
+  return `<div class="wc" data-project="${esc(c.id)}">
+    <div class="wci"><img src="../../${esc(c.thumbnail)}" alt="${esc(c.title)}"><div class="wco">View</div></div>
+    <div class="wcm"><p class="wct">${esc(c.title)}</p><p class="wcty">${esc(cardTypes(c).map(filterLabel).join(' / '))} &middot; ${esc(c.year)}${likeBadge(c.id)}</p></div>
+  </div>`;
+}
+
+function accepted() {
+  return state.posts
+    .map(p => ({ p, cls: classify(p) }))
+    .filter(a => a.cls)
+    .sort((a, b) => new Date(b.p.date) - new Date(a.p.date));
+}
+
+function render() {
+  const site = state.site;
+  const posts = accepted();
+  const projects = (site.projectCards || []).filter(c => c.published !== false && c.thumbnail);
+
+  // Same rule as the live site: only show filter chips that have something under them
+  const used = new Set([...projects.flatMap(cardTypes), ...posts.flatMap(a => a.cls.filters)]);
+  const chips = [{ value: 'all', label: 'All' }, ...(site.filters || []).filter(f => used.has(f.value))];
+  if (!chips.some(c => c.value === state.filter)) state.filter = 'all';
+  $('work-filters').innerHTML = chips.map(c => `<button class="fb ${c.value === state.filter ? 'active' : ''}" data-f="${esc(c.value)}">${esc(c.label)}</button>`).join('')
+    + `<span class="sort">${[['newest', 'Newest'], ['likes', 'Most liked']].map(([v, l]) => `<button class="fb ${state.sort === v ? 'active' : ''}" data-sort="${v}">${l}</button>`).join('')}</span>`;
+
+  // Projects keep their hand-set order up front; feed posts follow, newest first.
+  const keep = types => state.filter === 'all' || types.includes(state.filter);
+  let items = [
+    ...projects.filter(c => keep(cardTypes(c))).map(c => ({ id: c.id, html: projectCard(c) })),
+    ...posts.filter(a => keep(a.cls.filters)).map(a => ({ id: a.p.id, html: postCard(a) })),
+  ];
+  // Most liked mixes projects and posts into one ranking
+  if (state.sort === 'likes') items = items.sort((a, b) => likeCount(b.id) - likeCount(a.id));
+  $('wg').innerHTML = items.map(x => x.html).join('') || '<p class="wcty">Nothing under this filter yet.</p>';
+
+  const passed = new Set(posts.map(a => a.p.id));
+  const rows = [...state.posts].sort((a, b) => new Date(b.date) - new Date(a.date)).map(p => {
+    const s = SRC[p.source];
+    const why = passed.has(p.id) ? '' : ' · no studio tag, stays off';
+    return `<li class="${passed.has(p.id) ? '' : 'out'}"><span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span>${fmtDate(p.date)} · ${tagify(p.text.slice(0, 80))}${p.text.length > 80 ? '…' : ''}${why}</li>`;
+  });
+  $('log').innerHTML = `<li>Fetch log · ${posts.length} of ${state.posts.length} posts tagged</li>` + rows.join('');
+}
+
+function mediaBlock(m) {
+  return m.type === 'video'
+    ? `<div class="bl-image auto"><video src="${esc(m.url)}" controls playsinline preload="metadata" aria-label="${esc(m.alt)}"></video></div>`
+    : `<div class="bl-image auto"><img src="${esc(m.url)}" alt="${esc(m.alt)}" loading="lazy"></div>`;
+}
+
+/* Imported article HTML is someone else's markup: keep only plain formatting.
+   (The real fetch job would do this when it saves the post.) */
+const ALLOWED = new Set(['P','H1','H2','H3','H4','STRONG','B','EM','I','A','UL','OL','LI','BLOCKQUOTE','IMG','FIGURE','FIGCAPTION','BR','HR','PRE','CODE','VIDEO','SOURCE']);
+function sanitize(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = node => {
+    for (const el of [...node.children]) {
+      walk(el); // children first, so anything unwrapped below is already clean
+      if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'BUTTON', 'SVG', 'svg'].includes(el.tagName)) { el.remove(); continue; }
+      // Substack wraps each image in a link to the full-size file; keep readers on the page
+      if (el.tagName === 'A' && el.classList.contains('image-link')) { el.replaceWith(...el.childNodes); continue; }
+      if (!ALLOWED.has(el.tagName)) { el.replaceWith(...el.childNodes); continue; }
+      for (const a of [...el.attributes]) {
+        const ok = ['href', 'src', 'alt', 'controls'].includes(a.name) && !/^\s*(javascript|data):/i.test(a.value);
+        if (!ok) el.removeAttribute(a.name);
+      }
+      if (el.tagName === 'A') { el.target = '_blank'; el.rel = 'noopener'; }
+      if (el.tagName === 'IMG') el.loading = 'lazy';
+      if (el.tagName === 'H1') { const h = document.createElement('h2'); h.append(...el.childNodes); el.replaceWith(h); }
+    }
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+
+/* End of a post: keep people on the site rather than sending them back out */
+function moreWork(p, cls) {
+  const all = [
+    ...accepted().filter(a => a.p.id !== p.id).map(a => ({ types: a.cls.filters, date: a.p.date, html: postCard(a) })),
+    ...(state.site.projectCards || []).filter(c => c.published !== false && c.thumbnail).map(c => ({ types: cardTypes(c), date: c.year + '-12-31', html: projectCard(c) })),
+  ];
+  const same = all.filter(x => x.types.some(t => cls.filters.includes(t)));
+  const picks = [...same, ...all.filter(x => !same.includes(x)).sort((a, b) => new Date(b.date) - new Date(a.date))].slice(0, 2);
+  if (!picks.length) return '';
+  return `<div class="more-work">
+    <p class="more-head">More ${cls.filters.length === 1 && picks.every(x => x.types.includes(cls.filters[0])) ? esc(filterLabel(cls.filters[0])) + ' ' : ''}work</p>
+    <div class="wg">${picks.map(x => x.html).join('')}</div>
+  </div>`;
+}
+function contactBox() {
+  const site = state.site;
+  const headline = site.availability?.enabled ? site.availability.text : `Work with ${site.name}`;
+  return `<div class="bl-cta">
+    <div class="bl-cta-copy">
+      <p class="bl-cta-headline">${esc(headline)}</p>
+      <p class="bl-cta-body">${esc(site.name)} is an animation studio in ${esc(site.location || 'Toronto')}. Got a project in mind?</p>
+    </div>
+    <a class="bl-cta-link" href="mailto:${esc(site.contact?.email || '')}">Get in touch</a>
+  </div>`;
+}
+
+/* Post panel: same #pp panel and hero a project opens in, with a link out at the end */
+function openPost(id) {
+  const p = state.posts.find(x => x.id === id);
+  if (!p) return;
+  const s = SRC[p.source];
+  const cls = classify(p) || { filters: [] };
+  // Hero is the first image; everything else in the post (carousel, video) follows the text
+  const media = p.media || [];
+  const hero = media.find(m => m.type !== 'video');
+  const rest = media.filter(m => m !== hero);
+  $('ppb').innerHTML = `
+    <div class="pp-hero ${hero ? '' : 'noimg'}" style="${hero ? `background-image:url('${esc(hero.url)}')` : ''}">
+      <div class="pp-hero-overlay"></div>
+      <div class="pp-hero-actions">
+        <button class="pp-hero-btn pp-like-btn ${state.liked.has(likeKey(p.id)) ? 'liked' : ''}" id="pp-like-btn" data-like="${esc(p.id)}" title="Like"><i class="ph-fill ph-heart"></i> <span id="pp-like-count">${likeCount(p.id) || ''}</span></button>
+        <button class="pp-hero-btn" id="pp-share" data-share="${esc(p.id)}" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+      </div>
+      <div class="pp-hero-content"><div class="pp-hero-left">
+        <h2 class="pp-hero-title">${esc(postTitle(p))}</h2>
+        <div class="pp-hero-meta">
+          <span class="pp-hero-tag">${s.label}</span>
+          ${cls.filters.map(v => `<span class="pp-hero-tag">${esc(filterLabel(v))}</span>`).join('')}
+          <span class="pp-hero-tag">${fmtDate(p.date)}</span>
+        </div>
+      </div></div>
+    </div>
+    <div class="block-canvas">
+      ${p.html
+        ? `<p class="post-dek">${esc(stripTags(p.text))}</p><div class="post-article">${sanitize(p.html)}</div>`
+        : `<p class="bl-text-md post-text">${tagify(p.text)}</p>`}
+      ${(p.html ? [] : rest).map(mediaBlock).join('')}
+      <a class="origin" href="${esc(p.url)}" target="_blank" rel="noopener">Originally posted on ${s.label}${p.manual ? ' · embedded by hand' : ''} ↗</a>
+      ${moreWork(p, cls)}
+      ${contactBox()}
+    </div>`;
+  $('ppb').scrollTop = 0;
+  $('pp').classList.add('open');
+  $('bd').classList.add('project-open');
+  const url = new URL(location); url.searchParams.set('post', p.id); history.replaceState(null, '', url);
+}
+async function toggleLike(id) {
+  const btn = $('pp-like-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${LIKES_API}/${encodeURIComponent(likeKey(id))}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vid: getVisitorId(true) }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    setLike(id, await r.json());
+    btn.classList.toggle('liked', state.liked.has(likeKey(id)));
+    $('pp-like-count').textContent = likeCount(id) || '';
+    render();
+  } catch (err) {
+    $('status').textContent = `Like failed: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+function sharePost(id) {
+  // Real site would share a static page (like /p/<project>/) so link previews show the post
+  const url = new URL(location); url.search = ''; url.searchParams.set('post', id);
+  const btn = $('pp-share'), orig = btn.innerHTML;
+  navigator.clipboard?.writeText(url.href).then(() => {
+    btn.innerHTML = '&#x2713; Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  });
+}
+function closePost() {
+  $('pp').classList.remove('open');
+  $('bd').classList.remove('project-open');
+  const url = new URL(location); url.searchParams.delete('post'); history.replaceState(null, '', url);
+}
+
+/* Live Bluesky: public API, no login, CORS-enabled */
+async function loadBluesky(handle) {
+  handle = handle.replace(/^@/, '').trim();
+  if (!handle) return;
+  $('status').textContent = 'Loading Bluesky…';
+  try {
+    const r = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(handle)}&limit=50&filter=posts_no_replies`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const { feed } = await r.json();
+    const live = feed.filter(f => !f.reason).map(({ post }) => {
+      const rec = post.record || {};
+      const rkey = post.uri.split('/').pop();
+      const facetTags = (rec.facets || []).flatMap(f => f.features || []).filter(x => x.$type === 'app.bsky.richtext.facet#tag').map(x => x.tag);
+      const textTags = [...(rec.text || '').matchAll(/#([\w-]+)/g)].map(m => m[1]);
+      const e = post.embed || {};
+      const imgs = e.images || e.media?.images || [];
+      const media = imgs.length ? imgs.map(i => ({ type: 'image', url: i.fullsize || i.thumb, alt: i.alt }))
+        : e.external?.thumb ? [{ type: 'image', url: e.external.thumb, alt: e.external.title }] : [];
+      return {
+        id: 'bsky:' + rkey, source: 'bluesky',
+        url: `https://bsky.app/profile/${post.author.handle}/post/${rkey}`,
+        date: rec.createdAt || post.indexedAt, text: rec.text || '',
+        tags: [...new Set([...facetTags, ...textTags])], media,
+      };
+    });
+    state.posts = [...state.posts.filter(p => p.source !== 'bluesky'), ...live];
+    $('status').textContent = `${live.length} live post${live.length === 1 ? '' : 's'} from @${handle}.`;
+    render();
+    loadLikes();
+  } catch (err) {
+    $('status').textContent = `Couldn't load @${handle}: ${err.message}`;
+  }
+}
+
+document.addEventListener('click', e => {
+  const like = e.target.closest('[data-like]');
+  if (like) return toggleLike(like.dataset.like);
+  const share = e.target.closest('[data-share]');
+  if (share) return sharePost(share.dataset.share);
+  const so = e.target.closest('[data-sort]');
+  if (so) { state.sort = so.dataset.sort; return render(); }
+  const f = e.target.closest('[data-f]');
+  if (f) { state.filter = f.dataset.f; return render(); }
+  const post = e.target.closest('[data-open]');
+  if (post) return openPost(post.dataset.open);
+  const proj = e.target.closest('[data-project]');
+  if (proj) $('status').textContent = 'Projects open as usual on the real site; this sample only opens feed posts.';
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePost(); });
+$('editor').onchange = e => document.body.classList.toggle('editor', e.target.checked);
+$('bskyGo').onclick = () => loadBluesky($('bsky').value);
+$('bsky').onkeydown = e => { if (e.key === 'Enter') loadBluesky($('bsky').value); };
+
+/* Sample stand-in for the Worker's daily job; the real button would ask the Worker to run it now */
+/* Real posts pulled by fetch_substack.py (git-ignored live/ folder) replace the mock Substack ones */
+async function withLive(posts) {
+  try {
+    const r = await fetch('live/substack.json', { cache: 'no-store' });
+    if (!r.ok) return posts;
+    const live = await r.json();
+    $('status').textContent = `Live Substack: ${live.posts.length} post${live.posts.length === 1 ? '' : 's'} from ${live.publication.replace(/^https?:\/\//, '')}`;
+    return [...posts.filter(p => p.source !== 'substack'), ...live.posts];
+  } catch { return posts; }
+}
+
+async function checkNow() {
+  const btn = $('checkNow');
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const feed = await fetch('feed-sample.json', { cache: 'no-store' }).then(r => r.json());
+    state.posts = await withLive(feed.posts);
+    setLastChecked(new Date());
+    render();
+    // Re-pull live Bluesky if a handle is loaded (loadBluesky also reloads likes)
+    if ($('bsky').value.trim()) await loadBluesky($('bsky').value); else loadLikes();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Check now';
+  }
+}
+function setLastChecked(d) {
+  const next = new Date(d); next.setDate(next.getDate() + 1); next.setHours(3, 0, 0, 0);
+  $('lastChecked').textContent = `Last checked ${d.toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · next daily check ${next.toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+}
+$('checkNow').onclick = checkNow;
+
+(async () => {
+  const [site, feed] = await Promise.all([
+    fetch('../../content.json').then(r => r.json()),
+    fetch('feed-sample.json').then(r => r.json()),
+  ]);
+  state.site = site;
+  state.posts = await withLive(feed.posts);
+  setLastChecked(new Date(feed.fetchedAt || Date.now()));
+  const t = site.theme || {};
+  const root = document.documentElement.style;
+  if (t.ink) root.setProperty('--ink', t.ink);
+  if (t.paper) root.setProperty('--paper', t.paper);
+  if (t.panelBg) root.setProperty('--panel-bg', t.panelBg);
+  if (t.accent) {
+    root.setProperty('--accent', t.accent);
+    const n = parseInt(t.accent.slice(1), 16);
+    root.setProperty('--accent-rgb', `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`);
+  }
+  document.body.classList.toggle('panel-frost', t.panelStyle === 'dark');
+  render();
+  const deep = new URLSearchParams(location.search).get('post');
+  // Bluesky handle: from Site settings → Social links (a bsky.app/profile/… link), else the box's default
+  const bskyLink = (site.contact?.links || []).find(l => /bsky\.app\/profile\//.test(l.url || ''));
+  if (bskyLink) $('bsky').value = bskyLink.url.split('/profile/')[1].split(/[/?#]/)[0];
+  if ($('bsky').value.trim()) await loadBluesky($('bsky').value); else loadLikes();
+  if (deep) openPost(deep);
+})();
+</script>
+</body>
+</html>

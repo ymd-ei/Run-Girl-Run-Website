@@ -2,3 +2,6 @@
 *.swp
 *.swo
 *~
+
+# Real posts pulled for local feed testing (other people's content, never deploy)
+samples/feed/live/
