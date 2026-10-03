@@ -4,10 +4,11 @@
  *
  * Bluesky is read straight from its public API in the visitor's browser (no
  * login, CORS-enabled). The account comes from Site settings → Social links (a
- * bsky.app/profile/… link). Substack and Instagram will need the daily job on
- * the Worker; their posts will arrive in this same shape.
+ * bsky.app/profile/… link). Instagram needs the account's token, so the Worker
+ * reads it (/api/feed/instagram) whenever an instagram.com link is in Social
+ * links. Substack will go through the Worker the same way.
  *
- * Post shape: { id, source, url, date, title?, text, html?, tags[], media[{type,url,alt,w?,h?}] }
+ * Post shape: { id, source, url, date, title?, text, html?, tags[], media[{type,url,alt,poster?,w?,h?}] }
  * The platform is the only control: retag or delete a post there and the site follows.
  */
 
@@ -83,6 +84,14 @@ async function fetchBluesky(handle) {
   });
 }
 
+async function fetchInstagram() {
+  const base = window.RGR_CONFIG?.apiBase || '';
+  const res = await fetch(`${base}/api/feed/instagram`);
+  if (res.status === 503) return []; // not connected yet
+  if (!res.ok) throw new Error('Instagram feed HTTP ' + res.status);
+  return (await res.json()).posts || [];
+}
+
 /**
  * Every source the site can read, merged newest first. Posts without #rgr are
  * dropped here; each kept post carries `filters` (filter values) from its tags.
@@ -92,6 +101,7 @@ export async function loadFeed(site) {
   const jobs = [];
   const handle = blueskyHandle(site);
   if (handle) jobs.push(fetchBluesky(handle));
+  if ((site.contact?.links || []).some(l => /instagram\.com\//.test(l.url || ''))) jobs.push(fetchInstagram());
   const results = await Promise.allSettled(jobs);
   results.filter(r => r.status === 'rejected').forEach(r => console.warn('Feed source failed:', r.reason));
   return results
@@ -127,9 +137,11 @@ export function postCardHTML(p, filters, { uniform = false, likes = '' } = {}) {
   const shape = !uniform && img?.w && img?.h ? ` style="aspect-ratio:${fitRatio(img.w, img.h)}"` : '';
   const thumb = !img
     ? `<div class="textthumb"><span>${esc(quote(stripTags(p.text) || postTitle(p)))}</span></div>`
-    : img.type === 'video' && !img.video
-      ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
-      : `<img src="${esc(img.url)}" alt="${esc(img.alt)}" loading="lazy">`;
+    : img.type === 'video' && img.poster
+      ? `<img src="${esc(img.poster)}" alt="" loading="lazy">`
+      : img.type === 'video' && !img.video
+        ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
+        : `<img src="${esc(img.url)}" alt="${esc(img.alt)}" loading="lazy">`;
   return `<div class="wc" data-types="${types}" data-key="${esc(likeKey(p.id))}" ${open}>
     <div class="wci"${shape}>
       ${thumb}
@@ -177,18 +189,22 @@ function mediaBlock(m, p) {
       <img src="${esc(m.url)}" alt="${esc(m.alt)}" loading="lazy"><span>Play on ${esc(SOURCES[p.source]?.label || '')} ↗</span></a>`;
   }
   return m.type === 'video'
-    ? `<div class="bl-image post-media"><video src="${esc(m.url)}" controls playsinline preload="metadata"></video></div>`
+    ? `<div class="bl-image post-media"><video src="${esc(m.url)}"${m.poster ? ` poster="${esc(m.poster)}"` : ''} controls playsinline preload="metadata"></video></div>`
     : `<div class="bl-image post-media"><img src="${esc(m.url)}" alt="${esc(m.alt)}" loading="lazy"></div>`;
 }
 
 /** Hero image: the first still (never a video file). */
-export const postHero = p => (p.media || []).find(m => m.type !== 'video' || m.video);
+export const postHero = p => {
+  const m = (p.media || []).find(x => x.type !== 'video' || x.video || x.poster);
+  return m && m.type === 'video' && m.poster ? { ...m, url: m.poster, fromVideo: true } : m;
+};
 
 /** Everything under the hero: the full text or article, the rest of the media, then the way out. */
 export function postBodyHTML(p) {
   const s = SOURCES[p.source] || { label: p.source };
   const hero = postHero(p);
-  const rest = (p.media || []).filter(m => m !== hero || m.video);
+  // A video whose poster became the banner still plays below
+  const rest = (p.media || []).filter(m => m.url !== hero?.url || m.video || hero?.fromVideo);
   return `<div class="block-canvas post-body">
     ${p.html
       ? `<p class="post-dek">${esc(stripTags(p.text))}</p><div class="post-article">${sanitizeHtml(p.html)}</div>`
@@ -235,7 +251,8 @@ export function masonry(grid, prev) {
   if (!kids.length) { grid.style.height = ''; return; }
   const w = grid.clientWidth;
   if (!w) return; // panel hidden; the observer re-runs this once it has a width
-  const cols = w < 520 ? 1 : 2;
+  const cols = w < 520 ? 1 : w < 600 ? 2 : 3;
+  grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
   kids.forEach(el => { el.style.width = colW + 'px'; });
   const heights = Array(cols).fill(0);

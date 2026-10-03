@@ -9,6 +9,8 @@
  *   - FRONTEND_URL: Editor frontend URL (e.g., https://editor.youromain.com)
  *   - FRONTEND_HOST: Editor frontend hostname for CORS (e.g., rungirlrun.studio)
  *   - COOKIE_SECRET: Random string for signing sessions
+ *   - IG_TOKEN (optional): Instagram access token for the social feed. Only the
+ *     first one is read from here; the worker keeps renewed tokens in KV.
  * 
  * Setup GitHub OAuth App at: https://github.com/settings/developers
  * - Authorization callback URL: https://your-backend-url/auth/callback
@@ -77,6 +79,9 @@ async function handleRequestInner(request, env) {
   }
 
   // Public API routes (no auth required)
+  if (path === '/api/feed/instagram') {
+    return handleInstagramFeed(request, env);
+  }
   const likesMatch = path.match(/^\/api\/likes\/([a-zA-Z0-9_-]+)$/);
   if (likesMatch) {
     return handleLikes(request, env, likesMatch[1]);
@@ -815,6 +820,87 @@ function likesResponse(data, status, request, env) {
   }), request, env);
 }
 
+/* ── Social feed: Instagram ─────────────────────────────
+ * The site can't read Instagram itself (it needs the account's token), so the
+ * worker does: it returns only #rgr-tagged posts, in the feed's post shape,
+ * cached for 10 minutes. Instagram's media links expire, so posts are always
+ * read fresh rather than stored.
+ *
+ * Token: set once with `wrangler secret put IG_TOKEN`. Tokens last 60 days, so
+ * the worker renews any token over a week old (on requests and on the daily
+ * cron) and keeps the current one in KV under `ig:token`.
+ */
+const IG_FEED_CACHE_KEY = 'feed:instagram';
+const IG_FEED_TTL = 600; // seconds
+const IG_REFRESH_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function getInstagramToken(env) {
+  const stored = env.LIKES ? await env.LIKES.get('ig:token', 'json') : null;
+  // A newly set secret wins over an older stored token
+  if (env.IG_TOKEN && (!stored || stored.seed !== env.IG_TOKEN)) {
+    const fresh = { token: env.IG_TOKEN, seed: env.IG_TOKEN, refreshedAt: Date.now() };
+    if (env.LIKES) await env.LIKES.put('ig:token', JSON.stringify(fresh));
+    return fresh;
+  }
+  return stored;
+}
+
+async function refreshInstagramToken(env, force = false) {
+  const current = await getInstagramToken(env);
+  if (!current?.token) return null;
+  if (!force && Date.now() - current.refreshedAt < IG_REFRESH_AFTER_MS) return current;
+  const res = await fetch(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(current.token)}`);
+  if (!res.ok) return current; // keep using the old one until it actually expires
+  const data = await res.json();
+  if (!data.access_token) return current;
+  const next = { token: data.access_token, seed: current.seed, refreshedAt: Date.now() };
+  if (env.LIKES) await env.LIKES.put('ig:token', JSON.stringify(next));
+  return next;
+}
+
+function instagramPost(m) {
+  const caption = m.caption || '';
+  const tags = [...caption.matchAll(/#([\w-]+)/g)].map(x => x[1].toLowerCase());
+  const asMedia = x => x.media_type === 'VIDEO'
+    ? { type: 'video', url: x.media_url, poster: x.thumbnail_url || '' }
+    : { type: 'image', url: x.media_url, alt: '' };
+  const items = m.media_type === 'CAROUSEL_ALBUM' && m.children?.data?.length ? m.children.data : [m];
+  return {
+    id: 'ig:' + m.id,
+    source: 'instagram',
+    url: m.permalink,
+    // Instagram writes +0000; Safari only parses +00:00
+    date: String(m.timestamp || '').replace(/([+-]\d{2})(\d{2})$/, '$1:$2'),
+    text: caption,
+    tags: [...new Set(tags)],
+    media: items.filter(x => x.media_url).map(asMedia),
+  };
+}
+
+async function handleInstagramFeed(request, env) {
+  const json = (data, status = 200) => corsResponse(new Response(JSON.stringify(data), {
+    status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' }
+  }), request, env);
+
+  const cached = env.LIKES ? await env.LIKES.get(IG_FEED_CACHE_KEY, 'json') : null;
+  if (cached) return json(cached);
+
+  const tok = await refreshInstagramToken(env);
+  if (!tok?.token) return json({ posts: [], error: 'Instagram not connected' }, 503);
+
+  const fields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{media_type,media_url,thumbnail_url}';
+  const res = await fetch(`https://graph.instagram.com/me/media?fields=${encodeURIComponent(fields)}&limit=50&access_token=${encodeURIComponent(tok.token)}`);
+  if (!res.ok) return json({ posts: [], error: 'Instagram HTTP ' + res.status }, 502);
+  const data = await res.json();
+
+  // Only tagged posts ever leave the worker
+  const posts = (data.data || []).map(instagramPost)
+    .filter(p => p.tags.some(t => t === 'rgr' || t.startsWith('rgr-')));
+  const body = { posts, fetchedAt: new Date().toISOString() };
+  if (env.LIKES) await env.LIKES.put(IG_FEED_CACHE_KEY, JSON.stringify(body), { expirationTtl: IG_FEED_TTL });
+  return json(body);
+}
+
 /**
  * /api/likes/:projectId - Get or toggle likes (public, no auth)
  */
@@ -877,5 +963,7 @@ function corsResponse(response, request, env) {
 
 // Cloudflare Worker entry
 export default {
-  fetch: (request, env) => handleRequest(request, env)
+  fetch: (request, env) => handleRequest(request, env),
+  // Daily cron (wrangler.toml): keep the Instagram token renewed even if nobody visits
+  scheduled: (event, env, ctx) => ctx.waitUntil(refreshInstagramToken(env))
 };

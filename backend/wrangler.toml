@@ -12,3 +12,7 @@ FRONTEND_URL = "https://rungirlrun.studio/editor.html?api=https://rgr-editor-bac
 [[kv_namespaces]]
 binding = "LIKES"
 id = "ec4858a98e0a40828026fe00a7ebd904"
+
+# Daily run: renews the Instagram feed token before its 60 days run out
+[triggers]
+crons = ["0 9 * * *"]
