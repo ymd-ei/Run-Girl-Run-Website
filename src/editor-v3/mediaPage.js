@@ -44,10 +44,22 @@ function fmtSize(n) {
 
 function toast(msg, err) { window.__v3toast && window.__v3toast(msg, err); }
 
+// Pages in /modelling/ reach site files one level up.
+const ROOT = location.pathname.includes('/modelling/') ? '../' : '';
+let liveSources = null; // optional [{ label, json }] from the host editor's unsaved state
+
+async function fetchText(path) {
+  try {
+    const res = await fetch(ROOT + path, { cache: 'no-cache' });
+    return res.ok ? await res.text() : null;
+  } catch (_) { return null; }
+}
+
 // Where each media path is referenced: site content, every project, the modelling site.
 async function buildUsage() {
   usage = new Map();
   const note = (json, where) => {
+    if (!json) return;
     for (const f of files || []) {
       if (json.includes(f.path)) {
         if (!usage.has(f.path)) usage.set(f.path, []);
@@ -55,16 +67,30 @@ async function buildUsage() {
       }
     }
   };
-  note(JSON.stringify(state.global), 'Site content');
-  await Promise.all((state.projects || []).map(p => loadProject(p.id).catch(() => null)));
-  for (const p of state.projects || []) {
-    const full = state.projectCache.get(p.id) || p;
-    note(JSON.stringify(full), 'Project: ' + (p.title || p.id));
+  const live = new Set((liveSources || []).map(x => x.label));
+  for (const src of liveSources || []) note(src.json, src.label);
+
+  if (Object.keys(state.global || {}).length) {
+    // Inside editor v3: use its in-memory (possibly unsaved) content.
+    note(JSON.stringify(state.global), 'Site content');
+    await Promise.all((state.projects || []).map(p => loadProject(p.id).catch(() => null)));
+    for (const p of state.projects || []) {
+      note(JSON.stringify(state.projectCache.get(p.id) || p), 'Project: ' + (p.title || p.id));
+    }
+  } else {
+    // Elsewhere (modelling editor): read the saved site files.
+    const siteText = await fetchText('content.json');
+    note(siteText, 'Site content');
+    let ids = [];
+    try { ids = JSON.parse(siteText || '{}').projects || []; } catch (_) { /* no projects */ }
+    const projects = await Promise.all(ids.map(async id => [id, await fetchText('projects/' + id + '.json')]));
+    for (const [id, json] of projects) {
+      let title = id;
+      try { title = JSON.parse(json).title || id; } catch (_) { /* keep id */ }
+      note(json, 'Project: ' + title);
+    }
   }
-  try {
-    const res = await fetch('modelling/content.json', { cache: 'no-cache' });
-    if (res.ok) note(await res.text(), 'Modelling site');
-  } catch (_) { /* modelling site optional */ }
+  if (!live.has('Modelling site')) note(await fetchText('modelling/content.json'), 'Modelling site');
 }
 
 function visible() {
@@ -85,7 +111,7 @@ function renderGrid() {
   const list = visible();
   root.querySelector('.v3-mp-count').textContent = `${list.length} file${list.length === 1 ? '' : 's'}`;
   if (!list.length) {
-    grid.innerHTML = `<div class="v3-media-empty">${files.length ? 'No files match.' : 'No media yet — upload or drop files here.'}</div>`;
+    grid.innerHTML = `<div class="v3-mp-empty">${files.length ? 'No files match.' : 'No media yet — upload or drop files here.'}</div>`;
     return;
   }
   grid.innerHTML = list.map(f => {
@@ -103,7 +129,7 @@ function renderDetail() {
   const pane = root.querySelector('.v3-mp-detail');
   const f = (files || []).find(x => x.path === selected);
   if (!f) {
-    pane.innerHTML = `<p class="v3-insp-note">Select a file to preview it, copy its path or see where it's used.</p>`;
+    pane.innerHTML = `<p class="v3-mp-note">Select a file to preview it, copy its path or see where it's used.</p>`;
     return;
   }
   const k = kind(f.path);
@@ -116,11 +142,11 @@ function renderDetail() {
   pane.innerHTML = `
     <div class="v3-mp-preview">${preview}</div>
     <div class="v3-mp-path"><code>${esc(f.path)}</code>
-      <button class="v3-insp-ico" data-copy="${esc(f.path)}" title="Copy path"><i class="ph-fill ph-copy"></i></button></div>
+      <button class="v3-mp-ico" data-copy="${esc(f.path)}" title="Copy path"><i class="ph-fill ph-copy"></i></button></div>
     <p class="v3-mp-meta">${esc(fmtSize(f.size))}</p>
-    <div class="v3-set-head">Used in</div>
+    <div class="v3-mp-subhead">Used in</div>
     ${used.length ? `<ul class="v3-mp-used">${used.map(u => `<li>${esc(u)}</li>`).join('')}</ul>` : '<p class="v3-mp-meta">Not used anywhere on the site.</p>'}
-    <button class="v3-delete-project" data-delete="${esc(f.path)}"><i class="ph-fill ph-trash"></i> Delete file</button>`;
+    <button class="v3-mp-delete" data-delete="${esc(f.path)}"><i class="ph-fill ph-trash"></i> Delete file</button>`;
 }
 
 async function uploadFiles(list) {
@@ -206,21 +232,23 @@ function bind() {
 }
 
 /** Render the media page into the given panel element. */
-export async function showMediaPage(panelEl, { authed } = {}) {
-  root = panelEl;
-  root.innerHTML = `<div class="v3-insp-head"><span>Media Library</span>
+export async function showMediaPage(panelEl, { authed, sources } = {}) {
+  liveSources = sources || null;
+  panelEl.innerHTML = '<div class="v3-mp-root"></div>';
+  root = panelEl.firstElementChild;
+  root.innerHTML = `<div class="v3-mp-head"><span>Media Library</span>
       <span class="v3-mp-status"></span>
-      <label class="v3-site-preview-btn v3-mp-upload"><i class="ph-fill ph-upload-simple"></i> Upload
+      <label class="v3-mp-btn v3-mp-upload"><i class="ph-fill ph-upload-simple"></i> Upload
         <input type="file" multiple accept="image/*,video/*,.glb,.gltf,.pdf,model/gltf-binary,model/gltf+json" hidden></label></div>
     <div class="v3-mp-body">
-      <p class="v3-insp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file. Larger files: compress them, or add to media/ on your computer and push with git.</p>
+      <p class="v3-mp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file. Larger files: compress them, or add to media/ on your computer and push with git.</p>
       <div class="v3-mp-main">
         <div class="v3-mp-toolbar">
           <div class="v3-mp-types">${TYPES.map(([v, l]) => `<button data-type="${v}" class="${v === type ? 'active' : ''}">${l}</button>`).join('')}</div>
-          <input class="v3-f v3-mp-filter" type="text" placeholder="Filter by name…" value="${esc(filter)}">
+          <input class="v3-mp-input v3-mp-filter" type="text" placeholder="Filter by name…" value="${esc(filter)}">
           <span class="v3-mp-count"></span>
         </div>
-        <div class="v3-mp-grid"><div class="v3-media-empty">${authed === false ? 'Log in to see and manage media.' : 'Loading…'}</div></div>
+        <div class="v3-mp-grid"><div class="v3-mp-empty">${authed === false ? 'Log in to see and manage media.' : 'Loading…'}</div></div>
       </div>
       <aside class="v3-mp-detail"></aside>
     </div>`;

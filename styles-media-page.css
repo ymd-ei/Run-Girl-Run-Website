@@ -1,0 +1,88 @@
+/* ============================================================
+   Media library page — shared by editor v3 and the modelling editor
+   (src/editor-v3/mediaPage.js). Uses the --v3-* colour variables, which
+   each editor defines for its own theme.
+   ============================================================ */
+
+.v3-mp-root { color: var(--v3-text); font-size: 13px; }
+.v3-mp-root code { background: var(--v3-panel-2); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+
+.v3-mp-head {
+  display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+  border-bottom: 1px solid var(--v3-line); background: var(--v3-panel);
+  font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13.5px; letter-spacing: .02em;
+  position: sticky; top: 0; z-index: 2;
+}
+.v3-mp-status { flex: 1; text-align: right; font-weight: 400; font-size: 12px; color: var(--v3-muted); font-family: 'DM Sans', sans-serif; }
+.v3-mp-btn {
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px; cursor: pointer;
+  background: var(--v3-panel-2); border: 1px solid var(--v3-line); border-radius: 7px;
+  color: var(--v3-text); font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 12px;
+}
+.v3-mp-btn:hover { border-color: var(--v3-accent-2); }
+
+.v3-mp-note {
+  font-size: 12px; color: var(--v3-muted); background: var(--v3-panel-2);
+  border-left: 2px solid var(--v3-line); padding: 7px 10px; border-radius: 0 6px 6px 0; margin: 0 0 14px;
+}
+.v3-mp-subhead {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--v3-accent-2); font-weight: 600;
+  padding-bottom: 7px; margin-bottom: 11px; border-bottom: 1px solid var(--v3-line);
+}
+.v3-mp-input {
+  width: 100%; max-width: 240px; background: var(--v3-panel-2); border: 1px solid var(--v3-line);
+  color: var(--v3-text); border-radius: 7px; padding: 7px 9px; font-size: 13px; font-family: inherit; outline: none;
+}
+.v3-mp-input:focus { border-color: var(--v3-accent); }
+.v3-mp-ico {
+  width: 26px; height: 26px; flex: 0 0 auto; display: grid; place-items: center; cursor: pointer;
+  background: var(--v3-panel-2); border: 1px solid var(--v3-line); border-radius: 6px; color: var(--v3-muted); font-size: 13px;
+}
+.v3-mp-ico:hover { color: var(--v3-text); }
+.v3-mp-delete {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+  background: transparent; border: 1px solid var(--v3-warn, #e5484d); color: var(--v3-warn, #e5484d);
+  padding: 9px; border-radius: 8px; font-size: 12.5px;
+}
+.v3-mp-delete:hover { background: var(--v3-warn, #e5484d); color: #fff; }
+.v3-mp-empty { grid-column: 1 / -1; text-align: center; color: var(--v3-muted); padding: 40px; font-size: 13px; }
+
+.v3-mp-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; padding: 20px 24px 60px;
+  border: 2px dashed transparent; border-radius: 10px;
+}
+.v3-mp-body.drop { border-color: var(--v3-accent-2); }
+.v3-mp-limit { grid-column: 1 / -1; margin: 0; }
+.v3-mp-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.v3-mp-types { display: flex; gap: 4px; flex-wrap: wrap; }
+.v3-mp-types button {
+  background: var(--v3-panel-2); border: 1px solid var(--v3-line); color: var(--v3-muted);
+  border-radius: 7px; padding: 5px 10px; font: inherit; font-size: 12px; cursor: pointer;
+}
+.v3-mp-types button.active { color: var(--v3-text); border-color: var(--v3-accent-2); }
+.v3-mp-count { font-size: 12px; color: var(--v3-muted); }
+.v3-mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.v3-mp-item {
+  position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px; cursor: pointer;
+  background: var(--v3-panel-2); border: 1px solid var(--v3-line); border-radius: 8px;
+  color: var(--v3-text); font: inherit; text-align: left;
+}
+.v3-mp-item:hover { border-color: var(--v3-muted); }
+.v3-mp-item.active { border-color: var(--v3-accent-2); box-shadow: 0 0 0 1px var(--v3-accent-2); }
+.v3-mp-item img, .v3-mp-icon { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 5px; background: #111; }
+.v3-mp-icon { display: grid; place-items: center; color: #8a8a96; font-size: 28px; }
+.v3-mp-icon.big { font-size: 48px; }
+.v3-mp-name { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v3-mp-unused { position: absolute; top: 10px; left: 10px; font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(0, 0, 0, .7); color: #cfcfd6; }
+.v3-mp-detail { position: sticky; top: 64px; align-self: start; }
+.v3-mp-preview { margin-bottom: 12px; }
+.v3-mp-preview img, .v3-mp-preview video { width: 100%; border-radius: 8px; background: #111; display: block; }
+.v3-mp-path { display: flex; align-items: center; gap: 8px; }
+.v3-mp-path code { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.v3-mp-meta { font-size: 12px; color: var(--v3-muted); margin: 6px 0 14px; }
+.v3-mp-used { margin: 0 0 16px; padding-left: 18px; font-size: 12.5px; }
+
+@media (max-width: 1100px) {
+  .v3-mp-body { grid-template-columns: 1fr; }
+  .v3-mp-detail { position: static; }
+}

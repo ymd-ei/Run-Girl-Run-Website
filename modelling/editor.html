@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+  <link rel="stylesheet" href="../styles-media-page.css">
   <script type="importmap">
   {
     "imports": {
@@ -175,6 +176,8 @@
     .content-inner { max-width: 760px; margin: 0 auto; }
     .panel { display: none; }
     .panel.active { display: block; }
+    .content-inner.wide { max-width: none; }
+    #panel-media .v3-mp-head { top: -36px; }
 
     .page-title { font-family: var(--font-head); font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; }
     .page-subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 30px; }
@@ -459,6 +462,7 @@
       <div class="nav-section-label">Site</div>
       <button class="nav-item active" data-panel="brand"><i class="ph-fill ph-diamond"></i><span class="nav-item-label">Brand</span></button>
       <button class="nav-item" data-panel="profile"><i class="ph-fill ph-user-circle"></i><span class="nav-item-label">Profile</span></button>
+      <button class="nav-item" data-panel="media"><i class="ph-fill ph-images"></i><span class="nav-item-label">Media library</span></button>
       <a class="nav-item" href="../editor.html" title="Open the main site editor" style="text-decoration:none"><i class="ph-fill ph-squares-four"></i><span class="nav-item-label">Main site editor</span><i class="ph-fill ph-arrow-up-right" style="margin-left:auto;font-size:11px"></i></a>
     </div>
     <div class="nav-section">
@@ -502,6 +506,9 @@
       <div class="section-head"><div class="section-title">Contact &amp; social links</div><div class="section-desc">Shared with the main site — edit them in <a href="../editor.html" style="color:var(--accent)">Site settings</a>.</div></div>
     </div>
 
+    <!-- ── Media library (shared page from src/editor-v3/mediaPage.js) ── -->
+    <div class="panel" id="panel-media"></div>
+
     <!-- ── Work (dynamic) ── -->
     <div class="panel" id="panel-work"></div>
 
@@ -526,6 +533,7 @@
   import { mediaUrl, DEFAULTS, loadSiteSettings } from './site-data.js';
   import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
   import { openMediaPicker } from '../src/editor-v3/media.js';
+  import { showMediaPage } from '../src/editor-v3/mediaPage.js';
 
   // ── State ───────────────────────────────────────────────────────────────
   let state    = null;
@@ -796,7 +804,13 @@
     activeId = id;
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    if (id === 'brand' || id === 'profile') {
+    document.querySelector('.content-inner').classList.toggle('wide', id === 'media');
+    if (id === 'media') {
+      $('panel-media').classList.add('active');
+      document.querySelector('.nav-item[data-panel="media"]')?.classList.add('active');
+      // Pass the editor's current (possibly unsaved) works so "Used in" is up to date.
+      showMediaPage($('panel-media'), { authed, sources: [{ label: 'Modelling site', json: JSON.stringify(state) }] });
+    } else if (id === 'brand' || id === 'profile') {
       $('panel-' + id).classList.add('active');
       document.querySelector(`.nav-item[data-panel="${id}"]`)?.classList.add('active');
     } else {
