@@ -176,6 +176,10 @@ async function goTo(panel, projectId) {
     pushData(state.global, state.projects);
   }
   navigate(panel === 'site' ? 'home' : panel, projectId);
+  // Site settings fill the page (canvas hidden until "Preview site").
+  const main = document.getElementById('v3-main');
+  main.classList.toggle('v3-site-mode', panel === 'site');
+  if (panel !== 'site') main.classList.remove('v3-site-preview');
   renderRail();
   if (panel === 'site') showSiteSettings();
   else if (panel === 'home') showHomeSettings();

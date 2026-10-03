@@ -465,3 +465,39 @@ a.v3-nav-item { text-decoration: none; }
 .v3-ref-val { flex: 1; min-width: 0; color: var(--v3-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v3-ref-warn .v3-ref-val, .v3-ref-warn code { color: var(--v3-warn); }
 #v3-references .v3-ref-group { padding-left: 0; }
+
+/* ── Site settings: full-page mode (canvas hidden until "Preview site") ── */
+#v3-main.v3-site-mode { grid-template-columns: 230px 1fr; }
+#v3-main.v3-site-mode #v3-canvas-wrap { display: none; }
+#v3-main.v3-site-mode #v3-inspector { display: block; border-left: 0; }
+#v3-main.v3-site-mode.v3-site-preview { grid-template-columns: 230px 1fr 380px; }
+#v3-main.v3-site-mode.v3-site-preview #v3-canvas-wrap { display: flex; }
+#v3-main.v3-site-mode.v3-site-preview #v3-inspector { border-left: 1px solid var(--v3-line); }
+
+.v3-site-preview-btn {
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+  background: var(--v3-panel-2); border: 1px solid var(--v3-line); border-radius: 7px;
+  color: var(--v3-text); font: inherit; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 12px; cursor: pointer;
+}
+.v3-site-preview-btn:hover { background: #2a2a33; }
+.v3-site-preview-btn.active { border-color: var(--v3-accent-2); color: var(--v3-accent-2); }
+
+.v3-site-nav { display: none; }
+#v3-main.v3-site-mode:not(.v3-site-preview) .v3-site-body {
+  display: grid; grid-template-columns: 180px minmax(0, 720px); gap: 40px; padding: 24px 32px 80px;
+}
+#v3-main.v3-site-mode:not(.v3-site-preview) .v3-site-nav {
+  display: flex; flex-direction: column; gap: 2px; position: sticky; top: 64px; align-self: start;
+}
+.v3-site-nav button {
+  background: none; border: 0; text-align: left; padding: 6px 10px; border-radius: 6px;
+  color: var(--v3-muted); font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.v3-site-nav button:hover { background: var(--v3-panel-2); color: var(--v3-text); }
+#v3-main.v3-site-mode:not(.v3-site-preview) .v3-site-content .v3-set-group { scroll-margin-top: 64px; }
+#v3-main.v3-site-mode:not(.v3-site-preview) .v3-site-content textarea.v3-f { min-height: 7em; }
+
+@media (max-width: 1100px) {
+  #v3-main.v3-site-mode { grid-template-columns: 200px 1fr; }
+  #v3-main.v3-site-mode.v3-site-preview { grid-template-columns: 200px 1fr 300px; }
+}

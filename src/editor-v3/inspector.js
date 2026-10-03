@@ -570,17 +570,50 @@ export function showSiteSettings() {
   current = null;
   if (!panelEl) return;
   const g = state.global;
-  panelEl.innerHTML = `<div class="v3-insp-head"><span>Site Settings</span></div>
-    <div class="v3-insp-body">
+  panelEl.innerHTML = `<div class="v3-insp-head"><span>Site Settings</span>
+      <button class="v3-site-preview-btn" id="v3-site-preview-btn" title="Show the site next to these settings"><i class="ph-fill ph-eye"></i> <span>Preview site</span></button></div>
+    <div class="v3-insp-body v3-site-body">
+      <nav class="v3-site-nav" id="v3-site-nav"></nav>
+      <div class="v3-site-content">
       <p class="v3-insp-note">Site-wide settings used across every page, the mobile site and the modelling site.</p>
       ${groupsHTML(g, SITE_GROUPS)}
       ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']])}
       ${groupsHTML(g, SITE_GROUPS_2)}
       ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (matches project type)'], ['label', 'Label']])}
       ${referencesHTML(g)}
+      </div>
     </div>`;
   bindSettingsForm(g, 'content.json', showSiteSettings, false);
   bindReferences();
+  bindSiteLayout();
+}
+
+// Full-page layout: section jump list + a toggle to show the site canvas.
+function bindSiteLayout() {
+  const main = document.getElementById('v3-main');
+  const nav = panelEl.querySelector('#v3-site-nav');
+  const groups = [...panelEl.querySelectorAll('.v3-site-content > .v3-set-group')];
+  const seen = new Set();
+  nav.innerHTML = groups.map((grp, i) => {
+    const title = grp.querySelector('.v3-set-head')?.textContent || '';
+    grp.id = 'v3-site-sec-' + i;
+    if (seen.has(title)) return ''; // repeated list items (e.g. each social link)
+    seen.add(title);
+    return `<button data-jump="${grp.id}">${escHtml(title)}</button>`;
+  }).join('');
+  nav.addEventListener('click', e => {
+    const b = e.target.closest('[data-jump]');
+    if (b) panelEl.querySelector('#' + b.getAttribute('data-jump'))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  const btn = panelEl.querySelector('#v3-site-preview-btn');
+  const sync = () => {
+    const on = main.classList.contains('v3-site-preview');
+    btn.querySelector('span').textContent = on ? 'Hide preview' : 'Preview site';
+    btn.classList.toggle('active', on);
+  };
+  btn.addEventListener('click', () => { main.classList.toggle('v3-site-preview'); sync(); });
+  sync();
 }
 
 function referencesHTML(g) {
