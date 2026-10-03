@@ -946,6 +946,10 @@ function corsResponse(response, request, env) {
   const origin = request.headers.get('Origin');
   const frontendHost = env.FRONTEND_HOST || 'localhost';
   
+  // The allowed origin is echoed back, so caches must keep one copy per origin
+  // (otherwise a reply cached for localhost gets reused on the live site)
+  headers.append('Vary', 'Origin');
+
   // Only allow same-origin requests (editor frontend)
   if (origin && (origin.includes(frontendHost) || origin.includes('localhost'))) {
     headers.set('Access-Control-Allow-Origin', origin);
