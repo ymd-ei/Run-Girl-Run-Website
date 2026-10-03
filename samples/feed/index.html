@@ -303,7 +303,8 @@ function masonry(grid, prev) {
   grid.classList.toggle('masonry', kids.length > 0);
   if (!kids.length) { grid.style.height = ''; return; }
   const w = grid.clientWidth;
-  const cols = w < 520 ? 1 : 2;
+  const cols = w < 520 ? 1 : w < 600 ? 2 : 3;
+  grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
   kids.forEach(el => { el.style.width = colW + 'px'; });
   const heights = Array(cols).fill(0);

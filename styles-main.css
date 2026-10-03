@@ -161,6 +161,14 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 .wci video{width:100%;height:100%;object-fit:cover;display:block}
 .wcm .wct{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;padding-right:.6rem}
 .wcm .wcty{white-space:nowrap}
+/* 3-column Work grid (~215px cards): smaller text so titles and tags still fit */
+.wg[data-cols="3"] .wci{margin-bottom:.5rem}
+.wg[data-cols="3"] .wct{font-size:var(--fs-sm)}
+.wg[data-cols="3"] .wcty{font-size:.55rem;letter-spacing:.06em}
+.wg[data-cols="3"] .wc-quote{padding:.8rem .9rem .8rem 1rem;gap:.45rem}
+.wg[data-cols="3"] .wc-quote .q-text{font-size:1.05rem}
+.wg[data-cols="3"] .wci .textthumb{padding:1.1rem .9rem .8rem;font-size:.95rem}
+.wg[data-cols="3"] .src-dot{font-size:.5rem}
 
 /* Social feed post in the #pp panel */
 .pp-hero-plain{background:linear-gradient(135deg,rgba(var(--accent-rgb),.9),rgba(var(--ink-rgb),1))}
