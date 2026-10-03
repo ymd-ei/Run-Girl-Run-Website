@@ -167,6 +167,8 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 .wg[data-cols="3"] .wcty{font-size:.55rem;letter-spacing:.06em}
 .wg[data-cols="3"] .wc-quote{padding:.8rem .9rem .8rem 1rem;gap:.45rem}
 .wg[data-cols="3"] .wc-quote .q-text{font-size:1.05rem}
+.wg[data-cols="3"] .wc-quote.wc-wide{padding:1rem 1.2rem 1rem 1.4rem}
+.wg[data-cols="3"] .wc-quote.wc-wide .q-text{font-size:1.25rem}
 .wg[data-cols="3"] .wci .textthumb{padding:1.1rem .9rem .8rem;font-size:.95rem}
 .wg[data-cols="3"] .src-dot{font-size:.5rem}
 

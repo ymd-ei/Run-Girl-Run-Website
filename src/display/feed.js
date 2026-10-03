@@ -104,8 +104,12 @@ export async function loadFeed(site) {
   if ((site.contact?.links || []).some(l => /instagram\.com\//.test(l.url || ''))) jobs.push(fetchInstagram());
   const results = await Promise.allSettled(jobs);
   results.filter(r => r.status === 'rejected').forEach(r => console.warn('Feed source failed:', r.reason));
-  return results
-    .flatMap(r => (r.status === 'fulfilled' ? r.value : []))
+  return withFilters(results.flatMap(r => (r.status === 'fulfilled' ? r.value : [])), site);
+}
+
+/** Keep #rgr posts, give each its filters, newest first. */
+export function withFilters(posts, site) {
+  return posts
     .map(p => ({ ...p, filters: classifyPostTags(p.tags, site.filters)?.filters }))
     .filter(p => p.filters)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -142,7 +146,8 @@ export function postCardHTML(p, filters, { uniform = false, likes = '' } = {}) {
       : img.type === 'video' && !img.video
         ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
         : `<img src="${esc(img.url)}" alt="${esc(img.alt)}" loading="lazy">`;
-  return `<div class="wc" data-types="${types}" data-key="${esc(likeKey(p.id))}" ${open}>
+  const ratio = !uniform && img?.w && img?.h ? ` data-ratio="${fitRatio(img.w, img.h)}"` : '';
+  return `<div class="wc" data-types="${types}" data-key="${esc(likeKey(p.id))}"${ratio} ${open}>
     <div class="wci"${shape}>
       ${thumb}
       ${srcBadge(s)}
@@ -224,7 +229,10 @@ export const fitRatio = (w, h) => +Math.min(RATIO_MAX, Math.max(RATIO_MIN, w / h
 
 function shapeThumb(el, w, h) {
   const box = el.closest('#wg .wci');
-  if (box && w && h) box.style.aspectRatio = fitRatio(w, h);
+  if (!box || !w || !h) return;
+  box.style.aspectRatio = fitRatio(w, h);
+  const card = box.closest('.wc');
+  if (card) card.dataset.ratio = fitRatio(w, h); // lets wide thumbnails span two columns
 }
 export function initThumbShapes() {
   document.addEventListener('load', e => {
@@ -241,6 +249,11 @@ export function initThumbShapes() {
    cards and slim quote strips pack without holes. Cards already on screen
    slide from their old spot; new ones fade in. */
 const GAP = 16;
+const SPAN_SLACK = 120; // px: how uneven two columns may be for a card to span both
+const WIDE_RATIO = 1.7;  // thumbnails this wide or wider (16:9, 2:1) may span two columns
+
+// Quote strips and wide thumbnails may take two columns
+const canSpan = el => el.classList.contains('wc-quote') || +el.dataset.ratio >= WIDE_RATIO;
 const cardKey = el => el.dataset.key;
 export const cardPositions = grid => new Map([...grid.children].filter(el => el.dataset.pos).map(el => [cardKey(el), el.dataset.pos]));
 const observers = new WeakMap();
@@ -254,12 +267,27 @@ export function masonry(grid, prev) {
   const cols = w < 520 ? 1 : w < 600 ? 2 : 3;
   grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
-  kids.forEach(el => { el.style.width = colW + 'px'; });
   const heights = Array(cols).fill(0);
   const placed = kids.map(el => {
-    const c = heights.indexOf(Math.min(...heights));
-    const at = `translate(${Math.round(c * (colW + GAP))}px, ${Math.round(heights[c])}px)`;
-    heights[c] += el.offsetHeight + GAP;
+    const shortest = heights.indexOf(Math.min(...heights));
+    // At 3 columns a quote strip or wide thumbnail spans two neighbouring
+    // columns when they're close in height and it wouldn't sit much lower
+    // than a 1-wide card would
+    let c = shortest, span = 1;
+    if (cols >= 3 && canSpan(el)) {
+      for (let i = 0; i < cols - 1; i++) {
+        const top = Math.max(heights[i], heights[i + 1]);
+        const even = Math.abs(heights[i] - heights[i + 1]) <= SPAN_SLACK;
+        if (even && top - heights[shortest] <= SPAN_SLACK && (span === 1 || top < Math.max(heights[c], heights[c + 1]))) { c = i; span = 2; }
+      }
+    }
+    el.classList.toggle('wc-wide', span === 2);
+    el.style.width = (span === 2 ? colW * 2 + GAP : colW) + 'px';
+    const top = span === 2 ? Math.max(heights[c], heights[c + 1]) : heights[c];
+    const at = `translate(${Math.round(c * (colW + GAP))}px, ${Math.round(top)}px)`;
+    const bottom = top + el.offsetHeight + GAP;
+    heights[c] = bottom;
+    if (span === 2) heights[c + 1] = bottom;
     return [el, at];
   });
   grid.style.height = Math.max(...heights) - GAP + 'px';

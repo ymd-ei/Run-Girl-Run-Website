@@ -295,6 +295,7 @@ document.addEventListener('loadedmetadata', e => { if (e.target.tagName === 'VID
    tall image cards and slim quote strips pack without holes. Cards that were
    already on screen slide from their old spot; new ones fade in. */
 const GAP = 16;
+const SPAN_SLACK = 120; // px: how uneven two columns may be for a quote to span both
 const cardKey = el => el.dataset.open || el.dataset.project;
 const positions = grid => new Map([...grid.children].filter(el => el.dataset.pos).map(el => [cardKey(el), el.dataset.pos]));
 const observers = new WeakMap();
@@ -306,12 +307,26 @@ function masonry(grid, prev) {
   const cols = w < 520 ? 1 : w < 600 ? 2 : 3;
   grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
-  kids.forEach(el => { el.style.width = colW + 'px'; });
   const heights = Array(cols).fill(0);
   const placed = kids.map(el => {
-    const c = heights.indexOf(Math.min(...heights));
-    const at = `translate(${Math.round(c * (colW + GAP))}px, ${Math.round(heights[c])}px)`;
-    heights[c] += el.offsetHeight + GAP;
+    const shortest = heights.indexOf(Math.min(...heights));
+    // At 3 columns a quote strip spans two neighbouring columns when they're
+    // close in height and it wouldn't sit much lower than a 1-wide card would
+    let c = shortest, span = 1;
+    if (cols >= 3 && el.classList.contains('wc-quote')) {
+      for (let i = 0; i < cols - 1; i++) {
+        const top = Math.max(heights[i], heights[i + 1]);
+        const even = Math.abs(heights[i] - heights[i + 1]) <= SPAN_SLACK;
+        if (even && top - heights[shortest] <= SPAN_SLACK && (span === 1 || top < Math.max(heights[c], heights[c + 1]))) { c = i; span = 2; }
+      }
+    }
+    el.classList.toggle('wc-wide', span === 2);
+    el.style.width = (span === 2 ? colW * 2 + GAP : colW) + 'px';
+    const top = span === 2 ? Math.max(heights[c], heights[c + 1]) : heights[c];
+    const at = `translate(${Math.round(c * (colW + GAP))}px, ${Math.round(top)}px)`;
+    const bottom = top + el.offsetHeight + GAP;
+    heights[c] = bottom;
+    if (span === 2) heights[c + 1] = bottom;
     return [el, at];
   });
   grid.style.height = Math.max(...heights) - GAP + 'px';

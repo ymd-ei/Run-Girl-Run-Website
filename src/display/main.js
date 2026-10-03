@@ -24,7 +24,7 @@ import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 import {
-  loadFeed, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey,
+  loadFeed, withFilters, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey,
   masonry, cardPositions, initThumbShapes, SOURCES
 } from './feed.js';
 
@@ -48,7 +48,8 @@ let loaderActive = false;
 let feedPosts = [];
 let workShowAll = false;
 let workFilter = 'all';
-let workSort = 'newest';        // 'newest' | 'likes'
+let workSort = 'newest';        // 'newest' | 'likes' | 'shuffle'
+let shuffleOrder = [];          // card keys in the order the last Shuffle dealt them
 const likeCounts = new Map();   // likes API key -> count, filled when sorting by likes
 let openItem = null;            // { kind: 'project' | 'post', id } in the #pp panel
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -725,17 +726,25 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   const sortBtn = (value, label) =>
     `<button class="fb${workSort === value ? ' active' : ''}" onclick="window.display?.sortWork?.('${value}')">${label}</button>`;
   filtersEl.innerHTML = chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')
-    + (feedPosts.length ? `<span class="wf-sort">${sortBtn('newest', 'Newest')}${sortBtn('likes', 'Most liked')}</span>` : '');
+    + (feedPosts.length ? `<span class="wf-sort">${sortBtn('newest', 'Newest')}${sortBtn('likes', 'Most liked')}${IS_LOCAL || DEMO_MODE ? sortBtn('shuffle', 'Shuffle') : ''}</span>` : '');
 
   // Projects keep their hand-set order up front; feed posts follow, newest first.
   // Most liked ranks both together.
   let items = [
-    ...visibleProjects.map(p => ({ key: p.id, html: renderWorkGrid([p], globalState.theme, { showAll }) })),
-    ...feedPosts.map(p => ({ key: likeKey(p.id), html: postCardHTML(p, filters) })),
+    ...visibleProjects.map(p => ({ key: p.id, types: projectTypes(p), html: renderWorkGrid([p], globalState.theme, { showAll }) })),
+    ...feedPosts.map(p => ({ key: likeKey(p.id), types: p.filters, html: postCardHTML(p, filters) })),
   ];
+  if (workSort === 'shuffle') {
+    const rank = new Map(shuffleOrder.map((k, i) => [k, i]));
+    items = items.map((x, i) => [x, rank.has(x.key) ? rank.get(x.key) : shuffleOrder.length + i])
+      .sort((a, b) => a[1] - b[1]).map(([x]) => x);
+  }
   if (workSort === 'likes') items = items.map((x, i) => [x, i])
     .sort((a, b) => (likeCounts.get(b[0].key) || 0) - (likeCounts.get(a[0].key) || 0) || a[1] - b[1])
     .map(([x]) => x);
+
+  // A filter shows only its cards; the rest re-stack around them
+  if (workFilter !== 'all') items = items.filter(x => x.types.includes(workFilter));
 
   const before = cardPositions(gridEl);
   gridEl.innerHTML = items.map(x => x.html).join('');
@@ -747,7 +756,6 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
         `<span class="wc-likes"><i class="ph-fill ph-heart"></i> ${likeCounts.get(items[i].key) || 0}</span>`);
     });
   }
-  applyWorkFilter();
   masonry(gridEl, before);
 
   // Initialize sensitive tapes
@@ -757,15 +765,20 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   setTimeout(initCountUps, 100);
 }
 
-function applyWorkFilter() {
-  document.querySelectorAll('#wg .wc').forEach(c => {
-    let types = [];
-    try { types = JSON.parse(c.dataset.types || '[]'); } catch (e) {}
-    const show = workFilter === 'all' || types.includes(workFilter);
-    c.style.opacity = show ? '' : '0.15';
-    c.style.pointerEvents = show ? '' : 'none';
-  });
+/** Every card the grid could show (any filter), for likes and Shuffle. */
+function allCardKeys() {
+  return [
+    ...projects.filter(p => workShowAll || p.published !== false).map(p => p.id),
+    ...feedPosts.map(p => likeKey(p.id)),
+  ];
 }
+
+// Testing aids. ?demo fills the grid with placeholder posts (src/display/feedDemo.js)
+// to judge the layout on any screen; visitors without ?demo never see them.
+// Shuffle shows on a local copy or in demo mode only.
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+const DEMO_MODE = new URLSearchParams(location.search).has('demo');
+const demoLiked = new Set();
 
 async function refreshFeed() {
   try {
@@ -774,13 +787,27 @@ async function refreshFeed() {
     console.warn('Feed failed to load:', e);
     feedPosts = [];
   }
+  if (DEMO_MODE) {
+    const { demoPosts, demoLikes } = await import('./feedDemo.js');
+    feedPosts = withFilters([...feedPosts, ...demoPosts()], globalState);
+    Object.entries(demoLikes()).forEach(([k, v]) => { if (!likeCounts.has(k)) likeCounts.set(k, v); });
+    if (!document.getElementById('demo-indicator')) {
+      const tag = document.createElement('div');
+      tag.id = 'demo-indicator';
+      tag.textContent = 'Demo content — placeholder posts';
+      tag.style = 'position:fixed;bottom:1rem;left:1rem;background:#1a1a1a;color:#fff;padding:.5em 1em;border-radius:6px;font-size:.75rem;z-index:9999;opacity:.85;pointer-events:none;';
+      document.body.appendChild(tag);
+    }
+  }
   renderWorkSection();
 }
+
+const isDemoKey = key => String(key).startsWith('demo-');
 
 /** Counts for every card, fetched once when someone sorts by likes. */
 async function loadAllLikes() {
   if (new URLSearchParams(location.search).has('preview')) return;
-  const keys = [...document.querySelectorAll('#wg .wc')].map(el => el.dataset.key).filter(k => k && !likeCounts.has(k));
+  const keys = allCardKeys().filter(k => k && !likeCounts.has(k));
   const vid = getVisitorId();
   await Promise.allSettled(keys.map(async key => {
     const res = await fetch(`${LIKES_API}/${encodeURIComponent(key)}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
@@ -1059,13 +1086,20 @@ function setupEventListeners() {
   window.display = {
     filterWork(btn, type) {
       workFilter = type;
-      document.querySelectorAll('#work-filters > .fb').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyWorkFilter();
+      renderWorkSection();
     },
 
     async sortWork(sort) {
       workSort = sort;
+      if (sort === 'shuffle') {
+        // Each click deals a new order; it holds until the next click
+        const keys = allCardKeys();
+        for (let i = keys.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [keys[i], keys[j]] = [keys[j], keys[i]];
+        }
+        shuffleOrder = keys;
+      }
       if (sort === 'likes') await loadAllLikes();
       renderWorkSection();
     },
@@ -1102,7 +1136,8 @@ function setupEventListeners() {
         ppb.scrollTop = 0;
       }
 
-      fetchLikeCount(likeKey(id));
+      if (isDemoKey(likeKey(id))) updateLikeUI(likeCounts.get(likeKey(id)) || 0, demoLiked.has(likeKey(id)));
+      else fetchLikeCount(likeKey(id));
       showProjectPanel(false);
 
       if (!options?.skipHistory) {
@@ -1216,6 +1251,13 @@ function setupEventListeners() {
     async toggleLike() {
       if (!openItem) return;
       const id = openItem.kind === 'post' ? likeKey(openItem.id) : openItem.id;
+      if (isDemoKey(id)) { // demo posts never touch the real likes store
+        const on = !demoLiked.has(id);
+        on ? demoLiked.add(id) : demoLiked.delete(id);
+        likeCounts.set(id, (likeCounts.get(id) || 0) + (on ? 1 : -1));
+        updateLikeUI(likeCounts.get(id), on);
+        return;
+      }
       const vid = getVisitorId(true);
       try {
         const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
