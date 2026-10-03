@@ -1378,7 +1378,7 @@ function startCanvasEdit(el) {
   if (!payload) return;
 
   canvasEditActiveElement = el;
-  canvasEditOriginalText = el.textContent || '';
+  canvasEditOriginalText = el.innerHTML;
   el.setAttribute('contenteditable', 'true');
   el.setAttribute('spellcheck', 'false');
   el.classList.add('canvas-edit-active');
@@ -1403,11 +1403,13 @@ function finishCanvasEdit(commit) {
   const payload = getCanvasEditPayload(el);
   if (!payload) return;
 
-  const nextValue = (el.textContent || '').trim();
+  const nextValue = cleanEditedHTML(el);
+  if (commit && nextValue === cleanEditedHTML(htmlToElement(canvasEditOriginalText))) commit = false;
   if (!commit) {
-    el.textContent = canvasEditOriginalText;
+    el.innerHTML = canvasEditOriginalText;
     window.parent.postMessage({ type: 'canvas-cancel-edit', payload }, '*');
   } else {
+    el.innerHTML = nextValue; // show exactly what was saved
     window.parent.postMessage({
       type: 'canvas-commit-edit',
       payload: {
@@ -1423,6 +1425,48 @@ function finishCanvasEdit(commit) {
   el.classList.remove('canvas-edit-active');
   canvasEditActiveElement = null;
   canvasEditOriginalText = '';
+}
+
+// Inline edits keep simple formatting (line breaks, italics, bold, <rgr>
+// highlights, links) instead of flattening to plain text. Anything else the
+// browser or a paste adds is unwrapped to its text.
+const EDIT_KEEP_TAGS = new Set(['BR', 'I', 'EM', 'B', 'STRONG', 'U', 'RGR', 'A']);
+
+function htmlToElement(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html || '';
+  return div;
+}
+
+function cleanEditedHTML(el) {
+  const root = el.cloneNode(true);
+  const clean = node => {
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType !== 1) {
+        if (child.nodeType !== 3) child.remove();
+        return;
+      }
+      clean(child);
+      const tag = child.tagName;
+      if (tag === 'DIV' || tag === 'P') {
+        // Line breaks typed with Shift+Enter can arrive as blocks.
+        if (child.previousSibling) child.before(document.createElement('br'));
+        child.replaceWith(...child.childNodes);
+      } else if (!EDIT_KEEP_TAGS.has(tag)) {
+        child.replaceWith(...child.childNodes);
+      } else {
+        [...child.attributes].forEach(a => {
+          if (!(tag === 'A' && ['href', 'target', 'rel'].includes(a.name))) child.removeAttribute(a.name);
+        });
+      }
+    });
+  };
+  clean(root);
+  return root.innerHTML
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/(<br>\s*)+$/, '')
+    .trim();
 }
 
 // Caret inside the text being edited, kept so the editor's "Insert reference"
