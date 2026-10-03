@@ -60,20 +60,8 @@
 
 <div id="v3-toast"></div>
 
-<script>
-  // API config — same pattern as v1/v2. Capture session token from OAuth redirect.
-  const params = new URLSearchParams(location.search);
-  const apiParam = params.get('api');
-  const tokenParam = params.get('session_token');
-  if (tokenParam) {
-    localStorage.setItem('editor_session_token', tokenParam);
-    params.delete('session_token');
-    const next = `${location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
-    history.replaceState({}, '', next);
-  }
-  if (apiParam) localStorage.setItem('editor_api_base', apiParam);
-  window.__V3_API_BASE = apiParam || localStorage.getItem('editor_api_base') || 'https://rgr-editor-backend.rungirlrun.workers.dev';
-</script>
+<script src="site-config.js"></script>
+<script src="editor-auth.js"></script>
 
 <script type="module" src="src/editor-v3/app.js"></script>
 </body>

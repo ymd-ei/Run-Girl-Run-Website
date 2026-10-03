@@ -117,7 +117,7 @@ function hideCursorWorkBadge() {
   curWorkBadge.classList.remove('is-visible');
 }
 
-const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
+const LIKES_API = `${window.RGR_CONFIG?.apiBase || ''}/api/likes`;
 
 function getVisitorId() {
   let vid = localStorage.getItem('rgr_vid');
@@ -864,6 +864,11 @@ function renderContactSection() {
   }
   const ctEmailText = document.getElementById('ct-email-text');
   if (ctEmailText) ctEmailText.textContent = email;
+  const legalEmail = document.getElementById('legal-email');
+  if (legalEmail && email) {
+    legalEmail.href = 'mailto:' + email;
+    legalEmail.textContent = email;
+  }
 
   // Update footer
   const ctFooterName = document.getElementById('ct-footer-name');

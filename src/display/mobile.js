@@ -1,5 +1,6 @@
 import { renderBlock } from '../modules/blocks/blockRenderer.js';
 import { generateThumbSVG } from '../utils/svg.js';
+import { resolveLinkUrl } from '../utils/refs.js';
 
 const SOCIAL_ICON_MAP = {
   'e-mail': 'ph-envelope',
@@ -15,7 +16,7 @@ const SOCIAL_ICON_MAP = {
   'dribbble': 'ph-dribbble-logo',
 };
 
-const LIKES_API = 'https://rgr-editor-backend.rungirlrun.workers.dev/api/likes';
+const LIKES_API = `${window.RGR_CONFIG?.apiBase || ''}/api/likes`;
 
 function getVisitorId() {
   let vid = localStorage.getItem('rgr_vid');
@@ -245,7 +246,7 @@ function renderContact() {
     for (const link of contact.links) {
       const key = (link.label || '').toLowerCase();
       const iconName = SOCIAL_ICON_MAP[key] || 'ph-link';
-      iconsHTML += `<a class="contact-icon-btn" href="${link.url}" target="_blank" rel="noopener" aria-label="${link.label}"><i class="ph-fill ${iconName}"></i></a>`;
+      iconsHTML += `<a class="contact-icon-btn" href="${resolveLinkUrl(link.url, { contact })}" target="_blank" rel="noopener" aria-label="${link.label}"><i class="ph-fill ${iconName}"></i></a>`;
     }
     iconsWrap.innerHTML = iconsHTML;
   }

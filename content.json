@@ -8,13 +8,10 @@
   },
   "contact": {
     "email": "contact@rungirlrun.studio",
-    "vimeo": "-",
-    "linkedin": "https://www.linkedin.com/feed/",
-    "instagram": "@me_are_jei",
     "links": [
       {
         "label": "E-mail",
-        "url": "mailto:contact@rogel.ca"
+        "url": "mailto:{email}"
       },
       {
         "label": "Twitter",

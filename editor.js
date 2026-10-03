@@ -1825,7 +1825,7 @@ function startDeployPolling(){
   const poll=async()=>{
     tries++;
     try{
-      const r=await fetch(`https://api.github.com/repos/ymd-ei/Run-Girl-Run-Website/pages/builds/latest`,{
+      const r=await fetch(`https://api.github.com/repos/${window.RGR_CONFIG.repo}/pages/builds/latest`,{
         headers:{Accept:'application/vnd.github.v3+json'}
       });
       if(r.status===404){ 

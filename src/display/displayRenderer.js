@@ -6,6 +6,7 @@
 import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { phosphorIcon } from '../utils/icons.js';
+import { resolveLinkUrl } from '../utils/refs.js';
 import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
 
 /**
@@ -423,6 +424,7 @@ export function renderContactPanel(globalState) {
   const midItems = cp.tickerMid && cp.tickerMid.length ? cp.tickerMid : defaultTicker;
 
   const icons = (globalState.contact?.links || [])
+    .map(l => ({ ...l, url: resolveLinkUrl(l.url, globalState) }))
     .map(
       l => `
         <a href="${l.url}" target="${l.url.startsWith('mailto') ? '_self' : '_blank'}" rel="noopener" class="ct-icon-btn" title="${l.label}">

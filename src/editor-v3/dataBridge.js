@@ -11,7 +11,7 @@
 const API_BASE =
   window.__V3_API_BASE ||
   window.__V2_API_BASE ||
-  'https://rgr-editor-backend.rungirlrun.workers.dev';
+  window.RGR_CONFIG?.apiBase;
 
 export const state = {
   global: {},
