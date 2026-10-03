@@ -7,6 +7,7 @@ import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/sv
 import { pool, scheduleIdle } from '../utils/text.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { resolveLinkUrl, resolveRefs, getSiteGlobal } from '../utils/refs.js';
+import { projectTypes, projectTypeText } from '../utils/projectTypes.js';
 import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
 
 /**
@@ -340,11 +341,14 @@ export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
         </div>`
         : '';
 
+      const types = projectTypes(p);
+      const typeText = projectTypeText(p, getSiteGlobal().filters);
       const thumbnail = p.thumbnail
         ? `<img src="${p.thumbnail}" alt="${p.title}">`
-        : getProjectThumbnail(p.type, accentColor, bgColor);
+        : getProjectThumbnail(types[0], accentColor, bgColor);
+      const typesAttr = JSON.stringify(types).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-      return `<div class="wc" data-type="${p.type}" onclick="window.display?.openProject?.('${p.id}')">
+      return `<div class="wc" data-type="${types[0] || ''}" data-types="${typesAttr}" onclick="window.display?.openProject?.('${p.id}')">
         <div class="wci ${isSensitive ? 'wci-blur' : ''}">
           ${thumbnail}
           <div class="wco"></div>
@@ -352,7 +356,7 @@ export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
         </div>
         <div class="wcm">
           <p class="wct">${p.title}</p>
-          <p class="wcty">${p.typeLabel || p.type} &middot; ${p.year}</p>
+          <p class="wcty">${[typeText, p.year].filter(Boolean).join(' &middot; ')}</p>
         </div>
       </div>`;
     })

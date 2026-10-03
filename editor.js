@@ -143,7 +143,7 @@ function buildNav(){
         onclick="event.stopPropagation()">&#9776;</span>
       <div class="dot"></div>
       <span style="flex:1;text-align:left">${p.title}</span>
-      <span class="badge">${p.type}</span>
+      <span class="badge">${projTypes(p).join(' / ')}</span>
     </button>`).join('');
 }
 
@@ -590,10 +590,10 @@ function renderProject(id){
       <div class="sb">
         <div class="row2">
           <div class="field"><label>Title</label><input value="${p.title}" oninput="updateP('${id}','title',this.value);document.querySelector('.page-title').textContent=this.value;document.getElementById('nav-proj-${id}').childNodes[2].textContent=this.value"></div>
-          <div class="field"><label>Type</label>
-            <select onchange="updateP('${id}','type',this.value);updateP('${id}','typeLabel',(C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]).find(f=>f.value===this.value)?.label||this.value)">
-              ${(C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]).map(f=>`<option value="${f.value}" ${p.type===f.value?'selected':''}>${f.label}</option>`).join('')}
-            </select>
+          <div class="field"><label>Filters</label>
+            <div style="display:flex;flex-wrap:wrap;gap:.35rem .9rem;padding:.4rem 0">
+              ${siteFilters().map(f=>`<label style="display:flex;align-items:center;gap:.35rem;font-size:.72rem;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" ${projTypes(p).includes(String(f.value))?'checked':''} onchange="toggleProjType('${id}',${escapeHtml(JSON.stringify(String(f.value)))},this.checked)" style="width:auto;accent-color:var(--accent)">${f.label}</label>`).join('')}
+            </div>
           </div>
         </div>
         <div class="row3">
@@ -1285,6 +1285,22 @@ function toggleBlockMenu(menuId){
 // ─────────────────────────────────────────
 // PROJECT HELPERS
 // ─────────────────────────────────────────
+// A project can sit under several filters: `types: [value]`. Older data only
+// has `type`, so a missing `types` reads as [type]. `type`/`typeLabel` are kept
+// in step (first filter) for older readers.
+function siteFilters(){ return C.filters||[{value:'2d',label:'2D'},{value:'3d',label:'3D'},{value:'motion',label:'Motion'}]; }
+function projTypes(p){
+  const list=Array.isArray(p&&p.types)?p.types.filter(v=>v!=null&&v!=='').map(String):[];
+  return list.length?[...new Set(list)]:(p&&p.type?[String(p.type)]:[]);
+}
+function projTypeLabel(p,v){ const f=siteFilters().find(f=>String(f.value)===String(v)); return f&&f.label?f.label:(p&&p.typeLabel&&String(p.type)===String(v)?p.typeLabel:String(v)); }
+function toggleProjType(id,val,on){
+  const p=projects.find(x=>x.id===id); if(!p) return;
+  const cur=projTypes(p);
+  const next=on?(cur.includes(val)?cur:[...cur,val]):cur.filter(v=>v!==val);
+  p.types=next; p.type=next[0]||''; p.typeLabel=next.length?projTypeLabel(p,next[0]):'';
+  markDirty();
+}
 function updateP(id,key,val){
   const p=projects.find(x=>x.id===id);if(p){p[key]=val;}
   markDirty();
@@ -1296,7 +1312,7 @@ function updateP(id,key,val){
 function addProject(){
   const title=prompt('Project title:');if(!title)return;
   const id=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const p={id,title,type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',longform:false,published:false,blocks:[
+  const p={id,title,types:['motion'],type:'motion',typeLabel:'Motion',year:new Date().getFullYear().toString(),client:'',duration:'',tags:[],thumbnail:'',videoUrl:'',longform:false,published:false,blocks:[
     {id:'b1',type:'text-lg',content:title,align:'left'},
     {id:'b2',type:'text-sm',content:'Motion · '+new Date().getFullYear(),align:'left'}
   ]};
@@ -1924,8 +1940,9 @@ async function saveAll(){
   C.projectCards = projects.map(p => ({
     id: p.id,
     title: p.title,
-    type: p.type,
-    typeLabel: p.typeLabel,
+    types: projTypes(p),
+    type: projTypes(p)[0] || '',
+    typeLabel: projTypes(p).length ? projTypeLabel(p, projTypes(p)[0]) : '',
     year: p.year,
     thumbnail: p.thumbnail,
     published: !!p.published,

@@ -7,6 +7,8 @@
  * (which is being retired). Same backend worker, same endpoints.
  */
 
+import { projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
+
 // ── API config (set by the editor host page before module loads) ──
 const API_BASE =
   window.__V3_API_BASE ||
@@ -214,8 +216,9 @@ export async function saveSiteData() {
     state.global.projectCards = state.projects.map(p => ({
       id: p.id,
       title: p.title,
-      type: p.type,
-      typeLabel: p.typeLabel,
+      types: projectTypes(p),
+      type: projectTypes(p)[0] || '',
+      typeLabel: projectTypeLabels(p, state.global.filters)[0] || '',
       year: p.year,
       thumbnail: p.thumbnail,
       published: !!p.published,
@@ -357,6 +360,7 @@ export function createProject(title) {
   const project = {
     id,
     title: title || 'New Project',
+    types: [],
     type: '',
     typeLabel: '',
     year: new Date().getFullYear().toString(),

@@ -21,6 +21,7 @@ import { pool, scheduleIdle } from '../utils/text.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 import { setRefContext } from '../utils/refs.js';
 import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
+import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 
 let bgPlayer = null;
@@ -631,14 +632,10 @@ function renderWorkSection({ showAll = false } = {}) {
 
   if (!filtersEl || !gridEl) return;
 
-  const filters = globalState.filters || [
-    { value: '2d', label: '2D' },
-    { value: '3d', label: '3D' },
-    { value: 'motion', label: 'Motion' }
-  ];
+  const filters = globalState.filters || DEFAULT_FILTERS;
 
   const visibleProjects = projects.filter(p => showAll || p.published !== false);
-  const activeTypes = new Set(visibleProjects.map(p => p.type));
+  const activeTypes = new Set(visibleProjects.flatMap(projectTypes));
   const visibleFilters = filters.filter(f => activeTypes.has(f.value));
 
   filtersEl.innerHTML =
@@ -874,7 +871,9 @@ function setupEventListeners() {
       btn.classList.add('active');
 
       document.querySelectorAll('#wg .wc').forEach(c => {
-        const show = type === 'all' || c.dataset.type === type;
+        let types = [];
+        try { types = JSON.parse(c.dataset.types || '[]'); } catch (e) {}
+        const show = type === 'all' || types.includes(type);
         c.style.opacity = show ? '1' : '0.15';
         c.style.pointerEvents = show ? '' : 'none';
       });
@@ -906,7 +905,7 @@ function setupEventListeners() {
           <div class="pp-hero-left">
             <h2 class="pp-hero-title">${(project.title || '').replace(/ /, '<br>')}</h2>
             <div class="pp-hero-meta">
-              ${project.typeLabel ? `<span class="pp-hero-tag">${project.typeLabel}</span>` : ''}
+              ${projectTypeLabels(project, globalState.filters).map(l => `<span class="pp-hero-tag">${l}</span>`).join('')}
               ${project.year ? `<span class="pp-hero-tag">${project.year}</span>` : ''}
               ${project.client ? `<span class="pp-hero-tag">${project.client}</span>` : ''}
             </div>

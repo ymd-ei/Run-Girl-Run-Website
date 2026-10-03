@@ -20,6 +20,7 @@ import {
 } from '../modules/blocks/blockManager.js';
 import { blocksToMarkdown, parseMarkdownToBlocks } from '../modules/blocks/markdown.js';
 import { slugRef, listRefs } from '../utils/refs.js';
+import { DEFAULT_FILTERS, projectTypes, setProjectTypes, filterTags } from '../utils/projectTypes.js';
 import { SITE_TEXT_FIELDS, SITE_TEXT_DEFAULTS } from '../display/siteChrome.js';
 
 let panelEl = null;
@@ -503,8 +504,7 @@ const SITE_GROUPS_2 = [
 const PROJECT_GROUPS = [
   { title: 'Details', fields: [
     { label: 'Title', key: 'title' },
-    { label: 'Type (matches a filter value)', key: 'type' },
-    { label: 'Type label', key: 'typeLabel' },
+    { label: 'Filters', key: 'types', kind: 'types' },
     { label: 'Year', key: 'year' },
     { label: 'Client', key: 'client' },
     { label: 'Duration', key: 'duration' },
@@ -524,12 +524,29 @@ function groupsHTML(target, groups) {
   return groups.map(g => `<div class="v3-set-group"><div class="v3-set-head">${escHtml(g.title)}</div>${g.note ? note(g.note) : ''}${
     g.fields.map(fd => {
       const raw = getNested(target, fd.key);
+      if (fd.kind === 'types') return typesFieldHTML(fd.label, target);
       if (fd.kind === 'checkbox') {
         return field({ label: '', kind: 'checkbox', value: !!raw, dataKey: fd.key, placeholder: fd.cbLabel || fd.label });
       }
       return field({ label: fd.label, kind: fd.kind || 'text', value: raw == null ? '' : raw, options: fd.options || [], dataKey: fd.key, placeholder: fd.placeholder || '', rows: fd.rows });
     }).join('')
   }</div>`).join('');
+}
+
+// Toggle chips: one per site filter. A project can be under several.
+function typesFieldHTML(label, proj) {
+  const filters = state.global.filters || DEFAULT_FILTERS;
+  const on = projectTypes(proj);
+  // Keep values that no longer match a filter visible so they can be removed.
+  const orphans = on.filter(v => !filters.some(f => String(f.value) === v));
+  const chips = [
+    ...filters.filter(f => f && f.value !== '' && f.value != null).map(f => [String(f.value), f.label || f.value, false]),
+    ...orphans.map(v => [v, v, true])
+  ];
+  return `<div class="v3-field"><label>${escHtml(label)}</label>
+    <div class="v3-type-chips">${chips.map(([v, l, orphan]) =>
+      `<button type="button" class="v3-type-chip${on.includes(v) ? ' active' : ''}${orphan ? ' orphan' : ''}" data-type-toggle="${escAttr(v)}"${orphan ? ' title="Not a site filter any more"' : ''}>${escHtml(l)}</button>`).join('')}</div>
+    ${chips.length ? '' : '<p class="v3-insp-note">Add filters in Site settings.</p>'}</div>`;
 }
 
 function strListHTML(label, path, arr) {
@@ -549,7 +566,7 @@ function objListHTML(label, path, arr, subs) {
       <div class="v3-item-head"><span>${escHtml(label)} ${i + 1}</span>
         <button class="v3-insp-ico v3-danger" data-arr-del="${path}" data-idx="${i}" title="Remove"><i class="ph-fill ph-x"></i></button></div>
       ${subs.map(([k, l]) => `<div class="v3-field"><label>${escHtml(l)}</label>
-        <input class="v3-f v3-arr-input" data-arr="${path}" data-idx="${i}" data-sub="${k}" value="${escAttr(it[k] == null ? '' : it[k])}"></div>`).join('')}
+        <input class="v3-f v3-arr-input" data-arr="${path}" data-idx="${i}" data-sub="${k}" value="${escAttr(Array.isArray(it[k]) ? it[k].join(', ') : (it[k] == null ? '' : it[k]))}"></div>`).join('')}
     </div>`).join('')}
     <button class="v3-add-item" data-arr-add="${path}" data-objfields="${keys}">+ Add</button></div>`;
 }
@@ -579,7 +596,7 @@ export function showSiteSettings() {
       ${groupsHTML(g, SITE_GROUPS)}
       ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']])}
       ${groupsHTML(g, SITE_GROUPS_2)}
-      ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (matches project type)'], ['label', 'Label']])}
+      ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (projects use this; keep it fixed)'], ['label', 'Label (shown on cards)'], ['tags', 'Feed hashtags (with #rgr), e.g. blender3d, 3danimation']])}
       ${referencesHTML(g)}
       </div>
     </div>`;
@@ -704,6 +721,16 @@ function bindSettingsForm(target, dirtyFile, rerender, heavy) {
     });
   });
 
+  panelEl.querySelectorAll('[data-type-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.getAttribute('data-type-toggle');
+      const cur = projectTypes(target);
+      const next = cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v];
+      commit(() => setProjectTypes(target, next, state.global.filters));
+      rerender();
+    });
+  });
+
   // Array (string + object) lists
   panelEl.querySelectorAll('.v3-arr-input').forEach(inp => {
     inp.addEventListener('change', () => {
@@ -713,11 +740,11 @@ function bindSettingsForm(target, dirtyFile, rerender, heavy) {
       commit(() => {
         if (sub) {
           if (!arr[idx]) arr[idx] = {};
-          arr[idx][sub] = sub === 'ref' ? slugRef(inp.value) : inp.value;
+          arr[idx][sub] = sub === 'ref' ? slugRef(inp.value) : sub === 'tags' ? filterTags({ tags: inp.value }) : inp.value;
           if (sub === 'label' && 'ref' in arr[idx] && !arr[idx].ref) arr[idx].ref = slugRef(inp.value);
         } else { arr[idx] = inp.value; }
       });
-      if (sub === 'label' || sub === 'ref') rerender();
+      if (sub === 'label' || sub === 'ref' || sub === 'tags') rerender();
     });
   });
   panelEl.querySelectorAll('[data-arr-add]').forEach(b => b.addEventListener('click', () => {
