@@ -147,7 +147,7 @@ export function postCardHTML(p, filters, { uniform = false, likes = '' } = {}) {
         ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
         : `<img src="${esc(img.url)}" alt="${esc(img.alt)}" loading="lazy">`;
   const ratio = !uniform && img?.w && img?.h ? ` data-ratio="${fitRatio(img.w, img.h)}"` : '';
-  return `<div class="wc" data-types="${types}" data-key="${esc(likeKey(p.id))}"${ratio} ${open}>
+  return `<div class="wc" data-types="${types}" data-key="${esc(likeKey(p.id))}" data-source="${esc(p.source)}" data-date="${esc(p.date)}"${ratio} ${open}>
     <div class="wci"${shape}>
       ${thumb}
       ${srcBadge(s)}
@@ -252,8 +252,28 @@ const GAP = 16;
 const SPAN_SLACK = 120; // px: how uneven two columns may be for a card to span both
 const WIDE_RATIO = 1.7;  // thumbnails this wide or wider (16:9, 2:1) may span two columns
 
-// Quote strips and wide thumbnails may take two columns
-const canSpan = el => el.classList.contains('wc-quote') || +el.dataset.ratio >= WIDE_RATIO;
+const SQUARE_MIN = 0.8, SQUARE_MAX = 1.25; // near-square thumbnails (4:5 to 5:4)
+const isSquare = el => +el.dataset.ratio >= SQUARE_MIN && +el.dataset.ratio <= SQUARE_MAX;
+
+/* For each source (projects, Instagram, Bluesky, Substack) only the newest card
+   with a near-square thumbnail may become a 2×2 feature. Projects compare by
+   year, then by their place in the project order. */
+function squareFeatures(kids) {
+  const best = new Map();
+  for (const el of kids) {
+    if (!isSquare(el)) continue;
+    const src = el.dataset.source || 'project';
+    const cur = best.get(src);
+    const newer = !cur || el.dataset.date > cur.dataset.date
+      || (el.dataset.date === cur.dataset.date && +(el.dataset.order || 0) < +(cur.dataset.order || 0));
+    if (newer) best.set(src, el);
+  }
+  return new Set(best.values());
+}
+
+// Quote strips, wide thumbnails and each source's newest near-square card may
+// take two columns (a square at double width becomes a 2×2 feature)
+const canSpan = (el, features) => el.classList.contains('wc-quote') || +el.dataset.ratio >= WIDE_RATIO || features.has(el);
 const cardKey = el => el.dataset.key;
 export const cardPositions = grid => new Map([...grid.children].filter(el => el.dataset.pos).map(el => [cardKey(el), el.dataset.pos]));
 const observers = new WeakMap();
@@ -268,13 +288,14 @@ export function masonry(grid, prev) {
   grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
   const heights = Array(cols).fill(0);
+  const features = squareFeatures(kids);
   const placed = kids.map(el => {
     const shortest = heights.indexOf(Math.min(...heights));
     // At 3 columns a quote strip or wide thumbnail spans two neighbouring
     // columns when they're close in height and it wouldn't sit much lower
     // than a 1-wide card would
     let c = shortest, span = 1;
-    if (cols >= 3 && canSpan(el)) {
+    if (cols >= 3 && canSpan(el, features)) {
       for (let i = 0; i < cols - 1; i++) {
         const top = Math.max(heights[i], heights[i + 1]);
         const even = Math.abs(heights[i] - heights[i + 1]) <= SPAN_SLACK;

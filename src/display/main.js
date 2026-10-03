@@ -721,12 +721,23 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   const visibleFilters = filters.filter(f => activeTypes.has(f.value));
   if (workFilter !== 'all' && !activeTypes.has(workFilter)) workFilter = 'all';
 
+  let chipIndex = 0;
   const chip = (value, label) =>
-    `<button class="fb${workFilter === value ? ' active' : ''}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
-  const sortBtn = (value, label) =>
-    `<button class="fb${workSort === value ? ' active' : ''}" onclick="window.display?.sortWork?.('${value}')">${label}</button>`;
-  filtersEl.innerHTML = chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')
-    + (feedPosts.length ? `<span class="wf-sort">${sortBtn('newest', 'Newest')}${sortBtn('likes', 'Most liked')}${IS_LOCAL || DEMO_MODE ? sortBtn('shuffle', 'Shuffle') : ''}</span>` : '');
+    `<button class="fb${workFilter === value ? ' active' : ''}" data-i="${chipIndex++}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
+  // Sort: a quiet text dropdown on the right (Shuffle only locally or in demo mode)
+  const sorts = [['newest', 'Newest'], ['likes', 'Most liked'], ...(IS_LOCAL || DEMO_MODE ? [['shuffle', 'Shuffle']] : [])];
+  const sortLabel = (sorts.find(([v]) => v === workSort) || sorts[0])[1];
+  const sortHTML = feedPosts.length ? `<div class="wf-dd wf-sort">
+      <button class="wf-dd-btn wf-sort-btn" aria-haspopup="true">${sortLabel} <span class="wf-caret">▾</span></button>
+      <div class="wf-menu wf-menu-right">${sorts.map(([v, l]) =>
+        `<button class="wf-opt${workSort === v ? ' active' : ''}" onclick="window.display?.sortWork?.('${v}')">${l}</button>`).join('')}</div>
+    </div>` : '';
+  // Filters stay as chips; any that don't fit on one line fold into "More" (see fitWorkFilters)
+  filtersEl.innerHTML = `<div class="wf-chips">${chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')}</div>
+    <div class="wf-dd wf-more" hidden><button class="fb wf-dd-btn" aria-haspopup="true"></button><div class="wf-menu"></div></div>`
+    + sortHTML;
+  bindWorkFilterRow(filtersEl);
+  fitWorkFilters(filtersEl);
 
   // Projects keep their hand-set order up front; feed posts follow, newest first.
   // Most liked ranks both together.
@@ -749,7 +760,15 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   const before = cardPositions(gridEl);
   gridEl.innerHTML = items.map(x => x.html).join('');
   // Project cards need the same key the stacking uses to animate them
-  [...gridEl.children].forEach((el, i) => { if (!el.dataset.key) el.dataset.key = items[i]?.key; });
+  [...gridEl.children].forEach((el, i) => {
+    if (el.dataset.key) return;
+    el.dataset.key = items[i]?.key;
+    // Projects count as their own source for the 2×2 feature (newest square one)
+    const proj = visibleProjects.find(p => p.id === items[i]?.key);
+    el.dataset.source = 'project';
+    el.dataset.date = proj?.year || '';
+    el.dataset.order = visibleProjects.indexOf(proj);
+  });
   if (workSort === 'likes') {
     [...gridEl.children].forEach((el, i) => {
       el.querySelector('.wcty')?.insertAdjacentHTML('beforeend',
@@ -763,6 +782,54 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
 
   // Initialize countup animations (lazy)
   setTimeout(initCountUps, 100);
+}
+
+/**
+ * Keep the filter chips on one line: chips that don't fit move, last first,
+ * into the "More" menu. If the active filter is in there, the button shows it.
+ */
+function fitWorkFilters(row) {
+  const chipsEl = row.querySelector('.wf-chips');
+  const more = row.querySelector('.wf-more');
+  if (!chipsEl || !more) return;
+  const menu = more.querySelector('.wf-menu');
+  const btn = more.querySelector('.wf-dd-btn');
+  // Start from every chip back on the line, in order
+  [...menu.children].forEach(el => chipsEl.appendChild(el));
+  [...chipsEl.children].sort((a, b) => a.dataset.i - b.dataset.i).forEach(el => chipsEl.appendChild(el));
+  more.hidden = true;
+  if (!row.clientWidth) return; // not laid out yet; the resize observer fits it later
+  if (chipsEl.scrollWidth <= chipsEl.clientWidth + 1) return;
+  more.hidden = false;
+  btn.textContent = 'More ▾';
+  // Never fold "All"
+  while (chipsEl.children.length > 1 && chipsEl.scrollWidth > chipsEl.clientWidth + 1) {
+    menu.prepend(chipsEl.lastElementChild);
+  }
+  const active = menu.querySelector('.fb.active');
+  btn.classList.toggle('active', !!active);
+  if (active) btn.textContent = active.textContent + ' ▾';
+}
+
+/** Open/close the filter row's dropdowns; re-fit the chips when the row resizes. */
+function bindWorkFilterRow(row) {
+  if (row.dataset.bound) return;
+  row.dataset.bound = '1';
+  row.addEventListener('click', e => {
+    const toggle = e.target.closest('.wf-dd-btn');
+    const dd = toggle?.closest('.wf-dd');
+    row.querySelectorAll('.wf-dd.open').forEach(el => { if (el !== dd) el.classList.remove('open'); });
+    if (dd) dd.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!row.contains(e.target)) row.querySelectorAll('.wf-dd.open').forEach(el => el.classList.remove('open'));
+  });
+  let queued = false;
+  new ResizeObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; fitWorkFilters(row); });
+  }).observe(row);
 }
 
 /** Every card the grid could show (any filter), for likes and Shuffle. */

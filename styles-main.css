@@ -143,7 +143,26 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 .wg.masonry{display:block;position:relative}
 .wg.masonry>.wc{position:absolute;top:0;left:0;transition:transform .55s var(--ease),opacity .4s ease}
 .wg.masonry>.wc.wc-enter{opacity:0}
-.wf-sort{margin-left:auto;display:flex;gap:.4rem}
+/* Filter row: chips on one line, overflow in "More", quiet sort dropdown on the right */
+.wf{align-items:center;flex-wrap:nowrap;position:relative;z-index:5} /* menus open over the grid */
+.wf-chips{display:flex;gap:.4rem;flex:1 1 auto;min-width:0;overflow:hidden}
+.wf-chips .fb,.wf-more .fb{flex:none;white-space:nowrap}
+.wf-dd{position:relative;flex:none}
+.wf-dd[hidden]{display:none}
+.wf-menu{position:absolute;top:calc(100% + .4rem);left:0;z-index:30;display:none;flex-direction:column;align-items:stretch;gap:.3rem;min-width:9rem;padding:.45rem;background:var(--panel-bg);border:1px solid var(--border);box-shadow:0 12px 30px rgba(10,8,6,.25)}
+.wf-menu-right{left:auto;right:0}
+.wf-dd.open .wf-menu{display:flex}
+.wf-menu .fb{text-align:left}
+.wf-sort{margin-left:auto;padding-left:.8rem}
+.wf-sort-btn{background:none;border:none;padding:.38rem 0;font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted);transition:color .2s;white-space:nowrap}
+.wf-sort-btn:hover,.wf-sort.open .wf-sort-btn{color:var(--ink)}
+.wf-caret{font-size:.7em;margin-left:.15rem}
+.wf-opt{background:none;border:none;text-align:left;padding:.35rem .5rem;font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-normal);text-transform:uppercase;color:var(--muted);white-space:nowrap;transition:color .2s}
+.wf-opt:hover,.wf-opt.active{color:var(--ink)}
+.wf-opt.active::before{content:'\2022';color:var(--accent);margin-right:.4rem}
+body.panel-frost .wf-menu{background:rgba(var(--ink-rgb),.96);border-color:rgba(var(--paper-rgb),.12)}
+body.panel-frost .wf-sort-btn,body.panel-frost .wf-opt{color:rgba(var(--paper-rgb),.45)}
+body.panel-frost .wf-sort-btn:hover,body.panel-frost .wf-sort.open .wf-sort-btn,body.panel-frost .wf-opt:hover,body.panel-frost .wf-opt.active{color:var(--paper)}
 .wc-likes{color:var(--accent);margin-left:.4rem}
 .wc-likes i{font-size:.7rem;vertical-align:-.05em}
 
