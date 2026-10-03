@@ -6,7 +6,7 @@
 import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { phosphorIcon } from '../utils/icons.js';
-import { resolveLinkUrl } from '../utils/refs.js';
+import { resolveLinkUrl, resolveRefs, getSiteGlobal } from '../utils/refs.js';
 import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
 
 /**
@@ -329,7 +329,7 @@ export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
     .filter(p => showAll || p.published !== false)
     .map(p => {
       const isSensitive = p.sensitive;
-      const label = p.sensitiveLabel || 'MATURE';
+      const label = p.sensitiveLabel || getSiteGlobal().sensitiveLabel || 'MATURE';
       const color = p.sensitiveColor || theme?.sensitiveColor || '#e03030';
 
       const sensitiveOverlay = isSensitive
@@ -368,7 +368,7 @@ export function initSensitiveTapes(projects, { showAll = false } = {}) {
     const tape = document.querySelector(`#st-${p.id} .wci-tape-track`);
     if (!tape) return;
 
-    const label = p.sensitiveLabel || 'MATURE';
+    const label = p.sensitiveLabel || getSiteGlobal().sensitiveLabel || 'MATURE';
     const items = Array(12).fill(label);
 
     tape.innerHTML = items
@@ -411,7 +411,7 @@ export function renderContactPanel(globalState) {
   const ctSub = cp.sub || "Animation, motion, original features — whatever the idea, we're built for it. Let's talk.";
 
   const hero = ctTitle + '<br><span class="accent-word">' + ctAccent + '</span>';
-  const sub = ctSub;
+  const sub = resolveRefs(ctSub);
 
   function makeTickerHTML(items) {
     const copies = [...items, ...items, ...items, ...items];

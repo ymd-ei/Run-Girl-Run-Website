@@ -1,27 +1,7 @@
 {
-  "brand": "Run Girl Run",
   "profile": {
     "bio": "3D artist & creative director based in Toronto. Specialising in character art, game assets, and real-time visuals.",
-    "email": "contact@rungirlrun.studio",
-    "resumeUrl": "resume/RJ_RGR_anim-02_W25.pdf",
-    "headerImage": "media/woke-up_thumbnail.webp",
-    "socials": [
-      {
-        "label": "Instagram",
-        "handle": "@rungirl.r",
-        "url": "#"
-      },
-      {
-        "label": "ArtStation",
-        "handle": "artstation.com/rungirl",
-        "url": "#"
-      },
-      {
-        "label": "Twitter",
-        "handle": "@rungirl_run",
-        "url": "#"
-      }
-    ]
+    "headerImage": "media/woke-up_thumbnail.webp"
   },
   "works": [
     {

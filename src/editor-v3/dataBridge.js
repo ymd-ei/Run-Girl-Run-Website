@@ -138,6 +138,70 @@ export async function loadProject(id) {
 /**
  * Save all dirty files to the backend (commits to GitHub)
  */
+const STATIC_PAGES = ['index.html', 'mobile.html'];
+
+function escAttrValue(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Replace the content="" of a <meta> found by its property/name attribute.
+function setMeta(html, attr, key, value) {
+  const re = new RegExp(`(<meta\\s[^>]*${attr}="${key}"[^>]*\\scontent=")[^"]*(")`);
+  return re.test(html) ? html.replace(re, (_, a, b) => a + escAttrValue(value) + b) : html;
+}
+
+export function patchPageMeta(html, g) {
+  const siteUrl = (html.match(/property="og:url"[^>]*content="([^"]+)"/) || [])[1] || location.origin + '/';
+  const abs = p => (!p || /^https?:/i.test(p) ? p : new URL(p, siteUrl).href);
+  let out = html;
+
+  const title = g.siteTitle || g.name;
+  if (title) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${escAttrValue(title)}</title>`);
+  if (g.ogTitle) {
+    out = setMeta(out, 'property', 'og:title', g.ogTitle);
+    out = setMeta(out, 'name', 'twitter:title', g.ogTitle);
+  }
+  if (g.ogDescription) {
+    out = setMeta(out, 'property', 'og:description', g.ogDescription);
+    out = setMeta(out, 'name', 'twitter:description', g.ogDescription);
+    if (/<meta\s[^>]*name="description"/.test(out)) out = setMeta(out, 'name', 'description', g.ogDescription);
+    else out = out.replace(/(<title>[^<]*<\/title>)/, t => `${t}\n<meta name="description" content="${escAttrValue(g.ogDescription)}">`);
+  }
+  if (g.ogImage) {
+    out = setMeta(out, 'property', 'og:image', abs(g.ogImage));
+    out = setMeta(out, 'name', 'twitter:image', abs(g.ogImage));
+  }
+  if (g.favicon) {
+    out = out.replace(/(<link\s[^>]*rel="(?:icon|apple-touch-icon|mask-icon)"[^>]*\shref=")[^"]*(")/g, (_, a, b) => a + escAttrValue(g.favicon) + b);
+  }
+  if (g.name) {
+    out = out.replace(/(<div id="loader-name" data-name=")[^"]*(")/, (_, a, b) => a + escAttrValue(g.name) + b);
+  }
+  return out;
+}
+
+// Fetch the pages fresh from GitHub (not the possibly-cached live site) so we
+// never commit back stale page code; only pages whose tags changed are returned.
+async function buildPatchedPages(g) {
+  const cfg = window.RGR_CONFIG || {};
+  const out = {};
+  for (const path of STATIC_PAGES) {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${cfg.repo}/contents/${path}?ref=${cfg.branch || 'main'}`, {
+        headers: { Accept: 'application/vnd.github.raw' },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const html = await res.text();
+      const patched = patchPageMeta(html, g);
+      if (patched !== html) out[path] = patched;
+    } catch (err) {
+      console.warn(`SEO tags not updated in ${path}:`, err);
+    }
+  }
+  return out;
+}
+
 export async function saveSiteData() {
   if (saveInFlight) return { success: false, error: 'Save already in progress' };
   if (dirtyFiles.size === 0) return { success: true, message: 'Nothing to save' };
@@ -182,6 +246,12 @@ export async function saveSiteData() {
     // Always include content.json if any project changed (projectCards sync)
     if (Object.keys(files).some(k => k.startsWith('projects/'))) {
       files['content.json'] = JSON.stringify(state.global, null, 2);
+    }
+
+    // Write title / social-preview / favicon / loader name into the static
+    // pages, where link previews and search engines read them.
+    if (files['content.json']) {
+      Object.assign(files, await buildPatchedPages(state.global));
     }
 
     if (Object.keys(files).length === 0) {

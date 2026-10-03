@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Run Girl Run</title>
+<meta name="description" content="3D character animation out of Toronto. Run Girl Run brings ideas to life through craft, curiosity, and a love for storytelling.">
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://rungirlrun.studio/">
@@ -29,6 +30,7 @@
 <header id="hero">
   <p class="hero-role" id="hero-role"></p>
   <h1 class="hero-name" id="hero-name"></h1>
+  <p class="hero-avail" id="hero-avail" style="display:none"><span class="avail-dot"></span><span id="avail-text"></span></p>
 </header>
 
 <!-- REEL -->
@@ -36,73 +38,45 @@
   <div id="reel-embed"></div>
 </section>
 
-<!-- WORK -->
-<section id="work">
-  <h2 class="section-title">Work</h2>
-  <div class="filters" id="work-filters"></div>
-  <div class="work-grid" id="work-grid"></div>
-</section>
-
-<!-- PROJECT DETAIL -->
-<section id="project-detail" style="display:none">
-  <div class="project-back-bar">
-    <button id="project-back" class="back-btn">&larr; Back to Work</button>
-  </div>
-  <div id="project-blocks"></div>
-  <button id="project-back-bottom" class="back-btn back-btn-bottom">&larr; Back to Work</button>
-</section>
-
-<!-- ABOUT -->
-<section id="about">
-  <h2 class="section-title">About</h2>
-  <div id="about-blocks"></div>
-</section>
+<!-- WORK: the full site has the projects -->
+<div class="view-work-wrap">
+  <a class="view-work-btn" href="index.html?desktop=true"><span data-site-text="viewWork">View work</span> <i class="ph-fill ph-arrow-right"></i></a>
+</div>
 
 <!-- CONTACT -->
 <section id="contact">
   <div id="ct-bg-video" class="ct-bg-video"></div>
   <div class="ct-content">
     <h2 class="section-title contact-title" id="ct-title"></h2>
-  <p class="contact-sub" id="ct-sub"></p>
-  <div class="contact-email-block">
-    <p class="contact-label" id="ct-email-label"></p>
-    <a id="ct-email-link" href="#" class="contact-email"></a>
-  </div>
-  <div class="contact-social-block">
-    <p class="contact-label" id="ct-social-label"></p>
-    <div class="contact-icons" id="ct-icons"></div>
-  </div>
-  <div id="ct-resume-wrap" class="contact-resume-block" style="display:none">
-    <p class="contact-label">Credentials</p>
-    <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="contact-resume-link">
-      <i class="ph-fill ph-file-pdf"></i>
-      View Resume
-      <i class="ph-fill ph-arrow-right"></i>
-    </a>
-  </div>
+    <p class="contact-sub" id="ct-sub"></p>
+    <div class="contact-email-block">
+      <p class="contact-label" id="ct-email-label"></p>
+      <a id="ct-email-link" href="#" class="contact-email"></a>
+    </div>
+    <div class="contact-social-block">
+      <p class="contact-label" id="ct-social-label"></p>
+      <div class="contact-icons" id="ct-icons"></div>
+    </div>
+    <div id="ct-resume-wrap" class="contact-resume-block" style="display:none">
+      <p class="contact-label" id="ct-resume-label">Credentials</p>
+      <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="contact-resume-link">
+        <i class="ph-fill ph-file-pdf"></i>
+        <span data-site-text="resumeLink">View Resume</span>
+        <i class="ph-fill ph-arrow-right"></i>
+      </a>
+    </div>
   </div>
 </section>
 
-<!-- REEL LIGHTBOX -->
-<div id="reel-lightbox" class="reel-lightbox">
-  <div id="rl-backdrop" class="rl-backdrop"></div>
-  <div class="rl-inner">
-    <div class="rl-top">
-      <span class="rl-label">Demo Reel</span>
-      <button id="rl-close" class="rl-close">&#x2715;</button>
-    </div>
-    <div id="rl-frame" class="rl-frame"></div>
-  </div>
-</div>
-
-<button id="back-to-top" class="back-to-top" aria-label="Back to top">&uarr;</button>
-
 <footer id="footer">
-  <span id="footer-name"></span>
-  <span class="footer-dot"></span>
-  <span id="footer-loc"></span>
-  <a href="index.html?desktop=true" class="desktop-link">View Desktop Site</a>
+  <span data-site-text="footer">© Run Girl Run</span>
+  <button class="legal-trigger" onclick="openLegalModal()" data-site-text="legalLink">Privacy &amp; Legal</button>
 </footer>
+
+<!-- Legal Modal -->
+<div id="legal-modal" onclick="if(event.target===this)closeLegalModal()">
+  <div id="legal-card"></div>
+</div>
 
 <script src="site-config.js"></script>
 <script type="module" src="src/display/mobile.js"></script>

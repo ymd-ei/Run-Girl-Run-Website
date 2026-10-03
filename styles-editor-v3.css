@@ -432,3 +432,36 @@ select.v3-f { cursor: pointer; }
   #v3-main { grid-template-columns: 200px 1fr; }
   #v3-inspector { display: none; }
 }
+
+/* ── Rail: external link (Modelling editor) ── */
+a.v3-nav-item { text-decoration: none; }
+.v3-nav-item .v3-nav-ext { margin-left: auto; font-size: 11px; }
+
+/* ── Insert reference ({shortcut}) menu ── */
+.v3-ref-wrap { position: relative; }
+.v3-ref-btn { width: auto; padding: 0 10px; gap: 6px; display: flex; font-size: 12.5px; }
+.v3-ref-menu {
+  display: none; position: absolute; top: 36px; left: 0; z-index: 50;
+  width: 340px; max-height: 60vh; overflow: auto; padding: 6px;
+  background: var(--v3-panel); border: 1px solid var(--v3-line); border-radius: var(--v3-radius);
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+}
+.v3-ref-menu.show { display: block; }
+.v3-ref-group {
+  font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--v3-muted); padding: 8px 8px 4px;
+}
+.v3-ref-opt {
+  width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 6px 8px;
+  background: none; border: 0; border-radius: 6px; color: var(--v3-text);
+  text-align: left; cursor: pointer; font: inherit; font-size: 12.5px;
+}
+.v3-ref-opt:hover { background: var(--v3-panel-2); }
+.v3-ref-opt code, .v3-ref-row code { color: var(--v3-accent-2); font-size: 12px; white-space: nowrap; }
+.v3-ref-opt span { color: var(--v3-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* ── References list (Site settings) ── */
+.v3-ref-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12.5px; }
+.v3-ref-val { flex: 1; min-width: 0; color: var(--v3-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v3-ref-warn .v3-ref-val, .v3-ref-warn code { color: var(--v3-warn); }
+#v3-references .v3-ref-group { padding-left: 0; }

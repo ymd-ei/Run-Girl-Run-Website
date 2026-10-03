@@ -474,8 +474,8 @@
     <!-- ── Brand ── -->
     <div class="panel active" id="panel-brand">
       <p class="page-title">Brand</p>
-      <p class="page-subtitle">The site name shown in the splash header, contact page, and browser tab.</p>
-      <input class="brand-big" id="brand-field" type="text" spellcheck="false" placeholder="Your Name or Studio">
+      <p class="page-subtitle">The site name, email, résumé and social links are shared with the main site. Edit them in <a href="../editor.html" style="color:var(--accent)">Site settings in the main editor</a>.</p>
+      <div class="brand-big" id="brand-field" style="cursor:default"></div>
     </div>
 
     <!-- ── Profile ── -->
@@ -498,21 +498,7 @@
         </div>
       </div>
 
-      <div class="section-head"><div class="section-title">Contact</div></div>
-      <div class="field-group">
-        <div class="field"><label class="field-label" for="email-field">Email</label>
-          <input class="field-input" id="email-field" type="email" placeholder="hello@example.com" spellcheck="false"></div>
-        <div class="field"><label class="field-label" for="resume-field">Résumé</label>
-          <input class="field-input" id="resume-field" type="text" placeholder="media/resume.pdf" spellcheck="false">
-          <button class="field-action" id="resume-pick-btn" title="Pick from media library">Pick</button></div>
-      </div>
-
-      <div class="section-head"><div class="section-title">Social Links</div></div>
-      <div class="field-group">
-        <div class="socials-header"><span>Platform</span><span>Handle</span><span>URL</span><span></span></div>
-        <div id="socials-list"></div>
-      </div>
-      <button class="btn" style="margin-top:8px" id="add-social-btn">+ Add Link</button>
+      <div class="section-head"><div class="section-title">Contact &amp; social links</div><div class="section-desc">Shared with the main site — edit them in <a href="../editor.html" style="color:var(--accent)">Site settings</a>.</div></div>
     </div>
 
     <!-- ── Work (dynamic) ── -->
@@ -536,13 +522,14 @@
   import { HalftonePass }   from 'three/addons/postprocessing/HalftonePass.js';
   import { OutputPass }     from 'three/addons/postprocessing/OutputPass.js';
   import { loadModel, applyCamera, applyMaterialMode, fitDolly, CAMERA_DEFAULTS, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
-  import { mediaUrl, DEFAULTS } from './site-data.js';
+  import { mediaUrl, DEFAULTS, loadSiteSettings } from './site-data.js';
   import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
   import { openMediaPicker } from '../src/editor-v3/media.js';
 
   // ── State ───────────────────────────────────────────────────────────────
   let state    = null;
   let activeId = 'brand';     // 'brand' | 'profile' | work.id
+  let siteName = 'Run Girl Run'; // from the main site's Site settings
   let dragSrc  = null;
   let dirty    = false;
   let authed   = false;
@@ -940,7 +927,7 @@
     wrap.innerHTML = `
       <div class="cam-stage">
         <div class="cam-chrome">
-          <div class="cc-brand">${esc(state.brand || 'Run Girl Run')}</div>
+          <div class="cc-brand">${esc(siteName)}</div>
           <div class="cc-nav">Home&ensp;Contact&ensp;Works</div>
           <div class="cc-geo">LOC&nbsp;&nbsp;TOKYO, JP<br>LAT&nbsp;&nbsp;35.6762° N<br>LNG&nbsp;&nbsp;139.6503° E</div>
           <div class="cc-splash">
@@ -1078,30 +1065,18 @@
   }
 
   // ── Brand + Profile wiring ──────────────────────────────────────────────────
-  function bindBrand() {
-    const f = $('brand-field');
-    f.value = state.brand || '';
-    $('topbar-brand').innerHTML = `${esc(state.brand || 'Untitled')} <span>/ Modelling</span> <b>Editor</b>`;
-    f.addEventListener('input', () => {
-      state.brand = f.value;
-      $('topbar-brand').innerHTML = `${esc(f.value || 'Untitled')} <span>/ Modelling</span> <b>Editor</b>`;
-      document.title = 'Editor — ' + (f.value || 'Modelling');
-      markDirty();
-    });
+  // Name comes from the main site's Site settings (read-only here).
+  async function bindBrand() {
+    const site = await loadSiteSettings();
+    siteName = (site && site.name) || 'Run Girl Run';
+    $('brand-field').textContent = siteName;
+    $('topbar-brand').innerHTML = `${esc(siteName)} <span>/ Modelling</span> <b>Editor</b>`;
   }
 
   function bindProfile() {
     const p = state.profile;
     $('bio-field').value = p.bio || '';
-    $('email-field').value = p.email || '';
-    $('resume-field').value = p.resumeUrl || '';
     $('bio-field').addEventListener('input', e => { p.bio = e.target.value; markDirty(); });
-    $('email-field').addEventListener('input', e => { p.email = e.target.value; markDirty(); });
-    $('resume-field').addEventListener('input', e => { p.resumeUrl = e.target.value; markDirty(); });
-    $('resume-pick-btn').addEventListener('click', () => {
-      if (!authed) { toast('Log in to manage media.', true); return; }
-      openMediaPicker(path => { if (!path) return; p.resumeUrl = path; $('resume-field').value = path; markDirty(); });
-    });
 
     // Header image
     const slot = $('hero-slot'), img = $('hero-img'), rm = $('hero-rm');
@@ -1116,29 +1091,6 @@
       openMediaPicker(path => { if (!path) return; p.headerImage = path; paintHero(); markDirty(); });
     });
     rm.addEventListener('click', e => { e.stopPropagation(); p.headerImage = ''; paintHero(); markDirty(); });
-
-    renderSocials();
-    $('add-social-btn').addEventListener('click', () => {
-      p.socials = p.socials || []; p.socials.push({ label: '', handle: '', url: '' });
-      markDirty(); renderSocials();
-      $('socials-list').lastElementChild?.querySelector('input')?.focus();
-    });
-  }
-
-  function renderSocials() {
-    const list = $('socials-list'); list.innerHTML = '';
-    (state.profile.socials || []).forEach((s, i) => {
-      const row = document.createElement('div'); row.className = 'social-row';
-      ['label', 'handle', 'url'].forEach((f, fi) => {
-        const inp = document.createElement('input'); inp.className = 'field-input';
-        inp.value = s[f] || ''; inp.placeholder = ['Platform', 'Handle', 'URL'][fi]; inp.spellcheck = false;
-        inp.addEventListener('input', () => { s[f] = inp.value; markDirty(); });
-        row.appendChild(inp);
-      });
-      const rm = document.createElement('button'); rm.className = 'social-rm'; rm.innerHTML = '✕';
-      rm.addEventListener('click', () => { state.profile.socials.splice(i, 1); markDirty(); renderSocials(); });
-      row.appendChild(rm); list.appendChild(row);
-    });
   }
 
   // ── Init ────────────────────────────────────────────────────────────────

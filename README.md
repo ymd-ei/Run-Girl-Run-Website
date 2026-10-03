@@ -17,8 +17,11 @@ the real site in an iframe). The original form-based editor is kept as a fallbac
 ## Project Structure
 
 ```
-index.html          → Desktop homepage (redirects mobile to mobile.html)
-mobile.html         → Mobile layout
+index.html          → Desktop homepage (redirects phones to mobile.html, except ?project= links)
+mobile.html         → Slim mobile page: reel, contact, "View work" link to the full site
+site-config.js      → Shared settings (backend URL, repo, branch) for every page
+editor-auth.js      → Shared editor sign-in capture (main, v1 and modelling editors)
+_config.yml         → Files GitHub Pages should not publish
 editor.html         → WYSIWYG editor (edits the live site in an iframe; GitHub OAuth to save)
 editor-v1.html      → Legacy form-based editor (fallback)
 content.json        → Site content (hero, contact, project order)
@@ -29,6 +32,15 @@ styles-main.css     → Desktop styles
 styles-mobile.css   → Mobile styles
 styles-editor.css   → Editor styles
 ```
+
+## Site settings & shortcuts
+
+Site-wide values (name, email, social links, branding, SEO, theme, filters, availability badge,
+site text, Privacy & Legal) live in **Site settings** in the editor. Any text can use
+`{shortcuts}` such as `{name}`, `{email}`, `{year}`, `{instagram}` or `{project:<id>}`; they
+resolve on the live site (`src/utils/refs.js`) and stay as-is inside the editors. Saving also
+writes the title / social-preview tags into `index.html` and `mobile.html` so link previews and
+search engines see them. The modelling site reads name, email, résumé and socials from here too.
 
 ## Editor Backend
 

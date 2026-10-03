@@ -1,8 +1,11 @@
 // site-data.js — single source of truth for the modelling portfolio.
 //
-// content.json (committed by editor.html via the backend) holds { brand, profile,
-// works[] }. Every viewer page and the editor load it through loadContent() so
-// there is exactly one place that defines the data shape and path handling.
+// content.json (committed by editor.html via the backend) holds { profile, works[] }.
+// Every viewer page and the editor load it through loadContent() so there is
+// exactly one place that defines the data shape and path handling.
+//
+// Name, email, résumé and social links are NOT stored here: they come from the
+// main site's Site settings (../content.json) so both sites stay in sync.
 //
 // Paths inside content.json are stored repo-relative (e.g. "media/models/x.glb",
 // "media/foo.png") so they match what the media backend returns. Pages live in
@@ -13,15 +16,11 @@
 export const DEFAULTS = {
   brand: 'Run Girl Run',
   profile: {
-    bio: '3D artist & creative director based in Tokyo. Specialising in character art, game assets, and real-time visuals.',
-    email: 'hello@rungirl.run',
+    bio: '',
+    email: '',
     resumeUrl: '',
     headerImage: '',
-    socials: [
-      { label: 'Instagram', handle: '@rungirl.run', url: '#' },
-      { label: 'ArtStation', handle: 'artstation.com/rungirl', url: '#' },
-      { label: 'Twitter', handle: '@rungirl_run', url: '#' },
-    ],
+    socials: [],
   },
   works: [
     { id: 'akali', title: 'Akali', model: 'media/models/AKALI.glb',
@@ -41,13 +40,41 @@ export function mediaUrl(p) {
   return '../' + p;
 }
 
+async function fetchJson(url) {
+  try {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (res.ok) return await res.json();
+  } catch (_) { /* caller falls back */ }
+  return null;
+}
+
+/** The main site's Site settings (name, email, résumé, social links), or null. */
+export async function loadSiteSettings() {
+  return fetchJson('../content.json');
+}
+
 /** Fetch + normalise content.json. Always resolves (falls back to DEFAULTS). */
 export async function loadContent() {
-  try {
-    const res = await fetch('content.json', { cache: 'no-cache' });
-    if (res.ok) return normalize(await res.json());
-  } catch (_) { /* fall through to defaults */ }
-  return normalize(DEFAULTS);
+  const [own, site] = await Promise.all([fetchJson('content.json'), loadSiteSettings()]);
+  return withSiteSettings(normalize(own || DEFAULTS), site);
+}
+
+// Overlay the shared identity/contact values from the main site.
+export function withSiteSettings(content, site) {
+  if (!site) return content;
+  const c = site.contact || {};
+  const email = c.email || content.profile.email;
+  content.brand = site.name || content.brand;
+  content.profile = {
+    ...content.profile,
+    email,
+    resumeUrl: c.resume || content.profile.resumeUrl,
+    socials: (c.links || [])
+      .map(l => ({ ...l, url: String(l.url || '').replace(/\{email\}/g, email) }))
+      .filter(l => l.url && !l.url.startsWith('mailto:'))
+      .map(l => ({ label: l.label || '', handle: l.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), url: l.url }))
+  };
+  return content;
 }
 
 /** Fill in missing fields so callers can rely on the shape. */

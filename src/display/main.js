@@ -19,6 +19,9 @@ import { startTicker } from '../utils/svg.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
+import { setRefContext } from '../utils/refs.js';
+import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
+import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 
 let bgPlayer = null;
 let contactTickersStarted = false;
@@ -61,24 +64,6 @@ function ensureCanvasEditStyles() {
 let lightboxMode = 'reel';
 const projectCache = new Map();
 let activeBeforeAfter = null;
-const ENABLE_LOG_STACK = false;
-const ENABLE_CURSOR_RIPPLE = false;
-const CUR_TAIL_MAX_POINTS = 9;
-const CUR_TAIL_SAMPLE_DISTANCE = 45;
-const CUR_TAIL_SAMPLE_INTERVAL_MS = 120;
-const CUR_TAIL_DECAY_MS = 900;
-const CUR_TAIL_DECAY_CASCADE = 0.78;
-
-let curTailSvg = null;
-let curTailLine = null;
-let curTailDots = [];
-let curTailPoints = [];
-let curTailLastSample = null;
-let curTailLastSampleAt = 0;
-let curTailLastMoveAt = 0;
-let curTailHoverEndAt = 0;
-const CUR_TAIL_HOVER_COOLDOWN_MS = 400;
-let curTailRaf = null;
 let curWorkBadge = null;
 let curWorkBadgeDismissed = false;
 let curWorkBadgeDismissTimer = null;
@@ -89,12 +74,13 @@ function ensureCursorWorkBadge() {
 
   curWorkBadge = document.createElement('div');
   curWorkBadge.id = 'cur-work-badge';
-  curWorkBadge.textContent = 'Available for work';
+  curWorkBadge.textContent = availability(globalState).text;
   document.body.appendChild(curWorkBadge);
   return curWorkBadge;
 }
 
 function updateCursorWorkBadge(x, y, visible = true) {
+  if (!availability(globalState).enabled) return;
   const badge = ensureCursorWorkBadge();
   if (!badge) return;
   if (curWorkBadgeDismissed) return;
@@ -119,9 +105,11 @@ function hideCursorWorkBadge() {
 
 const LIKES_API = `${window.RGR_CONFIG?.apiBase || ''}/api/likes`;
 
-function getVisitorId() {
+// The anonymous like ID is only created when a visitor likes something
+// (create=true); viewing a project just reads an existing one.
+function getVisitorId(create = false) {
   let vid = localStorage.getItem('rgr_vid');
-  if (!vid) {
+  if (!vid && create) {
     vid = crypto.randomUUID();
     localStorage.setItem('rgr_vid', vid);
   }
@@ -224,14 +212,6 @@ function resumeMediaIn(root) {
   });
 }
 
-function hideLogStackIfDisabled() {
-  if (ENABLE_LOG_STACK) return;
-  const stack = document.getElementById('log-stack');
-  if (!stack) return;
-  stack.style.display = 'none';
-  stack.style.height = '0px';
-}
-
 function setNativeCursorEnabled(enabled) {
   document.body.classList.toggle('native-cursor', !!enabled);
 }
@@ -244,154 +224,6 @@ function syncCursorForFullscreen() {
   const reelPopupOpen = document.body.classList.contains('reel-popup-open');
   const fullscreenActive = !!(document.fullscreenElement || document.webkitFullscreenElement);
   setNativeCursorEnabled(reelPopupOpen || fullscreenActive);
-}
-
-function ensureCursorTail() {
-  if (curTailSvg) return;
-
-  const ns = 'http://www.w3.org/2000/svg';
-  curTailSvg = document.createElementNS(ns, 'svg');
-  curTailSvg.setAttribute('id', 'cur-tail');
-  curTailSvg.style.opacity = '0.5';
-  curTailSvg.setAttribute('aria-hidden', 'true');
-  curTailSvg.setAttribute('width', String(window.innerWidth));
-  curTailSvg.setAttribute('height', String(window.innerHeight));
-  curTailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-
-  curTailDots = [];
-  for (let i = 0; i < CUR_TAIL_MAX_POINTS; i++) {
-    const dot = document.createElementNS(ns, 'circle');
-    dot.setAttribute('class', 'cur-tail-dot');
-    dot.setAttribute('r', '2.4');
-    curTailSvg.appendChild(dot);
-    curTailDots.push(dot);
-  }
-
-  document.body.appendChild(curTailSvg);
-  window.addEventListener('resize', syncCursorTailViewport, { passive: true });
-}
-
-function syncCursorTailViewport() {
-  if (!curTailSvg) return;
-  curTailSvg.setAttribute('width', String(window.innerWidth));
-  curTailSvg.setAttribute('height', String(window.innerHeight));
-  curTailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-}
-
-function resetCursorTail() {
-  if (curTailRaf) {
-    cancelAnimationFrame(curTailRaf);
-    curTailRaf = null;
-  }
-
-  curTailPoints = [];
-  curTailLastSample = null;
-  curTailLastSampleAt = 0;
-  curTailLastMoveAt = 0;
-  curTailDots.forEach(dot => {
-    dot.setAttribute('cx', '-9999');
-    dot.setAttribute('cy', '-9999');
-  });
-}
-
-function ensureCursorTailLoop() {
-  if (curTailRaf) return;
-
-  const tick = now => {
-    renderCursorTail(now);
-    if (curTailPoints.length) {
-      curTailRaf = requestAnimationFrame(tick);
-    } else {
-      curTailRaf = null;
-    }
-  };
-
-  curTailRaf = requestAnimationFrame(tick);
-}
-
-function renderCursorTail(now = performance.now()) {
-  if (!curTailDots.length) return;
-  if (!curTailPoints.length) {
-    curTailDots.forEach(dot => {
-      dot.setAttribute('cx', '-9999');
-      dot.setAttribute('cy', '-9999');
-    });
-    return;
-  }
-
-  const idleMs = Math.max(0, now - curTailLastMoveAt);
-  const decayProgress = clamp(idleMs / CUR_TAIL_DECAY_MS, 0, 1);
-  const cascadeWindow = Math.max(0.01, 1 - CUR_TAIL_DECAY_CASCADE);
-  const len = curTailPoints.length;
-
-  let headLife = 1;
-
-  for (let i = 0; i < curTailDots.length; i++) {
-    const dot = curTailDots[i];
-    const p = curTailPoints[i];
-    if (!p) {
-      dot.setAttribute('cx', '-9999');
-      dot.setAttribute('cy', '-9999');
-      continue;
-    }
-
-    dot.setAttribute('cx', String(p.x));
-    dot.setAttribute('cy', String(p.y));
-
-    const t = i / (CUR_TAIL_MAX_POINTS - 1 || 1);
-    const tailOrder = len <= 1 ? 0 : i / (len - 1);
-    const startAt = (1 - tailOrder) * CUR_TAIL_DECAY_CASCADE;
-    const pointDecay = clamp((decayProgress - startAt) / cascadeWindow, 0, 1);
-    const life = 1 - pointDecay;
-
-    if (i === 0) headLife = life;
-
-    const age = now - p.t;
-    const radius = 5 + (age / 300) * 18;
-    const alpha = life * Math.max(0, 1 - age / 1400);
-    dot.style.opacity = alpha.toFixed(3);
-    dot.setAttribute('r', radius.toFixed(2));
-  }
-
-  if (decayProgress >= 1) {
-    curTailPoints = [];
-    curTailDots.forEach(dot => {
-      dot.setAttribute('cx', '-9999');
-      dot.setAttribute('cy', '-9999');
-    });
-  }
-}
-
-function updateCursorTail(x, y) {
-  const now = performance.now();
-  ensureCursorTail();
-  ensureCursorTailLoop();
-
-  if (!curTailPoints.length) {
-    curTailPoints = [{ x, y, t: now }];
-    curTailLastSample = { x, y };
-    curTailLastSampleAt = now;
-    curTailLastMoveAt = now;
-    renderCursorTail(now);
-    return;
-  }
-
-  const dx = x - curTailLastSample.x;
-  const dy = y - curTailLastSample.y;
-  const dist = Math.hypot(dx, dy);
-  const elapsed = now - curTailLastSampleAt;
-  curTailLastMoveAt = now;
-
-  if (dist >= CUR_TAIL_SAMPLE_DISTANCE && elapsed >= CUR_TAIL_SAMPLE_INTERVAL_MS * clamp(CUR_TAIL_SAMPLE_DISTANCE / dist, 1, 12)) {
-    curTailPoints.unshift({ x, y, t: now });
-    if (curTailPoints.length > CUR_TAIL_MAX_POINTS) curTailPoints.length = CUR_TAIL_MAX_POINTS;
-    curTailLastSample = { x, y };
-    curTailLastSampleAt = now;
-  } else {
-    curTailPoints[0] = { x, y, t: now };
-  }
-
-  renderCursorTail(now);
 }
 
 /**
@@ -417,7 +249,7 @@ function runLoaderAnimation() {
   nameEl.innerHTML = '';
 
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const nameText = 'Run Girl Run';
+  const nameText = nameEl.dataset.name || document.title;
 
   function runLoaderName() {
     nameEl.innerHTML = nameText
@@ -517,13 +349,15 @@ function runLoaderAnimation() {
 export async function bootstrap() {
   try {
     runLoaderAnimation();
-    hideLogStackIfDisabled();
+    initLegalModal();
 
     // Set up bridge immediately to avoid missing the editor's first preview push.
     setupEditorPreviewBridge();
 
     // 1. Load data
     await loadAllData();
+    setRefContext(globalState, projects);
+    applySiteChrome();
 
     // 2. Apply theme
     applyTheme(globalState.theme);
@@ -558,9 +392,6 @@ export async function bootstrap() {
       projects.push(...origProjects);
     }
 
-    // 5b. Render lower-right updates stack from log.json without blocking first paint.
-    if (ENABLE_LOG_STACK) void loadLogStack();
-
     // 6. Render about panel
     renderAboutPanel();
 
@@ -569,6 +400,14 @@ export async function bootstrap() {
 
     // 8. Set up event listeners
     setupEventListeners();
+
+    // {project:id} shortcut links open the project in place instead of reloading.
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a.ref-link[href^="?project="]');
+      if (!a) return;
+      e.preventDefault();
+      window.display?.openProject?.(new URLSearchParams(a.getAttribute('href')).get('project'));
+    });
 
     // Apply any queued navigation state received before controls were ready.
     if (pendingPreviewNav) {
@@ -702,6 +541,26 @@ async function loadAllData() {
 }
 
 /**
+ * Site-wide chrome from Site settings: editable text, availability badge,
+ * Privacy & Legal popup.
+ */
+function applySiteChrome() {
+  applySiteText(globalState);
+
+  const avail = availability(globalState);
+  const sh = document.getElementById('sh');
+  if (sh) sh.style.display = avail.enabled ? '' : 'none';
+  const availText = document.getElementById('avail-text');
+  if (availText) availText.textContent = avail.text;
+  if (curWorkBadge) {
+    curWorkBadge.textContent = avail.text;
+    if (!avail.enabled) curWorkBadge.classList.remove('is-visible');
+  }
+
+  renderLegal(globalState, document.getElementById('legal-card'));
+}
+
+/**
  * Update document title and favicon
  */
 function updateDocumentMeta() {
@@ -745,13 +604,14 @@ function renderHero() {
   if (globalState.reel && globalState.reel.url) {
     const url = globalState.reel.url;
     if (globalState.reel.type === 'youtube') {
-        reelEl.innerHTML = `<iframe title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe title="Demo reel" src="${privacyEmbedUrl(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
     } else if (globalState.reel.type === 'vimeo') {
-        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
+        reelEl.innerHTML = `<iframe id="bg-reel-iframe" title="Demo reel" src="${privacyEmbedUrl(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
       // Try to initialize Vimeo player if available
-      if (window.Vimeo) {
-        bgPlayer = new window.Vimeo.Player(document.getElementById('bg-reel-iframe'));
-      }
+      loadVimeoApi().then(Vimeo => {
+        const iframe = document.getElementById('bg-reel-iframe');
+        if (Vimeo && iframe) bgPlayer = new Vimeo.Player(iframe);
+      });
     } else if (globalState.reel.type === 'video') {
       reelEl.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${encodeURI(url)}"></video><div id="reel-block"></div>`;
       const v = reelEl.querySelector('video');
@@ -882,6 +742,8 @@ function renderContactSection() {
   if (ctIcons) ctIcons.innerHTML = ctData.icons;
 
   // Update resume link
+  const ctResumeLabel = document.getElementById('ct-resume-label');
+  if (ctResumeLabel) ctResumeLabel.textContent = globalState.contactPanel?.resumeLabel || 'Credentials';
   const ctResumeWrap = document.getElementById('ct-resume-wrap');
   if (ctResumeWrap) {
     if (globalState.contact?.resume) {
@@ -908,7 +770,7 @@ function renderContactSection() {
 
     if (vid && vid.url) {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
-        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${vid.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${privacyEmbedUrl(vid.url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
         ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${encodeURI(vid.url)}"></video>`;
         const v = ctBgVideo.querySelector('video');
@@ -962,183 +824,6 @@ function runWhenLayoutStable(task) {
   window.addEventListener('load', run, { once: true });
 }
 
-async function loadLogStack() {
-  const inner = document.getElementById('ls-inner');
-  const stack = document.getElementById('log-stack');
-  if (!inner || !stack) return;
-  if (!ENABLE_LOG_STACK) {
-    stack.style.display = 'none';
-    stack.style.height = '0px';
-    return;
-  }
-
-  try {
-    const response = await fetch('log.json');
-    if (!response.ok) throw new Error('Failed to load log.json');
-    const entries = await response.json();
-
-    if (!Array.isArray(entries) || entries.length === 0) {
-      inner.innerHTML = '';
-      stack.style.height = '0px';
-      return;
-    }
-
-    inner.innerHTML = '';
-
-    const SHOW = 8;
-    let rotateIdx = entries.length - 1;
-    const recent = entries.slice(-SHOW);
-    const logSpanGroups = [];
-
-    function buildEntry(text, opacity) {
-      const span = document.createElement('span');
-      span.className = 'ls-entry';
-      span.dataset.opacity = opacity;
-      span.innerHTML = String(text || '')
-        .split('')
-        .map(ch =>
-          ch === ' '
-            ? '<span class="sc-char" data-ch=" " style="opacity:0">&nbsp;</span>'
-            : `<span class="sc-char" data-ch="${ch}" style="opacity:0">${ch}</span>`
-        )
-        .join('');
-      return span;
-    }
-
-    function scrambleEntry(entry, delay) {
-      const spans = Array.from(entry.querySelectorAll('.sc-char'));
-      logSpanGroups.push(spans);
-
-      const revealWindowMs = 550;
-      const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
-      const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
-      let revealIndex = 0;
-
-      spans.forEach(span => {
-        const ch = span.dataset.ch;
-        const isSpace = ch === ' ';
-        const charPool = isSpace ? [' '] : pool(ch);
-        let tick = 0;
-        const cycles = 6;
-        const staggerDelay = isSpace ? revealIndex * perCharDelay : revealIndex++ * perCharDelay;
-
-        setTimeout(() => {
-          span.style.opacity = '1';
-          if (isSpace) {
-            span.innerHTML = '&nbsp;';
-            return;
-          }
-
-          function cycle() {
-            if (tick < cycles) {
-              const overshoot = Math.max(0, tick - (cycles - 3));
-              span.textContent = charPool[tick % charPool.length];
-              tick++;
-              setTimeout(cycle, 90 * (1 + overshoot * 1.4));
-            } else {
-              span.textContent = ch;
-            }
-          }
-
-          cycle();
-        }, delay + staggerDelay);
-      });
-
-      return spans;
-    }
-
-    recent.forEach((entry, i) => {
-      const opacity = 0.1 + (i / (recent.length - 1 || 1)) * 0.9;
-      const row = buildEntry(entry.text, opacity);
-      inner.appendChild(row);
-      const delay = 1400 + i * 120;
-      setTimeout(() => {
-        row.style.opacity = opacity;
-        scrambleEntry(row, 0);
-      }, delay);
-    });
-
-    setTimeout(() => {
-      runWhenLayoutStable(() => {
-        stack.style.height = inner.offsetHeight + 'px';
-      });
-    }, 1400 + recent.length * 120 + 500);
-
-    const logIdleStart = 1400 + recent.length * 120 + 2000;
-    setTimeout(() => scheduleIdle(logSpanGroups), logIdleStart);
-
-    if (entries.length > 1) {
-      function rotateStack() {
-        rotateIdx = (rotateIdx + 1) % entries.length;
-        const newEntry = buildEntry(entries[rotateIdx].text, 0);
-        newEntry.style.opacity = '0';
-        inner.appendChild(newEntry);
-
-        runWhenLayoutStable(() => {
-          const topEntry = inner.querySelector('.ls-entry');
-          const innerStyles = window.getComputedStyle(inner);
-          const gap = parseFloat(innerStyles.rowGap || innerStyles.gap || '0') || 0;
-          const shiftRaw = topEntry ? topEntry.getBoundingClientRect().height + gap : 18;
-          const shift = Math.max(18, Math.round(shiftRaw));
-
-          let finalized = false;
-          let cleanupFallback = null;
-
-          const finalizeRotation = () => {
-            if (finalized) return;
-            finalized = true;
-            if (cleanupFallback) clearTimeout(cleanupFallback);
-
-            const top = inner.querySelector('.ls-entry');
-            if (top) top.remove();
-            inner.style.transition = 'none';
-            inner.style.transform = 'translateY(0)';
-            requestAnimationFrame(() => {
-              inner.style.transition = '';
-            });
-          };
-
-          const onTransformEnd = event => {
-            if (event.target !== inner || event.propertyName !== 'transform') return;
-            inner.removeEventListener('transitionend', onTransformEnd);
-            finalizeRotation();
-          };
-
-          inner.addEventListener('transitionend', onTransformEnd);
-          inner.style.transform = `translateY(-${shift}px)`;
-
-          setTimeout(() => {
-            newEntry.style.opacity = '1';
-            const allEntries = Array.from(inner.querySelectorAll('.ls-entry'));
-            const top = allEntries[0];
-            if (top) top.style.opacity = '0';
-
-            allEntries.slice(1).forEach((item, i) => {
-              item.dataset.opacity = 0.1 + (i / (SHOW - 1)) * 0.9;
-              item.style.opacity = item.dataset.opacity;
-            });
-
-            const spans = scrambleEntry(newEntry, 0);
-            logSpanGroups.push(spans);
-            if (logSpanGroups.length > SHOW) logSpanGroups.shift();
-          }, 600);
-
-          cleanupFallback = setTimeout(() => {
-            inner.removeEventListener('transitionend', onTransformEnd);
-            finalizeRotation();
-          }, 1500);
-        });
-
-        setTimeout(rotateStack, 12000);
-      }
-
-      setTimeout(rotateStack, logIdleStart + 12000);
-    }
-  } catch (error) {
-    console.warn('Could not load log stack:', error);
-  }
-}
-
 /**
  * Update like button UI
  */
@@ -1169,7 +854,7 @@ async function fetchLikeCount(id) {
 
   try {
     const vid = getVisitorId();
-    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}?vid=${encodeURIComponent(vid)}`);
+    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
     const data = await res.json();
     sessionStorage.setItem(cacheKey, JSON.stringify({ count: data.count, liked: data.liked }));
     updateLikeUI(data.count, data.liked);
@@ -1313,7 +998,7 @@ function setupEventListeners() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('project');
       if (!id) return;
-      const vid = getVisitorId();
+      const vid = getVisitorId(true);
       try {
         const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
           method: 'POST',
@@ -1351,10 +1036,10 @@ function setupEventListeners() {
         if (lightboxReel.type === 'video') {
           lbFrame.innerHTML = `<video id="lb-video" controls autoplay playsinline preload="auto" src="${src}" style="width:100%;height:100%;max-height:80vh;"></video>`;
         } else {
-          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+          lbFrame.innerHTML = `<iframe id="lb-iframe" title="Demo reel player" src="${privacyEmbedUrl(src)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
         }
       }
-      if (lbLabel) lbLabel.textContent = 'Demo Reel';
+      if (lbLabel) lbLabel.textContent = siteText(globalState, 'reelLabel');
       lightboxMode = 'reel';
 
       const lightbox = document.getElementById('lightbox');
@@ -1362,9 +1047,13 @@ function setupEventListeners() {
       setReelPopupCursorDisabled(true);
       setNativeCursorEnabled(true);
 
-      if (lightboxReel.type === 'vimeo' && window.Vimeo) {
-        const lbPlayer = new window.Vimeo.Player(document.getElementById('lb-iframe'));
-        lbPlayer.ready().then(() => lbPlayer.play().catch(() => {}));
+      if (lightboxReel.type === 'vimeo') {
+        loadVimeoApi().then(Vimeo => {
+          const iframe = document.getElementById('lb-iframe');
+          if (!Vimeo || !iframe) return;
+          const lbPlayer = new Vimeo.Player(iframe);
+          lbPlayer.ready().then(() => lbPlayer.play().catch(() => {}));
+        });
       }
     },
 
@@ -1378,7 +1067,7 @@ function setupEventListeners() {
         const lbFrame = document.getElementById('lb-frame');
         const lbLabel = document.getElementById('lb-label');
         if (lbFrame) lbFrame.innerHTML = '';
-        if (lbLabel) lbLabel.textContent = 'Demo Reel';
+        if (lbLabel) lbLabel.textContent = siteText(globalState, 'reelLabel');
         if (lightboxMode === 'reel' && bgPlayer) bgPlayer.play().catch(() => {});
         lightboxMode = 'reel';
       }, 400);
@@ -1418,7 +1107,7 @@ function setupEventListeners() {
         if (stage) stage.classList.add('contact-open');
         document.getElementById('ct-sliver')?.classList.add('open');
         // Slide UI elements left in sync — inline styles beat animation fills
-        const _uiEls = ['nav','ht','sh','log-stack','watch-reel-wrap'].map(id => document.getElementById(id)).filter(Boolean);
+        const _uiEls = ['nav','ht','sh','watch-reel-wrap'].map(id => document.getElementById(id)).filter(Boolean);
         _uiEls.forEach(el => { el.style.transition = 'transform .8s cubic-bezier(0.16,1,0.3,1)'; });
         requestAnimationFrame(() => { _uiEls.forEach(el => { el.style.transform = 'translateX(calc(-1 * var(--ct-panel-w)))'; }); });
         // No #bd needed — contact has its own full dark background
@@ -1431,7 +1120,7 @@ function setupEventListeners() {
         if (contact) contact.classList.remove('open');
         if (stage) stage.classList.remove('contact-open');
         document.getElementById('ct-sliver')?.classList.remove('open');
-        ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
+        ['nav','ht','sh','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
         const panel = document.getElementById('panel-' + name);
         const bd = document.getElementById('bd');
         if (panel) panel.classList.add('open');
@@ -1457,7 +1146,7 @@ function setupEventListeners() {
       if (contact) contact.classList.remove('open');
       if (stage) stage.classList.remove('contact-open');
       document.getElementById('ct-sliver')?.classList.remove('open');
-      ['nav','ht','sh','log-stack','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
+      ['nav','ht','sh','watch-reel-wrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.transform = ''; });
       if (bd) {
         bd.classList.remove('open');
         bd.classList.remove('project-open');
@@ -1531,7 +1220,6 @@ function setupEventListeners() {
         document.body.classList.contains('reel-popup-open');
 
       if (hiddenCursorMode) {
-        resetCursorTail();
         hideCursorWorkBadge();
         return;
       }
@@ -1539,7 +1227,6 @@ function setupEventListeners() {
       cur.style.left = e.clientX + 'px';
       cur.style.top = e.clientY + 'px';
       updateCursorWorkBadge(e.clientX, e.clientY, true);
-      if (ENABLE_CURSOR_RIPPLE && !document.body.classList.contains('ch') && (performance.now() - curTailHoverEndAt >= CUR_TAIL_HOVER_COOLDOWN_MS)) updateCursorTail(e.clientX, e.clientY);
     }, { passive: true });
 
     document.addEventListener('mouseleave', hideCursorWorkBadge, { passive: true });
@@ -1553,7 +1240,6 @@ function setupEventListeners() {
     document.addEventListener('mouseout', e => {
       if (isInteractive(e.target)) {
         document.body.classList.remove('ch');
-        curTailHoverEndAt = performance.now();
       }
     }, { passive: true });
   }
@@ -1638,19 +1324,22 @@ function setupEditorPreviewBridge() {
       projects.length = 0;
       projects.push(...(e.data.projects || []));
       projects.forEach(rememberProject);
+      setRefContext(globalState, projects);
 
       // Re-render everything
+      applySiteChrome();
       applyTheme(globalState.theme);
       updateDocumentMeta();
       renderHero();
       renderWorkSection();
       renderAboutPanel();
       renderContactSection();
-      if (ENABLE_LOG_STACK) loadLogStack();
     } else if (e.data.type === 'preview-nav') {
       // Messages can arrive before event handlers are fully initialized.
       pendingPreviewNav = e.data;
       applyPreviewNavigation(e.data);
+    } else if (e.data.type === 'canvas-insert-text') {
+      insertIntoCanvasEdit(String(e.data.text || ''));
     } else if (e.data.type === 'canvas-edit-mode') {
       canvasEditEnabled = !!e.data.enabled;
       document.body.classList.toggle('canvas-edit-enabled', canvasEditEnabled);
@@ -1728,11 +1417,43 @@ function finishCanvasEdit(commit) {
     }, '*');
   }
 
+  canvasEditRange = null;
   el.removeAttribute('contenteditable');
   el.removeAttribute('spellcheck');
   el.classList.remove('canvas-edit-active');
   canvasEditActiveElement = null;
   canvasEditOriginalText = '';
+}
+
+// Caret inside the text being edited, kept so the editor's "Insert reference"
+// menu (in the parent window) can insert at the right spot.
+let canvasEditRange = null;
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection();
+  if (!canvasEditActiveElement || !sel || !sel.rangeCount) return;
+  const r = sel.getRangeAt(0);
+  if (canvasEditActiveElement.contains(r.commonAncestorContainer)) canvasEditRange = r.cloneRange();
+});
+
+function insertIntoCanvasEdit(text) {
+  const el = canvasEditActiveElement;
+  if (!el || !text) return;
+  el.focus();
+  let range = canvasEditRange && el.contains(canvasEditRange.commonAncestorContainer) ? canvasEditRange : null;
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+  }
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  canvasEditRange = range.cloneRange();
 }
 
 function setupCanvasEditListeners() {

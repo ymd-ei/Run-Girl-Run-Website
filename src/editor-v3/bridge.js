@@ -94,6 +94,11 @@ export function navigate(panel, projectId) {
   sendOrQueue({ type: 'preview-nav', panel, projectId });
 }
 
+/** Insert text (e.g. a {shortcut}) at the caret of the active inline text edit. */
+export function insertText(text) {
+  sendOrQueue({ type: 'canvas-insert-text', text });
+}
+
 /** Toggle in-place edit mode (hover/selection chrome) inside the iframe. */
 export function setEditMode(enabled) {
   sendOrQueue({ type: 'canvas-edit-mode', enabled: !!enabled });

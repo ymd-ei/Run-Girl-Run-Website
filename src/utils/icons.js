@@ -19,5 +19,8 @@ export function phosphorIcon(url) {
   if (url.includes('behance.net')) return 'ph-fill ph-behance-logo';
   if (url.includes('dribbble.com')) return 'ph-fill ph-dribbble-logo';
   if (url.includes('tiktok.com')) return 'ph-fill ph-tiktok-logo';
+  if (url.includes('bsky.app')) return 'ph-fill ph-butterfly';
+  if (url.includes('substack.com')) return 'ph-fill ph-newspaper';
+  if (url.includes('pixiv.net')) return 'ph-fill ph-palette';
   return 'ph-fill ph-link';
 }

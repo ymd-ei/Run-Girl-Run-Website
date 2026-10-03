@@ -12,15 +12,16 @@ import {
   isDirty, markDirty, createProject, deleteProject
 } from './dataBridge.js';
 import {
-  initBridge, pushData, navigate, setEditMode, isReady
+  initBridge, pushData, navigate, setEditMode, isReady, insertText
 } from './bridge.js';
 import {
   initHistory, pushState, undo, redo, canUndo, canRedo
 } from './history.js';
 import {
   initInspector, showBlockInspector, showSectionInspector, clearInspector,
-  showHomeSettings, showContactSettings, showProjectSettings
+  showHomeSettings, showContactSettings, showProjectSettings, showSiteSettings
 } from './inspector.js';
+import { listRefs } from '../utils/refs.js';
 import { openMediaPicker } from './media.js';
 import {
   getBlocks as bmGetBlocks, setBlocks as bmSetBlocks,
@@ -42,7 +43,7 @@ function dirtyForScope(scope) {
 
 // ── Current view state ──
 const view = {
-  panel: 'about',          // 'home' | 'about' | 'contact' | 'project'
+  panel: 'about',          // 'site' | 'home' | 'about' | 'contact' | 'project'
   projectId: null
 };
 
@@ -174,9 +175,10 @@ async function goTo(panel, projectId) {
     await loadProject(projectId); // ensure full blocks are in state + pushed
     pushData(state.global, state.projects);
   }
-  navigate(panel, projectId);
+  navigate(panel === 'site' ? 'home' : panel, projectId);
   renderRail();
-  if (panel === 'home') showHomeSettings();
+  if (panel === 'site') showSiteSettings();
+  else if (panel === 'home') showHomeSettings();
   else if (panel === 'contact') showContactSettings();
   else if (panel === 'project' && projectId) showProjectSettings(projectId);
   else if (panel === 'about') showSectionInspector('about');
@@ -187,6 +189,7 @@ window.__v3goTo = goTo;
 // ── Left rail ─────────────────────────────────────────────────
 function renderRail() {
   const sections = [
+    { id: 'site', label: 'Site settings', icon: 'ph-gear-six' },
     { id: 'home', label: 'Home', icon: 'ph-house' },
     { id: 'about', label: 'About', icon: 'ph-user' },
     { id: 'contact', label: 'Contact', icon: 'ph-envelope' }
@@ -194,7 +197,10 @@ function renderRail() {
   railSections.innerHTML = sections.map(s => `
     <button class="v3-nav-item${view.panel === s.id ? ' active' : ''}" data-nav="${s.id}">
       <i class="ph-fill ${s.icon}"></i><span>${s.label}</span>
-    </button>`).join('');
+    </button>`).join('') +
+    `<a class="v3-nav-item" href="modelling/editor.html" title="Open the modelling site editor">
+      <i class="ph-fill ph-cube"></i><span>Modelling</span><i class="ph-fill ph-arrow-up-right v3-nav-ext"></i>
+    </a>`;
 
   railProjects.innerHTML = (state.projects || []).map(p => `
     <button class="v3-nav-item v3-proj-item${view.panel === 'project' && view.projectId === p.id ? ' active' : ''}" data-nav="project" data-project="${p.id}" draggable="true">
@@ -402,9 +408,9 @@ async function init() {
       setEditMode(true);
       navigate(view.panel, view.projectId);
     },
-    onCommitEdit: applyCommit,
-    onStartEdit: () => {},
-    onCancelEdit: () => {},
+    onCommitEdit: (p) => { canvasTextEditing = false; applyCommit(p); },
+    onStartEdit: () => { canvasTextEditing = true; },
+    onCancelEdit: () => { canvasTextEditing = false; },
     onSelectBlock: (payload) => {
       showBlockInspector(payload);
     },
@@ -430,8 +436,65 @@ async function init() {
     else if (mod && (e.shiftKey && e.key.toLowerCase() === 'z')) { e.preventDefault(); if (redo(state)) updateSaveUI(); }
   });
 
+  bindInsertReference();
+
   window.addEventListener('v3-save-status', updateSaveUI);
   window.addEventListener('v3-history', updateSaveUI);
+}
+
+// ── Insert reference ({shortcut}) ─────────────────────────────
+// Inserts into the inspector field you were typing in, or the text you're
+// editing on the canvas; otherwise copies the shortcut to the clipboard.
+let canvasTextEditing = false;
+let lastField = null;
+
+function bindInsertReference() {
+  const btn = document.getElementById('v3-insert-ref');
+  const menu = document.getElementById('v3-ref-menu');
+  if (!btn || !menu) return;
+
+  document.getElementById('v3-inspector').addEventListener('focusin', e => {
+    const el = e.target;
+    if (el.matches('textarea.v3-f, input.v3-f[type="text"]')) lastField = el;
+  });
+  // Keep focus (and the caret) where it is when the button is pressed.
+  btn.addEventListener('mousedown', e => e.preventDefault());
+  menu.addEventListener('mousedown', e => e.preventDefault());
+
+  btn.addEventListener('click', () => {
+    if (menu.classList.contains('show')) { menu.classList.remove('show'); return; }
+    let group = '';
+    menu.innerHTML = listRefs(state.global, state.projects).filter(r => !r.warn).map(r => {
+      const head = r.group !== group ? `<div class="v3-ref-group">${escapeHtml((group = r.group))}</div>` : '';
+      return `${head}<button class="v3-ref-opt" data-code="${escapeHtml(r.code)}"><code>${escapeHtml(r.code)}</code><span>${escapeHtml(r.value || '')}</span></button>`;
+    }).join('');
+    menu.classList.add('show');
+  });
+
+  menu.addEventListener('click', e => {
+    const opt = e.target.closest('[data-code]');
+    if (!opt) return;
+    const code = opt.getAttribute('data-code');
+    menu.classList.remove('show');
+
+    const field = document.activeElement === lastField ? lastField : null;
+    if (field && document.body.contains(field)) {
+      const a = field.selectionStart ?? field.value.length;
+      const b = field.selectionEnd ?? a;
+      field.value = field.value.slice(0, a) + code + field.value.slice(b);
+      field.setSelectionRange(a + code.length, a + code.length);
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (canvasTextEditing) {
+      insertText(code);
+    } else {
+      navigator.clipboard?.writeText(code).catch(() => {});
+      toast(`Copied ${code} — paste it into any text`);
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#v3-ref-menu, #v3-insert-ref')) menu.classList.remove('show');
+  });
 }
 
 // Block toolbar / inspector structural actions. Parent owns state; we mutate

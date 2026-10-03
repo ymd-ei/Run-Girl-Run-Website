@@ -4,6 +4,8 @@
  */
 
 import { generateThumbSVG } from '../../utils/svg.js';
+import { resolveBlockRefs } from '../../utils/refs.js';
+import { privacyEmbedUrl } from '../../utils/embeds.js';
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -44,6 +46,7 @@ export function renderBlockThumbnail(type, theme = {}) {
  */
 export function renderBlock(block, theme = {}, renderOptions = {}) {
   if (!block || !block.type) return '';
+  block = resolveBlockRefs(block); // {shortcuts} → Site settings values (left raw in editors)
 
   const canvasAttrs = (field, itemIndex) => {
     const scope = renderOptions.canvasScope;
@@ -110,7 +113,7 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
         if (isDirectVideoSource(block.src)) {
           return `<div class="bl-video"><video src="${block.src}" controls playsinline preload="metadata"></video></div>`;
         }
-        return `<div class="bl-video"><iframe title="Embedded project video" src="${block.src}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+        return `<div class="bl-video"><iframe title="Embedded project video" src="${privacyEmbedUrl(block.src)}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       }
       return `<div class="bl-video empty">Video embed</div>`;
 

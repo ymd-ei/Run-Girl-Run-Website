@@ -19,6 +19,8 @@ import {
   getBlocks as bmGetBlocks, setBlocks as bmSetBlocks
 } from '../modules/blocks/blockManager.js';
 import { blocksToMarkdown, parseMarkdownToBlocks } from '../modules/blocks/markdown.js';
+import { slugRef, listRefs } from '../utils/refs.js';
+import { SITE_TEXT_FIELDS, SITE_TEXT_DEFAULTS } from '../display/siteChrome.js';
 
 let panelEl = null;
 let cb = {};             // { repaint, action, openMedia }
@@ -154,7 +156,7 @@ export function showBlockInspector(payload) {
 }
 
 // ── Field HTML helpers ───────────────────────────────────────
-function field({ label, kind = 'text', value = '', options = [], dataKey, item, sub, placeholder = '', min, max }) {
+function field({ label, kind = 'text', value = '', options = [], dataKey, item, sub, placeholder = '', min, max, rows = 3 }) {
   const attrs = `data-key="${dataKey || ''}"${item != null ? ` data-item="${item}"` : ''}${sub ? ` data-sub="${sub}"` : ''}`;
   const v = escAttr(value);
   let control;
@@ -162,7 +164,7 @@ function field({ label, kind = 'text', value = '', options = [], dataKey, item, 
     control = `<select class="v3-f" ${attrs}>${options.map(([ov, ol]) =>
       `<option value="${escAttr(ov)}"${String(ov) === String(value) ? ' selected' : ''}>${escHtml(ol)}</option>`).join('')}</select>`;
   } else if (kind === 'textarea') {
-    control = `<textarea class="v3-f" rows="3" ${attrs} placeholder="${escAttr(placeholder)}">${escHtml(value)}</textarea>`;
+    control = `<textarea class="v3-f" rows="${rows}" ${attrs} placeholder="${escAttr(placeholder)}">${escHtml(value)}</textarea>`;
   } else if (kind === 'media') {
     control = `<div class="v3-media-row">
       <input class="v3-f" type="text" ${attrs} value="${v}" placeholder="media/…">
@@ -419,12 +421,6 @@ function setNested(obj, path, val) {
 const REEL_TYPES = [['video', 'Video file'], ['youtube', 'YouTube'], ['vimeo', 'Vimeo']];
 
 const HOME_GROUPS = [
-  { title: 'Identity', fields: [
-    { label: 'Name', key: 'name' },
-    { label: 'Role', key: 'role' },
-    { label: 'Location', key: 'location' },
-    { label: 'Browser tab title', key: 'siteTitle' }
-  ] },
   { title: 'Demo reel (hero background)', fields: [
     { label: 'Type', key: 'reel.type', kind: 'select', options: REEL_TYPES },
     { label: 'URL / media', key: 'reel.url', kind: 'media' }
@@ -432,26 +428,6 @@ const HOME_GROUPS = [
   { title: 'Watch reel (button popup)', fields: [
     { label: 'Type', key: 'watchReel.type', kind: 'select', options: REEL_TYPES },
     { label: 'URL / media', key: 'watchReel.url', kind: 'media' }
-  ] },
-  { title: 'Branding', fields: [
-    { label: 'Logo', key: 'logo', kind: 'media' },
-    { label: 'Favicon', key: 'favicon', kind: 'media' }
-  ] },
-  { title: 'Social preview (SEO)', fields: [
-    { label: 'OG title', key: 'ogTitle' },
-    { label: 'OG description', key: 'ogDescription', kind: 'textarea' },
-    { label: 'OG image', key: 'ogImage', kind: 'media' }
-  ] },
-  { title: 'Theme', fields: [
-    { label: 'Ink (text)', key: 'theme.ink', kind: 'color' },
-    { label: 'Paper (background)', key: 'theme.paper', kind: 'color' },
-    { label: 'Accent', key: 'theme.accent', kind: 'color' },
-    { label: 'Panel background', key: 'theme.panelBg', kind: 'color' },
-    { label: 'Contact accent', key: 'theme.ctAccent', kind: 'color' },
-    { label: 'Contact background', key: 'theme.ctBg', kind: 'color' },
-    { label: 'Contact highlight', key: 'theme.ctHi', kind: 'color' },
-    { label: 'Sensitive color', key: 'theme.sensitiveColor', kind: 'color' },
-    { label: 'Panel style', key: 'theme.panelStyle', kind: 'select', options: [['light', 'Light'], ['dark', 'Dark'], ['frost', 'Frost']] }
   ] }
 ];
 
@@ -464,15 +440,63 @@ const CONTACT_GROUPS = [
   { title: 'Labels', fields: [
     { label: 'Email label', key: 'contactPanel.emailLabel' },
     { label: 'Social label', key: 'contactPanel.socialLabel' },
-    { label: 'Resume label', key: 'contactPanel.resumeLabel' }
+    { label: 'Resume label', key: 'contactPanel.resumeLabel', placeholder: 'Credentials' }
   ] },
   { title: 'Background video', fields: [
     { label: 'Type', key: 'contactPanel.video.type', kind: 'select', options: REEL_TYPES },
     { label: 'URL / media', key: 'contactPanel.video.url', kind: 'media' }
+  ] }
+];
+
+// Site-wide settings. Text fields accept {shortcuts} — see References at the bottom.
+const SITE_GROUPS = [
+  { title: 'Studio identity', fields: [
+    { label: 'Name', key: 'name' },
+    { label: 'Role', key: 'role' },
+    { label: 'Location', key: 'location' }
   ] },
   { title: 'Contact details', fields: [
     { label: 'Email', key: 'contact.email' },
     { label: 'Resume (PDF)', key: 'contact.resume', kind: 'media' }
+  ] }
+];
+
+const SITE_GROUPS_2 = [
+  { title: 'Availability', note: 'The “available” badge on the home screen and next to the cursor.', fields: [
+    { label: '', key: 'availability.enabled', kind: 'checkbox', cbLabel: 'Show availability badge' },
+    { label: 'Badge text', key: 'availability.text', placeholder: 'Available for work' }
+  ] },
+  { title: 'Branding', fields: [
+    { label: 'Browser tab title', key: 'siteTitle' },
+    { label: 'Logo', key: 'logo', kind: 'media' },
+    { label: 'Favicon', key: 'favicon', kind: 'media' }
+  ] },
+  { title: 'Social preview (SEO)', note: 'What shows when your link is shared (Discord, iMessage, LinkedIn) and in search results. Written into the site when you save.', fields: [
+    { label: 'Share title', key: 'ogTitle' },
+    { label: 'Share description', key: 'ogDescription', kind: 'textarea' },
+    { label: 'Share image', key: 'ogImage', kind: 'media' }
+  ] },
+  { title: 'Theme', fields: [
+    { label: 'Ink (text)', key: 'theme.ink', kind: 'color' },
+    { label: 'Paper (background)', key: 'theme.paper', kind: 'color' },
+    { label: 'Accent', key: 'theme.accent', kind: 'color' },
+    { label: 'Panel background', key: 'theme.panelBg', kind: 'color' },
+    { label: 'Contact accent', key: 'theme.ctAccent', kind: 'color' },
+    { label: 'Contact background', key: 'theme.ctBg', kind: 'color' },
+    { label: 'Contact highlight', key: 'theme.ctHi', kind: 'color' },
+    { label: 'Panel style', key: 'theme.panelStyle', kind: 'select', options: [['light', 'Light'], ['dark', 'Dark'], ['frost', 'Frost']] }
+  ] },
+  { title: 'Mature content', note: 'Defaults for projects marked sensitive. Each project can still override these.', fields: [
+    { label: 'Warning label', key: 'sensitiveLabel', placeholder: 'MATURE' },
+    { label: 'Warning color', key: 'theme.sensitiveColor', kind: 'color' }
+  ] },
+  { title: 'Site text', note: 'Leave blank to use the default shown.', fields: SITE_TEXT_FIELDS.map(([k, label]) => (
+    { label, key: 'siteText.' + k, placeholder: SITE_TEXT_DEFAULTS[k] }
+  )) },
+  { title: 'Privacy & Legal', note: 'Blank line = new paragraph. Links: [text](https://…). Shortcuts like {name} and {email} fill in automatically. Empty a box to hide that section.', fields: [
+    { label: 'Copyright', key: 'legal.copyright', kind: 'textarea', rows: 6 },
+    { label: 'Privacy', key: 'legal.privacy', kind: 'textarea', rows: 10 },
+    { label: 'AI disclosure', key: 'legal.ai', kind: 'textarea', rows: 5 }
   ] }
 ];
 
@@ -497,13 +521,13 @@ const PROJECT_GROUPS = [
 ];
 
 function groupsHTML(target, groups) {
-  return groups.map(g => `<div class="v3-set-group"><div class="v3-set-head">${escHtml(g.title)}</div>${
+  return groups.map(g => `<div class="v3-set-group"><div class="v3-set-head">${escHtml(g.title)}</div>${g.note ? note(g.note) : ''}${
     g.fields.map(fd => {
       const raw = getNested(target, fd.key);
       if (fd.kind === 'checkbox') {
         return field({ label: '', kind: 'checkbox', value: !!raw, dataKey: fd.key, placeholder: fd.cbLabel || fd.label });
       }
-      return field({ label: fd.label, kind: fd.kind || 'text', value: raw == null ? '' : raw, options: fd.options || [], dataKey: fd.key, placeholder: fd.placeholder || '' });
+      return field({ label: fd.label, kind: fd.kind || 'text', value: raw == null ? '' : raw, options: fd.options || [], dataKey: fd.key, placeholder: fd.placeholder || '', rows: fd.rows });
     }).join('')
   }</div>`).join('');
 }
@@ -534,12 +558,53 @@ export function showHomeSettings() {
   current = null;
   if (!panelEl) return;
   const g = state.global;
-  panelEl.innerHTML = `<div class="v3-insp-head"><span>Home &amp; Site Settings</span></div>
+  panelEl.innerHTML = `<div class="v3-insp-head"><span>Home Settings</span></div>
     <div class="v3-insp-body">
       ${groupsHTML(g, HOME_GROUPS)}
-      ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (matches project type)'], ['label', 'Label']])}
+      <p class="v3-insp-note">Name, role, branding, SEO, theme and filters are in Site settings.</p>
     </div>`;
   bindSettingsForm(g, 'content.json', showHomeSettings, false);
+}
+
+export function showSiteSettings() {
+  current = null;
+  if (!panelEl) return;
+  const g = state.global;
+  panelEl.innerHTML = `<div class="v3-insp-head"><span>Site Settings</span></div>
+    <div class="v3-insp-body">
+      <p class="v3-insp-note">Site-wide settings used across every page, the mobile site and the modelling site.</p>
+      ${groupsHTML(g, SITE_GROUPS)}
+      ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']])}
+      ${groupsHTML(g, SITE_GROUPS_2)}
+      ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (matches project type)'], ['label', 'Label']])}
+      ${referencesHTML(g)}
+    </div>`;
+  bindSettingsForm(g, 'content.json', showSiteSettings, false);
+  bindReferences();
+}
+
+function referencesHTML(g) {
+  const rows = listRefs(g, state.projects);
+  let group = '';
+  const body = rows.map(r => {
+    const head = r.group !== group ? `<div class="v3-ref-group">${escHtml((group = r.group))}</div>` : '';
+    return `${head}<div class="v3-ref-row${r.warn ? ' v3-ref-warn' : ''}">
+      <code>${escHtml(r.code)}</code><span class="v3-ref-val" title="${escAttr(r.value)}">${escHtml(r.value || '—')}</span>
+      <button class="v3-insp-ico" data-copy-ref="${escAttr(r.code)}" title="Copy"><i class="ph-fill ph-copy"></i></button></div>`;
+  }).join('');
+  return `<div class="v3-set-group" id="v3-references"><div class="v3-set-head">References</div>
+    ${note('Type a shortcut in any text (or use Insert reference in the top bar) and the site shows the current value. Change the value here once and it updates everywhere.')}
+    ${body}</div>`;
+}
+
+function bindReferences() {
+  panelEl.querySelectorAll('[data-copy-ref]').forEach(btn => btn.addEventListener('click', () => {
+    const code = btn.getAttribute('data-copy-ref');
+    navigator.clipboard?.writeText(code).then(() => {
+      btn.innerHTML = '<i class="ph-fill ph-check"></i>';
+      setTimeout(() => { btn.innerHTML = '<i class="ph-fill ph-copy"></i>'; }, 1200);
+    }).catch(() => {});
+  }));
 }
 
 export function showContactSettings() {
@@ -551,7 +616,7 @@ export function showContactSettings() {
       ${groupsHTML(g, CONTACT_GROUPS)}
       ${strListHTML('Ticker — top row', 'contactPanel.tickerTop', getNested(g, 'contactPanel.tickerTop'))}
       ${strListHTML('Ticker — middle row', 'contactPanel.tickerMid', getNested(g, 'contactPanel.tickerMid'))}
-      ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL']])}
+      <p class="v3-insp-note">Email, resume and social links are in Site settings.</p>
     </div>`;
   bindSettingsForm(g, 'content.json', showContactSettings, false);
 }
@@ -612,7 +677,14 @@ function bindSettingsForm(target, dirtyFile, rerender, heavy) {
       const arr = getNested(target, inp.getAttribute('data-arr')) || [];
       const idx = Number(inp.getAttribute('data-idx'));
       const sub = inp.getAttribute('data-sub');
-      commit(() => { if (sub) { if (!arr[idx]) arr[idx] = {}; arr[idx][sub] = inp.value; } else { arr[idx] = inp.value; } });
+      commit(() => {
+        if (sub) {
+          if (!arr[idx]) arr[idx] = {};
+          arr[idx][sub] = sub === 'ref' ? slugRef(inp.value) : inp.value;
+          if (sub === 'label' && 'ref' in arr[idx] && !arr[idx].ref) arr[idx].ref = slugRef(inp.value);
+        } else { arr[idx] = inp.value; }
+      });
+      if (sub === 'label' || sub === 'ref') rerender();
     });
   });
   panelEl.querySelectorAll('[data-arr-add]').forEach(b => b.addEventListener('click', () => {
