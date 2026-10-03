@@ -6,10 +6,17 @@ Quick reference for image/video dimensions. Pick the template that matches your 
 
 | Template | Ratio | Export Size | Slots |
 |---|---|---|---|
-| **16:9** | 16:9 | **1920 × 1080** | Card Thumbnails (`.wci`), Image Blocks (`.bl-image`), Video Blocks (`.bl-video`), Before / After (`.bl-before-after-frame`), Lightbox (`#lb-frame`), Hero Showreel (`#reel`), Contact Background (`#ct-bg-video`) |
+| **16:9** | 16:9 | **1920 × 1080** | Card Thumbnails (`.wci`, default — see below), More work cards in the post panel, Image Blocks (`.bl-image`), Video Blocks (`.bl-video`), Before / After (`.bl-before-after-frame`), Lightbox (`#lb-frame`), Hero Showreel (`#reel`), Contact Background (`#ct-bg-video`) |
 | **4:3** | 4:3 | **1200 × 900** | Gallery Items (`.bl-gallery-item img`), Process Steps (`.bl-process-step`) |
 | **Project Header** | ~2.25:1 | **1800 × 800** | Project Hero (`.pp-hero`), Longform Hero (`#pp.longform .pp-hero`) |
 | **Socials** | ~1.91:1 | **1200 × 630** | OG Image (`og:image`), Twitter Image (`twitter:image`) |
+
+### Card thumbnails (stacked Work grid)
+
+- In the stacked Work grid, a card thumbnail can be **any shape from 4:5 (portrait) to 2:1 (wide)**, at least **1200 px wide**. It shows whole, and the columns stack around it.
+- Taller than 4:5 or wider than 2:1 is cropped from the centre to that limit.
+- **16:9 is the default**: a card sits at 16:9 until its image loads, and More work cards in the post panel are always 16:9.
+- Live so far on the feed sample (`/samples/feed/`). The main Work grid still crops thumbnails to 16:9 until the social feed is built into it, so keep exporting 16:9 for projects until then.
 
 ### Socials notes
 

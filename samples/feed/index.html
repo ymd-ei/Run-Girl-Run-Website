@@ -30,8 +30,21 @@ html body button,html body a,html body .wc,html body select,html body label{curs
 /* Feed cards inside the real .wc card */
 .wci .src-dot{position:absolute;top:.55rem;left:.55rem;z-index:2;display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;border-radius:2px;background:rgba(10,8,6,.6);color:#fff;font-family:var(--font-b);font-size:.55rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase}
 .src-dot i{width:6px;height:6px;border-radius:50%;display:inline-block}
-.wci .textthumb{position:absolute;inset:0;display:flex;align-items:center;padding:1.4rem 1.2rem 1rem;font-family:var(--font-s);font-size:1.15rem;line-height:1.2;color:var(--paper);background:linear-gradient(135deg,rgba(var(--accent-rgb),.55),rgba(var(--ink-rgb),.95))}
+/* Text-only posts: slim quote strip spanning the grid */
+/* More work: uniform 16:9 cards in a plain grid; text-only posts as a quote inside the 16:9 box */
+.more-work .wci{aspect-ratio:16/9 !important}
+.wci .textthumb{position:absolute;inset:0;display:flex;align-items:center;padding:1.4rem 1.2rem 1rem;font-family:var(--font-s);font-size:1.1rem;line-height:1.25;color:var(--paper);background:linear-gradient(135deg,rgba(var(--accent-rgb),.55),rgba(var(--ink-rgb),.95))}
 .wci .textthumb span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Dynamic stacking: cards drop into the shortest column (positions set in JS) */
+.wg.masonry{display:block;position:relative}
+.wg.masonry > .wc{position:absolute;top:0;left:0;transition:transform .55s var(--ease),opacity .4s ease}
+.wc-quote{display:flex;flex-direction:column;gap:.55rem;padding:1rem 1.2rem 1rem 1.4rem;border-left:2px solid var(--accent);background:rgba(var(--accent-rgb),.08);transition:background .25s}
+.wc-quote:hover{background:rgba(var(--accent-rgb),.16)}
+.wc-quote .q-text{font-family:var(--font-s);font-size:1.25rem;line-height:1.3;color:var(--ink)}
+.wc-quote .wcty{display:flex;align-items:center;gap:.5rem}
+.wc-quote .src-dot{position:static;display:inline-flex;align-items:center;gap:.35rem;padding:0;background:none;color:inherit}
+body.panel-frost .wc-quote .q-text{color:var(--paper)}
 .wct{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;padding-right:.6rem}
 .wcm{gap:.5rem}.wcty{white-space:nowrap}
 
@@ -215,13 +228,30 @@ function classify(post) {
 }
 const filterLabels = cls => cls.filters.map(v => esc(filterLabel(v))).join(' / ');
 
-function postCard({ p, cls }) {
+// Short enough for two lines; cut on a word so the closing quote always shows
+const quote = t => {
+  t = t.replace(/\s+/g, ' ').trim();
+  if (t.length > 140) t = t.slice(0, 140).replace(/\s+\S*$/, '') + '…';
+  return `\u201C${t}\u201D`;
+};
+
+// uniform: the "More work" row, where every card is a plain 16:9 thumbnail
+function postCard({ p, cls }, { uniform = false } = {}) {
   const s = SRC[p.source];
   const img = p.media?.[0];
+  // Text-only posts: a slim full-width quote strip instead of an empty thumbnail
+  if (!img && uniform) return `<div class="wc" data-open="${esc(p.id)}">
+    <div class="wci"><div class="textthumb"><span>${esc(quote(stripTags(p.text) || postTitle(p)))}</span></div>
+      <span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span><div class="wco">View post</div></div>
+    <div class="wcm"><p class="wct">${esc(postTitle(p))}</p><p class="wcty">${shortDate(p.date)}</p></div>
+  </div>`;
+  if (!img) return `<div class="wc wc-quote" data-open="${esc(p.id)}">
+    <p class="q-text"><span>${esc(quote(stripTags(p.text) || postTitle(p)))}</span></p>
+    <p class="wcty"><span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span>${cls.filters.length ? filterLabels(cls) + ' &middot; ' : ''}${shortDate(p.date)}${likeBadge(p.id)}</p>
+  </div>`;
   return `<div class="wc" data-open="${esc(p.id)}">
-    <div class="wci">
-      ${!img ? `<div class="textthumb"><span>${esc(stripTags(p.text))}</span></div>`
-        : img.type === 'video' ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
+    <div class="wci"${img.w && img.h ? ` style="aspect-ratio:${fitRatio(img.w, img.h)}"` : ''}>
+      ${img.type === 'video' ? `<video src="${esc(img.url)}#t=0.1" muted playsinline preload="metadata"></video>`
         : `<img src="${esc(img.url)}" alt="${esc(img.alt)}">`}
       ${p.media.length > 1 ? `<span class="src-dot" style="left:auto;right:.55rem">${p.media.length} items</span>` : ''}
       <span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span>
@@ -248,6 +278,78 @@ function accepted() {
     .sort((a, b) => new Date(b.p.date) - new Date(a.p.date));
 }
 
+/* Thumbnails keep their own shape, held between 4:5 (portrait) and 2:1 (wide);
+   anything beyond is cropped from the centre. Until an image loads its card
+   sits at the 16:9 default, then re-stacks once (masonry's observer catches it). */
+const RATIO_MIN = 4 / 5, RATIO_MAX = 2;
+const fitRatio = (w, h) => +Math.min(RATIO_MAX, Math.max(RATIO_MIN, w / h)).toFixed(4);
+function shapeThumb(el, w, h) {
+  if (el.closest('.more-work')) return; // More work stays uniform 16:9
+  const box = el.closest('.wci');
+  if (box && w && h) box.style.aspectRatio = fitRatio(w, h);
+}
+document.addEventListener('load', e => { if (e.target.tagName === 'IMG') shapeThumb(e.target, e.target.naturalWidth, e.target.naturalHeight); }, true);
+document.addEventListener('loadedmetadata', e => { if (e.target.tagName === 'VIDEO') shapeThumb(e.target, e.target.videoWidth, e.target.videoHeight); }, true);
+
+/* Masonry: each card goes into the currently shortest column, in order, so
+   tall image cards and slim quote strips pack without holes. Cards that were
+   already on screen slide from their old spot; new ones fade in. */
+const GAP = 16;
+const cardKey = el => el.dataset.open || el.dataset.project;
+const positions = grid => new Map([...grid.children].filter(el => el.dataset.pos).map(el => [cardKey(el), el.dataset.pos]));
+const observers = new WeakMap();
+function masonry(grid, prev) {
+  const kids = [...grid.children].filter(el => el.classList.contains('wc'));
+  grid.classList.toggle('masonry', kids.length > 0);
+  if (!kids.length) { grid.style.height = ''; return; }
+  const w = grid.clientWidth;
+  const cols = w < 520 ? 1 : 2;
+  const colW = (w - GAP * (cols - 1)) / cols;
+  kids.forEach(el => { el.style.width = colW + 'px'; });
+  const heights = Array(cols).fill(0);
+  const placed = kids.map(el => {
+    const c = heights.indexOf(Math.min(...heights));
+    const at = `translate(${Math.round(c * (colW + GAP))}px, ${Math.round(heights[c])}px)`;
+    heights[c] += el.offsetHeight + GAP;
+    return [el, at];
+  });
+  grid.style.height = Math.max(...heights) - GAP + 'px';
+  for (const [el, at] of placed) {
+    if (el.dataset.pos === at) continue;
+    const from = prev?.get(cardKey(el));
+    if (!el.dataset.pos) {
+      el.style.transition = 'none';
+      if (from) el.style.transform = from;                  // was on screen: slide from there
+      else if (prev) el.style.opacity = '0';                // newly shown: fade in
+      el.offsetWidth;                                       // commit the start state
+      el.style.transition = prev ? '' : 'none';             // first layout: no animation
+    }
+    el.style.transform = at;
+    el.style.opacity = '';
+    el.dataset.pos = at;
+  }
+  if (!prev) requestAnimationFrame(() => kids.forEach(el => { el.style.transition = ''; }));
+  // Re-stack when the grid resizes or a card's height changes (fonts, images)
+  let ro = observers.get(grid);
+  if (!ro) {
+    let queued = false;
+    ro = new ResizeObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; masonry(grid, positions(grid)); });
+    });
+    observers.set(grid, ro);
+  }
+  // Only re-attach when the cards themselves changed; observe() always fires once,
+  // so re-attaching on every layout would loop
+  if (ro.cards?.length !== kids.length || kids.some((el, i) => ro.cards[i] !== el)) {
+    ro.disconnect();
+    ro.observe(grid);
+    kids.forEach(el => ro.observe(el));
+    ro.cards = kids;
+  }
+}
+
 function render() {
   const site = state.site;
   const posts = accepted();
@@ -268,7 +370,9 @@ function render() {
   ];
   // Most liked mixes projects and posts into one ranking
   if (state.sort === 'likes') items = items.sort((a, b) => likeCount(b.id) - likeCount(a.id));
+  const before = positions($('wg'));
   $('wg').innerHTML = items.map(x => x.html).join('') || '<p class="wcty">Nothing under this filter yet.</p>';
+  masonry($('wg'), before);
 
   const passed = new Set(posts.map(a => a.p.id));
   const rows = [...state.posts].sort((a, b) => new Date(b.date) - new Date(a.date)).map(p => {
@@ -313,7 +417,7 @@ function sanitize(html) {
 /* End of a post: keep people on the site rather than sending them back out */
 function moreWork(p, cls) {
   const all = [
-    ...accepted().filter(a => a.p.id !== p.id).map(a => ({ types: a.cls.filters, date: a.p.date, html: postCard(a) })),
+    ...accepted().filter(a => a.p.id !== p.id).map(a => ({ types: a.cls.filters, date: a.p.date, html: postCard(a, { uniform: true }) })),
     ...(state.site.projectCards || []).filter(c => c.published !== false && c.thumbnail).map(c => ({ types: cardTypes(c), date: c.year + '-12-31', html: projectCard(c) })),
   ];
   const same = all.filter(x => x.types.some(t => cls.filters.includes(t)));
@@ -427,7 +531,7 @@ async function loadBluesky(handle) {
       const textTags = [...(rec.text || '').matchAll(/#([\w-]+)/g)].map(m => m[1]);
       const e = post.embed || {};
       const imgs = e.images || e.media?.images || [];
-      const media = imgs.length ? imgs.map(i => ({ type: 'image', url: i.fullsize || i.thumb, alt: i.alt }))
+      const media = imgs.length ? imgs.map(i => ({ type: 'image', url: i.fullsize || i.thumb, alt: i.alt, w: i.aspectRatio?.width, h: i.aspectRatio?.height }))
         : e.external?.thumb ? [{ type: 'image', url: e.external.thumb, alt: e.external.title }] : [];
       return {
         id: 'bsky:' + rkey, source: 'bluesky',
@@ -467,6 +571,7 @@ $('bsky').onkeydown = e => { if (e.key === 'Enter') loadBluesky($('bsky').value)
 /* Sample stand-in for the Worker's daily job; the real button would ask the Worker to run it now */
 /* Real posts pulled by fetch_substack.py (git-ignored live/ folder) replace the mock Substack ones */
 async function withLive(posts) {
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return posts; // live/ never deploys
   try {
     const r = await fetch('live/substack.json', { cache: 'no-store' });
     if (!r.ok) return posts;
