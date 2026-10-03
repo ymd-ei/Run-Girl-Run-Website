@@ -437,6 +437,7 @@ async function init() {
   });
 
   bindInsertReference();
+  window.addEventListener('beforeunload', e => { if (isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
   window.addEventListener('v3-save-status', updateSaveUI);
   window.addEventListener('v3-history', updateSaveUI);
