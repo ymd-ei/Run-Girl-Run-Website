@@ -287,6 +287,12 @@ export async function saveSiteData() {
  * Upload a file to the media directory.
  */
 export async function uploadMedia(file, folder = 'media') {
+  // Check the size before sending anything (the backend rejects larger files anyway).
+  const maxMB = (window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20;
+  if (file.size > maxMB * 1024 * 1024) {
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    return { success: false, error: `${file.name} is ${mb} MB — the editor limit is ${maxMB} MB. Compress it, or add it to media/ on your computer and push with git.` };
+  }
   const form = new FormData();
   form.append('file', file);
   form.append('folder', folder);

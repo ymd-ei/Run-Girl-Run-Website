@@ -134,7 +134,7 @@ async function uploadFiles(list) {
     // Keep 3D models in media/models/ so the modelling site finds them.
     const res = await uploadMedia(file, kind(file.name) === 'model' ? 'media/models' : 'media');
     if (res.success) ok++;
-    else toast(`Upload failed (${file.name}): ${res.error}`, true);
+    else toast(res.error.includes(file.name) ? res.error : `Upload failed (${file.name}): ${res.error}`, true);
   }
   status.textContent = '';
   if (ok) {
@@ -213,6 +213,7 @@ export async function showMediaPage(panelEl, { authed } = {}) {
       <label class="v3-site-preview-btn v3-mp-upload"><i class="ph-fill ph-upload-simple"></i> Upload
         <input type="file" multiple accept="image/*,video/*,.glb,.gltf,.pdf,model/gltf-binary,model/gltf+json" hidden></label></div>
     <div class="v3-mp-body">
+      <p class="v3-insp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file. Larger files: compress them, or add to media/ on your computer and push with git.</p>
       <div class="v3-mp-main">
         <div class="v3-mp-toolbar">
           <div class="v3-mp-types">${TYPES.map(([v, l]) => `<button data-type="${v}" class="${v === type ? 'active' : ''}">${l}</button>`).join('')}</div>

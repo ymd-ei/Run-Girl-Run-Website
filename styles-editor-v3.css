@@ -530,3 +530,4 @@ a.v3-nav-item { text-decoration: none; }
 .v3-mp-meta { font-size: 12px; color: var(--v3-muted); margin: 6px 0 14px; }
 .v3-mp-used { margin: 0 0 16px; padding-left: 18px; font-size: 12.5px; }
 @media (max-width: 1100px) { .v3-mp-body { grid-template-columns: 1fr; } .v3-mp-detail { position: static; } }
+.v3-mp-limit { grid-column: 1 / -1; margin: 0; }
