@@ -33,6 +33,17 @@ let contactTickersStarted = false;
 let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
+
+// Loading screen: stays up until the hero + contact background videos can play
+// through, but never shorter than the brand intro or longer than the cap.
+// ?fastload=1 previews the alternative: lift the loader after the intro and fade
+// the hero video in once it plays.
+const LOADER_MIN_MS = 1500;
+const LOADER_MAX_MS = 7000;
+const FAST_LOAD = new URLSearchParams(location.search).has('fastload');
+const loaderVideos = [];
+let releaseLoaderGate = () => {};   // bootstrap calls this once every gated video is rendered
+let loaderActive = false;
 // Social feed (#rgr posts) shown in the Work grid next to projects
 let feedPosts = [];
 let workShowAll = false;
@@ -303,46 +314,65 @@ function runLoaderAnimation() {
 
   runLoaderName();
 
+  loaderActive = true;
+  const loaderStart = performance.now();
+  let videosReady = false;
+  const registered = new Promise(resolve => { releaseLoaderGate = resolve; });
+  const gate = FAST_LOAD
+    ? Promise.resolve()
+    : registered.then(() => Promise.all(loaderVideos.map(videoCanPlayThrough)));
+  Promise.race([gate, new Promise(r => setTimeout(r, LOADER_MAX_MS))]).then(() => { videosReady = true; });
+
+  // A couple of quick randomized stops for the intro, then the bar follows the
+  // real video buffering until the gate opens.
   const numStops = 2 + Math.floor(Math.random() * 2);
   const stops = [];
   let cursor = 0;
   for (let i = 0; i < numStops; i++) {
-    cursor += 15 + Math.random() * 35;
-    if (cursor < 90) stops.push(Math.round(cursor));
+    cursor += 12 + Math.random() * 22;
+    if (cursor < 70) stops.push(Math.round(cursor));
   }
-  stops.push(100);
 
-  let stopIdx = 0;
-  function animateBar() {
-    if (stopIdx >= stops.length) return;
-    const target = stops[stopIdx];
-    const prev = stopIdx === 0 ? 0 : stops[stopIdx - 1];
-    const range = target - prev;
-    const duration = 280 + Math.random() * 340;
+  function tweenBar(from, to, duration, done) {
+    // rAF is paused in background tabs; skip the animation there.
+    if (document.hidden) { bar.style.width = to + '%'; return done(); }
     const startTime = performance.now();
-
     function step(now) {
       const t = Math.min((now - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 2);
-      bar.style.width = prev + range * eased + '%';
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else {
-        bar.style.width = target + '%';
-        stopIdx++;
-        if (target < 100) {
-          const pause = 180 + Math.random() * 420;
-          setTimeout(animateBar, pause);
-        } else {
-          setTimeout(dismiss, 260);
-        }
-      }
+      bar.style.width = from + (to - from) * eased + '%';
+      if (t < 1) requestAnimationFrame(step);
+      else done();
     }
-
     requestAnimationFrame(step);
   }
 
+  let stopIdx = 0;
+  let shown = 0;
+  function animateBar() {
+    if (stopIdx >= stops.length) return waitForVideos();
+    const target = stops[stopIdx++];
+    tweenBar(shown, target, 200 + Math.random() * 180, () => {
+      shown = target;
+      setTimeout(animateBar, 90 + Math.random() * 160);
+    });
+  }
+
+  function waitForVideos() {
+    if (videosReady && performance.now() - loaderStart >= LOADER_MIN_MS) {
+      tweenBar(shown, 100, 280, () => setTimeout(dismiss, 200));
+      return;
+    }
+    // Follow real buffering, with a slow creep so the bar never looks frozen.
+    const real = loaderVideoProgress() || 0;
+    shown = Math.min(95, Math.max(shown + (90 - shown) * 0.008, real * 95));
+    bar.style.width = shown + '%';
+    setTimeout(waitForVideos, 50);
+  }
+
   function dismiss() {
+    if (!loaderActive) return;
+    loaderActive = false;
     loader.classList.add('done');
     // Let the loader fade begin before revealing the full page state.
     setTimeout(() => {
@@ -351,9 +381,41 @@ function runLoaderAnimation() {
   }
 
   setTimeout(animateBar, 120);
-  setTimeout(() => {
-    if (!loader.classList.contains('done')) dismiss();
-  }, 4000);
+  // Hard cap, independent of the bar animation.
+  setTimeout(dismiss, LOADER_MAX_MS + 1000);
+}
+
+/** Gate a background video behind the loading screen (first load only). */
+function trackLoaderVideo(video) {
+  if (!loaderActive || !video) return;
+  loaderVideos.push(video);
+  if (FAST_LOAD) {
+    // Prototype: fade the video in once it can play. Not 'playing', which
+    // never fires when autoplay is blocked (background tab, iOS Low Power).
+    video.style.opacity = '0';
+    video.style.transition = 'opacity .6s ease';
+    const show = () => { video.style.opacity = '1'; };
+    if (video.readyState >= 3) show();
+    else video.addEventListener('canplay', show, { once: true });
+  }
+}
+
+function videoCanPlayThrough(video) {
+  return new Promise(resolve => {
+    if (video.readyState >= 4 || video.error) return resolve();
+    video.addEventListener('canplaythrough', resolve, { once: true });
+    video.addEventListener('error', resolve, { once: true });
+  });
+}
+
+/** Average buffered fraction of the gated videos, or null if unknown yet. */
+function loaderVideoProgress() {
+  const parts = loaderVideos.map(v => {
+    if (v.readyState >= 4) return 1;
+    if (!v.duration || !v.buffered.length) return 0;
+    return Math.min(1, v.buffered.end(v.buffered.length - 1) / v.duration);
+  });
+  return parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : null;
 }
 
 /**
@@ -404,6 +466,7 @@ export async function bootstrap() {
 
     // 7. Render contact panel
     renderContactSection();
+    releaseLoaderGate();
 
     // 8. Set up event listeners
     setupEventListeners();
@@ -439,6 +502,7 @@ export async function bootstrap() {
     console.log('✓ Display Bootstrap Complete');
   } catch (error) {
     console.error('✗ Display bootstrap failed:', error);
+    releaseLoaderGate();
   }
 }
 
@@ -628,8 +692,10 @@ function renderHero() {
         if (Vimeo && iframe) bgPlayer = new Vimeo.Player(iframe);
       });
     } else if (globalState.reel.type === 'video') {
-      reelEl.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${encodeURI(url)}"></video><div id="reel-block"></div>`;
+      const poster = globalState.reel.poster ? ` poster="${encodeURI(globalState.reel.poster)}"` : '';
+      reelEl.innerHTML = `<video autoplay muted loop playsinline preload="auto"${poster} src="${encodeURI(url)}"></video><div id="reel-block"></div>`;
       const v = reelEl.querySelector('video');
+      trackLoaderVideo(v);
       if (v) v.play().catch(() => {});
     }
   } else {
@@ -892,8 +958,10 @@ function renderContactSection() {
       if (vid.type === 'vimeo' || vid.type === 'youtube') {
         ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${privacyEmbedUrl(vid.url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
       } else if (vid.type === 'video') {
-        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto" src="${encodeURI(vid.url)}"></video>`;
+        const poster = vid.poster ? ` poster="${encodeURI(vid.poster)}"` : '';
+        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto"${poster} src="${encodeURI(vid.url)}"></video>`;
         const v = ctBgVideo.querySelector('video');
+        trackLoaderVideo(v);
         if (v) v.play().catch(() => {});
       }
     }

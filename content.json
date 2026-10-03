@@ -4,7 +4,8 @@
   "location": "Toronto, Canada",
   "reel": {
     "type": "video",
-    "url": "media/RGR_Woke Up.mp4"
+    "url": "media/RGR_woke-up_web.mp4",
+    "poster": "media/RGR_woke-up_poster.jpg"
   },
   "contact": {
     "email": "contact@rungirlrun.studio",
@@ -162,7 +163,8 @@
   "contactPanel": {
     "video": {
       "type": "video",
-      "url": "media/RGR_anim_chal_clean.mp4"
+      "url": "media/RGR_anim_chal_web.mp4",
+      "poster": "media/RGR_anim_chal_poster.jpg"
     },
     "titleAccent": "worth telling.",
     "tickerMid": [
