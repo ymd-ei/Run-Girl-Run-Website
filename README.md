@@ -50,6 +50,10 @@ The editor saves changes via a Cloudflare Worker that commits to this repo throu
 
 See [MEDIA-GUIDE.md](MEDIA-GUIDE.md) for image/video dimensions and export guidelines.
 
+## Social feed
+
+See [SOCIAL-FEED-GUIDE.md](SOCIAL-FEED-GUIDE.md) for tagging posts with `#rgr`, the accounts involved, and replacing the Instagram token.
+
 ## Deployment
 
 The site is hosted on **GitHub Pages** with a custom domain (`rungirlrun.studio`). Pushing to the default branch deploys automatically.
