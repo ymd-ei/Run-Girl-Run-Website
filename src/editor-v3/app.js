@@ -23,6 +23,7 @@ import {
 } from './inspector.js';
 import { listRefs } from '../utils/refs.js';
 import { openMediaPicker } from './media.js';
+import { showMediaPage } from './mediaPage.js';
 import {
   getBlocks as bmGetBlocks, setBlocks as bmSetBlocks,
   addBlock as bmAddBlock, removeBlock as bmRemoveBlock,
@@ -175,13 +176,14 @@ async function goTo(panel, projectId) {
     await loadProject(projectId); // ensure full blocks are in state + pushed
     pushData(state.global, state.projects);
   }
-  navigate(panel === 'site' ? 'home' : panel, projectId);
-  // Site settings fill the page (canvas hidden until "Preview site").
+  navigate(panel === 'site' || panel === 'media' ? 'home' : panel, projectId);
+  // Site settings and Media fill the page (canvas hidden; Site settings can preview).
   const main = document.getElementById('v3-main');
-  main.classList.toggle('v3-site-mode', panel === 'site');
+  main.classList.toggle('v3-page-mode', panel === 'site' || panel === 'media');
   if (panel !== 'site') main.classList.remove('v3-site-preview');
   renderRail();
   if (panel === 'site') showSiteSettings();
+  else if (panel === 'media') showMediaPage(document.getElementById('v3-inspector'), { authed: authed === null ? undefined : authed });
   else if (panel === 'home') showHomeSettings();
   else if (panel === 'contact') showContactSettings();
   else if (panel === 'project' && projectId) showProjectSettings(projectId);
@@ -196,7 +198,8 @@ function renderRail() {
     { id: 'site', label: 'Site settings', icon: 'ph-gear-six' },
     { id: 'home', label: 'Home', icon: 'ph-house' },
     { id: 'about', label: 'About', icon: 'ph-user' },
-    { id: 'contact', label: 'Contact', icon: 'ph-envelope' }
+    { id: 'contact', label: 'Contact', icon: 'ph-envelope' },
+    { id: 'media', label: 'Media', icon: 'ph-images' }
   ];
   railSections.innerHTML = sections.map(s => `
     <button class="v3-nav-item${view.panel === s.id ? ' active' : ''}" data-nav="${s.id}">
@@ -288,8 +291,10 @@ function bindProjectDrag() {
 }
 
 // ── Auth ──────────────────────────────────────────────────────
+let authed = null; // null = still checking
 async function initAuth() {
   const auth = await checkAuth();
+  authed = !!auth;
   if (auth) {
     authEl.innerHTML = `<span class="v3-auth-user"><i class="ph-fill ph-check-circle"></i> ${auth.user || 'Logged in'}</span> <a href="${getLogoutUrl()}" class="v3-link">Logout</a>`;
     saveBtn.disabled = false;
