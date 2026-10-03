@@ -1,0 +1,14 @@
+# GitHub Pages (Jekyll) build settings.
+# Files listed here stay in the repo but are not published to rungirlrun.studio.
+# Don't add anything the live site, editor.html or modelling/ load at runtime.
+exclude:
+  - backend/
+  - README.md
+  - MD-IMPORT-GUIDE.md
+  - MEDIA-GUIDE.md
+  - sample-project.md
+  - start.command
+  - start.bat
+  - loading-preview.html
+  - p/all-blocks-sample/
+  - media/Screenshot*
