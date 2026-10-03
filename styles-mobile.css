@@ -98,6 +98,7 @@ section{padding:2rem 1.5rem}
 }
 .ref-link,.contact-sub a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 
+/* ─────────────────────────────────────────
    CONTACT
 ───────────────────────────────────────── */
 #contact{background:var(--ct-bg);color:var(--ct-hi);padding:2.5rem 1.5rem;position:relative;overflow:hidden}
