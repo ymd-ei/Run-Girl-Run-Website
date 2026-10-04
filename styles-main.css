@@ -212,7 +212,7 @@ body.panel-frost .wf-sort-btn:hover,body.panel-frost .wf-sort.open .wf-sort-btn,
 .post-article ol,.post-article ul{padding-left:1.3rem;display:flex;flex-direction:column;gap:.4rem}
 .post-article blockquote{border-left:2px solid var(--accent);padding:.2rem 0 .2rem 1.1rem;font-family:var(--font-s);font-size:1.35rem;line-height:1.35;color:var(--ink)}
 .post-media{aspect-ratio:auto}
-.post-media img,.post-media video{height:auto}
+.post-media img,.post-media video{width:100%;height:auto;display:block}
 .post-video-still{position:relative;display:block;aspect-ratio:auto}
 .post-video-still img{height:auto}
 .post-video-still span{position:absolute;inset:auto 1rem 1rem auto;padding:.45rem .8rem;background:rgba(10,8,6,.7);color:#fff;font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase}
