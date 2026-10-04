@@ -137,6 +137,10 @@ section{padding:2rem 1.5rem}
   text-transform:uppercase;color:var(--ct-hi);text-decoration:none;
   display:block;line-height:1.1;word-break:break-all;
 }
+.ct-copy-email{margin-top:.75rem;display:inline-flex;align-items:center;gap:.45rem;background:none;border:1px solid rgba(255,255,255,.18);border-radius:2px;padding:.45rem .8rem;color:var(--ct-muted);font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;transition:color .2s,border-color .2s}
+.ct-copy-email:hover,.ct-copy-email:focus-visible{color:var(--ct-hi);border-color:var(--ct-accent)}
+.ct-copy-email.is-copied{color:var(--ct-accent);border-color:var(--ct-accent)}
+.ct-copy-email[hidden]{display:none}
 .contact-icons{display:flex;gap:.6rem;flex-wrap:wrap}
 .contact-icon-btn{
   display:flex;align-items:center;justify-content:center;

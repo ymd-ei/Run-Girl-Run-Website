@@ -120,6 +120,7 @@ function renderContact() {
     emailLink.href = 'mailto:' + contact.email;
     emailLink.textContent = contact.email;
   }
+  setupCopyEmail(contact.email);
 
   const iconsWrap = document.getElementById('ct-icons');
   if (iconsWrap) {
@@ -142,4 +143,32 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init, { once: true });
 } else {
   init();
+}
+
+/* Copy-email button next to the mailto link: for webmail users, or when no mail
+   app opens. Falls back to selecting the text where the clipboard API is blocked. */
+function setupCopyEmail(email) {
+  const btn = document.getElementById('ct-copy-email');
+  if (!btn) return;
+  btn.hidden = !email;
+  btn.dataset.email = email || '';
+  if (btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  const label = btn.querySelector('span');
+  btn.addEventListener('click', async () => {
+    const value = btn.dataset.email;
+    let ok = false;
+    try { await navigator.clipboard.writeText(value); ok = true; } catch (e) {
+      const t = document.createElement('textarea');
+      t.value = value; t.setAttribute('readonly', ''); t.style.position = 'absolute'; t.style.left = '-9999px';
+      document.body.appendChild(t); t.select();
+      try { ok = document.execCommand('copy'); } catch (_) {}
+      t.remove();
+    }
+    if (!ok) return;
+    btn.classList.add('is-copied');
+    label.textContent = 'Copied';
+    clearTimeout(btn._reset);
+    btn._reset = setTimeout(() => { btn.classList.remove('is-copied'); label.textContent = 'Copy email'; }, 2000);
+  });
 }

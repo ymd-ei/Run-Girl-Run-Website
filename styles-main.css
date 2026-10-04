@@ -484,6 +484,10 @@ rgr{display:inline-block;background:var(--accent);color:#fff;font-family:var(--f
 .ct-email-link:hover{color:var(--ct-accent)}
 .ct-email-link .arr{font-size:clamp(1.5rem,3vw,3rem);color:var(--ct-accent);transition:transform .3s var(--ease)}
 .ct-email-link:hover .arr{transform:translate(6px,-6px)}
+.ct-copy-email{align-self:flex-start;display:inline-flex;align-items:center;gap:.45rem;background:none;border:1px solid rgba(255,255,255,.18);border-radius:2px;padding:.45rem .8rem;color:var(--ct-muted);font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;transition:color .2s,border-color .2s}
+.ct-copy-email:hover,.ct-copy-email:focus-visible{color:var(--ct-hi);border-color:var(--ct-accent)}
+.ct-copy-email.is-copied{color:var(--ct-accent);border-color:var(--ct-accent)}
+.ct-copy-email[hidden]{display:none}
 .ct-social-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--ct-muted);margin-bottom:1.25rem}
 .ct-icons{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
 .ct-icon-btn{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border:1px solid var(--ct-border);color:rgba(255,255,255,0.5);text-decoration:none;font-size:var(--fs-lg);transition:border-color .2s,color .2s,background .2s,background-image .2s,transform .25s var(--ease)}
