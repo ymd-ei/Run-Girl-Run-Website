@@ -109,4 +109,4 @@ Measured on a first visit (Oct 2026) after the web copies went in:
 | 20 Mbps | hero playable at 8.6 s, so the 7 s cap kicks in | loader done at **2.2 s** |
 | 6 Mbps | (cap) | loader done at **7.5 s**, both videos ready |
 
-**Trying the "page first" option:** add `?fastload=1` to the URL. The loader lifts after the intro and the hero video fades in when it can play. This is a preview only and isn't switched on for visitors.
+**Default since Oct 2026: page first.** The loader lifts as soon as the brand intro has played (about 1.5 s); the hero video fades in when it can play, and the contact video keeps downloading in the background. To compare with the old "wait for the videos" behaviour described above, add `?waitload` to the URL.

@@ -34,13 +34,13 @@ let contactHeroIdleController = null;
 let contactHeroText = { title: "Let's", accent: 'work.' };
 let pendingPreviewNav = null;
 
-// Loading screen: stays up until the hero + contact background videos can play
-// through, but never shorter than the brand intro or longer than the cap.
-// ?fastload=1 previews the alternative: lift the loader after the intro and fade
-// the hero video in once it plays.
+// Loading screen (default): lifts once the brand intro has played; the hero video
+// fades in when it can play, and the contact video keeps downloading in the
+// background. ?waitload restores the old behaviour for comparison: stay up until
+// the hero + contact videos can play through (capped at LOADER_MAX_MS).
 const LOADER_MIN_MS = 1500;
 const LOADER_MAX_MS = 7000;
-const FAST_LOAD = new URLSearchParams(location.search).has('fastload');
+const FAST_LOAD = !new URLSearchParams(location.search).has('waitload');
 const loaderVideos = [];
 let releaseLoaderGate = () => {};   // bootstrap calls this once every gated video is rendered
 let loaderActive = false;
@@ -393,7 +393,7 @@ function trackLoaderVideo(video) {
   if (!loaderActive || !video) return;
   loaderVideos.push(video);
   if (FAST_LOAD) {
-    // Prototype: fade the video in once it can play. Not 'playing', which
+    // Fade the video in once it can play. Not 'playing', which
     // never fires when autoplay is blocked (background tab, iOS Low Power).
     video.style.opacity = '0';
     video.style.transition = 'opacity .6s ease';
