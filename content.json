@@ -245,7 +245,7 @@
       "year": "2026",
       "thumbnail": "media/jammeratoast jammers.png",
       "published": true,
-      "sensitive": true,
+      "sensitive": false,
       "sensitiveLabel": "",
       "sensitiveColor": "",
       "longform": false
