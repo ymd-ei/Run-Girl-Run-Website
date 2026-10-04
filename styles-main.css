@@ -461,11 +461,15 @@ ul.bl-process>.bl-process-item>.bl-process-step::before{content:'•'}
    opacity: 0;
    transform: translateY(40px);
    transition: opacity .85s .05s var(--ease), transform .85s .05s var(--ease);
+   mix-blend-mode: difference;
+   /* Safari only blends a layer against the background video while that layer
+      is GPU-composited. Without this it drops back to plain text once the
+      slide-in transition ends or the scramble repaints a letter. */
+   will-change: transform;
 }
-.ct-hero,.ct-hero .accent-word{mix-blend-mode:difference}
-.ct-hero .accent-word{color:var(--ct-accent);mix-blend-mode:screen}
-
-/* Safari blend mode bug workaround: dummy class to force repaint */
+/* No blend of its own: a blend nested inside the hero only mixes with the
+   hero's own (empty) layer, so it changed nothing in Chrome and confused Safari. */
+.ct-hero .accent-word{color:var(--ct-accent)}
 #contact-wrapper.open .ct-hero{opacity:1;transform:translateY(0)}
 .ct-sub{font-family:var(--font-ui);font-weight:300;font-size:var(--fs-body);color:var(--ct-muted);line-height:1.8;max-width:480px;margin-top:1.75rem;opacity:0;transform:translateY(16px);transition:opacity .7s .35s var(--ease),transform .7s .35s var(--ease)}
 #contact-wrapper.open .ct-sub{opacity:1;transform:translateY(0)}
