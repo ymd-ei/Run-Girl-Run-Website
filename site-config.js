@@ -2,6 +2,7 @@
 // page picks it up. Load this before any script that reads window.RGR_CONFIG.
 window.RGR_CONFIG = {
   apiBase: 'https://rgr-editor-backend.rungirlrun.workers.dev', // Cloudflare Worker (editor saves + likes)
+  shareBase: 'https://share.rungirlrun.workers.dev', // Share worker: link previews for social posts (backend/share/)
   repo: 'ymd-ei/Run-Girl-Run-Website', // GitHub repo the site deploys from
   branch: 'main',                      // branch GitHub Pages publishes
   customCursor: false,                 // false = normal system mouse cursor (accessibility default). true = branded custom cursor, see CURSOR-NOTES.md

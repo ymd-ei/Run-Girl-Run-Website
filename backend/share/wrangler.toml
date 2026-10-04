@@ -1,0 +1,10 @@
+# Link previews for social feed posts: https://share.rungirlrun.workers.dev/<code>
+# Deploy: npx wrangler deploy --config "<this file>"   (no secrets needed)
+name = "share"
+main = "share.js"
+compatibility_date = "2024-01-01"
+workers_dev = true
+
+[vars]
+SITE = "https://rungirlrun.studio"
+FEED_API = "https://rgr-editor-backend.rungirlrun.workers.dev"

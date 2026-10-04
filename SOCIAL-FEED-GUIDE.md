@@ -60,6 +60,18 @@ npx wrangler deploy --config "/Users/ymd/Documents/RGR Web/Run-Girl-Run-Website/
 
 Deploying keeps the saved secrets (GitHub login, `IG_TOKEN`).
 
+## Share links
+
+- **Projects:** Share copies `rungirlrun.studio/p/<project>/`. The editor writes those pages whenever it saves; each shows the project's title, first text and thumbnail in link previews.
+- **Posts:** Share copies `share.rungirlrun.workers.dev/<code>` (`b…` = Bluesky, `i…` = Instagram). A separate small worker, `share` (`backend/share/`), builds the preview on request: the post's first line, platform and date, and its first image, or the **default banner** for text-only posts. If the post is deleted or untagged, it shows the site's own preview and opens the homepage. Nothing is stored.
+- The domain stays at Google Domains; that's why post links use the workers.dev address instead of rungirlrun.studio.
+
+Deploy the share worker (only when `backend/share/` changes; no secrets needed):
+
+```bash
+npx wrangler deploy --config "/Users/ymd/Documents/RGR Web/Run-Girl-Run-Website/backend/share/wrangler.toml"
+```
+
 ## Not set up yet
 
 - **Scaling past ~50 posts** (none urgent yet):

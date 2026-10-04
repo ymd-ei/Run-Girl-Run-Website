@@ -1378,10 +1378,19 @@ function setupEventListeners() {
 
     copyShareLink() {
       if (!openItem) return;
-      // Projects have static share pages (p/<id>/) for link previews; posts link to the site itself
-      const shareUrl = openItem.kind === 'post'
-        ? `https://rungirlrun.studio/?post=${encodeURIComponent(openItem.id)}`
-        : `https://rungirlrun.studio/p/${openItem.id}/`;
+      // Projects have share pages on the site (p/<id>/, written by the editor). Posts
+      // go through the share worker, which builds their link preview on request:
+      // b<rkey> = Bluesky, i<id> = Instagram. Anything else (e.g. demo posts) links
+      // to the post on the site.
+      let shareUrl = `https://rungirlrun.studio/p/${openItem.id}/`;
+      if (openItem.kind === 'post') {
+        const [src, key] = String(openItem.id).split(':');
+        const code = { bsky: 'b', ig: 'i' }[src];
+        const base = window.RGR_CONFIG?.shareBase;
+        shareUrl = code && key && base
+          ? `${base}/${code}${key}`
+          : `https://rungirlrun.studio/?post=${encodeURIComponent(openItem.id)}`;
+      }
       navigator.clipboard.writeText(shareUrl).then(() => {
         const btn = document.querySelector('.pp-hero-btn:last-child') || document.getElementById('pp-share');
         if (btn) {
