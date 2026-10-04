@@ -755,12 +755,18 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
     (el?.getClientRects().length ? el : el?.closest('.wf-dd')?.querySelector('.wf-dd-btn'))?.focus({ preventScroll: true });
   }
 
-  // Projects keep their hand-set order up front; feed posts follow, newest first.
+  // Newest first, projects and posts together. On the same day a project goes
+  // ahead of a post, and projects with the same date keep their hand-set order.
   // Most liked ranks both together.
   let items = [
-    ...visibleProjects.map(p => ({ key: p.id, types: projectTypes(p), html: renderWorkGrid([p], globalState.theme, { showAll }) })),
-    ...feedPosts.map(p => ({ key: likeKey(p.id), types: p.filters, html: postCardHTML(p, filters) })),
+    ...visibleProjects.map(p => ({ key: p.id, project: true, date: projectDate(p), types: projectTypes(p), html: renderWorkGrid([p], globalState.theme, { showAll }) })),
+    ...feedPosts.map(p => ({ key: likeKey(p.id), date: p.date, types: p.filters, html: postCardHTML(p, filters) })),
   ];
+  items = items.map((x, i) => [x, i]).sort(([a, i], [b, j]) =>
+    b.date.slice(0, 10).localeCompare(a.date.slice(0, 10))
+    || (b.project ? 1 : 0) - (a.project ? 1 : 0)
+    || (a.project ? i - j : new Date(b.date) - new Date(a.date)))
+    .map(([x]) => x);
   if (workSort === 'shuffle') {
     const rank = new Map(shuffleOrder.map((k, i) => [k, i]));
     items = items.map((x, i) => [x, rank.has(x.key) ? rank.get(x.key) : shuffleOrder.length + i])
@@ -800,7 +806,7 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
       // Projects count as their own source for the 2×2 feature (newest square one)
       const proj = visibleProjects.find(p => p.id === x.key);
       el.dataset.source = 'project';
-      el.dataset.date = proj?.year || '';
+      el.dataset.date = proj ? projectDate(proj) : '';
       el.dataset.order = visibleProjects.indexOf(proj);
     }
     return el;
@@ -984,12 +990,15 @@ async function loadAllLikes() {
   }));
 }
 
+/** A project's own date; older ones without it count as the end of their year. */
+const projectDate = p => p.date || (p.year || '0') + '-12-31';
+
 /** End of a post: two more pieces (same filter first), all 16:9. */
 function moreWorkHTML(post) {
   const filters = globalState.filters || DEFAULT_FILTERS;
   const candidates = [
     ...feedPosts.filter(p => p.id !== post.id).map(p => ({ types: p.filters, date: p.date, html: postCardHTML(p, filters, { uniform: true }) })),
-    ...projects.filter(p => workShowAll || p.published !== false).map(p => ({ types: projectTypes(p), date: (p.year || '0') + '-12-31', html: renderWorkGrid([p], globalState.theme, { showAll: workShowAll }) })),
+    ...projects.filter(p => workShowAll || p.published !== false).map(p => ({ types: projectTypes(p), date: projectDate(p), html: renderWorkGrid([p], globalState.theme, { showAll: workShowAll }) })),
   ];
   const same = candidates.filter(x => x.types.some(t => post.filters.includes(t)));
   const picks = [...same, ...candidates.filter(x => !same.includes(x)).sort((a, b) => new Date(b.date) - new Date(a.date))].slice(0, 2);

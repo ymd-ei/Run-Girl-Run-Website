@@ -1944,6 +1944,7 @@ async function saveAll(){
     type: projTypes(p)[0] || '',
     typeLabel: projTypes(p).length ? projTypeLabel(p, projTypes(p)[0]) : '',
     year: p.year,
+    date: p.date || '',
     thumbnail: p.thumbnail,
     published: !!p.published,
     sensitive: !!p.sensitive,

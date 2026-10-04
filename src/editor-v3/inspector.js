@@ -173,6 +173,8 @@ function field({ label, kind = 'text', value = '', options = [], dataKey, item, 
     </div>`;
   } else if (kind === 'color') {
     control = `<div class="v3-color-row"><input class="v3-color" type="color" ${attrs} value="${v || '#5e30eb'}"><input class="v3-f v3-color-text" type="text" data-mirror="${dataKey || ''}" value="${v}"></div>`;
+  } else if (kind === 'date') {
+    control = `<input class="v3-f" type="date" ${attrs} value="${v}">`;
   } else if (kind === 'checkbox') {
     control = `<label class="v3-check"><input type="checkbox" class="v3-f" ${attrs}${value ? ' checked' : ''}> ${escHtml(placeholder)}</label>`;
   } else {
@@ -509,6 +511,7 @@ const PROJECT_GROUPS = [
     { label: 'Title', key: 'title' },
     { label: 'Filters', key: 'types', kind: 'types' },
     { label: 'Year', key: 'year' },
+    { label: 'Date', key: 'date', kind: 'date' },
     { label: 'Client', key: 'client' },
     { label: 'Duration', key: 'duration' },
     { label: 'Thumbnail', key: 'thumbnail', kind: 'media' },

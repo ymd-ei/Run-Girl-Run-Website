@@ -280,6 +280,15 @@ export async function saveSiteData() {
   dispatchStatusEvent();
 
   try {
+    // A project saved without a date gets today's (shown in Details → Date, editable)
+    const today = new Date().toLocaleDateString('en-CA');
+    for (const path of dirtyFiles) {
+      const m = path.match(/^projects\/(.+)\.json$/);
+      const proj = m && state.projectCache.get(m[1]);
+      const live = proj && state.projects.find(p => p.id === m[1]);
+      for (const x of [proj, live]) if (x && !x.date) x.date = today;
+    }
+
     // Sync projectCards into content.json from current project state
     state.global.projectCards = state.projects.map(p => ({
       id: p.id,
@@ -288,6 +297,7 @@ export async function saveSiteData() {
       type: projectTypes(p)[0] || '',
       typeLabel: projectTypeLabels(p, state.global.filters)[0] || '',
       year: p.year,
+      date: p.date || '',
       thumbnail: p.thumbnail,
       published: !!p.published,
       sensitive: !!p.sensitive,
@@ -433,6 +443,7 @@ export function createProject(title) {
     type: '',
     typeLabel: '',
     year: new Date().getFullYear().toString(),
+    date: new Date().toLocaleDateString('en-CA'),
     client: '',
     duration: '',
     tags: [],

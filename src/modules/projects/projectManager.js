@@ -51,6 +51,7 @@ export function addProject(state, title) {
     type: 'motion',
     typeLabel: 'Motion',
     year: new Date().getFullYear().toString(),
+    date: new Date().toLocaleDateString('en-CA'),
     client: '',
     duration: '',
     tags: [],
