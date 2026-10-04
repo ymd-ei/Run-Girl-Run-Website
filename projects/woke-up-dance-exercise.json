@@ -8,7 +8,7 @@
   "typeLabel": "3D",
   "year": "2026",
   "thumbnail": "media/woke-up_thumbnail.webp",
-  "published": false,
+  "published": true,
   "sensitive": false,
   "sensitiveLabel": "18+ NSFW",
   "sensitiveColor": "",
@@ -63,7 +63,7 @@
     {
       "id": "b1791078666044gi5b",
       "type": "video",
-      "src": "media/RGR_woke-up_web.mp4"
+      "src": "media/RGR_Woke Up.mp4"
     }
   ]
 }
