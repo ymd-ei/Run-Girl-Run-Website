@@ -44,6 +44,11 @@
         "label": "Bluesky",
         "url": "https://bsky.app/profile/ymd-ei.bsky.social",
         "ref": "bluesky"
+      },
+      {
+        "label": "Substack",
+        "url": "https://runstudio.substack.com",
+        "ref": "substack"
       }
     ],
     "resume": "resume/RJ_RGR_anim-02_W25.pdf"
