@@ -62,6 +62,10 @@ Deploying keeps the saved secrets (GitHub login, `IG_TOKEN`).
 
 ## Not set up yet
 
+- **Scaling past ~50 posts** (none urgent yet):
+  1. Only the latest **50 posts per platform** are checked for `#rgr`. Lots of untagged posting pushes older tagged posts out of the grid. Fix: page back through history and keep a stored list of tagged posts on the worker.
+  2. **No "Show more":** every card renders at once. Fix: show ~20–30, then a button; lazy-load project thumbnails too.
+  3. **Most liked** asks the worker once per card. Fix: one request that returns all counts.
 - **Substack**: needs a small relay in the worker (Substack doesn't let other websites read its feed from a browser). After that, pasting the Substack link into Social links is enough.
 - **X**: possible, but X charges per post read (about $2–3 a month for this feed). Parked.
 - **Default banner** for text-only posts: add one in Site settings → Social feed. Until then they get a purple gradient.
