@@ -216,13 +216,76 @@ export function sanitizeHtml(html) {
         const ok = ['href', 'src', 'alt'].includes(a.name) && !/^\s*(javascript|data):/i.test(a.value);
         if (!ok) el.removeAttribute(a.name);
       }
-      if (el.tagName === 'A') { el.target = '_blank'; el.rel = 'noopener'; }
+      if (el.tagName === 'A') { el.target = '_blank'; el.rel = 'noopener'; el.className = 'post-tag'; } // links wear the hashtag look
       if (el.tagName === 'IMG') el.loading = 'lazy';
       if (el.tagName === 'H1') { const h = document.createElement('h2'); h.append(...el.childNodes); el.replaceWith(h); }
     }
   };
   walk(doc.body);
+  restyle(doc);
   return doc.body.innerHTML;
+}
+
+/* Dress cleaned article HTML in the site's own widgets (styles-main.css .bl-*) */
+const mk = (doc, tag, cls, html = '') => { const e = doc.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
+// Substack writes paragraph breaks inside one <p> as <br><br>
+const paras = html => html.split(/(?:<br\s*\/?>\s*){2,}/i).map(x => x.replace(/^(?:\s|<br\s*\/?>)+|(?:\s|<br\s*\/?>)+$/gi, '')).filter(Boolean);
+
+function restyle(doc) {
+  const body = doc.body;
+  for (const p of [...body.querySelectorAll('p')]) {
+    const parts = paras(p.innerHTML);
+    if (parts.length > 1) p.replaceWith(...parts.map(x => mk(doc, 'p', '', x)));
+  }
+  // The process widget is a list (<ol class="bl-process">), so Substack lists just
+  // take its classes. Each item is a box (bold opening line as the title, then the
+  // first paragraph) followed by the rest of the item's text, inside one list item.
+  // An image right after a list becomes the picture of its last box; further images
+  // stay in the article, and a list that comes after them carries on the numbering.
+  const imgOf = el => {
+    if (el.tagName === 'IMG') return el;
+    const imgs = el.querySelectorAll('img');
+    const plain = el.tagName === 'P' ? !el.textContent.trim() : el.tagName === 'FIGURE';
+    return plain && imgs.length === 1 ? imgs[0] : null;
+  };
+  let count = 0, last = null; // steps so far, and the last list (numbering resumes only across images)
+  for (const list of [...body.querySelectorAll('ol, ul')]) {
+    if (list.closest('.bl-process') && list.closest('.bl-process') !== list) continue;
+    let between = list.previousElementSibling;
+    while (between && imgOf(between)) between = between.previousElementSibling;
+    count = last && between === last && last.tagName === list.tagName ? count : 0;
+    if (count) list.style.counterReset = 'step ' + count;
+    list.className = 'bl-process';
+    for (const li of list.children) {
+      li.className = 'bl-process-item';
+      if (!li.querySelector(':scope > p')) li.innerHTML = `<p>${li.innerHTML}</p>`; // item without paragraphs
+      const f = li.firstElementChild;
+      const lead = f.children.length === 1 && f.firstElementChild.tagName === 'STRONG'
+        && f.textContent.trim() === f.firstElementChild.textContent.trim() ? f.textContent.trim() : '';
+      if (lead) { const h = mk(doc, 'h4'); h.textContent = lead; f.replaceWith(h); }
+      const kids = [...li.children];
+      const firstP = kids.findIndex(c => c.tagName === 'P');
+      const copy = mk(doc, 'div', 'bl-process-copy');
+      copy.append(...kids.slice(0, firstP + 1));
+      const card = mk(doc, 'div', 'bl-process-step');
+      card.append(copy);
+      li.replaceChildren(card, ...kids.slice(firstP + 1));
+      count++;
+    }
+    const next = list.nextElementSibling, pic = next && imgOf(next);
+    if (pic) {
+      const card = list.lastElementChild.firstElementChild;
+      const cap = next.querySelector('figcaption')?.textContent.trim();
+      card.classList.add('has-image');
+      card.prepend(mk(doc, 'img', 'bl-process-step-image'), mk(doc, 'div', 'bl-process-step-overlay'));
+      card.firstElementChild.src = pic.getAttribute('src');
+      card.firstElementChild.alt = pic.getAttribute('alt') || cap || '';
+      next.remove();
+    }
+    last = list;
+  }
+  for (const q of body.querySelectorAll('blockquote')) q.replaceWith(mk(doc, 'div', 'bl-quote', `<p>${q.textContent.trim()}</p>`));
+  for (const hr of body.querySelectorAll('hr')) hr.replaceWith(mk(doc, 'div', 'bl-divider'));
 }
 
 function mediaBlock(m, p) {

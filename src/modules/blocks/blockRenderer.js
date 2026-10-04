@@ -158,21 +158,19 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
         .join('')}</div>`;
 
     case 'process':
-      return `<div class="bl-process">${(block.steps || [])
+      return `<ol class="bl-process">${(block.steps || [])
         .map(
-          (step, index) => `<div class="bl-process-step${step.image ? ' has-image' : ''}">${
+          (step, index) => `<li class="bl-process-item"><div class="bl-process-step${step.image ? ' has-image' : ''}">${
             step.image
               ? `<img class="bl-process-step-image" src="${step.image}" alt="${
                   step.imageAlt || step.title || ''
                 }"><div class="bl-process-step-overlay"></div>`
               : ''
-          }<div class="bl-process-num">${
-            index + 1
-          }</div><div class="bl-process-copy">${
+          }<div class="bl-process-copy">${
             step.date ? `<div class="bl-process-meta"><span class="bl-process-date"${canvasAttrs('steps.date', index)}>${step.date}</span></div>` : ''
-          }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}>${step.content || ''}</p></div></div>`
+          }<h4${canvasAttrs('steps.title', index)}>${step.title || ''}</h4><p${canvasAttrs('steps.content', index)}>${step.content || ''}</p></div></div></li>`
         )
-        .join('')}</div>`;
+        .join('')}</ol>`;
 
     case 'cta':
       return `<section class="bl-cta ${block.tone || 'default'}"><div class="bl-cta-copy">${
