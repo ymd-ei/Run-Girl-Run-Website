@@ -82,6 +82,9 @@ async function handleRequestInner(request, env) {
   if (path === '/api/feed/instagram') {
     return handleInstagramFeed(request, env);
   }
+  if (path === '/api/feed/substack') {
+    return handleSubstackFeed(request, env);
+  }
   const likesMatch = path.match(/^\/api\/likes\/([a-zA-Z0-9_-]+)$/);
   if (likesMatch) {
     return handleLikes(request, env, likesMatch[1]);
@@ -906,6 +909,62 @@ async function handleInstagramFeed(request, env) {
     .filter(p => p.tags.some(t => t === 'rgr' || t.startsWith('rgr-')));
   const body = { posts, fetchedAt: new Date().toISOString() };
   if (env.LIKES) await env.LIKES.put(IG_FEED_CACHE_KEY, JSON.stringify(body), { expirationTtl: IG_FEED_TTL });
+  return json(body);
+}
+
+/* ── Social feed: Substack ──────────────────────────────
+ * Substack sends no CORS header, so the browser can't read it; the worker does.
+ * The public RSS has no tags, so this uses the archive endpoint (post tags,
+ * free/paid flag). Only free posts tagged #rgr leave the worker, with their
+ * full article HTML, cached for 10 minutes per publication.
+ * Called as /api/feed/substack?pub=<name> for <name>.substack.com.
+ */
+const SUBSTACK_FEED_TTL = 600; // seconds
+const SUBSTACK_MAX_POSTS = 12;
+
+function substackPost(p, base) {
+  const tags = (p.postTags || []).map(t => String(t.name || '').trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean);
+  return {
+    id: 'sub:' + p.slug,
+    source: 'substack',
+    url: p.canonical_url || `${base}/p/${p.slug}`,
+    date: p.post_date,
+    title: p.title || '',
+    text: p.subtitle || p.description || '',
+    html: p.body_html || '',
+    tags,
+    media: p.cover_image ? [{ type: 'image', url: p.cover_image, alt: p.title || '' }] : [],
+  };
+}
+
+async function handleSubstackFeed(request, env) {
+  const json = (data, status = 200) => corsResponse(new Response(JSON.stringify(data), {
+    status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' }
+  }), request, env);
+
+  // Only <name>.substack.com: the worker must not become an open proxy
+  const pub = (new URL(request.url).searchParams.get('pub') || '').toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(pub)) return json({ posts: [], error: 'Bad publication' }, 400);
+  const base = `https://${pub}.substack.com`;
+  const cacheKey = `feed:substack:${pub}`;
+
+  const cached = env.LIKES ? await env.LIKES.get(cacheKey, 'json') : null;
+  if (cached) return json(cached);
+
+  const list = await fetch(`${base}/api/v1/archive?sort=new&offset=0&limit=50`, { headers: { 'User-Agent': 'RGR-feed' } });
+  if (!list.ok) return json({ posts: [], error: 'Substack HTTP ' + list.status }, 502);
+  const tagged = (await list.json())
+    .filter(p => p.audience === 'everyone')
+    .filter(p => (p.postTags || []).some(t => { const n = String(t.name || '').toLowerCase(); return n === 'rgr' || n.startsWith('rgr-'); }))
+    .slice(0, SUBSTACK_MAX_POSTS);
+
+  // The archive has no article bodies; each post's own endpoint does
+  const full = await Promise.all(tagged.map(async p => {
+    const r = await fetch(`${base}/api/v1/posts/${encodeURIComponent(p.slug)}`, { headers: { 'User-Agent': 'RGR-feed' } });
+    return r.ok ? { ...p, ...(await r.json()) } : null;
+  }));
+  const body = { posts: full.filter(Boolean).map(p => substackPost(p, base)), fetchedAt: new Date().toISOString() };
+  if (env.LIKES) await env.LIKES.put(cacheKey, JSON.stringify(body), { expirationTtl: SUBSTACK_FEED_TTL });
   return json(body);
 }
 

@@ -6,7 +6,8 @@
  * login, CORS-enabled). The account comes from Site settings → Social links (a
  * bsky.app/profile/… link). Instagram needs the account's token, so the Worker
  * reads it (/api/feed/instagram) whenever an instagram.com link is in Social
- * links. Substack will go through the Worker the same way.
+ * links. Substack goes through the Worker too (/api/feed/substack), for a
+ * <name>.substack.com or substack.com/@<name> link.
  *
  * Post shape: { id, source, url, date, title?, text, html?, tags[], media[{type,url,alt,poster?,w?,h?}] }
  * The platform is the only control: retag or delete a post there and the site follows.
@@ -92,6 +93,22 @@ async function fetchInstagram() {
   return (await res.json()).posts || [];
 }
 
+function substackPub(site) {
+  for (const l of site.contact?.links || []) {
+    const m = String(l.url || '').match(/^https?:\/\/(?:([a-z0-9-]+)\.substack\.com|(?:www\.)?substack\.com\/@([a-z0-9_-]+))/i);
+    const name = m && (m[1] !== 'www' ? m[1] : null) || m && m[2];
+    if (name) return name.toLowerCase();
+  }
+  return '';
+}
+
+async function fetchSubstack(pub) {
+  const base = window.RGR_CONFIG?.apiBase || '';
+  const res = await fetch(`${base}/api/feed/substack?pub=${encodeURIComponent(pub)}`);
+  if (!res.ok) throw new Error('Substack feed HTTP ' + res.status);
+  return (await res.json()).posts || [];
+}
+
 /**
  * Every source the site can read, merged newest first. Posts without #rgr are
  * dropped here; each kept post carries `filters` (filter values) from its tags.
@@ -102,6 +119,8 @@ export async function loadFeed(site) {
   const handle = blueskyHandle(site);
   if (handle) jobs.push(fetchBluesky(handle));
   if ((site.contact?.links || []).some(l => /instagram\.com\//.test(l.url || ''))) jobs.push(fetchInstagram());
+  const pub = substackPub(site);
+  if (pub) jobs.push(fetchSubstack(pub));
   const results = await Promise.allSettled(jobs);
   results.filter(r => r.status === 'rejected').forEach(r => console.warn('Feed source failed:', r.reason));
   return withFilters(results.flatMap(r => (r.status === 'fulfilled' ? r.value : [])), site);
