@@ -143,6 +143,7 @@ body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:
 .wg.masonry{display:block;position:relative}
 .wg.masonry>.wc{position:absolute;top:0;left:0;transition:transform .55s var(--ease),opacity .4s ease}
 .wg.masonry>.wc.wc-enter{opacity:0}
+.wg.masonry>.wc.wc-leave{opacity:0;pointer-events:none;transition:opacity .3s ease}
 /* Filter row: chips on one line, overflow in "More", quiet sort dropdown on the right */
 .wf{align-items:center;flex-wrap:nowrap;position:relative;z-index:5} /* menus open over the grid */
 .wf-chips{display:flex;gap:.4rem;flex:1 1 auto;min-width:0;overflow:hidden}

@@ -275,11 +275,11 @@ function squareFeatures(kids) {
 // take two columns (a square at double width becomes a 2×2 feature)
 const canSpan = (el, features) => el.classList.contains('wc-quote') || +el.dataset.ratio >= WIDE_RATIO || features.has(el);
 const cardKey = el => el.dataset.key;
-export const cardPositions = grid => new Map([...grid.children].filter(el => el.dataset.pos).map(el => [cardKey(el), el.dataset.pos]));
+export const cardPositions = grid => new Map([...grid.children].filter(el => el.dataset.pos && !el.classList.contains('wc-leave')).map(el => [cardKey(el), el.dataset.pos]));
 const observers = new WeakMap();
 
 export function masonry(grid, prev) {
-  const kids = [...grid.children].filter(el => el.classList.contains('wc'));
+  const kids = [...grid.children].filter(el => el.classList.contains('wc') && !el.classList.contains('wc-leave'));
   grid.classList.toggle('masonry', kids.length > 0);
   if (!kids.length) { grid.style.height = ''; return; }
   const w = grid.clientWidth;

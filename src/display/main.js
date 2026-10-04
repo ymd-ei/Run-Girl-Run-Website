@@ -52,6 +52,8 @@ let workSort = 'newest';        // 'newest' | 'likes' | 'shuffle'
 let shuffleOrder = [];          // card keys in the order the last Shuffle dealt them
 const likeCounts = new Map();   // likes API key -> count, filled when sorting by likes
 let openItem = null;            // { kind: 'project' | 'post', id } in the #pp panel
+const cardHtml = new Map();     // key -> markup last rendered, so unchanged cards are reused
+const parkedCards = new Map();  // key -> card element filtered out, kept so it returns without reloading
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let canvasEditEnabled = false;
 let canvasEditActiveElement = null;
@@ -758,23 +760,51 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   if (workFilter !== 'all') items = items.filter(x => x.types.includes(workFilter));
 
   const before = cardPositions(gridEl);
-  gridEl.innerHTML = items.map(x => x.html).join('');
-  // Project cards need the same key the stacking uses to animate them
-  [...gridEl.children].forEach((el, i) => {
-    if (el.dataset.key) return;
-    el.dataset.key = items[i]?.key;
-    // Projects count as their own source for the 2×2 feature (newest square one)
-    const proj = visibleProjects.find(p => p.id === items[i]?.key);
-    el.dataset.source = 'project';
-    el.dataset.date = proj?.year || '';
-    el.dataset.order = visibleProjects.indexOf(proj);
+  // Keep cards that are still shown (same markup) so their images and shapes
+  // don't reload; they just slide. Cards that drop out fade away; new ones fade in.
+  const existing = new Map([...gridEl.children].filter(el => el.dataset.key && !el.classList.contains('wc-leave')).map(el => [el.dataset.key, el]));
+  const nodes = items.map(x => {
+    const same = cardHtml.get(x.key) === x.html;
+    const old = existing.get(x.key);
+    if (old && same) { existing.delete(x.key); return old; }
+    const parked = parkedCards.get(x.key);
+    if (parked && same) {
+      // Back from a filter: same element, so the image and shape are already there
+      parkedCards.delete(x.key);
+      clearTimeout(parked._leaveTimer);
+      parked.classList.remove('wc-leave');
+      delete parked.dataset.pos; // place it fresh (fades in at its new spot)
+      return parked;
+    }
+    const tmp = document.createElement('div');
+    tmp.innerHTML = x.html;
+    const el = tmp.firstElementChild;
+    cardHtml.set(x.key, x.html);
+    if (!el.dataset.key) {
+      // Project cards need the same key the stacking uses to animate them
+      el.dataset.key = x.key;
+      // Projects count as their own source for the 2×2 feature (newest square one)
+      const proj = visibleProjects.find(p => p.id === x.key);
+      el.dataset.source = 'project';
+      el.dataset.date = proj?.year || '';
+      el.dataset.order = visibleProjects.indexOf(proj);
+    }
+    return el;
   });
-  if (workSort === 'likes') {
-    [...gridEl.children].forEach((el, i) => {
+  existing.forEach((el, key) => {
+    el.classList.add('wc-leave');
+    parkedCards.set(key, el);
+    el._leaveTimer = setTimeout(() => el.remove(), 400);
+  });
+  [...gridEl.querySelectorAll(':scope > :not(.wc)')].forEach(el => el.remove()); // e.g. an old "nothing here" note
+  nodes.forEach(el => gridEl.appendChild(el));
+  nodes.forEach((el, i) => {
+    el.querySelector('.wc-likes')?.remove();
+    if (workSort === 'likes') {
       el.querySelector('.wcty')?.insertAdjacentHTML('beforeend',
         `<span class="wc-likes"><i class="ph-fill ph-heart"></i> ${likeCounts.get(items[i].key) || 0}</span>`);
-    });
-  }
+    }
+  });
   masonry(gridEl, before);
 
   // Initialize sensitive tapes
