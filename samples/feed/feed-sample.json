@@ -1,5 +1,0 @@
-{
-  "_note": "Stand-in for the daily job's output. Empty: the sample reads Bluesky live, and live/substack.json (git-ignored, local only) can add a test Substack post.",
-  "fetchedAt": "2026-10-03T14:00:00Z",
-  "posts": []
-}

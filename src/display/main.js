@@ -849,6 +849,9 @@ function fitWorkFilters(row) {
 function bindWorkFilterRow(row) {
   if (row.dataset.bound) return;
   row.dataset.bound = '1';
+  // A thin line under the pinned filter row once the grid scrolls beneath it
+  const scroller = row.closest('.pb');
+  if (scroller) scroller.addEventListener('scroll', () => row.classList.toggle('is-stuck', scroller.scrollTop > 8), { passive: true });
   row.addEventListener('click', e => {
     const toggle = e.target.closest('.wf-dd-btn');
     const dd = toggle?.closest('.wf-dd');

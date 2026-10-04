@@ -74,5 +74,4 @@ Deploying keeps the saved secrets (GitHub login, `IG_TOKEN`).
 ## Testing tools
 
 - **Demo posts:** open **rungirlrun.studio/?demo** (or `http://localhost:8099/?demo` on the local server: `python3 dev-server.py 8099` in the website folder). About 14 placeholder posts fill the Work grid (all shapes, short and long text, a carousel, a video, articles) with made-up like counts, plus a **Shuffle** button to try different layouts. Visitors without `?demo` never see any of it, and liking a demo post doesn't touch real likes. Add `&drafts=all` to include unpublished projects.
-- Sample page: `/samples/feed/` (hidden, not linked from the site).
-- `samples/feed/fetch_substack.py` pulls a Substack's posts for local testing into `samples/feed/live/`, which is git-ignored so other people's articles never deploy.
+- `samples/feed/fetch_substack.py` (a first draft of the Substack relay) pulls a Substack's posts for local testing into `samples/feed/live/`, which is git-ignored so other people's articles never deploy.
