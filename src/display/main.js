@@ -243,6 +243,8 @@ function setNativeCursorEnabled(enabled) {
   // Accessibility default: the normal system cursor unless customCursor is true in site-config.js
   const customCursor = !!(window.RGR_CONFIG && window.RGR_CONFIG.customCursor);
   document.body.classList.toggle('native-cursor', !customCursor || !!enabled);
+  // native-cursor-forced = fullscreen / popups, where the work badge must hide too
+  document.body.classList.toggle('native-cursor-forced', !!enabled);
 }
 
 function setReelPopupCursorDisabled(disabled) {
@@ -1585,11 +1587,17 @@ function setupEventListeners() {
 
     document.addEventListener('mousemove', e => {
       const hiddenCursorMode =
-        document.body.classList.contains('native-cursor') ||
+        document.body.classList.contains('native-cursor-forced') ||
         document.body.classList.contains('reel-popup-open');
 
       if (hiddenCursorMode) {
         hideCursorWorkBadge();
+        return;
+      }
+
+      if (document.body.classList.contains('native-cursor')) {
+        // normal system cursor: skip the custom dot but keep the work badge beside the pointer
+        updateCursorWorkBadge(e.clientX, e.clientY, true);
         return;
       }
 

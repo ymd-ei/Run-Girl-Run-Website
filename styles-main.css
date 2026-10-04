@@ -23,7 +23,7 @@ body.ch #cur{width:40px;height:40px;background:transparent;border-width:1px}
 #cur-work-badge{position:fixed;left:0;top:0;z-index:9997;pointer-events:none;transform:translate(-9999px,-9999px) translateY(-50%);margin-left:18px;opacity:0;padding:.18rem .55rem;border-radius:2px;background:var(--accent);color:#fff;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-normal);text-transform:uppercase;white-space:nowrap;transition:opacity .8s var(--ease),margin-left .18s var(--ease);will-change:transform,margin-left}
 #cur-work-badge.is-visible{opacity:1}
 body.ch #cur-work-badge{margin-left:34px}
-body.native-cursor #cur-work-badge,body.reel-popup-open #cur-work-badge{display:none !important}
+body.native-cursor-forced #cur-work-badge,body.reel-popup-open #cur-work-badge{display:none !important}
 @media (pointer:coarse){#cur-work-badge{display:none !important}}
 
 /* ─────────────────────────────────────────
