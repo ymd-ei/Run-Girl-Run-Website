@@ -191,6 +191,23 @@ export function sanitizeHtml(html) {
   const walk = node => {
     for (const el of [...node.children]) {
       walk(el); // children first, so anything unwrapped below is already clean
+      // Substack's own "subscribe" box sends readers away; the post ends with our own way out
+      if (el.matches('.subscription-widget-wrap-editor, [data-component-name="SubscribeWidgetToDOM"]')) { el.remove(); continue; }
+      // Substack's uploaded video is only an id in the article; its /src link redirects to the file
+      if (el.classList.contains('native-video-embed')) {
+        let id = '';
+        try { id = JSON.parse(el.dataset.attrs || '{}').mediaUploadId || ''; } catch { /* no id: drop it */ }
+        if (/^[0-9a-f-]{36}$/i.test(id)) {
+          const box = document.createElement('div');
+          box.className = 'bl-image post-media';
+          const v = document.createElement('video');
+          v.src = `https://substack.com/api/v1/video/upload/${id}/src?type=mp4#t=0.1`;
+          v.controls = true; v.playsInline = true; v.preload = 'metadata';
+          box.append(v);
+          el.replaceWith(box);
+        } else el.remove();
+        continue;
+      }
       if (DROP.has(el.tagName)) { el.remove(); continue; }
       // Substack wraps each image in a link to the full-size file; keep readers on the page
       if (el.tagName === 'A' && el.classList.contains('image-link')) { el.replaceWith(...el.childNodes); continue; }
