@@ -3,6 +3,8 @@
  * Handles text scrambling and idle animations
  */
 
+import { reducedMotion } from './a11y.js';
+
 /**
  * Keyboard proximity map for scramble effect
  */
@@ -62,6 +64,7 @@ export function rescrambleSpan(span) {
  */
 export function scheduleIdle(allSpanGroups, options = {}) {
   if (!allSpanGroups || allSpanGroups.length === 0) return;
+  if (reducedMotion()) return { cancel() {} }; // no idle flicker
 
   const initialDelay = Number.isFinite(options.initialDelay) ? options.initialDelay : 5500;
   const minDelay = Number.isFinite(options.minDelay) ? options.minDelay : 4000;

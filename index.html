@@ -35,10 +35,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" media="print" onload="this.media='all'">
-<link rel="preload" href="styles-main.css?v=9" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="styles-main.css?v=9"></noscript>
+<link rel="preload" href="styles-main.css?v=10" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="styles-main.css?v=10"></noscript>
 <script src="site-config.js"></script>
-<link rel="modulepreload" href="src/display/main.js?v=16">
+<link rel="modulepreload" href="src/display/main.js?v=17">
 <link rel="modulepreload" href="src/display/displayRenderer.js">
 <link rel="modulepreload" href="src/state/globalState.js">
 <link rel="modulepreload" href="src/utils/svg.js">
@@ -81,14 +81,16 @@
 <style id="pattern-styles"></style>
 </head>
 <body class="native-cursor">
-<div id="cur"></div>
-<div id="grain"></div>
+<!-- Shown on the first Tab press: opens Work and puts focus on the first card -->
+<button class="skip-link" onclick="window.display?.skipToWork?.()">Skip to work</button>
+<div id="cur" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
 
 <!-- LOADER -->
-<div id="loader">
+<div id="loader" role="status" aria-label="Loading">
   <img id="loader-img" src="media/doog_loop-smoller.png" alt="">
-  <div id="loader-name" data-name="Run Girl Run"></div>
-  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+  <div id="loader-name" data-name="Run Girl Run" aria-hidden="true"></div>
+  <div id="loader-bar-wrap" aria-hidden="true"><div id="loader-bar"></div></div>
 </div>
 
 <div id="stage"><div id="reel"></div></div>
@@ -115,22 +117,22 @@
   </button>
 </div>
 
-<div id="lightbox">
+<div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-label">
   <div id="lb-backdrop" onclick="window.display?.closeLightbox?.()"></div>
   <div id="lb-inner">
     <div id="lb-top">
       <span id="lb-label" data-site-text="reelLabel">Demo Reel</span>
-      <button id="lb-close" onclick="window.display?.closeLightbox?.()">&#x2715;</button>
+      <button id="lb-close" aria-label="Close" onclick="window.display?.closeLightbox?.()">&#x2715;</button>
     </div>
     <div id="lb-frame"></div>
   </div>
 </div>
 
-<div id="bd" onclick="window.display?.smartClose?.()"></div>
+<div id="bd" aria-hidden="true" onclick="window.display?.smartClose?.()"></div>
 
 <!-- WORK -->
-<div class="panel wide" id="panel-work">
-  <div class="ph"><span class="pt2" data-site-text="navWork">Work</span><button class="pc" onclick="window.display?.closeToRoot?.()">&#x2715;</button></div>
+<div class="panel wide" id="panel-work" role="dialog" aria-modal="true" aria-labelledby="panel-work-title">
+  <div class="ph"><span class="pt2" id="panel-work-title" data-site-text="navWork">Work</span><button class="pc" aria-label="Close" onclick="window.display?.closeToRoot?.()">&#x2715;</button></div>
   <div class="pb">
     <div class="wf" id="work-filters"></div>
     <div class="wg" id="wg"></div>
@@ -142,20 +144,20 @@
 </div>
 
 <!-- PROJECT DETAIL -->
-<div class="panel" id="pp">
+<div class="panel" id="pp" role="dialog" aria-modal="true" aria-label="Project">
   <div class="ph">
     <button class="backbtn" onclick="window.display?.closeProject?.()">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       <span data-site-text="back">Back</span>
     </button>
-    <button class="pc" onclick="window.display?.closeProject?.()">&#x2715;</button>
+    <button class="pc" aria-label="Close" onclick="window.display?.closeProject?.()">&#x2715;</button>
   </div>
   <div class="ppbody" id="ppb"></div>
 </div>
 
 <!-- ABOUT -->
-<div class="panel" id="panel-about">
-  <div class="ph"><span class="pt2" data-site-text="navAbout">About</span><button class="pc" onclick="window.display?.closeToRoot?.()">&#x2715;</button></div>
+<div class="panel" id="panel-about" role="dialog" aria-modal="true" aria-labelledby="panel-about-title">
+  <div class="ph"><span class="pt2" id="panel-about-title" data-site-text="navAbout">About</span><button class="pc" aria-label="Close" onclick="window.display?.closeToRoot?.()">&#x2715;</button></div>
   <div class="pb" id="about-body"></div>
   <div class="panel-legal-footer">
     <span data-site-text="footer">© Run Girl Run</span>
@@ -164,11 +166,11 @@
 </div>
 
 <!-- CONTACT PANEL & CLOSE BUTTON -->
-<div id="ct-sliver" onclick="window.display?.closeToRoot?.()"></div>
-<button id="ct-close" onclick="window.display?.closeToRoot?.()">&#x2715;</button>
+<div id="ct-sliver" aria-hidden="true" onclick="window.display?.closeToRoot?.()"></div>
+<button id="ct-close" aria-label="Close contact" onclick="window.display?.closeToRoot?.()">&#x2715;</button>
 
-<div id="contact-wrapper">
-  <div id="ct-bg">
+<div id="contact-wrapper" role="dialog" aria-modal="true" aria-label="Contact">
+  <div id="ct-bg" aria-hidden="true">
     <div id="ct-bg-video"></div>
     <div id="ct-bg-grad"></div>
     <div id="ct-bg-dark"></div>
@@ -176,15 +178,15 @@
   </div>
   <div id="ct-content">
     <div id="ct-splash">
-      <div class="ct-ticker tape-top reverse" id="ct-ticker-top">
+      <div class="ct-ticker tape-top reverse" id="ct-ticker-top" aria-hidden="true">
         <div class="ticker-track"></div>
       </div>
       <p class="ct-tag" id="ct-location"></p>
       <h1 class="ct-hero"></h1>
       <p class="ct-sub"></p>
-      <div class="ct-scroll-cue"><span class="ct-scroll-line"></span><span data-site-text="contactCue">See how to reach us</span></div>
+      <div class="ct-scroll-cue" aria-hidden="true"><span class="ct-scroll-line"></span><span data-site-text="contactCue">See how to reach us</span></div>
     </div>
-    <div id="ct-ticker-mid" class="ct-ticker tape-mid">
+    <div id="ct-ticker-mid" class="ct-ticker tape-mid" aria-hidden="true">
       <div class="ticker-track"></div>
     </div>
     <div id="ct-links">
@@ -192,7 +194,7 @@
         <p class="ct-email-label"></p>
         <a id="ct-email-link" href="#" class="ct-email-link">
           <span id="ct-email-text"></span>
-          <i class="ph-fill ph-arrow-up-right arr"></i>
+          <i class="ph-fill ph-arrow-up-right arr" aria-hidden="true"></i>
         </a>
       </div>
       <div id="ct-social-wrap">
@@ -202,9 +204,9 @@
       <div class="ct-resume-block" id="ct-resume-wrap" style="display:none">
         <p class="ct-email-label" id="ct-resume-label">Credentials</p>
         <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="ct-resume-link">
-          <i class="ph-fill ph-file-pdf"></i>
+          <i class="ph-fill ph-file-pdf" aria-hidden="true"></i>
           <span data-site-text="resumeLink">View Resume</span>
-          <i class="ph-fill ph-arrow-right"></i>
+          <i class="ph-fill ph-arrow-right" aria-hidden="true"></i>
         </a>
       </div>
     </div>
@@ -215,16 +217,16 @@
   </div>
 </div>
 
-<div id="contact-wrapper-bg"></div>
+<div id="contact-wrapper-bg" aria-hidden="true"></div>
 
 <!-- Legal Modal -->
-<div id="legal-modal" onclick="if(event.target===this)closeLegalModal()">
+<div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">
   <div id="legal-card"></div>
 </div>
 
 
 <script type="module">
-  import('./src/display/main.js?v=16')
+  import('./src/display/main.js?v=17')
     .then(({ bootstrap }) => {
       const start = () => {
         bootstrap().catch(err => {

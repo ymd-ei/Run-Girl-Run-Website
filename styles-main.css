@@ -631,3 +631,40 @@ body.panel-frost .panel .bl-faq,body.panel-frost .ppbody .bl-faq{border-top-colo
 body.panel-frost .panel .bl-faq-item,body.panel-frost .ppbody .bl-faq-item{border-bottom-color:rgba(var(--paper-rgb),0.12)}
 body.panel-frost .panel .bl-faq-trigger,body.panel-frost .ppbody .bl-faq-trigger{color:var(--paper)}
 body.panel-frost .panel .bl-faq-panel p,body.panel-frost .ppbody .bl-faq-panel p{color:rgba(var(--paper-rgb),0.72)}
+
+/* ─────────────────────────────────────────
+   ACCESSIBILITY
+   Keyboard focus rings (only shown for keyboard use, so the mouse look is
+   unchanged) and reduced motion. See README → Accessibility.
+───────────────────────────────────────── */
+:where(a,button,[role="button"],[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* Light over dark: the frost panels, the contact panel and the home screen */
+body.panel-frost :where(.panel,#pp,#legal-card) :focus-visible,#contact-wrapper :focus-visible,#ct-close:focus-visible,#nav :focus-visible,#watch-reel:focus-visible,#lightbox :focus-visible{outline-color:rgba(var(--paper-rgb),.9)}
+/* Dialogs take focus when they open; the panel itself needs no ring */
+:where(.panel,#pp,#contact-wrapper,#legal-modal,#lightbox):focus{outline:none}
+/* Work cards: the hover look, plus a ring that clears the thumbnail */
+.wc{scroll-margin:5.5rem 0 1.5rem} /* keep a focused card clear of the pinned filter row */
+.wc:focus-visible{outline-offset:5px}
+.wc:focus-visible .wci{transform:scale(1.025)}
+.wc:focus-visible .wco{opacity:1}
+.wc-quote:focus-visible{background:rgba(var(--accent-rgb),.16)}
+/* Filter chips sit in an overflow:hidden row, so their ring goes inside */
+.wf .fb:focus-visible,.wf-opt:focus-visible,.wf-sort-btn:focus-visible{outline-offset:-2px}
+body.panel-frost .wf :focus-visible{outline-color:rgba(var(--paper-rgb),.9)}
+/* The contact close button is hidden for mouse users (they click the sliver);
+   it shows while it has keyboard focus */
+#ct-close:focus-visible{opacity:1;transition-delay:0s}
+/* Skip link: off-screen until the first Tab, then a small accent tag at the top */
+.skip-link{position:fixed;top:5rem;left:50%;z-index:9500;transform:translate(-50%,calc(-100% - 5.5rem));padding:.45rem .9rem;border:none;border-radius:2px;background:var(--accent);color:#fff;font-family:var(--font-b);font-size:var(--fs-xs);font-weight:500;letter-spacing:var(--ls-wide);text-transform:uppercase}
+.skip-link:focus-visible{transform:translate(-50%,0);outline-color:rgba(var(--paper-rgb),.9)}
+/* Privacy & Legal: a close button that appears only when tabbed to */
+.legal-close{position:absolute;top:1rem;right:1rem;padding:.4rem .8rem;border:1px solid var(--panel-border);background:none;color:inherit;font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;opacity:0;pointer-events:none}
+.legal-close:focus-visible{opacity:1;pointer-events:auto}
+
+@media (prefers-reduced-motion: reduce){
+  /* Slides, fades and loops become instant; the JS skips the scrambles,
+     tickers and loader tweening (see src/utils/a11y.js reducedMotion) */
+  *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0s !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;transition-delay:0s !important;scroll-behavior:auto !important}
+  .wc:hover .wci,.wc:focus-visible .wci{transform:none}
+  .pc:hover,#lb-close:hover,#ct-close:hover{transform:none}
+}

@@ -858,12 +858,20 @@ async function refreshInstagramToken(env, force = false) {
   return next;
 }
 
+function captionAlt(caption) {
+  const t = String(caption || '').replace(/(^|\s)#[\w-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return t.length <= 150 ? t : t.slice(0, 150).replace(/\s+\S*$/, '') + '…';
+}
+
 function instagramPost(m) {
   const caption = m.caption || '';
   const tags = [...caption.matchAll(/#([\w-]+)/g)].map(x => x[1].toLowerCase());
+  // Instagram's API has no per-image alt text, so describe images with the
+  // caption (hashtags stripped, trimmed to a screen-reader-friendly length)
+  const alt = captionAlt(caption);
   const asMedia = x => x.media_type === 'VIDEO'
-    ? { type: 'video', url: x.media_url, poster: x.thumbnail_url || '' }
-    : { type: 'image', url: x.media_url, alt: '' };
+    ? { type: 'video', url: x.media_url, poster: x.thumbnail_url || '', alt }
+    : { type: 'image', url: x.media_url, alt };
   const items = m.media_type === 'CAROUSEL_ALBUM' && m.children?.data?.length ? m.children.data : [m];
   return {
     id: 'ig:' + m.id,

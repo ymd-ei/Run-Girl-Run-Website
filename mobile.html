@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
-<link rel="stylesheet" href="styles-mobile.css?v=2">
+<link rel="stylesheet" href="styles-mobile.css?v=3">
 </head>
 <body>
 
@@ -40,12 +40,12 @@
 
 <!-- WORK: the full site has the projects -->
 <div class="view-work-wrap">
-  <a class="view-work-btn" href="index.html?desktop=true"><span data-site-text="viewWork">View work</span> <i class="ph-fill ph-arrow-right"></i></a>
+  <a class="view-work-btn" href="index.html?desktop=true"><span data-site-text="viewWork">View work</span> <i class="ph-fill ph-arrow-right" aria-hidden="true"></i></a>
 </div>
 
 <!-- CONTACT -->
 <section id="contact">
-  <div id="ct-bg-video" class="ct-bg-video"></div>
+  <div id="ct-bg-video" class="ct-bg-video" aria-hidden="true"></div>
   <div class="ct-content">
     <h2 class="section-title contact-title" id="ct-title"></h2>
     <p class="contact-sub" id="ct-sub"></p>
@@ -60,9 +60,9 @@
     <div id="ct-resume-wrap" class="contact-resume-block" style="display:none">
       <p class="contact-label" id="ct-resume-label">Credentials</p>
       <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="contact-resume-link">
-        <i class="ph-fill ph-file-pdf"></i>
+        <i class="ph-fill ph-file-pdf" aria-hidden="true"></i>
         <span data-site-text="resumeLink">View Resume</span>
-        <i class="ph-fill ph-arrow-right"></i>
+        <i class="ph-fill ph-arrow-right" aria-hidden="true"></i>
       </a>
     </div>
   </div>
@@ -74,7 +74,7 @@
 </footer>
 
 <!-- Legal Modal -->
-<div id="legal-modal" onclick="if(event.target===this)closeLegalModal()">
+<div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">
   <div id="legal-card"></div>
 </div>
 

@@ -23,6 +23,7 @@ import { setRefContext } from '../utils/refs.js';
 import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
+import { initA11y, reducedMotion } from '../utils/a11y.js';
 import {
   loadFeed, withFilters, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey,
   masonry, cardPositions, initThumbShapes, SOURCES
@@ -283,6 +284,7 @@ function runLoaderAnimation() {
   const nameText = nameEl.dataset.name || document.title;
 
   function runLoaderName() {
+    if (reducedMotion()) { nameEl.textContent = nameText; return; }
     nameEl.innerHTML = nameText
       .split('')
       .map(ch =>
@@ -341,8 +343,8 @@ function runLoaderAnimation() {
   }
 
   function tweenBar(from, to, duration, done) {
-    // rAF is paused in background tabs; skip the animation there.
-    if (document.hidden) { bar.style.width = to + '%'; return done(); }
+    // rAF is paused in background tabs; skip the animation there (and for reduced motion).
+    if (document.hidden || reducedMotion()) { bar.style.width = to + '%'; return done(); }
     const startTime = performance.now();
     function step(now) {
       const t = Math.min((now - startTime) / duration, 1);
@@ -357,7 +359,7 @@ function runLoaderAnimation() {
   let stopIdx = 0;
   let shown = 0;
   function animateBar() {
-    if (stopIdx >= stops.length) return waitForVideos();
+    if (stopIdx >= stops.length || reducedMotion()) return waitForVideos();
     const target = stops[stopIdx++];
     tweenBar(shown, target, 200 + Math.random() * 180, () => {
       shown = target;
@@ -432,6 +434,7 @@ export async function bootstrap() {
   try {
     runLoaderAnimation();
     initLegalModal();
+    initA11y();
 
     // Set up bridge immediately to avoid missing the editor's first preview push.
     setupEditorPreviewBridge();
@@ -729,21 +732,28 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
 
   let chipIndex = 0;
   const chip = (value, label) =>
-    `<button class="fb${workFilter === value ? ' active' : ''}" data-i="${chipIndex++}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
+    `<button class="fb${workFilter === value ? ' active' : ''}" aria-pressed="${workFilter === value}" data-i="${chipIndex++}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
   // Sort: a quiet text dropdown on the right (Shuffle only locally or in demo mode)
   const sorts = [['newest', 'Newest'], ['likes', 'Most liked'], ...(IS_LOCAL || DEMO_MODE ? [['shuffle', 'Shuffle']] : [])];
   const sortLabel = (sorts.find(([v]) => v === workSort) || sorts[0])[1];
   const sortHTML = feedPosts.length ? `<div class="wf-dd wf-sort">
-      <button class="wf-dd-btn wf-sort-btn" aria-haspopup="true">${sortLabel} <span class="wf-caret">▾</span></button>
-      <div class="wf-menu wf-menu-right">${sorts.map(([v, l]) =>
-        `<button class="wf-opt${workSort === v ? ' active' : ''}" onclick="window.display?.sortWork?.('${v}')">${l}</button>`).join('')}</div>
+      <button class="wf-dd-btn wf-sort-btn" aria-expanded="false" aria-controls="wf-sort-menu" aria-label="Sort: ${sortLabel}">${sortLabel} <span class="wf-caret" aria-hidden="true">▾</span></button>
+      <div class="wf-menu wf-menu-right" id="wf-sort-menu">${sorts.map(([v, l]) =>
+        `<button class="wf-opt${workSort === v ? ' active' : ''}" aria-pressed="${workSort === v}" onclick="window.display?.sortWork?.('${v}')">${l}</button>`).join('')}</div>
     </div>` : '';
+  // Rebuilding the row drops keyboard focus; put it back on the same control afterwards
+  const refocus = filtersEl.contains(document.activeElement) || document.activeElement === document.body ? filtersEl._focusKey : null;
   // Filters stay as chips; any that don't fit on one line fold into "More" (see fitWorkFilters)
-  filtersEl.innerHTML = `<div class="wf-chips">${chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')}</div>
-    <div class="wf-dd wf-more" hidden><button class="fb wf-dd-btn" aria-haspopup="true"></button><div class="wf-menu"></div></div>`
+  filtersEl.innerHTML = `<div class="wf-chips" role="group" aria-label="Filter work">${chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')}</div>
+    <div class="wf-dd wf-more" hidden><button class="fb wf-dd-btn" aria-expanded="false" aria-controls="wf-more-menu"></button><div class="wf-menu" id="wf-more-menu" role="group" aria-label="More filters"></div></div>`
     + sortHTML;
   bindWorkFilterRow(filtersEl);
   fitWorkFilters(filtersEl);
+  if (refocus) {
+    const el = [...filtersEl.querySelectorAll('button')].find(b => filterControlKey(b) === refocus);
+    // A choice inside a (now closed) menu hands focus to that menu's button
+    (el?.getClientRects().length ? el : el?.closest('.wf-dd')?.querySelector('.wf-dd-btn'))?.focus({ preventScroll: true });
+  }
 
   // Projects keep their hand-set order up front; feed posts follow, newest first.
   // Most liked ranks both together.
@@ -835,31 +845,57 @@ function fitWorkFilters(row) {
   if (!row.clientWidth) return; // not laid out yet; the resize observer fits it later
   if (chipsEl.scrollWidth <= chipsEl.clientWidth + 1) return;
   more.hidden = false;
-  btn.textContent = 'More ▾';
+  btn.innerHTML = 'More <span aria-hidden="true">▾</span>';
   // Never fold "All"
   while (chipsEl.children.length > 1 && chipsEl.scrollWidth > chipsEl.clientWidth + 1) {
     menu.prepend(chipsEl.lastElementChild);
   }
   const active = menu.querySelector('.fb.active');
   btn.classList.toggle('active', !!active);
-  if (active) btn.textContent = active.textContent + ' ▾';
+  if (active) btn.innerHTML = `${active.textContent} <span aria-hidden="true">▾</span>`;
 }
+
+// Identifies a filter-row button across re-renders (chips and options by their action)
+const filterControlKey = b => b.getAttribute('onclick')
+  || (b.classList.contains('wf-dd-btn') ? (b.closest('.wf-sort') ? 'dd:sort' : 'dd:more') : '');
 
 /** Open/close the filter row's dropdowns; re-fit the chips when the row resizes. */
 function bindWorkFilterRow(row) {
   if (row.dataset.bound) return;
   row.dataset.bound = '1';
+  row.addEventListener('focusin', e => { row._focusKey = filterControlKey(e.target); });
   // A thin line under the pinned filter row once the grid scrolls beneath it
   const scroller = row.closest('.pb');
   if (scroller) scroller.addEventListener('scroll', () => row.classList.toggle('is-stuck', scroller.scrollTop > 8), { passive: true });
+  // Dropdowns are disclosure buttons: aria-expanded follows the open class
+  const setOpen = (dd, open) => {
+    dd.classList.toggle('open', open);
+    dd.querySelector('.wf-dd-btn')?.setAttribute('aria-expanded', String(open));
+  };
+  const closeAll = except => row.querySelectorAll('.wf-dd.open').forEach(el => { if (el !== except) setOpen(el, false); });
   row.addEventListener('click', e => {
     const toggle = e.target.closest('.wf-dd-btn');
     const dd = toggle?.closest('.wf-dd');
-    row.querySelectorAll('.wf-dd.open').forEach(el => { if (el !== dd) el.classList.remove('open'); });
-    if (dd) dd.classList.toggle('open');
+    closeAll(dd);
+    if (dd) setOpen(dd, !dd.classList.contains('open'));
   });
   document.addEventListener('click', e => {
-    if (!row.contains(e.target)) row.querySelectorAll('.wf-dd.open').forEach(el => el.classList.remove('open'));
+    if (!row.contains(e.target)) { closeAll(); row._focusKey = null; }
+  });
+  // Keyboard: Escape closes an open menu (not the panel) and returns to its button;
+  // tabbing out of a menu closes it
+  row.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const dd = e.target.closest('.wf-dd.open');
+    if (!dd) return;
+    e.stopPropagation();
+    setOpen(dd, false);
+    dd.querySelector('.wf-dd-btn')?.focus();
+  });
+  row.addEventListener('focusout', e => {
+    const dd = e.target.closest('.wf-dd.open');
+    if (dd && !dd.contains(e.relatedTarget) && e.relatedTarget) setOpen(dd, false);
+    if (e.relatedTarget && !row.contains(e.relatedTarget)) row._focusKey = null;
   });
   let queued = false;
   new ResizeObserver(() => {
@@ -1152,7 +1188,11 @@ function updateLikeUI(count, liked) {
   const btn = document.getElementById('pp-like-btn');
   if (icon) icon.className = liked ? 'ph-fill ph-heart' : 'ph-fill ph-heart';
   if (countEl) countEl.textContent = count > 0 ? count : '';
-  if (btn) btn.classList.toggle('liked', !!liked);
+  if (btn) {
+    btn.classList.toggle('liked', !!liked);
+    btn.setAttribute('aria-pressed', String(!!liked));
+    btn.setAttribute('aria-label', count > 0 ? `Like (${count} ${count === 1 ? 'like' : 'likes'})` : 'Like');
+  }
 }
 
 /**
@@ -1220,8 +1260,8 @@ function setupEventListeners() {
       const heroHTML = `<div class="pp-hero${heroImg ? '' : ' pp-hero-plain'}" style="${heroImg ? `background-image:url('${heroImg.replace(/'/g, '%27')}')` : ''}">
         <div class="pp-hero-overlay"></div>
         <div class="pp-hero-actions">
-          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
-          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like" aria-label="Like" aria-pressed="false"><i id="pp-like-icon" class="ph-fill ph-heart" aria-hidden="true"></i> <span id="pp-like-count">—</span></button>
+          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link" aria-live="polite"><i class="ph-fill ph-share-network" aria-hidden="true"></i> Share</button>
         </div>
         <div class="pp-hero-content">
           <div class="pp-hero-left">
@@ -1272,8 +1312,8 @@ function setupEventListeners() {
       const heroHTML = `<div class="pp-hero" style="${heroStyle}">
         <div class="pp-hero-overlay"></div>
         <div class="pp-hero-actions">
-          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like"><i id="pp-like-icon" class="ph-fill ph-heart"></i> <span id="pp-like-count">—</span></button>
-          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link"><i class="ph-fill ph-share-network"></i> Share</button>
+          <button class="pp-hero-btn pp-like-btn" id="pp-like-btn" onclick="window.display?.toggleLike?.()" title="Like" aria-label="Like" aria-pressed="false"><i id="pp-like-icon" class="ph-fill ph-heart" aria-hidden="true"></i> <span id="pp-like-count">—</span></button>
+          <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link" aria-live="polite"><i class="ph-fill ph-share-network" aria-hidden="true"></i> Share</button>
         </div>
         <div class="pp-hero-content">
           <div class="pp-hero-left">
@@ -1492,6 +1532,18 @@ function setupEventListeners() {
         if (bd) bd.classList.add('open');
         resumeMediaIn(panel);
       }
+    },
+
+    // The skip link: straight to the first Work card, past the hero and nav
+    skipToWork() {
+      // Closing Work then returns focus to the Work nav button, not the skip link
+      // (which would show its tag again)
+      document.querySelector('#nav [data-site-text="navWork"]')?.focus({ preventScroll: true });
+      this.openPanel('work');
+      requestAnimationFrame(() => {
+        const first = document.querySelector('#wg .wc:not(.wc-leave)');
+        (first || document.getElementById('panel-work'))?.focus({ preventScroll: true });
+      });
     },
 
     closeToRoot() {

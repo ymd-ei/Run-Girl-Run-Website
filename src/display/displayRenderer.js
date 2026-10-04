@@ -5,6 +5,7 @@
 
 import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
 import { pool, scheduleIdle } from '../utils/text.js';
+import { reducedMotion } from '../utils/a11y.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { resolveLinkUrl, resolveRefs, getSiteGlobal } from '../utils/refs.js';
 import { projectTypes, projectTypeText } from '../utils/projectTypes.js';
@@ -127,6 +128,14 @@ export function initCountUps() {
   document.querySelectorAll('.bl-stats').forEach(el => observer.observe(el));
 }
 
+// Reduced motion: the scrambled headlines just appear, already settled
+function showSpans(spans) {
+  spans.forEach(span => {
+    span.style.opacity = '1';
+    span.textContent = span.dataset.ch === ' ' ? '\u00a0' : span.dataset.ch;
+  });
+}
+
 /**
  * Animate hero text with character scrambling
  * @param {string} role - Role/title text
@@ -164,6 +173,7 @@ export function scrambleHero(role, line1, line2) {
       : '');
 
   function animateSpans(spans, startDelay, revealWindowMs, cycleMs, cycles) {
+    if (reducedMotion()) return showSpans(spans);
     const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
     const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
     let revealIndex = 0;
@@ -256,6 +266,7 @@ export function scrambleContactHero(title, accent, idleOptions = {}) {
     '</span>';
 
   function animateSpans(spans, startDelay, revealWindowMs, cycleMs, cycles) {
+    if (reducedMotion()) return showSpans(spans);
     const revealableChars = spans.filter(span => span.dataset.ch !== ' ').length;
     const perCharDelay = revealableChars > 1 ? revealWindowMs / (revealableChars - 1) : 0;
     let revealIndex = 0;
@@ -334,7 +345,7 @@ export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
       const color = p.sensitiveColor || theme?.sensitiveColor || '#e03030';
 
       const sensitiveOverlay = isSensitive
-        ? `<div class="wci-sensitive">
+        ? `<div class="wci-sensitive" aria-hidden="true">
           <div class="wci-tape" id="st-${p.id}" style="--sensitive-color:${color}">
             <div class="wci-tape-track"></div>
           </div>
@@ -344,11 +355,11 @@ export function renderWorkGrid(projects, theme, { showAll = false } = {}) {
       const types = projectTypes(p);
       const typeText = projectTypeText(p, getSiteGlobal().filters);
       const thumbnail = p.thumbnail
-        ? `<img src="${p.thumbnail}" alt="${p.title}">`
+        ? `<img src="${p.thumbnail}" alt="">` // the title is right below; a repeat would be read twice
         : getProjectThumbnail(types[0], accentColor, bgColor);
       const typesAttr = JSON.stringify(types).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-      return `<div class="wc" data-type="${types[0] || ''}" data-types="${typesAttr}" onclick="window.display?.openProject?.('${p.id}')">
+      return `<div class="wc" role="button" tabindex="0" data-type="${types[0] || ''}" data-types="${typesAttr}" onclick="window.display?.openProject?.('${p.id}')">
         <div class="wci ${isSensitive ? 'wci-blur' : ''}">
           ${thumbnail}
           <div class="wco"></div>
@@ -395,6 +406,9 @@ export function initSensitiveTapes(projects, { showAll = false } = {}) {
  * @param {Object} globalState - Global state with contactPanel data
  * @returns {{hero: string, heroTitle: string, heroAccent: string, sub: string, tickerTop: string, tickerMid: string, icons: string}}
  */
+// An icon-only link still needs a name: the site's label, else the address
+const linkHost = url => String(url || '').replace(/^(mailto:|https?:\/\/(www\.)?)/, '').split(/[/?#]/)[0];
+
 export function renderContactPanel(globalState) {
   const cp = globalState.contactPanel || {};
   const defaultTicker = [
@@ -431,8 +445,8 @@ export function renderContactPanel(globalState) {
     .map(l => ({ ...l, url: resolveLinkUrl(l.url, globalState) }))
     .map(
       l => `
-        <a href="${l.url}" target="${l.url.startsWith('mailto') ? '_self' : '_blank'}" rel="noopener" class="ct-icon-btn" title="${l.label}">
-          <i class="${phosphorIcon(l.url)}"></i>
+        <a href="${l.url}" target="${l.url.startsWith('mailto') ? '_self' : '_blank'}" rel="noopener" class="ct-icon-btn" title="${l.label}" aria-label="${l.label || linkHost(l.url)}">
+          <i class="${phosphorIcon(l.url)}" aria-hidden="true"></i>
         </a>`
     )
     .join('');

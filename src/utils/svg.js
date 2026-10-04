@@ -3,6 +3,8 @@
  * Creates inline SVG thumbnails for different project types
  */
 
+import { reducedMotion } from './a11y.js';
+
 /**
  * Generate thumbnail SVG for project types
  * @param {string} type - Project type ('2d', '3d', 'motion')
@@ -33,7 +35,7 @@ export function generateThumbSVG(type, accentColor, bgColor) {
  */
 export function startTicker(track, speed) {
   if (!track) return;
-  if (track._tickerRunning) return;
+  if (track._tickerRunning || reducedMotion()) return; // reduced motion: the tape stays still
   track._tickerRunning = true;
 
   const trackW = track.scrollWidth;
@@ -68,7 +70,7 @@ export function startTicker(track, speed) {
  * @param {number} speed - Speed in pixels per frame
  */
 export function startSensitiveTicker(track, speed) {
-  if (!track || track._tickerRunning) return;
+  if (!track || track._tickerRunning || reducedMotion()) return;
   track._tickerRunning = true;
 
   const trackW = track.scrollWidth;

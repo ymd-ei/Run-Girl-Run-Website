@@ -97,7 +97,9 @@ export function renderLegal(global, card) {
     .filter(([key]) => String(legal[key] || '').trim())
     .map(([key, title]) => `<div class="legal-section"><h3>${title}</h3>${legalParagraphs(legal[key])}</div>`)
     .join('');
-  card.innerHTML = `<h2>${resolveRefs(escHtml(siteText(global, 'legalLink')))}</h2>${sections}`;
+  // The Close button shows only when it has keyboard focus (mouse users click outside or press Escape)
+  card.innerHTML = '<button class="legal-close" onclick="closeLegalModal()">Close</button>'
+    + `<h2 id="legal-title">${resolveRefs(escHtml(siteText(global, 'legalLink')))}</h2>${sections}`;
 }
 
 export function openLegalModal() {
@@ -109,16 +111,18 @@ export function openLegalModal() {
 
 export function closeLegalModal() {
   const m = document.getElementById('legal-modal');
-  if (!m) return;
+  if (!m || !m.classList.contains('open')) return false;
   m.classList.remove('open');
   setTimeout(() => { m.style.display = 'none'; }, 280);
+  return true;
 }
 
 /** Wire the popup's open/close globals (pages call openLegalModal() inline). */
 export function initLegalModal() {
   window.openLegalModal = openLegalModal;
   window.closeLegalModal = closeLegalModal;
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLegalModal(); });
+  // Escape closes only the popup, not the panel it was opened from
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && closeLegalModal()) e.stopImmediatePropagation(); });
 }
 
 function escHtml(s) {

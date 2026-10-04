@@ -117,7 +117,7 @@ export function withFilters(posts, site) {
 
 /* ── Cards ───────────────────────────────────────────── */
 
-const srcBadge = s => `<span class="src-dot"><i style="background:${s.color}"></i>${s.label}</span>`;
+const srcBadge = s => `<span class="src-dot"><i style="background:${s.color}" aria-hidden="true"></i>${s.label}</span>`;
 
 /**
  * A post card for the Work grid. Text-only posts become a slim quote strip;
@@ -129,12 +129,13 @@ export function postCardHTML(p, filters, { uniform = false, likes = '' } = {}) {
   const typeText = p.filters.map(v => esc(filterLabel(v, filters))).join(' / ');
   const meta = `${typeText ? typeText + ' &middot; ' : ''}${shortDate(p.date)}${likes}`;
   const types = esc(JSON.stringify(p.filters));
-  const open = `onclick="window.display?.openPost?.('${esc(p.id)}')"`;
+  // Cards are buttons for keyboard and screen reader users (Enter/Space: see utils/a11y.js)
+  const open = `role="button" tabindex="0" onclick="window.display?.openPost?.('${esc(p.id)}')"`;
 
   if (!img && !uniform) {
     return `<div class="wc wc-quote" data-types="${types}" data-key="${esc(likeKey(p.id))}" ${open}>
       <p class="q-text">${esc(quote(stripTags(p.text) || postTitle(p)))}</p>
-      <p class="wcty">${srcBadge(s)}${meta}</p>
+      <p class="wcty">${srcBadge(s)} ${meta}</p>
     </div>`;
   }
 
@@ -152,7 +153,7 @@ export function postCardHTML(p, filters, { uniform = false, likes = '' } = {}) {
       ${thumb}
       ${srcBadge(s)}
       ${p.media.length > 1 ? `<span class="src-dot src-count">${p.media.length} items</span>` : ''}
-      <div class="wco">View post</div>
+      <div class="wco" aria-hidden="true">View post</div>
     </div>
     <div class="wcm">
       <p class="wct">${esc(postTitle(p))}</p>

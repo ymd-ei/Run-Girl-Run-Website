@@ -8,11 +8,13 @@ import { phosphorIcon } from '../utils/icons.js';
 import { setRefContext, resolveRefs, resolveLinkUrl } from '../utils/refs.js';
 import { privacyEmbedUrl } from '../utils/embeds.js';
 import { applySiteText, availability, renderLegal, initLegalModal } from './siteChrome.js';
+import { initA11y } from '../utils/a11y.js';
 
 let data = null;
 
 async function init() {
   initLegalModal();
+  initA11y();
   try {
     const res = await fetch('content.json');
     data = await res.json();
@@ -124,7 +126,7 @@ function renderContact() {
     iconsWrap.innerHTML = (contact.links || []).map(link => {
       const url = resolveLinkUrl(link.url, data);
       const external = !url.startsWith('mailto:');
-      return `<a class="contact-icon-btn" href="${url}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${link.label || ''}"><i class="${phosphorIcon(url)}"></i></a>`;
+      return `<a class="contact-icon-btn" href="${url}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${link.label || url.replace(/^(mailto:|https?:\/\/(www\.)?)/, '').split(/[/?#]/)[0]}"><i class="${phosphorIcon(url)}" aria-hidden="true"></i></a>`;
     }).join('');
   }
 

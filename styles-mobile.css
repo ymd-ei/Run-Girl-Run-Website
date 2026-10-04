@@ -191,3 +191,13 @@ section{padding:2rem 1.5rem}
 }
 .legal-section p{font-size:var(--fs-md);line-height:1.65;color:rgba(var(--ink-rgb),0.7);margin-bottom:.5rem}
 .legal-section a{color:var(--accent);text-decoration:none}
+
+/* Accessibility: see README → Accessibility */
+:where(a,button):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#legal-modal:focus{outline:none}
+#legal-card{position:relative}
+.legal-close{position:absolute;top:1rem;right:1rem;padding:.4rem .8rem;border:1px solid rgba(var(--ink-rgb),.15);background:none;color:inherit;font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;opacity:0}
+.legal-close:focus-visible{opacity:1}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
