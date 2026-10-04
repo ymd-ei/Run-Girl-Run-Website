@@ -491,7 +491,7 @@ ul.bl-process>.bl-process-item>.bl-process-step::before{content:'•'}
 #ct-links{padding:5rem 3.5rem 4rem;display:flex;flex-direction:column;gap:4rem}
 .ct-email-block{display:flex;flex-direction:column;gap:.75rem}
 .ct-email-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-xwide);text-transform:uppercase;color:var(--ct-muted)}
-.ct-email-link{font-family:var(--font-hero);font-size:clamp(2.5rem,6vw,5.5rem);letter-spacing:.02em;text-transform:uppercase;color:var(--ct-hi);text-decoration:none;line-height:1;display:inline-flex;align-items:center;gap:1rem;transition:color .2s}
+.ct-email-link{font-family:var(--font-hero);font-size:clamp(2.5rem,6vw,5.5rem);letter-spacing:.02em;text-transform:uppercase;color:var(--ct-hi);text-decoration:none;line-height:1;display:inline-flex;align-items:center;gap:1rem;transition:color .2s;mix-blend-mode:difference;will-change:transform}
 .ct-email-link:hover{color:var(--ct-accent)}
 .ct-email-link .arr{font-size:clamp(1.5rem,3vw,3rem);color:var(--ct-accent);transition:transform .3s var(--ease)}
 .ct-email-link:hover .arr{transform:translate(6px,-6px)}
