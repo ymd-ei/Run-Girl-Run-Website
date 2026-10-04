@@ -51,10 +51,6 @@
   "projects": [
     "all-blocks-sample",
     "woke-up-dance-exercise",
-    "md-pulling",
-    "final-fantasy-modding",
-    "orbital-loop",
-    "cosmic-drift",
     "welcome-message"
   ],
   "about": [
@@ -237,70 +233,6 @@
       "sensitiveLabel": "18+ NSFW",
       "sensitiveColor": "",
       "longform": true
-    },
-    {
-      "id": "md-pulling",
-      "title": "MD pulling",
-      "types": [
-        "2d"
-      ],
-      "type": "2d",
-      "typeLabel": "2D",
-      "year": "2026",
-      "thumbnail": "media/rgr_favicon.png",
-      "published": false,
-      "sensitive": false,
-      "sensitiveLabel": "",
-      "sensitiveColor": "",
-      "longform": false
-    },
-    {
-      "id": "final-fantasy-modding",
-      "title": "Final Fantasy Modding",
-      "types": [
-        "motion"
-      ],
-      "type": "motion",
-      "typeLabel": "Motion",
-      "year": "2026",
-      "thumbnail": "media/galaxy (2).jpg",
-      "published": false,
-      "sensitive": false,
-      "sensitiveLabel": "",
-      "sensitiveColor": "",
-      "longform": true
-    },
-    {
-      "id": "orbital-loop",
-      "title": "Orbital Loop",
-      "types": [
-        "2d"
-      ],
-      "type": "2d",
-      "typeLabel": "2D",
-      "year": "2024",
-      "thumbnail": "media/woke-up_thumbnail.webp",
-      "published": false,
-      "sensitive": true,
-      "sensitiveLabel": "",
-      "sensitiveColor": "#874efe",
-      "longform": false
-    },
-    {
-      "id": "cosmic-drift",
-      "title": "Data in Motion",
-      "types": [
-        "2d"
-      ],
-      "type": "2d",
-      "typeLabel": "2D",
-      "year": "2023",
-      "thumbnail": "media/rgr_favicon.png",
-      "published": false,
-      "sensitive": true,
-      "sensitiveLabel": "Non disclosure agreement",
-      "sensitiveColor": "#f5ec00",
-      "longform": false
     },
     {
       "id": "welcome-message",

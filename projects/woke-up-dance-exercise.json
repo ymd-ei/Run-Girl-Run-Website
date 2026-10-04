@@ -1,9 +1,18 @@
 {
   "id": "woke-up-dance-exercise",
   "title": "Woke Up - Dance Exercise",
+  "types": [
+    "3d"
+  ],
   "type": "3d",
   "typeLabel": "3D",
   "year": "2026",
+  "thumbnail": "media/woke-up_thumbnail.webp",
+  "published": false,
+  "sensitive": false,
+  "sensitiveLabel": "18+ NSFW",
+  "sensitiveColor": "",
+  "longform": true,
   "client": "Personal",
   "duration": "2 moths",
   "tags": [
@@ -11,7 +20,6 @@
     "Blender",
     "Exercise"
   ],
-  "thumbnail": "media/woke-up_thumbnail.webp",
   "videoUrl": "https://www.youtube.com/shorts/xbIFMNQgkiE",
   "blocks": [
     {
@@ -51,10 +59,11 @@
       "type": "text-md",
       "content": "Since there is a never ending pool of dance videos that come out every year, the sky’s the limit.\nI have decided this time around, to use <rgr>WOKE UP</rgr> by XG as the subject of the exercise. ",
       "align": "left"
+    },
+    {
+      "id": "b1791078666044gi5b",
+      "type": "video",
+      "src": "media/RGR_woke-up_web.mp4"
     }
-  ],
-  "published": false,
-  "sensitive": false,
-  "sensitiveLabel": "18+ NSFW",
-  "longform": true
+  ]
 }
