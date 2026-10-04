@@ -63,7 +63,7 @@ Big video files are what make the loading screen wait. Render web copies with th
 - For loops, make sure the last frame flows into the first.
 - If a loop has lots of fine grain or noise, it needs more bitrate to look clean. Try the target first, and only raise it if you see blocky patches.
 
-**Hero bitrate, tested on the real site (Oct 2026):** 750 Kb/s fell apart (smeary, blocky). 2500 looked fine at full screen, and **1500 is enough** for the muted background loop, about 2 MB. If a new loop has lots of fine grain, detail or smooth gradients, check it full screen and step up to 2500 if you see banding or blocky patches.
+**Hero bitrate, tested on the real site (Oct 2026):** 750 Kb/s fell apart (smeary, blocky). 2500 looked fine at full screen (**the hero on the site now is the 2500 version**, about 3 MB), and **1500 is enough** for future loops, about 2 MB. If a new loop has lots of fine grain, detail or smooth gradients, check it full screen and step up to 2500 if you see banding or blocky patches.
 
 ### Where the settings live
 
