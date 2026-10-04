@@ -240,7 +240,9 @@ function resumeMediaIn(root) {
 }
 
 function setNativeCursorEnabled(enabled) {
-  document.body.classList.toggle('native-cursor', !!enabled);
+  // Accessibility default: the normal system cursor unless customCursor is true in site-config.js
+  const customCursor = !!(window.RGR_CONFIG && window.RGR_CONFIG.customCursor);
+  document.body.classList.toggle('native-cursor', !customCursor || !!enabled);
 }
 
 function setReelPopupCursorDisabled(disabled) {
@@ -1573,6 +1575,8 @@ function setupEventListeners() {
       { passive: true }
     );
   }
+
+  syncCursorForFullscreen(); // applies the customCursor setting on load
 
   // Cursor tracking
   const cur = document.getElementById('cur');
