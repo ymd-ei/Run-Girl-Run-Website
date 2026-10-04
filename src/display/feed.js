@@ -199,7 +199,7 @@ export function sanitizeHtml(html) {
         try { id = JSON.parse(el.dataset.attrs || '{}').mediaUploadId || ''; } catch { /* no id: drop it */ }
         if (/^[0-9a-f-]{36}$/i.test(id)) {
           const box = document.createElement('div');
-          box.className = 'bl-image post-media';
+          box.className = 'bl-video';
           const v = document.createElement('video');
           v.src = `https://substack.com/api/v1/video/upload/${id}/src?type=mp4#t=0.1`;
           v.controls = true; v.playsInline = true; v.preload = 'metadata';
@@ -284,6 +284,29 @@ function restyle(doc) {
     }
     last = list;
   }
+  // Images next to each other become the site's gallery (2 columns for 2 or 4, else 3)
+  const run = [];
+  const flush = () => {
+    if (run.length > 1) {
+      const cols = run.length % 3 === 0 || run.length > 4 ? 3 : 2;
+      const gal = mk(doc, 'div', `bl-gallery cols-${cols}`);
+      for (const el of run) {
+        const img = imgOf(el), cap = el.querySelector?.('figcaption')?.textContent.trim();
+        const fig = mk(doc, 'figure', 'bl-gallery-item');
+        const pic = mk(doc, 'img', 'bl-gallery-open');
+        pic.src = pic.dataset.fullSrc = img.getAttribute('src');
+        pic.alt = pic.dataset.fullAlt = img.getAttribute('alt') || cap || '';
+        fig.append(pic);
+        if (cap) { const fc = mk(doc, 'figcaption'); fc.textContent = cap; fig.append(fc); }
+        gal.append(fig);
+      }
+      run[0].before(gal);
+      run.forEach(el => el.remove());
+    }
+    run.length = 0;
+  };
+  for (const el of [...body.children]) { if (imgOf(el)) run.push(el); else flush(); }
+  flush();
   for (const q of body.querySelectorAll('blockquote')) q.replaceWith(mk(doc, 'div', 'bl-quote', `<p>${q.textContent.trim()}</p>`));
   for (const hr of body.querySelectorAll('hr')) hr.replaceWith(mk(doc, 'div', 'bl-divider'));
 }
