@@ -209,6 +209,9 @@
     {
       "id": "all-blocks-sample",
       "title": "All Blocks Sample",
+      "types": [
+        "Design"
+      ],
       "type": "Design",
       "typeLabel": "Design",
       "year": "2026",
@@ -222,6 +225,9 @@
     {
       "id": "woke-up-dance-exercise",
       "title": "Woke Up - Dance Exercise",
+      "types": [
+        "3d"
+      ],
       "type": "3d",
       "typeLabel": "3D",
       "year": "2026",
@@ -235,6 +241,9 @@
     {
       "id": "md-pulling",
       "title": "MD pulling",
+      "types": [
+        "2d"
+      ],
       "type": "2d",
       "typeLabel": "2D",
       "year": "2026",
@@ -248,6 +257,9 @@
     {
       "id": "final-fantasy-modding",
       "title": "Final Fantasy Modding",
+      "types": [
+        "motion"
+      ],
       "type": "motion",
       "typeLabel": "Motion",
       "year": "2026",
@@ -261,6 +273,9 @@
     {
       "id": "orbital-loop",
       "title": "Orbital Loop",
+      "types": [
+        "2d"
+      ],
       "type": "2d",
       "typeLabel": "2D",
       "year": "2024",
@@ -274,6 +289,9 @@
     {
       "id": "cosmic-drift",
       "title": "Data in Motion",
+      "types": [
+        "2d"
+      ],
       "type": "2d",
       "typeLabel": "2D",
       "year": "2023",
@@ -287,12 +305,15 @@
     {
       "id": "welcome-message",
       "title": "Welcome Message",
+      "types": [
+        "Pipeline"
+      ],
       "type": "Pipeline",
       "typeLabel": "Pipeline",
       "year": "2026",
       "thumbnail": "media/woke-up_thumbnail.webp",
       "published": true,
-      "sensitive": false,
+      "sensitive": true,
       "sensitiveLabel": "",
       "sensitiveColor": "",
       "longform": false
