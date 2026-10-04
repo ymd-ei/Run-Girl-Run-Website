@@ -182,6 +182,74 @@ export function patchPageMeta(html, g) {
   return out;
 }
 
+/* ── Project share pages ─────────────────────────────────
+ * Each published project gets p/<id>/index.html: a tiny page whose meta tags
+ * give link previews (Discord, iMessage...) the project's title, text and
+ * thumbnail, then sends visitors on to ?project=<id>. The Share button links
+ * here. (Ported from the legacy editor; v3 didn't write these before, so
+ * projects published from v3 had no preview page.)
+ */
+const SHARE_SITE = 'https://rungirlrun.studio';
+
+function projectDescription(proj, card, g) {
+  if (proj?.description) return proj.description;
+  for (const b of proj?.blocks || []) {
+    if ((b.type === 'text-md' || b.type === 'text-sm') && b.content) {
+      const plain = String(b.content).replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
+      if (plain) return plain.length > 160 ? plain.slice(0, 157) + '…' : plain;
+    }
+  }
+  const types = projectTypeLabels(proj || card, g.filters).join(' / ');
+  return [types, card.year].filter(Boolean).join(' · ') + ` — ${g.name || 'Run Girl Run'}`;
+}
+
+function sharePageHTML(card, proj, g) {
+  const site = g.name || 'Run Girl Run';
+  // Encoded so file names with spaces still work for preview bots
+  const abs = p => (!p ? '' : /^https?:/i.test(p) ? p : encodeURI(`${SHARE_SITE}/${String(p).replace(/^\/+/, '')}`));
+  const title = card.title || 'Project';
+  const desc = projectDescription(proj, card, g);
+  const image = abs(card.thumbnail || g.ogImage || 'media/rgr_fav.png');
+  const url = `${SHARE_SITE}/p/${card.id}/`;
+  const go = `${SHARE_SITE}/?project=${encodeURIComponent(card.id)}`;
+  const e = escAttrValue;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${e(title)} — ${e(site)}</title>
+<meta name="description" content="${e(desc)}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="${e(url)}">
+<meta property="og:site_name" content="${e(site)}">
+<meta property="og:title" content="${e(title)}">
+<meta property="og:description" content="${e(desc)}">
+<meta property="og:image" content="${e(image)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${e(title)}">
+<meta name="twitter:description" content="${e(desc)}">
+<meta name="twitter:image" content="${e(image)}">
+<link rel="canonical" href="${e(url)}">
+<script>window.location.replace(${JSON.stringify(go)});<\/script>
+</head>
+<body>
+<p><a href="${e(go)}">${e(title)} — ${e(site)}</a></p>
+</body>
+</html>
+`;
+}
+
+/** Share pages for every published project (unchanged ones commit as no-ops). */
+function buildSharePages(g) {
+  const out = {};
+  for (const card of g.projectCards || []) {
+    if (!card.published || !card.id) continue;
+    out[`p/${card.id}/index.html`] = sharePageHTML(card, state.projectCache.get(card.id), g);
+  }
+  return out;
+}
+
 // Fetch the pages fresh from GitHub (not the possibly-cached live site) so we
 // never commit back stale page code; only pages whose tags changed are returned.
 async function buildPatchedPages(g) {
@@ -255,6 +323,7 @@ export async function saveSiteData() {
     // pages, where link previews and search engines read them.
     if (files['content.json']) {
       Object.assign(files, await buildPatchedPages(state.global));
+      Object.assign(files, buildSharePages(state.global));
     }
 
     if (Object.keys(files).length === 0) {
