@@ -49,6 +49,9 @@
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;cursor:none !important}
   body.native-cursor,body.native-cursor *,body.native-cursor *::before,body.native-cursor *::after{cursor:auto !important}
   body.native-cursor #cur{display:none !important}
+  /* the blanket cursor:auto above would show the text I-beam over link text, so clickable things get the hand back */
+  body.native-cursor :is(a[href],button,summary,label[for],[role="button"],[onclick],.wc,.proj-card),body.native-cursor :is(a[href],button,summary,label[for],[role="button"],[onclick],.wc,.proj-card) *{cursor:pointer !important}
+  body.native-cursor .bl-gallery-open{cursor:zoom-in !important}
   body.reel-popup-open,body.reel-popup-open *,body.reel-popup-open *::before,body.reel-popup-open *::after{cursor:auto !important}
   body.reel-popup-open #cur{display:none !important}
   :root{
