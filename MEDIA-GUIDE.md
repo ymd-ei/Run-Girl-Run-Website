@@ -55,7 +55,7 @@ Big video files are what make the loading screen wait. Render web copies with th
 
 | Video | Slot | Target / max bitrate | Audio | Aim for |
 |---|---|---|---|---|
-| Hero background loop | Home screen (`reel`) | **5 / 8 Mbps** | **None** (remove the track) | ~6 MB for 9 s |
+| Hero background loop | Home screen (`reel`) | **1.5 Mbps** (tested Oct 2026; see below) | **None** (remove the track) | ~2 MB for 9 s |
 | Contact background | Contact panel | **4 / 6 Mbps** | **None** | ~12 MB for 25 s |
 | Watch reel | Lightbox (`watchReel`) | **6 / 10 Mbps** | AAC, 48 kHz, 192 kbps | ~50 MB for 66 s |
 
@@ -63,10 +63,14 @@ Big video files are what make the loading screen wait. Render web copies with th
 - For loops, make sure the last frame flows into the first.
 - If a loop has lots of fine grain or noise, it needs more bitrate to look clean. Try the target first, and only raise it if you see blocky patches.
 
+**Hero bitrate, tested on the real site (Oct 2026):** 750 Kb/s fell apart (smeary, blocky). 2500 looked fine at full screen, and **1500 is enough** for the muted background loop, about 2 MB. If a new loop has lots of fine grain, detail or smooth gradients, check it full screen and step up to 2500 if you see banding or blocky patches.
+
 ### Where the settings live
 
 - **Premiere / Media Encoder:** Format H.264 → Video: Match source size set to 1920×1080, Profile High, Level 4.2, Bitrate Encoding **VBR, 2 pass**, Target / Maximum from the table. Untick **Export Audio** for loops.
-- **DaVinci Resolve:** Deliver → Format **MP4**, Codec **H.264**, Resolution 1920×1080, Quality **Restrict to** (target in kb/s, e.g. 5000), Encoding profile **High**, tick **Network optimization**. Untick Export Audio for loops.
+- **DaVinci Resolve:** Deliver → Format **MP4**, Codec **H.264**, Resolution 1920×1080, Quality **Restrict to** (target in Kb/s, e.g. 1500 for the hero), Encoding profile **High**, tick **Multi-pass encode** and **Network optimization**. Untick Export Audio for loops.
+  - Leave **"Limit data rate every X secs"** unticked: it turns the target into a hard ceiling and costs quality on busy frames.
+  - With multi-pass on, Resolve's size estimate shows about **double**; it counts both passes. The real file stays at the normal size.
 - **After Effects:** Queue in Media Encoder and use the Premiere settings above.
 - **HandBrake** (re-encoding an existing file): Preset *Fast 1080p30*, then Video → **Avg Bitrate** = target, **2-pass**, tick **Web Optimized**. Audio tab: remove the track for loops.
 - **No editor handy?** For the two background loops, the repo has a script that uses macOS's built-in encoder (nothing to install). It makes 1080p H.264 with no audio and web-optimised on:
