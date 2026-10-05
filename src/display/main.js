@@ -24,6 +24,9 @@ import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 import { initA11y, reducedMotion } from '../utils/a11y.js';
+import { isLite, bindLiteToggles } from '../utils/lite.js';
+import { updateLikeUI, fetchLikeCount, sendLike, loadLikeCounts, copyShareLink as copyShare } from './likes.js';
+import { renderFilterRow, markCardLikes } from './workFilters.js';
 import {
   loadFeed, withFilters, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey,
   masonry, cardPositions, initThumbShapes, SOURCES
@@ -129,19 +132,6 @@ function updateCursorWorkBadge(x, y, visible = true) {
 function hideCursorWorkBadge() {
   if (!curWorkBadge || curWorkBadgeDismissed) return;
   curWorkBadge.classList.remove('is-visible');
-}
-
-const LIKES_API = `${window.RGR_CONFIG?.apiBase || ''}/api/likes`;
-
-// The anonymous like ID is only created when a visitor likes something
-// (create=true); viewing a project just reads an existing one.
-function getVisitorId(create = false) {
-  let vid = localStorage.getItem('rgr_vid');
-  if (!vid && create) {
-    vid = crypto.randomUUID();
-    localStorage.setItem('rgr_vid', vid);
-  }
-  return vid;
 }
 
 function clamp(value, min, max) {
@@ -481,6 +471,9 @@ export async function bootstrap() {
     // 8. Set up event listeners
     setupEventListeners();
 
+    // Footer "Lite mode" switch: swap the background videos for their posters
+    bindLiteToggles(() => { renderStageReel(); renderContactBg(); });
+
     // {project:id} shortcut links open the project in place instead of reloading.
     document.addEventListener('click', e => {
       const a = e.target.closest('a.ref-link[href^="?project="]');
@@ -686,11 +679,19 @@ function renderHero() {
 
   scrambleHero(globalState.role || '', line1, line2);
 
-  // Render demo reel
+  renderStageReel();
+}
+
+/** The looping reel behind the home screen; in lite mode just its poster. */
+function renderStageReel() {
   const reelEl = document.getElementById('reel');
   if (!reelEl) return;
+  bgPlayer = null;
 
-  if (globalState.reel && globalState.reel.url) {
+  if (globalState.reel && globalState.reel.url && isLite()) {
+    const poster = globalState.reel.poster;
+    reelEl.innerHTML = (poster ? `<img src="${encodeURI(poster)}" alt="">` : '') + '<div id="reel-block"></div>';
+  } else if (globalState.reel && globalState.reel.url) {
     const url = globalState.reel.url;
     if (globalState.reel.type === 'youtube') {
         reelEl.innerHTML = `<iframe title="Demo reel" src="${privacyEmbedUrl(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe><div id="reel-block"></div>`;
@@ -730,30 +731,9 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   const visibleFilters = filters.filter(f => activeTypes.has(f.value));
   if (workFilter !== 'all' && !activeTypes.has(workFilter)) workFilter = 'all';
 
-  let chipIndex = 0;
-  const chip = (value, label) =>
-    `<button class="fb${workFilter === value ? ' active' : ''}" aria-pressed="${workFilter === value}" data-i="${chipIndex++}" onclick="window.display?.filterWork?.(this, '${value}')">${label}</button>`;
   // Sort: a quiet text dropdown on the right (Shuffle only locally or in demo mode)
   const sorts = [['newest', 'Newest'], ['likes', 'Most liked'], ...(IS_LOCAL || DEMO_MODE ? [['shuffle', 'Shuffle']] : [])];
-  const sortLabel = (sorts.find(([v]) => v === workSort) || sorts[0])[1];
-  const sortHTML = feedPosts.length ? `<div class="wf-dd wf-sort">
-      <button class="wf-dd-btn wf-sort-btn" aria-expanded="false" aria-controls="wf-sort-menu" aria-label="Sort: ${sortLabel}">${sortLabel} <span class="wf-caret" aria-hidden="true">▾</span></button>
-      <div class="wf-menu wf-menu-right" id="wf-sort-menu">${sorts.map(([v, l]) =>
-        `<button class="wf-opt${workSort === v ? ' active' : ''}" aria-pressed="${workSort === v}" onclick="window.display?.sortWork?.('${v}')">${l}</button>`).join('')}</div>
-    </div>` : '';
-  // Rebuilding the row drops keyboard focus; put it back on the same control afterwards
-  const refocus = filtersEl.contains(document.activeElement) || document.activeElement === document.body ? filtersEl._focusKey : null;
-  // Filters stay as chips; any that don't fit on one line fold into "More" (see fitWorkFilters)
-  filtersEl.innerHTML = `<div class="wf-chips" role="group" aria-label="Filter work">${chip('all', 'All') + visibleFilters.map(f => chip(f.value, f.label)).join('')}</div>
-    <div class="wf-dd wf-more" hidden><button class="fb wf-dd-btn" aria-expanded="false" aria-controls="wf-more-menu"></button><div class="wf-menu" id="wf-more-menu" role="group" aria-label="More filters"></div></div>`
-    + sortHTML;
-  bindWorkFilterRow(filtersEl);
-  fitWorkFilters(filtersEl);
-  if (refocus) {
-    const el = [...filtersEl.querySelectorAll('button')].find(b => filterControlKey(b) === refocus);
-    // A choice inside a (now closed) menu hands focus to that menu's button
-    (el?.getClientRects().length ? el : el?.closest('.wf-dd')?.querySelector('.wf-dd-btn'))?.focus({ preventScroll: true });
-  }
+  renderFilterRow(filtersEl, { filters: visibleFilters, active: workFilter, sorts, sort: workSort, showSort: feedPosts.length > 0 });
 
   // Newest first, projects and posts together. On the same day a project goes
   // ahead of a post, and projects with the same date keep their hand-set order.
@@ -818,13 +798,7 @@ function renderWorkSection({ showAll = workShowAll } = {}) {
   });
   [...gridEl.querySelectorAll(':scope > :not(.wc)')].forEach(el => el.remove()); // e.g. an old "nothing here" note
   nodes.forEach(el => gridEl.appendChild(el));
-  nodes.forEach((el, i) => {
-    el.querySelector('.wc-likes')?.remove();
-    if (workSort === 'likes') {
-      el.querySelector('.wcty')?.insertAdjacentHTML('beforeend',
-        `<span class="wc-likes"><i class="ph-fill ph-heart"></i> ${likeCounts.get(items[i].key) || 0}</span>`);
-    }
-  });
+  markCardLikes(nodes, items.map(x => x.key), likeCounts, workSort === 'likes');
   masonry(gridEl, before);
 
   // Initialize sensitive tapes
@@ -860,83 +834,6 @@ function setupCopyEmail(email) {
     clearTimeout(btn._reset);
     btn._reset = setTimeout(() => { btn.classList.remove('is-copied'); label.textContent = 'Copy email'; }, 2000);
   });
-}
-
-/**
- * Keep the filter chips on one line: chips that don't fit move, last first,
- * into the "More" menu. If the active filter is in there, the button shows it.
- */
-function fitWorkFilters(row) {
-  const chipsEl = row.querySelector('.wf-chips');
-  const more = row.querySelector('.wf-more');
-  if (!chipsEl || !more) return;
-  const menu = more.querySelector('.wf-menu');
-  const btn = more.querySelector('.wf-dd-btn');
-  // Start from every chip back on the line, in order
-  [...menu.children].forEach(el => chipsEl.appendChild(el));
-  [...chipsEl.children].sort((a, b) => a.dataset.i - b.dataset.i).forEach(el => chipsEl.appendChild(el));
-  more.hidden = true;
-  if (!row.clientWidth) return; // not laid out yet; the resize observer fits it later
-  if (chipsEl.scrollWidth <= chipsEl.clientWidth + 1) return;
-  more.hidden = false;
-  btn.innerHTML = 'More <span aria-hidden="true">▾</span>';
-  // Never fold "All"
-  while (chipsEl.children.length > 1 && chipsEl.scrollWidth > chipsEl.clientWidth + 1) {
-    menu.prepend(chipsEl.lastElementChild);
-  }
-  const active = menu.querySelector('.fb.active');
-  btn.classList.toggle('active', !!active);
-  if (active) btn.innerHTML = `${active.textContent} <span aria-hidden="true">▾</span>`;
-}
-
-// Identifies a filter-row button across re-renders (chips and options by their action)
-const filterControlKey = b => b.getAttribute('onclick')
-  || (b.classList.contains('wf-dd-btn') ? (b.closest('.wf-sort') ? 'dd:sort' : 'dd:more') : '');
-
-/** Open/close the filter row's dropdowns; re-fit the chips when the row resizes. */
-function bindWorkFilterRow(row) {
-  if (row.dataset.bound) return;
-  row.dataset.bound = '1';
-  row.addEventListener('focusin', e => { row._focusKey = filterControlKey(e.target); });
-  // A thin line under the pinned filter row once the grid scrolls beneath it
-  const scroller = row.closest('.pb');
-  if (scroller) scroller.addEventListener('scroll', () => row.classList.toggle('is-stuck', scroller.scrollTop > 8), { passive: true });
-  // Dropdowns are disclosure buttons: aria-expanded follows the open class
-  const setOpen = (dd, open) => {
-    dd.classList.toggle('open', open);
-    dd.querySelector('.wf-dd-btn')?.setAttribute('aria-expanded', String(open));
-  };
-  const closeAll = except => row.querySelectorAll('.wf-dd.open').forEach(el => { if (el !== except) setOpen(el, false); });
-  row.addEventListener('click', e => {
-    const toggle = e.target.closest('.wf-dd-btn');
-    const dd = toggle?.closest('.wf-dd');
-    closeAll(dd);
-    if (dd) setOpen(dd, !dd.classList.contains('open'));
-  });
-  document.addEventListener('click', e => {
-    if (!row.contains(e.target)) { closeAll(); row._focusKey = null; }
-  });
-  // Keyboard: Escape closes an open menu (not the panel) and returns to its button;
-  // tabbing out of a menu closes it
-  row.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const dd = e.target.closest('.wf-dd.open');
-    if (!dd) return;
-    e.stopPropagation();
-    setOpen(dd, false);
-    dd.querySelector('.wf-dd-btn')?.focus();
-  });
-  row.addEventListener('focusout', e => {
-    const dd = e.target.closest('.wf-dd.open');
-    if (dd && !dd.contains(e.relatedTarget) && e.relatedTarget) setOpen(dd, false);
-    if (e.relatedTarget && !row.contains(e.relatedTarget)) row._focusKey = null;
-  });
-  let queued = false;
-  new ResizeObserver(() => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => { queued = false; fitWorkFilters(row); });
-  }).observe(row);
 }
 
 /** Every card the grid could show (any filter), for likes and Shuffle. */
@@ -980,14 +877,7 @@ const isDemoKey = key => String(key).startsWith('demo-');
 
 /** Counts for every card, fetched once when someone sorts by likes. */
 async function loadAllLikes() {
-  if (new URLSearchParams(location.search).has('preview')) return;
-  const keys = allCardKeys().filter(k => k && !likeCounts.has(k));
-  const vid = getVisitorId();
-  await Promise.allSettled(keys.map(async key => {
-    const res = await fetch(`${LIKES_API}/${encodeURIComponent(key)}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    likeCounts.set(key, (await res.json()).count || 0);
-  }));
+  await loadLikeCounts(allCardKeys(), likeCounts);
 }
 
 /** A project's own date; older ones without it count as the end of their year. */
@@ -1055,6 +945,29 @@ function renderAboutPanel() {
     setTimeout(() => {
       document.querySelectorAll('#skl .skf').forEach(b => b.classList.add('go'));
     }, 340);
+  }
+}
+
+/** The contact panel's looping background; in lite mode just its poster. */
+function renderContactBg() {
+  const ctBgVideo = document.getElementById('ct-bg-video');
+  if (ctBgVideo) {
+    const cp = globalState.contactPanel || {};
+    const vid = cp.video && cp.video.url && cp.video.type !== 'placeholder' ? cp.video : globalState.reel;
+
+    if (vid && vid.url && isLite()) {
+      ctBgVideo.innerHTML = vid.poster ? `<img src="${encodeURI(vid.poster)}" alt="">` : '';
+    } else if (vid && vid.url) {
+      if (vid.type === 'vimeo' || vid.type === 'youtube') {
+        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${privacyEmbedUrl(vid.url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+      } else if (vid.type === 'video') {
+        const poster = vid.poster ? ` poster="${encodeURI(vid.poster)}"` : '';
+        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto"${poster} src="${encodeURI(vid.url)}"></video>`;
+        const v = ctBgVideo.querySelector('video');
+        trackLoaderVideo(v);
+        if (v) v.play().catch(() => {});
+      }
+    }
   }
 }
 
@@ -1153,24 +1066,7 @@ function renderContactSection() {
   const tickerMidTrack = document.querySelector('#ct-ticker-mid .ticker-track');
   if (tickerMidTrack) tickerMidTrack.innerHTML = ctData.tickerMid;
 
-  // Update contact panel background video
-  const ctBgVideo = document.getElementById('ct-bg-video');
-  if (ctBgVideo) {
-    const cp = globalState.contactPanel || {};
-    const vid = cp.video && cp.video.url && cp.video.type !== 'placeholder' ? cp.video : globalState.reel;
-
-    if (vid && vid.url) {
-      if (vid.type === 'vimeo' || vid.type === 'youtube') {
-        ctBgVideo.innerHTML = `<iframe title="Contact panel background video" src="${privacyEmbedUrl(vid.url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-      } else if (vid.type === 'video') {
-        const poster = vid.poster ? ` poster="${encodeURI(vid.poster)}"` : '';
-        ctBgVideo.innerHTML = `<video autoplay muted loop playsinline preload="auto"${poster} src="${encodeURI(vid.url)}"></video>`;
-        const v = ctBgVideo.querySelector('video');
-        trackLoaderVideo(v);
-        if (v) v.play().catch(() => {});
-      }
-    }
-  }
+  renderContactBg();
 
   // Apply contact theme colors
   const theme = globalState.theme || {};
@@ -1215,49 +1111,6 @@ function runWhenLayoutStable(task) {
   }
 
   window.addEventListener('load', run, { once: true });
-}
-
-/**
- * Update like button UI
- */
-function updateLikeUI(count, liked) {
-  const icon = document.getElementById('pp-like-icon');
-  const countEl = document.getElementById('pp-like-count');
-  const btn = document.getElementById('pp-like-btn');
-  if (icon) icon.className = liked ? 'ph-fill ph-heart' : 'ph-fill ph-heart';
-  if (countEl) countEl.textContent = count > 0 ? count : '';
-  if (btn) {
-    btn.classList.toggle('liked', !!liked);
-    btn.setAttribute('aria-pressed', String(!!liked));
-    btn.setAttribute('aria-label', count > 0 ? `Like (${count} ${count === 1 ? 'like' : 'likes'})` : 'Like');
-  }
-}
-
-/**
- * Fetch like count for a project (sessionStorage-cached per tab session)
- */
-async function fetchLikeCount(id) {
-  if (new URLSearchParams(location.search).has('preview')) return;
-
-  const cacheKey = `rgr_likes_${id}`;
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      const { count, liked } = JSON.parse(cached);
-      updateLikeUI(count, liked);
-      return;
-    } catch (_) { /* fall through to fetch */ }
-  }
-
-  try {
-    const vid = getVisitorId();
-    const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}${vid ? `?vid=${encodeURIComponent(vid)}` : ''}`);
-    const data = await res.json();
-    sessionStorage.setItem(cacheKey, JSON.stringify({ count: data.count, liked: data.liked }));
-    updateLikeUI(data.count, data.liked);
-  } catch (e) {
-    console.warn('Failed to fetch likes:', e);
-  }
 }
 
 /**
@@ -1415,28 +1268,7 @@ function setupEventListeners() {
     },
 
     copyShareLink() {
-      if (!openItem) return;
-      // Projects have share pages on the site (p/<id>/, written by the editor). Posts
-      // go through the share worker, which builds their link preview on request:
-      // b<rkey> = Bluesky, i<id> = Instagram. Anything else (e.g. demo posts) links
-      // to the post on the site.
-      let shareUrl = `https://rungirlrun.studio/p/${openItem.id}/`;
-      if (openItem.kind === 'post') {
-        const [src, key] = String(openItem.id).split(':');
-        const code = { bsky: 'b', ig: 'i' }[src];
-        const base = window.RGR_CONFIG?.shareBase;
-        shareUrl = code && key && base
-          ? `${base}/${code}${key}`
-          : `https://rungirlrun.studio/?post=${encodeURIComponent(openItem.id)}`;
-      }
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        const btn = document.querySelector('.pp-hero-btn:last-child') || document.getElementById('pp-share');
-        if (btn) {
-          const orig = btn.innerHTML;
-          btn.innerHTML = '&#x2713; Copied!';
-          setTimeout(() => { btn.innerHTML = orig; }, 2000);
-        }
-      });
+      if (openItem) copyShare(openItem);
     },
 
     async toggleLike() {
@@ -1449,20 +1281,8 @@ function setupEventListeners() {
         updateLikeUI(likeCounts.get(id), on);
         return;
       }
-      const vid = getVisitorId(true);
-      try {
-        const res = await fetch(`${LIKES_API}/${encodeURIComponent(id)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vid })
-        });
-        const data = await res.json();
-        sessionStorage.setItem(`rgr_likes_${id}`, JSON.stringify({ count: data.count, liked: data.liked }));
-        updateLikeUI(data.count, data.liked);
-        if (likeCounts.has(id)) likeCounts.set(id, data.count);
-      } catch (e) {
-        console.warn('Like failed:', e);
-      }
+      const data = await sendLike(id);
+      if (data && likeCounts.has(id)) likeCounts.set(id, data.count);
     },
 
     openLightbox() {

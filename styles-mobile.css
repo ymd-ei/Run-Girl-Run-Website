@@ -13,6 +13,7 @@
   --ls-tight:.04em;--ls-normal:.1em;--ls-wide:.16em;--ls-xwide:.25em;
   --ink-rgb:26,23,20;--paper-rgb:242,237,228;
   --font-hero:'Bebas Neue',sans-serif;--font-ui:'Space Grotesk',sans-serif;
+  --panel-border:rgba(var(--ink-rgb),0.1);--ease:cubic-bezier(0.16,1,0.3,1);
 }
 html{scroll-behavior:smooth}
 body{
@@ -25,22 +26,60 @@ body{
 /* ─────────────────────────────────────────
    HERO
 ───────────────────────────────────────── */
-#hero{
-  padding:3rem 1.5rem 2rem;
+#top{position:relative;overflow:hidden}
+.top-content{position:relative;z-index:1}
+#hero{padding:5.5rem 1.5rem 2.5rem}
+#reel-section.has-reel{padding-top:5rem}
+#reel-section.has-reel+#hero{padding-top:.5rem}
+/* Background video: same treatment as the contact section's */
+.hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+.hero-bg video,.hero-bg img{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;
 }
+.hero-bg::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(var(--ink-rgb),0.92) 0%,rgba(var(--ink-rgb),0.6) 40%,rgba(var(--ink-rgb),0.75) 100%);
+}
+
+/* Running dog in the page's top-left corner; scrolls away with the page */
+.m-logo{
+  position:absolute;z-index:2;top:0;left:0;display:block;
+  padding:1.2rem 1.5rem;padding-top:max(1.2rem,env(safe-area-inset-top));line-height:0;
+}
+.m-logo[hidden]{display:none}
+.m-logo img{height:2em;max-width:40vw;object-fit:contain}
 
 .hero-role{
   font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-xwide);
-  text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;font-weight:500;
+  text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;font-weight:600;
 }
+#top.has-video .hero-role{color:color-mix(in srgb,var(--accent) 55%,#fff)}
 .hero-name{
   font-family:var(--font-s);font-size:clamp(2.8rem,12vw,4.5rem);
   font-weight:700;line-height:.9;letter-spacing:.01em;
 }
+.hero-name em{color:var(--accent);font-style:italic}
+/* Studio name on the left; About / Work as plain links stacked close together on
+   the right, the last one sitting on the name's baseline */
+.hero-content{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
+.hero-id{min-width:0}
+.hero-nav{display:flex;flex-direction:column;align-items:flex-end;gap:.15rem;flex:none;padding-bottom:.35rem}
+.hero-nav-btn{
+  display:flex;align-items:center;gap:.5rem;padding:.45rem 0;
+  background:none;border:none;color:var(--paper);
+  font-family:var(--font-b);font-size:var(--fs-sm);font-weight:500;
+  letter-spacing:var(--ls-wide);text-transform:uppercase;
+}
+.hero-nav-btn i{color:var(--accent);font-size:var(--fs-body)}
+.hero-nav-btn:active{color:var(--accent)}
 .hero-avail{
-  display:flex;align-items:center;gap:.5rem;margin-top:1rem;
+  /* Top-right, level with the dog in the opposite corner */
+  position:absolute;z-index:2;top:0;right:0;height:2rem;box-sizing:content-box;
+  padding:1.2rem 1.5rem 0;padding-top:max(1.2rem,env(safe-area-inset-top));
+  display:flex;align-items:center;gap:.5rem;
   font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-wide);
-  text-transform:uppercase;color:rgba(var(--paper-rgb),0.6);
+  text-transform:uppercase;color:rgba(var(--paper-rgb),0.7);
 }
 .avail-dot{width:6px;height:6px;border-radius:50%;background:#36c97f}
 
@@ -48,7 +87,7 @@ body{
    REEL
 ───────────────────────────────────────── */
 #reel-section{
-  padding:0 1.5rem 2rem;display:none;
+  padding:0 1.5rem 1.5rem;display:none;
 }
 #reel-embed{
   position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;
@@ -76,20 +115,42 @@ body{
 }
 #reel-section.has-reel{display:block}
 
-
-/* ─────────────────────────────────────────
-   VIEW WORK (links to the full site)
-───────────────────────────────────────── */
-.view-work-wrap{padding:0 1.5rem 2.5rem}
-.view-work-btn{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1rem 1.25rem;border:1px solid rgba(var(--paper-rgb),0.25);
-  color:var(--paper);text-decoration:none;
+/* Reel cover: the site's play button over the player until it's tapped. With a
+   poster it sits on the poster; without one the box is frosted glass over the
+   hero video, so there's never a black frame. */
+#reel-embed.no-poster{background:transparent}
+#reel-embed.no-poster:not(.is-playing)>video{visibility:hidden}
+.reel-cover{
+  position:absolute;inset:0;z-index:1;width:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;
+  background:rgba(var(--ink-rgb),.25);border:none;color:var(--paper);
+}
+#reel-embed.no-poster .reel-cover{
+  background:rgba(var(--ink-rgb),.35);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);
+  border:1px solid rgba(var(--paper-rgb),.14);
+}
+#reel-embed.is-playing .reel-cover{display:none}
+.reel-play{
+  width:64px;height:64px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(var(--paper-rgb),.45);background:rgba(var(--ink-rgb),.25);
+  transition:border-color .2s,transform .2s;
+}
+.reel-tri{
+  width:0;height:0;margin-left:4px;
+  border-top:10px solid transparent;border-bottom:10px solid transparent;
+  border-left:16px solid var(--paper);
+}
+.reel-cover:active .reel-play{border-color:var(--accent);transform:scale(.96)}
+.reel-cover-text{
+  display:flex;gap:.6rem;align-items:baseline;
   font-family:var(--font-b);font-size:var(--fs-sm);font-weight:500;
   letter-spacing:var(--ls-wide);text-transform:uppercase;
 }
-.view-work-btn i{color:var(--accent);font-size:var(--fs-body)}
-.view-work-btn:active{border-color:var(--accent)}
+.reel-dur{color:rgba(var(--paper-rgb),.55);font-weight:400}
+
+
 
 section{padding:2rem 1.5rem}
 .section-title{
@@ -167,10 +228,35 @@ section{padding:2rem 1.5rem}
   letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--ct-muted);
 }
 .legal-trigger{
-  margin-left:auto;background:none;border:none;color:var(--ct-muted);
+  background:none;border:none;color:var(--ct-muted);
   font:inherit;letter-spacing:var(--ls-normal);text-decoration:underline;text-underline-offset:3px;
 }
 
+
+/* Lite mode switch: sits before the legal link */
+.lite-toggle{
+  margin-left:auto;display:inline-flex;align-items:center;gap:.5rem;
+  background:none;border:none;padding:.3rem 0;color:var(--ct-muted);
+  font:inherit;letter-spacing:var(--ls-normal);
+}
+.lite-switch{
+  position:relative;width:26px;height:14px;border-radius:7px;
+  border:1px solid currentColor;transition:background .2s,border-color .2s;
+}
+.lite-switch::after{
+  content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;
+  background:currentColor;transition:transform .2s;
+}
+.lite-toggle[aria-pressed="true"]{color:var(--ct-hi)}
+.lite-toggle[aria-pressed="true"] .lite-switch{background:var(--ct-accent);border-color:var(--ct-accent)}
+.lite-toggle[aria-pressed="true"] .lite-switch::after{transform:translateX(12px);background:var(--ct-bg)}
+
+/* Lite mode: no blur (costly on slow phones), solid fills instead */
+html.lite *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
+html.lite #reel-embed.no-poster .reel-cover{background:rgba(var(--ink-rgb),.85)}
+html.lite body.panel-frost .sheet{background:var(--ink)}
+html.lite body.panel-frost .sheet .wf{background:var(--ink)}
+.ct-bg-video img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 /* ─────────────────────────────────────────
    PRIVACY & LEGAL POPUP
@@ -205,3 +291,72 @@ section{padding:2rem 1.5rem}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
+
+
+/* ─────────────────────────────────────────
+   ABOUT / WORK SHEET
+   Slides up to two thirds of the screen; swipe down to close (mobileSheet.js).
+   Content styles come from styles-content.css, shared with the desktop.
+───────────────────────────────────────── */
+html.sheet-open,html.sheet-open body{overflow:hidden}
+.sheet-bd{
+  position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;transition:opacity .35s ease;
+}
+.sheet-bd.open{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;z-index:160;left:0;right:0;bottom:0;
+  height:67vh;height:67svh;display:flex;flex-direction:column;
+  background:var(--panel-bg);color:var(--ink);border-radius:14px 14px 0 0;
+  box-shadow:0 -12px 40px rgba(0,0,0,.35);
+  transform:translateY(105%);visibility:hidden;
+  transition:transform .45s var(--ease),visibility 0s linear .45s;
+  outline:none;
+}
+.sheet.open{transform:translateY(0);visibility:visible;transition:transform .45s var(--ease),visibility 0s}
+.sheet.dragging{transition:none}
+body.panel-frost .sheet{
+  background:rgba(var(--ink-rgb),.88);color:var(--paper);
+  -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  border-top:1px solid rgba(var(--paper-rgb),.1);
+}
+.sheet-handle{display:flex;justify-content:center;padding:.6rem 0 .2rem;touch-action:none}
+.sheet-handle span{width:40px;height:4px;border-radius:2px;background:currentColor;opacity:.3}
+.sheet-head{
+  display:flex;align-items:center;gap:.75rem;padding:.3rem 1.5rem .9rem;
+  border-bottom:1px solid var(--panel-border);touch-action:none;
+}
+body.panel-frost .sheet-head{border-bottom-color:rgba(var(--paper-rgb),.08)}
+.sheet-title{font-family:var(--font-s);font-size:var(--fs-xl);font-weight:400;letter-spacing:var(--ls-tight);margin-right:auto}
+.sheet-back{
+  display:flex;align-items:center;gap:.45rem;background:none;border:none;padding:.4rem 0;
+  color:inherit;opacity:.6;font-family:var(--font-b);font-size:var(--fs-sm);
+  letter-spacing:var(--ls-normal);text-transform:uppercase;
+}
+.sheet-back[hidden]{display:none}
+.sheet-back:not([hidden])+.sheet-title{display:none}
+.sheet-close{
+  width:36px;height:36px;flex:none;margin-left:auto;display:flex;align-items:center;justify-content:center;
+  background:none;border:1px solid currentColor;color:inherit;opacity:.45;font-size:var(--fs-md);
+}
+.sheet-body{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:0 1.5rem calc(2rem + env(safe-area-inset-bottom));
+}
+/* Work filters stay pinned at the top while the grid scrolls under them (as on the desktop) */
+.sheet .wf{
+  position:sticky;top:0;margin:0 -1.5rem 1rem;padding:1rem 1.5rem .8rem;
+  background:var(--panel-bg);border-bottom:1px solid transparent;
+}
+.sheet .wf.is-stuck{border-bottom-color:var(--border)}
+body.panel-frost .sheet .wf{background:rgba(var(--ink-rgb),.92);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
+body.panel-frost .sheet .wf.is-stuck{border-bottom-color:rgba(var(--paper-rgb),.1)}
+.sheet-loading{padding-top:1.5rem;font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;opacity:.5}
+/* Desktop panels pad 2rem; the sheet pads 1.5rem, so the header bleeds by that */
+.sheet .pp-hero{width:calc(100% + 3rem);margin:0 -1.5rem 1.5rem;min-height:220px}
+.sheet .pp-hero-content{padding:1.5rem}
+.sheet .block-canvas{padding-top:1.25rem}
+.sheet .wg{gap:1rem .75rem}
+.sheet .wc{-webkit-tap-highlight-color:transparent}
+.sheet .bl-twocol{grid-template-columns:1fr}
+.sheet .bl-cta{flex-direction:column;align-items:flex-start}

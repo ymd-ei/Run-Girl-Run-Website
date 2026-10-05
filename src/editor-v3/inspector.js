@@ -426,11 +426,13 @@ const REEL_TYPES = [['video', 'Video file'], ['youtube', 'YouTube'], ['vimeo', '
 const HOME_GROUPS = [
   { title: 'Demo reel (hero background)', fields: [
     { label: 'Type', key: 'reel.type', kind: 'select', options: REEL_TYPES },
-    { label: 'URL / media', key: 'reel.url', kind: 'media' }
+    { label: 'URL / media', key: 'reel.url', kind: 'media' },
+    { label: 'Poster image', key: 'reel.poster', kind: 'media' }
   ] },
   { title: 'Watch reel (button popup)', fields: [
     { label: 'Type', key: 'watchReel.type', kind: 'select', options: REEL_TYPES },
-    { label: 'URL / media', key: 'watchReel.url', kind: 'media' }
+    { label: 'URL / media', key: 'watchReel.url', kind: 'media' },
+    { label: 'Poster image', key: 'watchReel.poster', kind: 'media' }
   ] }
 ];
 

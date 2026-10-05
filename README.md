@@ -28,6 +28,7 @@ content.json        → Site content (hero, contact, project order)
 projects/           → Individual project data (JSON per project)
 media/              → Images and video assets
 src/                → Source JS modules (display, editor, state, utils)
+styles-content.css  → Shared content styles (work cards, posts, blocks), loaded by both pages
 styles-main.css     → Desktop styles
 styles-mobile.css   → Mobile styles
 styles-editor.css   → Editor styles

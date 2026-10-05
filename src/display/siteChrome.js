@@ -18,7 +18,7 @@ export const SITE_TEXT_DEFAULTS = {
   back: 'Back',
   legalLink: 'Privacy & Legal',
   footer: '© {year} {name}',
-  viewWork: 'View work'
+  liteMode: 'Lite mode'
 };
 
 // Editor labels, in display order.
@@ -33,7 +33,7 @@ export const SITE_TEXT_FIELDS = [
   ['back', 'Project back button'],
   ['legalLink', 'Privacy & Legal link'],
   ['footer', 'Footer'],
-  ['viewWork', 'Mobile: view work link']
+  ['liteMode', 'Mobile: lite mode switch']
 ];
 
 export const LEGAL_DEFAULTS = {

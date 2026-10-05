@@ -226,7 +226,7 @@ export function sanitizeHtml(html) {
   return doc.body.innerHTML;
 }
 
-/* Dress cleaned article HTML in the site's own widgets (styles-main.css .bl-*) */
+/* Dress cleaned article HTML in the site's own widgets (styles-content.css .bl-*) */
 const mk = (doc, tag, cls, html = '') => { const e = doc.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
 // Substack writes paragraph breaks inside one <p> as <br><br>
 const paras = html => html.split(/(?:<br\s*\/?>\s*){2,}/i).map(x => x.replace(/^(?:\s|<br\s*\/?>)+|(?:\s|<br\s*\/?>)+$/gi, '')).filter(Boolean);
@@ -408,7 +408,7 @@ export function masonry(grid, prev) {
   const w = grid.clientWidth;
   if (!w) return; // panel hidden; the observer re-runs this once it has a width
   const cols = w < 520 ? 1 : w < 600 ? 2 : 3;
-  grid.dataset.cols = cols; // styles-main.css compacts card text at 3 columns
+  grid.dataset.cols = cols; // styles-content.css compacts card text at 3 columns
   const colW = (w - GAP * (cols - 1)) / cols;
   const heights = Array(cols).fill(0);
   const features = squareFeatures(kids);
