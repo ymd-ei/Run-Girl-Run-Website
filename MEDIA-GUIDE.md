@@ -94,7 +94,32 @@ Big video files are what make the loading screen wait. Render web copies with th
    ```
 
    Changing the reel URL in the old form editor (v1) resets the poster, so set it again afterwards.
+   In the WYSIWYG editor, Home → Demo reel / Watch reel each have a **Poster image** field.
 4. Check the file size: hero ≲ 8 MB, contact ≲ 15 MB. Every MB is loading-screen time on a slow connection.
+
+Posters also matter in **Lite mode** (the footer switch for slower devices, on by default for
+data-saver visitors): the hero and contact videos are replaced by their posters, so a video
+without a poster just shows the plain background there.
+
+### Watch reel poster (optional)
+
+The watch reel (`watchReel`) can have a `poster` too. On the phone page it's the thumbnail of
+the reel player, with the site's play button and "Watch Reel" on top. With no poster set, the
+player shows frosted glass over the hero video instead, so it's never a black box. Set it in
+the editor (Home → Watch reel → Poster image) or in `content.json`:
+
+```json
+"watchReel": { "type": "video", "url": "media/<reel>.mp4", "poster": "media/<reel>_poster.jpg" }
+```
+
+Pick a frame that reads well small (not a title card). Export a still from DaVinci, or cut one
+from the video on this Mac (no installs needed; the last number is the time in seconds):
+
+```bash
+swift tools/video-poster.swift "media/<reel>.mp4" "media/<reel>_poster.jpg" 14
+```
+
+As with the hero, changing the watch reel URL in the old v1 editor drops its poster.
 
 ### How the loading screen decides when to finish
 
@@ -113,4 +138,4 @@ Measured on a first visit (Oct 2026) after the web copies went in:
 | 20 Mbps | hero playable at 8.6 s, so the 7 s cap kicks in | loader done at **2.2 s** |
 | 6 Mbps | (cap) | loader done at **7.5 s**, both videos ready |
 
-**Default since Oct 2026: page first.** The loader lifts as soon as the brand intro has played (about 1.5 s); the hero video fades in when it can play, and the contact video keeps downloading in the background. To compare with the old "wait for the videos" behaviour described above, add `?waitload` to the URL.
+**Default since Oct 2026: page first.** The loader lifts as soon as the brand intro has played (about 1.5 s); the hero video fades in when it can play, and the contact video keeps downloading in the background. To compare with the old "wait for the videos" behaviour described above, add `?waitload` to the URL. In Lite mode there are no background videos to wait for at all (posters only).

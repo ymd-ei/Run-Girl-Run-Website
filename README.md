@@ -14,11 +14,16 @@ The editor is available at **http://localhost:8080/editor.html** (the WYSIWYG ed
 the real site in an iframe). The original form-based editor is kept as a fallback at
 **editor-v1.html**.
 
+**Testing the phone page on a real phone:** run `python3 dev-server.py 8090` in this folder (it serves to the
+whole Wi-Fi network, with caching off), find the Mac's address with `ipconfig getifaddr en0`,
+and open `http://<that address>:8090/mobile.html` on a phone on the same Wi-Fi. Allow Python
+through the macOS firewall if asked. Swipes and taps can only really be judged this way.
+
 ## Project Structure
 
 ```
 index.html          → Desktop homepage (redirects phones to mobile.html, except ?project= links)
-mobile.html         → Slim mobile page: reel, contact, "View work" link to the full site
+mobile.html         → Phone page: reel, contact, and Work / About in a slide-up panel (src/display/mobileSheet.js)
 site-config.js      → Shared settings (backend URL, repo, branch) for every page
 editor-auth.js      → Shared editor sign-in capture (main, v1 and modelling editors)
 _config.yml         → Files GitHub Pages should not publish
