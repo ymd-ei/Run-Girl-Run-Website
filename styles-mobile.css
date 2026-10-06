@@ -42,11 +42,22 @@ body{
   background:linear-gradient(to top,rgba(var(--ink-rgb),0.92) 0%,rgba(var(--ink-rgb),0.6) 40%,rgba(var(--ink-rgb),0.75) 100%);
 }
 
-/* Running dog in the page's top-left corner; scrolls away with the page */
-.m-logo{
-  position:absolute;z-index:2;top:0;left:0;display:block;
-  padding:1.2rem 1.5rem;padding-top:max(1.2rem,env(safe-area-inset-top));line-height:0;
+/* Top bar: the dog on the left, "Available for work" on the right, pinned while
+   the page scrolls. Once the page has scrolled, a light dark fade comes in
+   behind it (is-scrolled, set in mobile.js) so content passing under it recedes. */
+.m-bar{
+  position:fixed;z-index:90;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1.2rem 1.5rem 2.2rem;padding-top:max(1.2rem,env(safe-area-inset-top));
+  pointer-events:none;
 }
+.m-bar::before{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom,rgba(var(--ink-rgb),.75) 0%,rgba(var(--ink-rgb),.5) 60%,rgba(var(--ink-rgb),0) 100%);
+  opacity:0;transition:opacity .3s ease;
+}
+.m-bar.is-scrolled::before{opacity:1}
+.m-logo{display:block;line-height:0}
 .m-logo[hidden]{display:none}
 .m-logo img{height:2em;max-width:40vw;object-fit:contain}
 
@@ -74,9 +85,8 @@ body{
 .hero-nav-btn i{color:var(--accent);font-size:var(--fs-body)}
 .hero-nav-btn:active{color:var(--accent)}
 .hero-avail{
-  /* Top-right, level with the dog in the opposite corner */
-  position:absolute;z-index:2;top:0;right:0;height:2rem;box-sizing:content-box;
-  padding:1.2rem 1.5rem 0;padding-top:max(1.2rem,env(safe-area-inset-top));
+  /* In the top bar, level with the dog */
+  margin-left:auto;height:2rem;
   display:flex;align-items:center;gap:.5rem;
   font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:var(--ls-wide);
   text-transform:uppercase;color:rgba(var(--paper-rgb),0.7);

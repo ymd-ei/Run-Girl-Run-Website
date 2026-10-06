@@ -63,6 +63,18 @@ async function init() {
   renderLegal(data, document.getElementById('legal-card'));
   initPanels();
   pauseSoundInBackground();
+  darkenBarOnScroll();
+}
+
+// The top bar's fade (styles-mobile.css .m-bar) comes in once the page has
+// scrolled past the bar's own spot, i.e. when its original place is off-screen
+function darkenBarOnScroll() {
+  const bar = document.getElementById('m-bar');
+  if (!bar) return;
+  const reach = () => Math.max(...[...bar.children].map(el => el.getBoundingClientRect().bottom));
+  const update = () => bar.classList.toggle('is-scrolled', window.scrollY > reach());
+  window.addEventListener('scroll', update, { passive: true });
+  update();
 }
 
 /* Locking the phone or switching apps keeps an inline video's sound playing on

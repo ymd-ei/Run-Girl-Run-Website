@@ -24,15 +24,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
 <link rel="stylesheet" href="styles-content.css?v=3">
-<link rel="stylesheet" href="styles-mobile.css?v=22">
+<link rel="stylesheet" href="styles-mobile.css?v=26">
 </head>
 <body>
+
+<!-- Top bar: dog + availability, pinned while the page scrolls -->
+<div class="m-bar" id="m-bar">
+  <span class="m-logo" id="m-logo" hidden></span>
+  <p class="hero-avail" id="hero-avail" style="display:none"><span class="avail-dot"></span><span id="avail-text"></span></p>
+</div>
 
 <!-- TOP: reel and hero share one background video (like Contact) -->
 <div id="top">
 <div id="hero-bg" class="hero-bg" aria-hidden="true"></div>
-<span class="m-logo" id="m-logo" hidden></span>
-<p class="hero-avail" id="hero-avail" style="display:none"><span class="avail-dot"></span><span id="avail-text"></span></p>
 <div class="top-content">
 
 <!-- REEL -->
