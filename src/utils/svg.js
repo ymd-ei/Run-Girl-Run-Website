@@ -3,7 +3,6 @@
  * Creates inline SVG thumbnails for different project types
  */
 
-import { reducedMotion } from './a11y.js';
 
 /**
  * Generate thumbnail SVG for project types
@@ -26,64 +25,4 @@ export function generateThumbSVG(type, accentColor, bgColor) {
   };
 
   return svgs[type] || svgs.motion;
-}
-
-/**
- * Start ticker animation for marquee-style scrolling
- * @param {Element} track - Element to animate
- * @param {number} speed - Speed in pixels per frame (positive = left scroll)
- */
-export function startTicker(track, speed) {
-  if (!track) return;
-  if (track._tickerRunning || reducedMotion()) return; // reduced motion: the tape stays still
-  track._tickerRunning = true;
-
-  const trackW = track.scrollWidth;
-  const absSpeed = Math.abs(speed);
-  const movingLeft = speed > 0;
-  const loopPoint = trackW / 4;
-  let offset = movingLeft ? 0 : -loopPoint;
-  let raf;
-
-  function tick() {
-    offset += movingLeft ? -absSpeed : absSpeed;
-    if (movingLeft && offset < -loopPoint) offset = 0;
-    if (!movingLeft && offset > 0) offset = -loopPoint;
-    track.style.transform = `translateX(${offset}px)`;
-    raf = requestAnimationFrame(tick);
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      cancelAnimationFrame(raf);
-    } else {
-      raf = requestAnimationFrame(tick);
-    }
-  });
-
-  raf = requestAnimationFrame(tick);
-}
-
-/**
- * Start sensitive ticker (responsive to scroll)
- * @param {Element} track - Element to animate
- * @param {number} speed - Speed in pixels per frame
- */
-export function startSensitiveTicker(track, speed) {
-  if (!track || track._tickerRunning || reducedMotion()) return;
-  track._tickerRunning = true;
-
-  const trackW = track.scrollWidth;
-  const loopPoint = trackW / 4;
-  let offset = 0;
-  let raf;
-
-  function tick() {
-    offset -= speed;
-    if (offset < -loopPoint) offset = 0;
-    track.style.transform = `translateX(${offset}px)`;
-    raf = requestAnimationFrame(tick);
-  }
-
-  raf = requestAnimationFrame(tick);
 }

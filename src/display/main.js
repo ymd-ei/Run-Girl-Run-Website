@@ -15,7 +15,7 @@ import {
   updateContactPanelBackground,
   renderDisplayBlocks
 } from './displayRenderer.js';
-import { startTicker } from '../utils/svg.js';
+import { startTicker, STRIPE_CONTACT } from '../utils/ticker.js';
 import { phosphorIcon } from '../utils/icons.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
@@ -1088,14 +1088,21 @@ function renderContactSection() {
 }
 
 function startContactTickers() {
-  const topTrack = document.querySelector('#ct-ticker-top .ticker-track');
-  const midTrack = document.querySelector('#ct-ticker-mid .ticker-track');
+  const topTape = document.getElementById('ct-ticker-top');
+  const midTape = document.getElementById('ct-ticker-mid');
+  // Speeds as judged on the owner's 1204px-wide laptop, where the strips' text
+  // (1.2vw) is about 14.45px; they scale with the text on other screens
+  const tickers = [
+    topTape && startTicker(topTape.querySelector('.ticker-track'), { speed: 36, basePx: 14.45, right: true, hoverTarget: topTape, followSize: true, stripe: STRIPE_CONTACT }),
+    midTape && startTicker(midTape.querySelector('.ticker-track'), { speed: 30, basePx: 14.45, hoverTarget: midTape, followSize: true, stripe: STRIPE_CONTACT })
+  ].filter(Boolean);
 
-  if (topTrack && !topTrack._tickerRunning) {
-    startTicker(topTrack, -0.6);
-  }
-  if (midTrack && !midTrack._tickerRunning) {
-    startTicker(midTrack, 0.5);
+  // The strips only move while the contact panel is open
+  const wrapper = document.getElementById('contact-wrapper');
+  if (wrapper) {
+    const follow = () => tickers.forEach(t => (wrapper.classList.contains('open') ? t.play() : t.pause()));
+    new MutationObserver(follow).observe(wrapper, { attributes: true, attributeFilter: ['class'] });
+    follow();
   }
 
   contactTickersStarted = true;

@@ -95,7 +95,7 @@ Big video files are what make the loading screen wait. Render web copies with th
 
    Changing the reel URL in the old form editor (v1) resets the poster, so set it again afterwards.
    In the WYSIWYG editor, Home → Demo reel / Watch reel each have a **Poster image** field.
-4. Check the file size: hero ≲ 8 MB, contact ≲ 15 MB. Every MB is loading-screen time on a slow connection.
+4. Check the file size against the length: at these settings a background loop comes out at roughly 0.5–0.6 MB per second (hero 20 MB / 32 s, contact 12.5 MB / 25 s). There's no fixed cap: the hero is a carousel of samples from the demo reel, so it runs longer and weighs more than a single-shot loop. Keep the bitrate at the settings above rather than cutting length, and remember phones download these on mobile data (Lite mode skips them).
 
 Posters also matter in **Lite mode** (the footer switch for slower devices, on by default for
 data-saver visitors): the hero and contact videos are replaced by their posters, so a video

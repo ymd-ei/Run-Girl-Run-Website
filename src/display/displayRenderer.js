@@ -3,7 +3,8 @@
  * Renders the public-facing portfolio pages
  */
 
-import { generateThumbSVG, startTicker, startSensitiveTicker } from '../utils/svg.js';
+import { generateThumbSVG } from '../utils/svg.js';
+import { startTicker, STRIPE_MATURE } from '../utils/ticker.js';
 import { pool, scheduleIdle } from '../utils/text.js';
 import { reducedMotion } from '../utils/a11y.js';
 import { phosphorIcon } from '../utils/icons.js';
@@ -389,7 +390,8 @@ export function initSensitiveTapes(projects, { showAll = false } = {}) {
     document.getElementById('st-' + p.id).style.transform = `rotate(${angle}deg)`;
     document.getElementById('st-' + p.id).style.top = '35%';
 
-    startSensitiveTicker(tape, 0.4);
+    // 24 px/s at the tape's fixed 1.1rem; hovering the card slows it so the label can be read
+    startTicker(tape, { speed: 24, basePx: 17.6, hoverTarget: tape.closest('.wc'), stripe: STRIPE_MATURE });
   });
 }
 
