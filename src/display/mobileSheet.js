@@ -1,13 +1,15 @@
 /**
  * Mobile bottom sheet. The Work grid opens over two thirds of the screen;
- * About, a project or a post open tall. Swipes only start on the top strip
- * (handle + title row); the content just scrolls. Swiping down closes the
- * sheet, and in a project or post it does the same as Back. The backdrop, the
+ * About, a project or a post open tall. A swipe down closes the sheet from the
+ * handle anywhere, or from the content once it's scrolled to its top (otherwise
+ * the content just scrolls); in a project or post it does the same as Back. The backdrop, the
  * close button, Escape and the phone's Back also work. Each view (About, Work,
  * a project) is a history entry, so Back steps out one level at a time.
  */
 
-const CLOSE_DISTANCE = 0.25;   // of the sheet's height
+const CLOSE_DISTANCE = 0.3;    // of the sheet's height
+const START = 12;              // px of pull before the sheet starts to move
+const RESIST = 0.8;            // the sheet follows the finger at this share, so it feels a little heavy
 const CLOSE_SPEED = 0.6;       // px per ms: a flick this fast closes (or goes back) whatever the distance
 const GRID = 0.67;             // the Work sheet's share of the screen; keep in step with .sheet in styles-mobile.css
 const RUBBER = 0.15;           // how far past the grid's height a swipe back still moves the sheet
@@ -126,13 +128,13 @@ const backDistance = () => Math.max(0, sheet.offsetHeight - window.innerHeight *
 
 function bindSwipe() {
   let startY = 0, lastY = 0, lastT = 0, speed = 0, dy = 0;
-  let tracking = false, dragging = false;
+  let tracking = false, dragging = false, fromHandle = false;
 
-  // Only the top strip (handle + title row) drags; the content scrolls as usual
   sheet.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1 || body.contains(e.target)) return;
+    if (e.touches.length !== 1) return;
     tracking = true;
     dragging = false;
+    fromHandle = !body.contains(e.target);
     dy = 0;
     speed = 0;
     startY = lastY = e.touches[0].clientY;
@@ -144,11 +146,14 @@ function bindSwipe() {
     const y = e.touches[0].clientY;
     dy = y - startY;
     if (!dragging) {
-      if (dy > 6) {
+      // Pull down from the handle/header, or from content that's already at its top
+      if (dy > START && (fromHandle || body.scrollTop <= 0)) {
         dragging = true;
         sheet.classList.add('dragging');
+      } else if (Math.abs(dy) > START) {
+        tracking = false;      // a normal scroll inside the content (or an upward drag)
+        return;
       } else {
-        if (dy < -6) tracking = false;   // an upward drag isn't a close
         return;
       }
     }
@@ -157,7 +162,7 @@ function bindSwipe() {
     speed = (y - lastY) / dt;
     lastY = y;
     lastT = e.timeStamp;
-    let pull = Math.max(0, dy);
+    let pull = Math.max(0, dy) * RESIST;
     if (!backBtn.hidden) {
       // In a project or post the swipe heads for the grid's height: past that
       // line the drag gets heavy, so the sheet isn't pulled below where it lands
