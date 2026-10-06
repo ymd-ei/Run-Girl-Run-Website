@@ -245,9 +245,8 @@ function initPanels() {
   projects = (data.projects || []).map(id => cards.get(id)).filter(p => p && p.published !== false);
   if (data.theme && data.theme.panelStyle === 'dark') document.body.classList.add('panel-frost');
 
+  // Work and About are built now and parked below the screen; their tabs raise them
   initSheet(renderView);
-  document.querySelectorAll('[data-open]').forEach(btn =>
-    btn.addEventListener('click', () => openView({ sheet: btn.dataset.open })));
 
   // Cards, filter chips and header buttons call window.display, as on the desktop
   window.display = {
@@ -275,15 +274,14 @@ function initPanels() {
 
   loadFeed(data).then(list => {
     posts = list;
-    const view = history.state;
-    if (view && view.sheet === 'work' && !view.project && !view.post) refreshView();
+    refreshView('work');
   }).catch(e => console.warn('Feed failed to load:', e));
 }
 
 function renderView(view) {
   const filters = data.filters || DEFAULT_FILTERS;
   openItem = view.project ? { kind: 'project', id: view.project } : view.post ? { kind: 'post', id: view.post } : null;
-  const label = key => document.querySelector(`[data-open="${key}"] span`)?.textContent || key;
+  const label = key => document.getElementById(`sheet-${key}-title`)?.textContent || key;
 
   if (view.sheet === 'about') {
     return {

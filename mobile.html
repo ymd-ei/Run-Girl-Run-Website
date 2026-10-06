@@ -24,7 +24,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
 <link rel="stylesheet" href="styles-content.css?v=5">
-<link rel="stylesheet" href="styles-mobile.css?v=26">
+<link rel="stylesheet" href="styles-mobile.css?v=45">
 </head>
 <body>
 
@@ -50,10 +50,6 @@
       <p class="hero-role" id="hero-role"></p>
       <h1 class="hero-name" id="hero-name"></h1>
     </div>
-    <nav class="hero-nav" aria-label="Site">
-      <button type="button" class="hero-nav-btn" data-open="work" aria-haspopup="dialog"><span data-site-text="navWork">Work</span> <i class="ph-fill ph-arrow-up" aria-hidden="true"></i></button>
-      <button type="button" class="hero-nav-btn" data-open="about" aria-haspopup="dialog"><span data-site-text="navAbout">About</span> <i class="ph-fill ph-arrow-up" aria-hidden="true"></i></button>
-    </nav>
   </div>
 </header>
 
@@ -92,17 +88,33 @@
   <button class="legal-trigger" onclick="openLegalModal()" data-site-text="legalLink">Privacy &amp; Legal</button>
 </footer>
 
-<!-- About / Work sheet: slides up, swipe down to close -->
+<!-- Work / About panels (src/display/mobileSheet.js): parked just below the screen, built and
+     ready, with only their tab showing. Pull a tab up (or tap it) to bring its panel into view;
+     swipe down, Back or Escape sends it back. Tab + panel are drawn as one shape. -->
 <div id="sheet-bd" class="sheet-bd" aria-hidden="true"></div>
-<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
-  <div class="sheet-handle" aria-hidden="true"><span></span></div>
-  <div class="sheet-head">
-    <button type="button" class="sheet-back" id="sheet-back" hidden><i class="ph-fill ph-arrow-left" aria-hidden="true"></i> <span data-site-text="back">Back</span></button>
-    <h2 class="sheet-title" id="sheet-title"></h2>
-    <button type="button" class="sheet-close" id="sheet-close" aria-label="Close">&#x2715;</button>
+<section class="sheet" id="sheet-work" data-sheet="work" aria-labelledby="sheet-work-title">
+  <div class="tab-shape" aria-hidden="true"><svg><path/></svg></div>
+  <button type="button" class="sheet-tab" aria-controls="sheet-work-panel" aria-expanded="false"><span class="m-dock-grip" aria-hidden="true"></span><span data-site-text="navWork">Work</span></button>
+  <div class="sheet-panel" id="sheet-work-panel" inert>
+    <div class="sheet-head">
+      <button type="button" class="sheet-back" hidden><i class="ph-fill ph-arrow-left" aria-hidden="true"></i> <span data-site-text="back">Back</span></button>
+      <h2 class="sheet-title" id="sheet-work-title" data-site-text="navWork">Work</h2>
+      <button type="button" class="sheet-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div class="sheet-body ppbody"></div>
   </div>
-  <div class="sheet-body ppbody" id="sheet-body"></div>
-</div>
+</section>
+<section class="sheet" id="sheet-about" data-sheet="about" aria-labelledby="sheet-about-title">
+  <div class="tab-shape" aria-hidden="true"><svg><path/></svg></div>
+  <button type="button" class="sheet-tab" aria-controls="sheet-about-panel" aria-expanded="false"><span class="m-dock-grip" aria-hidden="true"></span><span data-site-text="navAbout">About</span></button>
+  <div class="sheet-panel" id="sheet-about-panel" inert>
+    <div class="sheet-head">
+      <h2 class="sheet-title" id="sheet-about-title" data-site-text="navAbout">About</h2>
+      <button type="button" class="sheet-close" aria-label="Close">&#x2715;</button>
+    </div>
+    <div class="sheet-body ppbody"></div>
+  </div>
+</section>
 
 <!-- Legal Modal -->
 <div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">

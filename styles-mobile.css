@@ -71,19 +71,7 @@ body{
   font-weight:700;line-height:.9;letter-spacing:.01em;
 }
 .hero-name em{color:var(--accent);font-style:italic}
-/* Studio name on the left; About / Work as plain links stacked close together on
-   the right, the last one sitting on the name's baseline */
-.hero-content{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
 .hero-id{min-width:0}
-.hero-nav{display:flex;flex-direction:column;align-items:flex-end;gap:.15rem;flex:none;padding-bottom:.35rem}
-.hero-nav-btn{
-  display:flex;align-items:center;gap:.5rem;padding:.45rem 0;
-  background:none;border:none;color:var(--paper);
-  font-family:var(--font-b);font-size:var(--fs-sm);font-weight:500;
-  letter-spacing:var(--ls-wide);text-transform:uppercase;
-}
-.hero-nav-btn i{color:var(--accent);font-size:var(--fs-body)}
-.hero-nav-btn:active{color:var(--accent)}
 .hero-avail{
   /* In the top bar, level with the dog */
   margin-left:auto;height:2rem;
@@ -264,8 +252,6 @@ section{padding:2rem 1.5rem}
 /* Lite mode: no blur (costly on slow phones), solid fills instead */
 html.lite *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
 html.lite #reel-embed.no-poster .reel-cover{background:rgba(var(--ink-rgb),.85)}
-html.lite body.panel-frost .sheet{background:var(--ink)}
-html.lite body.panel-frost .sheet .wf{background:var(--ink)}
 .ct-bg-video img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 /* ─────────────────────────────────────────
@@ -304,13 +290,18 @@ html.lite body.panel-frost .sheet .wf{background:var(--ink)}
 
 
 /* ─────────────────────────────────────────
-   ABOUT / WORK SHEET
-   Work opens over two thirds of the screen; About, projects and posts
-   open tall.
-   Swipe down on the top strip to close or go back (mobileSheet.js).
+   WORK / ABOUT PANELS (src/display/mobileSheet.js)
+   Two real panels parked just below the screen, built and ready; only their
+   folder tab shows (Work on the left, About on the right). Pulling a tab up drags
+   the panel itself into view, and it slides back down to park. Work rises to two
+   thirds; About, projects and posts rise tall.
+   Tab + fillets + panel are ONE shape: a .tab-shape layer clipped to an outline
+   drawn in mobileSheet.js (drawShape): one fill, one blur, one edge line.
    Content styles come from styles-content.css, shared with the desktop.
 ───────────────────────────────────────── */
+:root{--tab-h:3.4rem}
 html.sheet-open,html.sheet-open body{overflow:hidden}
+#footer{padding-bottom:calc(1.5rem + var(--tab-h) + env(safe-area-inset-bottom))}   /* the footer runs on under the parked tabs */
 .sheet-bd{
   position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);
   opacity:0;pointer-events:none;transition:opacity .35s ease;
@@ -318,64 +309,88 @@ html.sheet-open,html.sheet-open body{overflow:hidden}
 .sheet-bd.open{opacity:1;pointer-events:auto}
 .sheet{
   position:fixed;z-index:160;left:0;right:0;bottom:0;
-  height:67vh;height:67svh;display:flex;flex-direction:column;  /* GRID in mobileSheet.js */
-  background:var(--panel-bg);color:var(--ink);border-radius:14px 14px 0 0;
-  box-shadow:0 -12px 40px rgba(0,0,0,.35);
-  transform:translateY(105%);visibility:hidden;
-  transition:transform .45s var(--ease),height .45s var(--ease),visibility 0s linear .45s;
-  outline:none;
+  height:67vh;height:67svh;   /* GRID in mobileSheet.js */
+  padding:0;   /* not the page's section padding */
+  color:var(--paper);outline:none;pointer-events:none;
+  /* parked: only the tab shows; its 1px edge line and the home-indicator strip stay in view */
+  transform:translateY(calc(100% - 1px - env(safe-area-inset-bottom)));
+  transition:transform .45s var(--ease),height .45s var(--ease);
 }
-.sheet.open{transform:translateY(0);visibility:visible;transition:transform .45s var(--ease),height .45s var(--ease),visibility 0s}
-/* About, a project or a post get room to read; a sliver of the page still shows above */
-.sheet.tall{height:92vh;height:92svh}
+.sheet.raised{transform:translateY(0);z-index:162;pointer-events:auto}
+.sheet.active{z-index:162}            /* the one being pulled or put away sits over the other */
+.sheet.tall{   /* About, a project or a post: room to read. 92% counts the tab on top, and the tab
+                 never reaches up under the status bar / notch */
+  height:calc(92vh - var(--tab-h));
+  height:min(calc(92svh - var(--tab-h)),calc(100svh - var(--tab-h) - env(safe-area-inset-top) - .5rem));
+}
 .sheet.dragging{transition:none}
-body.panel-frost .sheet{
-  background:rgba(var(--ink-rgb),.88);color:var(--paper);
-  -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
-  border-top:1px solid rgba(var(--paper-rgb),.1);
+body:not(.panel-frost) .sheet{color:var(--ink)}
+
+/* The shape: reaches up over the tab; one fill, blur and edge for tab + panel */
+.tab-shape{position:absolute;left:0;right:0;bottom:0;top:calc(-1 * var(--tab-h));z-index:-1;pointer-events:none;
+  background:rgba(var(--ink-rgb),.88);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
+.tab-shape svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tab-shape path{fill:none;stroke:rgba(var(--paper-rgb),.1);stroke-width:1}
+html.lite .tab-shape{background:var(--ink)}
+body:not(.panel-frost) .tab-shape{background:var(--panel-bg)}
+body:not(.panel-frost) .tab-shape path{stroke:var(--panel-border)}
+
+/* The tab: a real button, sitting on the panel's top edge */
+.sheet-tab{
+  position:absolute;bottom:100%;height:var(--tab-h);width:calc(50% - 1.25rem);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;
+  background:none;border:none;color:inherit;pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;
+  font-family:var(--font-b);font-size:var(--fs-sm);font-weight:500;letter-spacing:var(--ls-wide);text-transform:uppercase;
 }
-.sheet-handle{display:flex;justify-content:center;padding:.6rem 0 .2rem;touch-action:none}
-.sheet-handle span{width:40px;height:4px;border-radius:2px;background:currentColor;opacity:.3}
-.sheet-head{
-  display:flex;align-items:center;gap:.75rem;padding:.3rem 1.5rem .9rem;
-  border-bottom:1px solid var(--panel-border);touch-action:none;
-}
-body.panel-frost .sheet-head{border-bottom-color:rgba(var(--paper-rgb),.08)}
-.sheet-title{font-family:var(--font-s);font-size:var(--fs-xl);font-weight:400;letter-spacing:var(--ls-tight);margin-right:auto}
+#sheet-work .sheet-tab{left:.5rem}
+#sheet-about .sheet-tab{right:.5rem}
+.sheet-tab:active{color:var(--accent)}
+.m-dock-grip{width:28px;height:3px;border-radius:2px;background:currentColor;opacity:.18}
+
+.sheet-panel{height:100%;display:flex;flex-direction:column}
+/* A parked panel's content stays out of sight, so nothing peeks into the home-indicator strip
+   under the tabs. Parking, it fades out as the panel slides down (gone before it lands); pulled
+   up or raised, it fades straight back in */
+.sheet .sheet-panel{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .45s}
+.sheet.raised .sheet-panel,.sheet.dragging .sheet-panel{opacity:1;visibility:visible;transition:opacity .15s ease,visibility 0s}
+.sheet-head{display:flex;align-items:center;gap:.75rem;padding:0 1rem;touch-action:none}   /* empty unless Back shows */
+/* The tab names the panel, so its title is only for screen readers */
+.sheet-title{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .sheet-back{
-  display:flex;align-items:center;gap:.45rem;background:none;border:none;padding:.4rem 0;
+  display:flex;align-items:center;gap:.45rem;background:none;border:none;padding:.6rem 0 .4rem;
   color:inherit;opacity:.6;font-family:var(--font-b);font-size:var(--fs-sm);
   letter-spacing:var(--ls-normal);text-transform:uppercase;
 }
 .sheet-back[hidden]{display:none}
-.sheet-back:not([hidden])+.sheet-title{display:none}
 .sheet-close{
-  width:36px;height:36px;flex:none;margin-left:auto;display:flex;align-items:center;justify-content:center;
-  background:none;border:1px solid currentColor;color:inherit;opacity:.45;font-size:var(--fs-md);
+  position:absolute;top:.5rem;right:1rem;z-index:2;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  background:none;border:1px solid currentColor;color:inherit;font-size:var(--fs-md);
 }
-/* Touch users swipe the sheet down, so the close button stays out of sight; it
+/* Touch users swipe the panel down, so the close button stays out of sight; it
    still shows when tabbed to, for keyboard and screen-reader users (like the
    desktop's contact and legal close buttons) */
 .sheet-close:not(:focus-visible){opacity:0;pointer-events:none}
 .sheet-body{
   flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:0 1.5rem calc(2rem + env(safe-area-inset-bottom));
+  padding:0 1rem calc(2rem + env(safe-area-inset-bottom));
 }
 /* Work filters stay pinned at the top while the grid scrolls under them (as on the desktop) */
 .sheet .wf{
-  position:sticky;top:0;margin:0 -1.5rem 1rem;padding:1rem 1.5rem .8rem;
+  position:sticky;top:0;margin:0 -1rem .75rem;padding:.6rem 1rem;
   background:var(--panel-bg);border-bottom:1px solid transparent;
 }
 .sheet .wf.is-stuck{border-bottom-color:var(--border)}
 body.panel-frost .sheet .wf{background:rgba(var(--ink-rgb),.92);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 body.panel-frost .sheet .wf.is-stuck{border-bottom-color:rgba(var(--paper-rgb),.1)}
+html.lite body.panel-frost .sheet .wf{background:var(--ink)}
 .sheet-body.sheet-swap{animation:sheet-swap .3s ease}
 @keyframes sheet-swap{from{opacity:0}to{opacity:1}}
 .sheet-loading{padding-top:1.5rem;font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;opacity:.5}
-/* Desktop panels pad 2rem; the sheet pads 1.5rem, so the header bleeds by that */
-.sheet .pp-hero{width:calc(100% + 3rem);margin:0 -1.5rem 1.5rem;min-height:220px}
-.sheet .pp-hero-content{padding:1.5rem}
-.sheet .block-canvas{padding-top:1.25rem}
+/* Desktop panels pad 2rem; the sheet pads 1rem, so the header bleeds by that */
+.sheet .pp-hero{width:calc(100% + 2rem);margin:0 -1rem 1.25rem;min-height:220px}
+.sheet .pp-hero-content{padding:1.25rem 1rem}
+.sheet .block-canvas{padding-top:.75rem}
 .sheet .wg{gap:1rem .75rem}
 .sheet .wc{-webkit-tap-highlight-color:transparent}
 .sheet .bl-twocol{grid-template-columns:1fr}
