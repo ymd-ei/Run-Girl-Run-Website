@@ -2,7 +2,7 @@
 // before it plays). Uses macOS's built-in AVFoundation, nothing to install.
 //
 //   swift tools/video-poster.swift <in.mp4> <out.jpg> <seconds>
-//   swift tools/video-poster.swift "media/rgr reel sample fall2026.mp4" media/rgr-reel_poster.jpg 12
+//   swift tools/video-poster.swift "media/rgr-reel.mp4" media/rgr-reel_poster.jpg 12
 
 import AVFoundation
 import AppKit
