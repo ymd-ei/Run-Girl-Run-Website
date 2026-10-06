@@ -1,9 +1,10 @@
 /**
- * Mobile bottom sheet: slides up to about two thirds of the screen and closes
- * with a swipe down (from the handle anywhere, or from the content once it is
- * scrolled to the top), the backdrop, the close button, Escape or the phone's
- * Back. Each view (About, Work, a project) is a history entry, so Back steps
- * out one level at a time.
+ * Mobile bottom sheet: slides up to about two thirds of the screen (taller for a
+ * project or post) and closes with a swipe down (from the handle anywhere, or
+ * from the content once it is scrolled to the top), the backdrop, the close
+ * button, Escape or the phone's Back. Each view (About, Work, a project) is a
+ * history entry, so Back steps out one level at a time; swiping down inside a
+ * project or post does the same as Back.
  */
 
 const CLOSE_DISTANCE = 0.25;   // of the sheet's height
@@ -80,6 +81,7 @@ function show(view) {
   const out = renderView(view);
   titleEl.textContent = out.title;
   backBtn.hidden = !out.back;
+  sheet.classList.toggle('tall', !!out.back);
   body.innerHTML = out.html;
   body.scrollTop = 0;
   if (out.after) out.after(body);
@@ -136,7 +138,8 @@ function bindSwipe() {
     lastT = e.timeStamp;
     const pull = Math.max(0, y - startY);
     sheet.style.transform = `translateY(${pull}px)`;
-    backdrop.style.opacity = String(Math.max(0, 1 - pull / sheet.offsetHeight));
+    // Only a swipe that will close the sheet fades the page back in
+    if (backBtn.hidden) backdrop.style.opacity = String(Math.max(0, 1 - pull / sheet.offsetHeight));
   }, { passive: false });
 
   const end = () => {
@@ -147,7 +150,13 @@ function bindSwipe() {
     sheet.classList.remove('dragging');
     const pull = Math.max(0, dy);
     if (pull > sheet.offsetHeight * CLOSE_DISTANCE || speed > CLOSE_SPEED) {
-      closeSheet();
+      if (backBtn.hidden) {
+        closeSheet();
+      } else {
+        // In a project or post: step back to the grid, which shrinks the sheet
+        sheet.style.transform = '';
+        history.back();
+      }
     } else {
       sheet.style.transform = '';
       backdrop.style.opacity = '';

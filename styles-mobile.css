@@ -310,10 +310,12 @@ html.sheet-open,html.sheet-open body{overflow:hidden}
   background:var(--panel-bg);color:var(--ink);border-radius:14px 14px 0 0;
   box-shadow:0 -12px 40px rgba(0,0,0,.35);
   transform:translateY(105%);visibility:hidden;
-  transition:transform .45s var(--ease),visibility 0s linear .45s;
+  transition:transform .45s var(--ease),height .45s var(--ease),visibility 0s linear .45s;
   outline:none;
 }
-.sheet.open{transform:translateY(0);visibility:visible;transition:transform .45s var(--ease),visibility 0s}
+.sheet.open{transform:translateY(0);visibility:visible;transition:transform .45s var(--ease),height .45s var(--ease),visibility 0s}
+/* A project or post gets more room to read; a sliver of the page still shows above */
+.sheet.tall{height:92vh;height:92svh}
 .sheet.dragging{transition:none}
 body.panel-frost .sheet{
   background:rgba(var(--ink-rgb),.88);color:var(--paper);
