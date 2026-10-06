@@ -295,7 +295,9 @@ html.lite body.panel-frost .sheet .wf{background:var(--ink)}
 
 /* ─────────────────────────────────────────
    ABOUT / WORK SHEET
-   Slides up to two thirds of the screen; swipe down to close (mobileSheet.js).
+   Work opens over two thirds of the screen; About, projects and posts
+   open tall.
+   Swipe down on the top strip to close or go back (mobileSheet.js).
    Content styles come from styles-content.css, shared with the desktop.
 ───────────────────────────────────────── */
 html.sheet-open,html.sheet-open body{overflow:hidden}
@@ -306,7 +308,7 @@ html.sheet-open,html.sheet-open body{overflow:hidden}
 .sheet-bd.open{opacity:1;pointer-events:auto}
 .sheet{
   position:fixed;z-index:160;left:0;right:0;bottom:0;
-  height:67vh;height:67svh;display:flex;flex-direction:column;
+  height:67vh;height:67svh;display:flex;flex-direction:column;  /* GRID in mobileSheet.js */
   background:var(--panel-bg);color:var(--ink);border-radius:14px 14px 0 0;
   box-shadow:0 -12px 40px rgba(0,0,0,.35);
   transform:translateY(105%);visibility:hidden;
@@ -314,7 +316,7 @@ html.sheet-open,html.sheet-open body{overflow:hidden}
   outline:none;
 }
 .sheet.open{transform:translateY(0);visibility:visible;transition:transform .45s var(--ease),height .45s var(--ease),visibility 0s}
-/* A project or post gets more room to read; a sliver of the page still shows above */
+/* About, a project or a post get room to read; a sliver of the page still shows above */
 .sheet.tall{height:92vh;height:92svh}
 .sheet.dragging{transition:none}
 body.panel-frost .sheet{
@@ -357,6 +359,8 @@ body.panel-frost .sheet-head{border-bottom-color:rgba(var(--paper-rgb),.08)}
 .sheet .wf.is-stuck{border-bottom-color:var(--border)}
 body.panel-frost .sheet .wf{background:rgba(var(--ink-rgb),.92);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 body.panel-frost .sheet .wf.is-stuck{border-bottom-color:rgba(var(--paper-rgb),.1)}
+.sheet-body.sheet-swap{animation:sheet-swap .3s ease}
+@keyframes sheet-swap{from{opacity:0}to{opacity:1}}
 .sheet-loading{padding-top:1.5rem;font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;opacity:.5}
 /* Desktop panels pad 2rem; the sheet pads 1.5rem, so the header bleeds by that */
 .sheet .pp-hero{width:calc(100% + 3rem);margin:0 -1.5rem 1.5rem;min-height:220px}

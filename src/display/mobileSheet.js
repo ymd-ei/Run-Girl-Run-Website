@@ -1,21 +1,24 @@
 /**
- * Mobile bottom sheet: slides up to about two thirds of the screen (taller for a
- * project or post) and closes with a swipe down (from the handle anywhere, or
- * from the content once it is scrolled to the top), the backdrop, the close
- * button, Escape or the phone's Back. Each view (About, Work, a project) is a
- * history entry, so Back steps out one level at a time; swiping down inside a
- * project or post does the same as Back.
+ * Mobile bottom sheet. The Work grid opens over two thirds of the screen;
+ * About, a project or a post open tall. Swipes only start on the top strip
+ * (handle + title row); the content just scrolls. Swiping down closes the
+ * sheet, and in a project or post it does the same as Back. The backdrop, the
+ * close button, Escape and the phone's Back also work. Each view (About, Work,
+ * a project) is a history entry, so Back steps out one level at a time.
  */
 
 const CLOSE_DISTANCE = 0.25;   // of the sheet's height
-const CLOSE_SPEED = 0.6;       // px per ms, a quick flick closes from anywhere
+const CLOSE_SPEED = 0.6;       // px per ms: a flick this fast closes (or goes back) whatever the distance
+const GRID = 0.67;             // the Work sheet's share of the screen; keep in step with .sheet in styles-mobile.css
+const RUBBER = 0.15;           // how far past the grid's height a swipe back still moves the sheet
 
 let sheet, body, backdrop, titleEl, backBtn, renderView;
 let depth = 0;                 // history entries pushed since the sheet was closed
 let opener = null;             // focus returns here on close
+let settleFrom = null;         // a swipe back from a project: the sheet's top where the finger let go
 
 /**
- * @param {(view: object) => {title: string, html: string, back?: boolean, after?: Function}} render
+ * @param {(view: object) => {title: string, html: string, back?: boolean, tall?: boolean, after?: Function}} render
  */
 export function initSheet(render) {
   renderView = render;
@@ -81,10 +84,28 @@ function show(view) {
   const out = renderView(view);
   titleEl.textContent = out.title;
   backBtn.hidden = !out.back;
-  sheet.classList.toggle('tall', !!out.back);
+  sheet.classList.toggle('tall', !!(out.tall || out.back));
   body.innerHTML = out.html;
   body.scrollTop = 0;
   if (out.after) out.after(body);
+
+  if (wasOpen) {
+    // Switching views inside the open sheet: the new content fades in
+    body.classList.remove('sheet-swap');
+    void body.offsetWidth;
+    body.classList.add('sheet-swap');
+  }
+  if (wasOpen && settleFrom !== null) {
+    // After a swipe back, carry on from where the finger let go and settle at
+    // the new (shorter) height in one move, instead of springing back up first
+    sheet.style.transform = '';
+    const top = sheet.getBoundingClientRect().top;
+    sheet.style.transform = `translateY(${settleFrom - top}px)`;
+    void sheet.offsetHeight;
+    sheet.classList.remove('dragging');
+    sheet.style.transform = '';
+    settleFrom = null;
+  }
 
   sheet.classList.add('open');
   backdrop.classList.add('open');
@@ -100,19 +121,22 @@ function setInert(on) {
   });
 }
 
+// How far a project's (tall) sheet drops to reach the grid's height
+const backDistance = () => Math.max(0, sheet.offsetHeight - window.innerHeight * GRID);
+
 function bindSwipe() {
   let startY = 0, lastY = 0, lastT = 0, speed = 0, dy = 0;
-  let tracking = false, dragging = false, fromHandle = false;
+  let tracking = false, dragging = false;
 
+  // Only the top strip (handle + title row) drags; the content scrolls as usual
   sheet.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1 || body.contains(e.target)) return;
     tracking = true;
     dragging = false;
     dy = 0;
     speed = 0;
     startY = lastY = e.touches[0].clientY;
     lastT = e.timeStamp;
-    fromHandle = !body.contains(e.target);
   }, { passive: true });
 
   sheet.addEventListener('touchmove', e => {
@@ -120,14 +144,11 @@ function bindSwipe() {
     const y = e.touches[0].clientY;
     dy = y - startY;
     if (!dragging) {
-      // Pull down from the handle/header, or from content that's already at its top
-      if (dy > 6 && (fromHandle || body.scrollTop <= 0)) {
+      if (dy > 6) {
         dragging = true;
         sheet.classList.add('dragging');
-      } else if (Math.abs(dy) > 6) {
-        tracking = false;      // a normal scroll inside the content
-        return;
       } else {
+        if (dy < -6) tracking = false;   // an upward drag isn't a close
         return;
       }
     }
@@ -136,7 +157,13 @@ function bindSwipe() {
     speed = (y - lastY) / dt;
     lastY = y;
     lastT = e.timeStamp;
-    const pull = Math.max(0, y - startY);
+    let pull = Math.max(0, dy);
+    if (!backBtn.hidden) {
+      // In a project or post the swipe heads for the grid's height: past that
+      // line the drag gets heavy, so the sheet isn't pulled below where it lands
+      const line = backDistance();
+      if (pull > line) pull = line + (pull - line) * RUBBER;
+    }
     sheet.style.transform = `translateY(${pull}px)`;
     // Only a swipe that will close the sheet fades the page back in
     if (backBtn.hidden) backdrop.style.opacity = String(Math.max(0, 1 - pull / sheet.offsetHeight));
@@ -147,17 +174,26 @@ function bindSwipe() {
     tracking = false;
     if (!dragging) return;
     dragging = false;
-    sheet.classList.remove('dragging');
     const pull = Math.max(0, dy);
-    if (pull > sheet.offsetHeight * CLOSE_DISTANCE || speed > CLOSE_SPEED) {
+    const far = backBtn.hidden ? pull > sheet.offsetHeight * CLOSE_DISTANCE : pull > backDistance() * 0.5;
+    if (far || speed > CLOSE_SPEED) {
       if (backBtn.hidden) {
+        sheet.classList.remove('dragging');
         closeSheet();
       } else {
-        // In a project or post: step back to the grid, which shrinks the sheet
-        sheet.style.transform = '';
+        // In a project or post: step back to the grid. The sheet holds still
+        // where it is until the grid renders, then settles from there (show)
+        settleFrom = sheet.getBoundingClientRect().top;
         history.back();
+        setTimeout(() => {      // in case Back never lands
+          if (settleFrom === null) return;
+          settleFrom = null;
+          sheet.classList.remove('dragging');
+          sheet.style.transform = '';
+        }, 600);
       }
     } else {
+      sheet.classList.remove('dragging');
       sheet.style.transform = '';
       backdrop.style.opacity = '';
     }

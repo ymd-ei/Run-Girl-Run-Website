@@ -258,6 +258,7 @@ function renderView(view) {
   if (view.sheet === 'about') {
     return {
       title: label('about'),
+      tall: true,               // one long page, so it opens tall like an article
       html: renderDisplayBlocks(normalizeBlocks(data.about || []), { scope: 'about' }),
       after: () => initCountUps()
     };
