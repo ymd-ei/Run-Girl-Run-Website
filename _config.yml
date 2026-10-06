@@ -6,6 +6,7 @@ exclude:
   - README.md
   - MD-IMPORT-GUIDE.md
   - MEDIA-GUIDE.md
+  - SESSION-HANDOFF.md
   - sample-project.md
   - start.command
   - start.bat
