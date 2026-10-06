@@ -12,6 +12,7 @@ import { privacyEmbedUrl } from '../utils/embeds.js';
 import { applySiteText, availability, renderLegal, initLegalModal } from './siteChrome.js';
 import { initA11y } from '../utils/a11y.js';
 import { isLite, stillVideos, bindLiteToggles } from '../utils/lite.js';
+import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { normalizeBlocks } from '../modules/blocks/blockManager.js';
 import { renderDisplayBlocks, renderWorkGrid, initSensitiveTapes, initCountUps } from './displayRenderer.js';
@@ -63,6 +64,7 @@ async function init() {
   renderLegal(data, document.getElementById('legal-card'));
   initPanels();
   pauseSoundInBackground();
+  pauseVideosWhenIdle();
   darkenBarOnScroll();
 }
 

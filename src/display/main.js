@@ -25,6 +25,7 @@ import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/proje
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 import { initA11y, reducedMotion } from '../utils/a11y.js';
 import { isLite, bindLiteToggles } from '../utils/lite.js';
+import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { updateLikeUI, fetchLikeCount, sendLike, loadLikeCounts, copyShareLink as copyShare } from './likes.js';
 import { renderFilterRow, markCardLikes } from './workFilters.js';
 import {
@@ -473,6 +474,9 @@ export async function bootstrap() {
 
     // Footer "Lite mode" switch: swap the background videos for their posters
     bindLiteToggles(() => { renderStageReel(); renderContactBg(); });
+
+    // Background loops pause after a few idle minutes so the laptop can sleep
+    pauseVideosWhenIdle();
 
     // {project:id} shortcut links open the project in place instead of reloading.
     document.addEventListener('click', e => {
