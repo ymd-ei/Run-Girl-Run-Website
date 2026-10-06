@@ -20,6 +20,13 @@ Quick reference for image/video dimensions. Pick the template that matches your 
 - Either way, a card only goes big when there's room (two neighbouring columns about level); otherwise it shows at normal size. 3:2 and anything else stays 1 column.
 - **16:9 is the default**: a card sits at 16:9 until its image loads, and More work cards in the post panel are always 16:9.
 - Applies to project thumbnails and social feed posts alike. A text-only feed post shows as a slim quote strip instead of a thumbnail.
+- **Export thumbnails as WebP** (or JPEG), not PNG. Every thumbnail downloads when the page loads, even if the Work panel is never opened, so they add up. Example: the Welcome Message thumbnail was a 1.5 MB PNG; the same picture as WebP (quality ~82) is 32 KB and looks identical. On this Mac without extra installs:
+
+  ```bash
+  python3 -c "from PIL import Image; Image.open('media/<name>.png').save('media/<name>.webp', quality=82, method=6)"
+  ```
+
+  Keep the PNG/JPEG for the social preview image (see Socials notes).
 
 ### Socials notes
 
