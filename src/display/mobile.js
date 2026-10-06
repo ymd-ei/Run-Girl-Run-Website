@@ -62,6 +62,22 @@ async function init() {
   applySiteText(data);
   renderLegal(data, document.getElementById('legal-card'));
   initPanels();
+  pauseSoundInBackground();
+}
+
+/* Locking the phone or switching apps keeps an inline video's sound playing on
+   iPhone, so pause anything with sound (the reel, videos in projects and posts)
+   when the page goes into the background. The muted background loops are left
+   alone and nudged back into play on return, in case the phone paused them. */
+function pauseSoundInBackground() {
+  document.addEventListener('visibilitychange', () => {
+    const videos = [...document.querySelectorAll('video')];
+    if (document.hidden) {
+      videos.forEach(v => { if (!v.muted && !v.paused) v.pause(); });
+    } else {
+      videos.forEach(v => { if (v.muted && v.autoplay && v.paused) v.play().catch(() => {}); });
+    }
+  });
 }
 
 function applyTheme(theme) {
