@@ -339,6 +339,10 @@ body.panel-frost .sheet-head{border-bottom-color:rgba(var(--paper-rgb),.08)}
   width:36px;height:36px;flex:none;margin-left:auto;display:flex;align-items:center;justify-content:center;
   background:none;border:1px solid currentColor;color:inherit;opacity:.45;font-size:var(--fs-md);
 }
+/* Touch users swipe the sheet down, so the close button stays out of sight; it
+   still shows when tabbed to, for keyboard and screen-reader users (like the
+   desktop's contact and legal close buttons) */
+.sheet-close:not(:focus-visible){opacity:0;pointer-events:none}
 .sheet-body{
   flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:0 1.5rem calc(2rem + env(safe-area-inset-bottom));
