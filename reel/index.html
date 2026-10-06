@@ -89,7 +89,7 @@
       // Media paths in content.json are relative to the site root, one level up from here.
       const url = /^(https?:)?\/\//.test(reel.url) ? reel.url : '../' + encodeURI(reel.url);
       const poster = reel.poster ? ` poster="${esc(/^(https?:)?\/\//.test(reel.poster) ? reel.poster : '../' + encodeURI(reel.poster))}"` : '';
-      player.innerHTML = `<video src="${esc(url)}"${poster} controls playsinline preload="metadata" aria-label="Demo reel"></video>`;
+      player.innerHTML = `<video src="${esc(url)}"${poster} controls loop playsinline preload="metadata" aria-label="Demo reel"></video>`;
     }
   } catch (e) {
     player.innerHTML = '<p class="msg">The reel couldn’t load here — <a href="../" style="color:inherit">watch it on the main site</a>.</p>';
