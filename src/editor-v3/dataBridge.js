@@ -9,6 +9,9 @@
 
 import { makeWebReady, webReadyOn, isVideoFile } from './webReady.js';
 import { projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
+// The newest saved content, even before GitHub Pages has published it — so
+// reloading right after a save never edits (and re-saves) an older copy
+import { liveFetch } from '../utils/liveContent.js';
 
 // ── API config (set by the editor host page before module loads) ──
 const API_BASE =
@@ -82,7 +85,7 @@ export function getApiBase() {
  * Load all site data from content.json and project files
  */
 export async function loadSiteData() {
-  const res = await fetch('content.json');
+  const res = await liveFetch('content.json', 'content.json');
   if (!res.ok) throw new Error('Failed to load content.json');
   const data = await res.json();
 
@@ -100,7 +103,7 @@ export async function loadSiteData() {
     // Fallback: load full project JSONs
     const loaded = await Promise.all(
       projectIds.map(id =>
-        fetch('projects/' + id + '.json')
+        liveFetch('projects/' + id + '.json', 'projects/' + id + '.json')
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
@@ -122,7 +125,7 @@ export async function loadProject(id) {
   const cached = state.projectCache.get(id);
   if (cached && Array.isArray(cached.blocks)) return cached;
 
-  const res = await fetch('projects/' + id + '.json');
+  const res = await liveFetch('projects/' + id + '.json', 'projects/' + id + '.json');
   if (!res.ok) return null;
   const full = await res.json();
 
@@ -358,7 +361,8 @@ export async function saveSiteData() {
     dirtyFiles.clear();
     saveInFlight = false;
     dispatchStatusEvent();
-    return { success: true, commit: result.commit };
+    // `sent` lets the editor follow the save until it's live (liveContent.watchPublish)
+    return { success: true, commit: result.commit, sent: files };
   } catch (err) {
     saveInFlight = false;
     dispatchStatusEvent();

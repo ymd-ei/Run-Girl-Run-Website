@@ -30,6 +30,7 @@ import {
   changeBlockType as bmChangeType
 } from '../modules/blocks/blockManager.js';
 import { uid } from '../utils/validation.js';
+import { watchPublish } from '../utils/liveContent.js';
 
 // blockManager operates on a { globalState, projects } shape; adapt our state.
 // Both share object references with our dataBridge state, so mutations persist.
@@ -322,7 +323,8 @@ async function doSave() {
   const result = await saveSiteData();
   if (result.success) {
     toast(result.message || 'Saved ✓');
-    if (result.commit) startDeployPolling();
+    if (result.sent && result.sent['content.json']) followPublish(result.sent['content.json']);
+    else if (result.commit) startDeployPolling();
   } else {
     toast('Error: ' + result.error, true);
     if (result.error && /unauthor/i.test(result.error)) initAuth();
@@ -331,7 +333,23 @@ async function doSave() {
   updateSaveUI();
 }
 
+// ── Publish status: follow the saved content.json until it's out ──
+// "live ✓" = visitors get it (the backend's copy, seconds after saving);
+// "published" = GitHub Pages serves it too (page titles / share previews update then).
+let stopFollow = null;
+function followPublish(savedText) {
+  if (stopFollow) stopFollow();
+  if (deployTimer) { clearInterval(deployTimer); deployTimer = null; }
+  stopFollow = watchPublish('content.json', 'content.json', savedText, s => {
+    if (s === 'saving') setDeployStatus('going live…', 'waiting');
+    else if (s === 'live') setDeployStatus('live ✓ · publishing files…', 'building');
+    else if (s === 'published') setDeployStatus('live ✓ · published', 'live');
+    else if (s === 'slow') setDeployStatus('live ✓ · GitHub still publishing', 'waiting');
+  });
+}
+
 // ── Deploy status polling (GitHub Pages public builds API, same as v1) ──
+// Fallback for saves without content.json
 let deployTimer = null;
 function setDeployStatus(msg, stateName) {
   const el = document.getElementById('v3-deploy');

@@ -13,6 +13,8 @@
 
 // Embedded fallback — keeps pages working if content.json is missing or fetch
 // fails (e.g. opened over file://). Mirrors content.json.
+import { liveFetch } from '../src/utils/liveContent.js';
+
 export const DEFAULTS = {
   brand: 'Run Girl Run',
   profile: {
@@ -40,9 +42,11 @@ export function mediaUrl(p) {
   return '../' + p;
 }
 
-async function fetchJson(url) {
+// Content comes through liveFetch (src/utils/liveContent.js): seconds after an
+// editor save, instead of waiting for GitHub Pages to publish.
+async function fetchJson(repoPath, url) {
   try {
-    const res = await fetch(url, { cache: 'no-cache' });
+    const res = await liveFetch(repoPath, url);
     if (res.ok) return await res.json();
   } catch (_) { /* caller falls back */ }
   return null;
@@ -50,12 +54,12 @@ async function fetchJson(url) {
 
 /** The main site's Site settings (name, email, résumé, social links), or null. */
 export async function loadSiteSettings() {
-  return fetchJson('../content.json');
+  return fetchJson('content.json', '../content.json');
 }
 
 /** Fetch + normalise content.json. Always resolves (falls back to DEFAULTS). */
 export async function loadContent() {
-  const [own, site] = await Promise.all([fetchJson('content.json'), loadSiteSettings()]);
+  const [own, site] = await Promise.all([fetchJson('modelling/content.json', 'content.json'), loadSiteSettings()]);
   return withSiteSettings(normalize(own || DEFAULTS), site);
 }
 

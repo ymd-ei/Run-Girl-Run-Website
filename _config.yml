@@ -1,3 +1,6 @@
+# NOT USED since Oct 2026: .nojekyll makes GitHub Pages publish the files as they
+# are (faster deploys), so this exclude list no longer applies. Kept for reference.
+#
 # GitHub Pages (Jekyll) build settings.
 # Files listed here stay in the repo but are not published to rungirlrun.studio.
 # Don't add anything the live site, editor.html or modelling/ load at runtime.

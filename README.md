@@ -52,6 +52,8 @@ search engines see them. The modelling site reads name, email, résumé and soci
 
 The editor saves changes via a Cloudflare Worker that commits to this repo through GitHub's API. See [backend/SETUP.md](backend/SETUP.md) for deployment and OAuth configuration.
 
+**Fresh content after a save.** GitHub Pages takes about a minute to publish. To bridge that, the worker also keeps each saved content file (`content.json`, `modelling/content.json`, `projects/*.json`) in KV for 15 minutes, served at `/api/live`. Every page loads content through `src/utils/liveContent.js` (`liveFetch`), which uses that copy when there is one and otherwise the page's own file; it never waits on the worker for more than 0.8 s. The editors follow each save with `watchPublish`: **live ✓** when visitors get it, **published** once GitHub Pages serves the files too (page titles and share previews update then). Changes pushed with git (not through the editor) skip this and appear when Pages publishes. If the worker is over Cloudflare's free daily limit, pages simply fall back to the Pages copy.
+
 ## Media
 
 See [MEDIA-GUIDE.md](MEDIA-GUIDE.md) for image/video dimensions and export guidelines.
@@ -99,4 +101,4 @@ accessibility settings (or emulate `prefers-reduced-motion` in Chrome DevTools �
 
 ## Deployment
 
-The site is hosted on **GitHub Pages** with a custom domain (`rungirlrun.studio`). Pushing to the default branch deploys automatically.
+The site is hosted on **GitHub Pages** with a custom domain (`rungirlrun.studio`). Pushing to the default branch deploys automatically. There's no build step: `.nojekyll` tells Pages to publish the files as they are (`_config.yml` is no longer used, so every file in the repo is reachable by URL — keep secrets in Cloudflare, never in the repo).

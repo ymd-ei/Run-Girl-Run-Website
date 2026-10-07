@@ -533,6 +533,7 @@
   import { mediaUrl, DEFAULTS, loadSiteSettings } from './site-data.js';
   import { checkAuth, getLoginUrl, getLogoutUrl, getApiBase } from '../src/editor-v3/dataBridge.js';
   import { openMediaPicker } from '../src/editor-v3/media.js';
+  import { liveFetch, watchPublish } from '../src/utils/liveContent.js';
   import { showMediaPage } from '../src/editor-v3/mediaPage.js';
 
   // ── State ───────────────────────────────────────────────────────────────
@@ -549,10 +550,24 @@
   // ── Load content.json ───────────────────────────────────────────────────
   async function loadState() {
     try {
-      const r = await fetch('content.json', { cache: 'no-cache' });
+      // Newest saved copy, even before GitHub Pages publishes (src/utils/liveContent.js)
+      const r = await liveFetch('modelling/content.json', 'content.json');
       if (r.ok) return await r.json();
     } catch (_) {}
     return JSON.parse(JSON.stringify(DEFAULTS));
+  }
+
+  // ── Publish status: follow the saved file until it's out (liveContent.js) ──
+  // "live ✓" = visitors get it (seconds after saving); "published" = GitHub Pages too.
+  let stopFollow = null;
+  function followPublish(savedText) {
+    if (stopFollow) stopFollow();
+    stopFollow = watchPublish('modelling/content.json', 'content.json', savedText, st => {
+      if (st === 'saving') setDeploy('going live…', 'waiting');
+      else if (st === 'live') setDeploy('live ✓ · publishing files…', 'building');
+      else if (st === 'published') setDeploy('live ✓ · published', 'live');
+      else if (st === 'slow') setDeploy('live ✓ · GitHub still publishing', 'waiting');
+    });
   }
 
   // ── Dirty + Save ──────────────────────────────────────────────────────────
@@ -581,7 +596,7 @@
       if (!res.ok || !r.success) throw new Error(r.error || 'Save failed');
       dirty = false;
       toast('Published ✓');
-      if (r.commit) startDeployPolling();
+      followPublish(files['modelling/content.json']);
     } catch (e) {
       toast('Error: ' + e.message, true);
       if (/unauthor/i.test(e.message)) initAuth();
@@ -615,28 +630,8 @@
     host.insertBefore(b, host.firstChild);
   }
 
-  // ── Deploy polling (GitHub Pages builds API) ──────────────────────────────
-  let deployTimer = null;
+  // ── Deploy status line (written by followPublish above) ──────────────────
   function setDeploy(msg, cls) { const el = $('deploy'); el.textContent = msg; el.className = 'deploy' + (cls ? ' ' + cls : ''); }
-  function startDeployPolling() {
-    if (deployTimer) clearInterval(deployTimer);
-    setDeploy('publishing…', 'building');
-    let tries = 0;
-    deployTimer = setInterval(async () => {
-      tries++;
-      try {
-        const r = await fetch(`https://api.github.com/repos/${window.RGR_CONFIG.repo}/pages/builds/latest`, { headers: { Accept: 'application/vnd.github.v3+json' } });
-        if (r.ok) {
-          const b = await r.json();
-          const st = (b.status || '').toLowerCase();
-          if (st === 'built') { setDeploy('live ✓', 'live'); clearInterval(deployTimer); deployTimer = null; return; }
-          if (st === 'errored') { setDeploy('deploy error', ''); clearInterval(deployTimer); deployTimer = null; return; }
-          setDeploy('building…', 'building');
-        }
-      } catch (_) {}
-      if (tries >= 24) { setDeploy('saved ✓', 'live'); clearInterval(deployTimer); deployTimer = null; }
-    }, 10000);
-  }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
   let toastTimer = null;

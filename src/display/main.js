@@ -4,6 +4,7 @@
  */
 
 import { globalState, projects } from '../state/globalState.js';
+import { liveFetch } from '../utils/liveContent.js';
 import {
   applyTheme,
   renderWorkGrid,
@@ -545,7 +546,7 @@ async function fetchProjectById(id) {
   if (cached && Array.isArray(cached.blocks)) return cached;
 
   try {
-    const res = await fetch('projects/' + id + '.json');
+    const res = await liveFetch('projects/' + id + '.json', 'projects/' + id + '.json');
     if (!res.ok) throw new Error('Failed to load ' + id);
     const full = await res.json();
     rememberProject(full);
@@ -574,7 +575,7 @@ async function loadAllData() {
     }
 
     // Load global content
-    const contentRes = await fetch('content.json');
+    const contentRes = await liveFetch('content.json', 'content.json');
     if (!contentRes.ok) throw new Error('Failed to load content.json');
     const contentData = await contentRes.json();
 
@@ -602,7 +603,7 @@ async function loadAllData() {
     // Backward-compatible fallback: no projectCards metadata yet, so load all.
     const loadedProjects = await Promise.all(
       projectIds.map(id =>
-        fetch('projects/' + id + '.json')
+        liveFetch('projects/' + id + '.json', 'projects/' + id + '.json')
           .then(r => {
             if (!r.ok) throw new Error('Failed to load ' + id);
             return r.json();

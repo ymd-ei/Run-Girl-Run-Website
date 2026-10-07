@@ -68,7 +68,8 @@
   const player = document.getElementById('player');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   try {
-    const data = await fetch('../content.json', { cache: 'no-cache' }).then(r => r.json());
+    const { liveFetch } = await import('../src/utils/liveContent.js');   // seconds-fresh after an editor save
+    const data = await liveFetch('content.json', '../content.json').then(r => r.json());
     const reel = (data.watchReel && data.watchReel.url) ? data.watchReel : data.reel;
     if (!reel || !reel.url) throw new Error('no reel');
 

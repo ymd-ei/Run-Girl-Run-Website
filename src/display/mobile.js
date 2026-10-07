@@ -11,6 +11,7 @@ import { setRefContext, resolveRefs, resolveLinkUrl } from '../utils/refs.js';
 import { privacyEmbedUrl } from '../utils/embeds.js';
 import { applySiteText, availability, renderLegal, initLegalModal } from './siteChrome.js';
 import { initA11y } from '../utils/a11y.js';
+import { liveFetch } from '../utils/liveContent.js';
 import { isLite, stillVideos, bindLiteToggles } from '../utils/lite.js';
 import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
@@ -35,7 +36,7 @@ async function init() {
   initLegalModal();
   initA11y();
   try {
-    const res = await fetch('content.json');
+    const res = await liveFetch('content.json', 'content.json');
     data = await res.json();
   } catch (e) {
     document.body.innerHTML = '<p style="padding:2rem;color:red">Failed to load portfolio data.</p>';
@@ -373,7 +374,7 @@ function workItems() {
 async function loadProject(id) {
   if (projectCache.has(id)) return projectCache.get(id);
   try {
-    const res = await fetch('projects/' + encodeURIComponent(id) + '.json');
+    const res = await liveFetch('projects/' + id + '.json', 'projects/' + encodeURIComponent(id) + '.json');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const project = await res.json();
     projectCache.set(id, project);

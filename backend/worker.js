@@ -84,6 +84,9 @@ async function handleRequestInner(request, env) {
   }
 
   // Public API routes (no auth required)
+  if (path === '/api/live') {
+    return handleLive(request, env);
+  }
   if (path === '/api/feed/instagram') {
     return handleInstagramFeed(request, env);
   }
@@ -96,6 +99,33 @@ async function handleRequestInner(request, env) {
   }
 
   return new Response('Not found', { status: 404 });
+}
+
+// ── Live content: saved files served before GitHub Pages has published ─────
+// On each save the content files are also kept in KV (prefix "live:", in the
+// LIKES namespace) for LIVE_TTL. The site asks /api/live first and falls back
+// to its own copy on GitHub Pages. The copies expire once Pages has long
+// caught up, so changes pushed with git are never hidden for longer than that.
+const LIVE_TTL = 15 * 60;   // seconds (Pages usually publishes within 1–3 min)
+const LIVE_FILES = /^(content\.json|modelling\/content\.json|projects\/[A-Za-z0-9_-]+\.json)$/;
+
+async function keepLiveCopies(files, env) {
+  const puts = Object.entries(files)
+    .filter(([path, text]) => LIVE_FILES.test(path) && typeof text === 'string')
+    .map(([path, text]) => env.LIKES.put(`live:${path}`, text, { expirationTtl: LIVE_TTL }));
+  // Never fail a save because the live copy couldn't be written
+  await Promise.allSettled(puts);
+}
+
+async function handleLive(request, env) {
+  const path = new URL(request.url).searchParams.get('path') || '';
+  const reply = (body, status, headers) => corsResponse(new Response(body, { status, headers }), request, env);
+  if (request.method !== 'GET' || !LIVE_FILES.test(path)) {
+    return reply(JSON.stringify({ error: 'Bad path' }), 400, { 'Content-Type': 'application/json' });
+  }
+  const text = await env.LIKES.get(`live:${path}`);
+  if (text === null) return reply(null, 204, { 'Cache-Control': 'no-store' });   // nothing newer: use the site's copy
+  return reply(text, 200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
 }
 
 /**
@@ -289,6 +319,9 @@ async function handleSave(request, env) {
 
     // Commit files to GitHub (batch commit using Git API)
     const commitResult = await commitFilesToGitHub(session.token, files, message, env);
+
+    // Serve the saved content right away while GitHub Pages publishes (see /api/live)
+    await keepLiveCopies(files, env);
 
     return corsResponse(new Response(JSON.stringify({
       success: true,
