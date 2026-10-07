@@ -486,8 +486,10 @@ const CONTACT_GROUPS = [
 
 // Site-wide settings. Text fields accept {shortcuts} — see References at the bottom.
 const SITE_GROUPS = [
-  { title: 'Studio identity', fields: [
-    { label: 'Name', key: 'name' },
+  { title: 'Studio identity', note: 'Your first and last name are the headline on the links page (rungirlrun.studio/links); leave them blank to show the studio name there instead.', fields: [
+    { label: 'Studio name', key: 'name' },
+    { label: 'Your first name', key: 'person.first' },
+    { label: 'Your last name', key: 'person.last' },
     { label: 'Role', key: 'role' },
     { label: 'Location', key: 'location' }
   ] },
@@ -502,6 +504,9 @@ const SOCIAL_PLACES = PLACES;
 
 // rungirlrun.studio/links (links/index.html). Blank subtitles use the defaults shown.
 const LINKS_PAGE_GROUPS = [
+  { title: 'Name', note: 'Where the label, your name and the location sit at the top of the card.', fields: [
+    { label: 'Alignment', key: 'linksPage.nameAlign', kind: 'select', options: [['left', 'Left'], ['right', 'Right']] }
+  ] },
   { title: 'Subtitles', note: 'Leave one blank to use the default shown.', fields: [
     { label: 'Portfolio subtitle', key: 'linksPage.portfolioSub', placeholder: 'Animation, projects & process' },
     { label: '3D modelling subtitle', key: 'linksPage.modellingSub', placeholder: 'Characters & props in 3D' },
@@ -670,7 +675,7 @@ export function showLinksPage() {
   }
   const socials = getNested(g, 'contact.links') || [];
   panelEl.querySelector('#v3-links-settings').innerHTML = `
-    <p class="v3-insp-note">Your Linktree-style page at <b>rungirlrun.studio/links</b>. Name, colours and the reel come from Site settings and Home.</p>
+    <p class="v3-insp-note">Your Linktree-style page at <b>rungirlrun.studio/links</b>. Your name, colours and the reel come from Site settings and Home.</p>
     <div class="v3-set-group"><div class="v3-set-head">Socials on this page</div>
       ${note('The same as Site settings → Social links → Show on → Links page.')}
       <div class="v3-links-socials">${socials.map((l, i) => `<label class="v3-check"><input type="checkbox" class="v3-arr-check" data-arr="contact.links" data-idx="${i}" data-flag="links"${l.hide && l.hide.links ? '' : ' checked'}> ${escHtml(l.label || l.url || 'Link ' + (i + 1))}</label>`).join('')}</div>

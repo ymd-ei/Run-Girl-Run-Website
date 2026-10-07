@@ -59,6 +59,8 @@
   .role{font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
   h1{font-family:var(--font-s);font-weight:700;font-size:clamp(3rem,15vw,3.9rem);line-height:.88;letter-spacing:.005em}
   h1 em{color:var(--accent)}
+  /* Site settings → Links page → Name → Alignment */
+  body.name-right .role,body.name-right h1,body.name-right .where{text-align:right}
   .where{margin-top:.7rem;font-size:.85rem;color:rgba(var(--ink-rgb),.55)}
 
   /* ── Social icons: one row under the name, like Linktree ── */
@@ -340,10 +342,19 @@
     applyThemeVars(t);
     if (t.panelBg) document.documentElement.style.setProperty('--card', t.panelBg);
 
-    // Name: first word, then the rest in accent italics — like the phone hero
-    const [first, ...rest] = String(d.name || 'Run Girl Run').split(' ');
-    $('name').innerHTML = `${esc(first)}<br><em>${esc(rest.join(' '))}</em>`;
-    $('role').textContent = d.role || '';
+    // Name: your name (Site settings → Studio identity) if set — first name, then the
+    // last name in accent italics, on one line — with the studio joining the role in the label
+    // above. Without it, the studio name: first word, then the rest in italics.
+    const studio = d.name || 'Run Girl Run';
+    const p = d.person || {};
+    const pFirst = (p.first || '').trim(), pLast = (p.last || '').trim();
+    const [first, ...rest] = pFirst || pLast ? [pFirst || pLast, pFirst ? pLast : ''] : studio.split(' ');
+    const last = rest.join(' ').trim();
+    // your name sits on one line (it wraps only if it doesn't fit); the studio name keeps two
+    const brk = pFirst || pLast ? ' ' : '<br>';
+    $('name').innerHTML = `${esc(first)}${last ? `${brk}<em>${esc(last)}</em>` : ''}`;
+    $('role').textContent = pFirst || pLast ? [d.role, studio].filter(Boolean).join(' · ') : d.role || '';
+    document.title = pFirst || pLast ? `${[pFirst, pLast].filter(Boolean).join(' ')} — ${studio}` : `Links — ${studio}`;
     $('where').textContent = d.location || '';
     const av = d.availability || {};
     $('avail').hidden = !av.enabled;
@@ -353,6 +364,7 @@
     renderReel(d);
 
     const lp = d.linksPage || {};
+    document.body.classList.toggle('name-right', lp.nameAlign === 'right');
     // Extra links (editor → Links page → Extra links)
     const extra = (lp.extra || []).filter(l => l && l.label && l.url);
     $('extra-group').hidden = !extra.length;
