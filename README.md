@@ -58,6 +58,11 @@ The editor saves changes via a Cloudflare Worker that commits to this repo throu
 
 See [MEDIA-GUIDE.md](MEDIA-GUIDE.md) for image/video dimensions and export guidelines.
 
+## Links page & QR
+
+- **`/links`** (`links/index.html`) — a Linktree-style page, one phone-first design for every screen. Live content (name, socials, theme, reel) from Site settings. Edit it under **Site settings → Links page** (subtitles, a heading, and extra links) and choose which socials appear with each social link's **Show on** checkboxes (Contact panel / Links page / Modelling site — `src/utils/socials.js`).
+- **`/joanna-lina`** (`joanna-lina/index.html`) — unlisted, `noindex`: open it to show or share the QR for `/links` (diamond, running dog in a clear centre; 29×29, error correction Q — chosen in `samples/qr-lab/`, local only). Share link / Copy link / Save QR (2048 px PNG). The QR never changes; edit the links page instead.
+
 ## Social feed
 
 See [SOCIAL-FEED-GUIDE.md](SOCIAL-FEED-GUIDE.md) for tagging posts with `#rgr`, the accounts involved, and replacing the Instagram token.

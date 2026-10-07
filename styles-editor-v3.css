@@ -279,6 +279,8 @@ select.v3-f { cursor: pointer; }
 
 .v3-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--v3-text); cursor: pointer; }
 .v3-check input { width: auto; }
+/* Social links → Show on: one row of place checkboxes */
+.v3-show-on-row { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .v3-type-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .v3-type-chip {
   background: transparent; border: 1px solid var(--v3-line); color: var(--v3-muted);

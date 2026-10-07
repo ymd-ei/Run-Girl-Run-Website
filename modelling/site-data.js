@@ -14,6 +14,7 @@
 // Embedded fallback — keeps pages working if content.json is missing or fetch
 // fails (e.g. opened over file://). Mirrors content.json.
 import { liveFetch } from '../src/utils/liveContent.js';
+import { showsOn } from '../src/utils/socials.js';
 
 export const DEFAULTS = {
   brand: 'Run Girl Run',
@@ -74,6 +75,7 @@ export function withSiteSettings(content, site) {
     email,
     resumeUrl: c.resume || content.profile.resumeUrl,
     socials: (c.links || [])
+      .filter(l => showsOn(l, 'modelling'))
       .map(l => ({ ...l, url: String(l.url || '').replace(/\{email\}/g, email) }))
       .filter(l => l.url && !l.url.startsWith('mailto:'))
       .map(l => ({ label: l.label || '', handle: l.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), url: l.url }))

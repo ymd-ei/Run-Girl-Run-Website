@@ -21,6 +21,7 @@ import { loadFeed, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, lik
 import { fetchLikeCount, sendLike, loadLikeCounts, copyShareLink } from './likes.js';
 import { renderFilterRow, markCardLikes } from './workFilters.js';
 import { initSheet, openView, refreshView } from './mobileSheet.js';
+import { showsOn } from '../utils/socials.js';
 
 let data = null;
 let projects = [];             // project cards, in the hand-set order
@@ -294,7 +295,7 @@ function renderContact() {
 
   const iconsWrap = document.getElementById('ct-icons');
   if (iconsWrap) {
-    iconsWrap.innerHTML = (contact.links || []).map(link => {
+    iconsWrap.innerHTML = (contact.links || []).filter(l => showsOn(l, 'contact')).map(link => {
       const url = resolveLinkUrl(link.url, data);
       const external = !url.startsWith('mailto:');
       return `<a class="contact-icon-btn" href="${url}"${external ? ' target="_blank" rel="noopener"' : ''} aria-label="${link.label || url.replace(/^(mailto:|https?:\/\/(www\.)?)/, '').split(/[/?#]/)[0]}"><i class="${phosphorIcon(url)}" aria-hidden="true"></i></a>`;

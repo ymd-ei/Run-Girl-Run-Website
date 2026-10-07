@@ -22,6 +22,7 @@ import { blocksToMarkdown, parseMarkdownToBlocks } from '../modules/blocks/markd
 import { slugRef, listRefs } from '../utils/refs.js';
 import { DEFAULT_FILTERS, projectTypes, setProjectTypes, filterTags } from '../utils/projectTypes.js';
 import { SITE_TEXT_FIELDS, SITE_TEXT_DEFAULTS } from '../display/siteChrome.js';
+import { PLACES } from '../utils/socials.js';
 
 let panelEl = null;
 let cb = {};             // { repaint, action, openMedia }
@@ -468,6 +469,20 @@ const SITE_GROUPS = [
   ] }
 ];
 
+// Social links: where each one shows (src/utils/socials.js)
+const SOCIAL_PLACES = PLACES;
+
+// rungirlrun.studio/links (links/index.html). Blank subtitles use the defaults shown.
+const LINKS_PAGE_GROUPS = [
+  { title: 'Links page', note: 'Your Linktree-style page at rungirlrun.studio/links. Socials come from Social links above (tick “Links page”). Leave a subtitle blank to use the default shown. Extra links (below) appear in their own group under the reel.', fields: [
+    { label: 'Portfolio subtitle', key: 'linksPage.portfolioSub', placeholder: 'Animation, projects & process' },
+    { label: '3D modelling subtitle', key: 'linksPage.modellingSub', placeholder: 'Characters & props in 3D' },
+    { label: 'Résumé subtitle', key: 'linksPage.resumeSub', placeholder: 'PDF' },
+    { label: 'Substack subtitle', key: 'linksPage.writingSub', placeholder: 'Notes from the studio' },
+    { label: 'Extra links heading', key: 'linksPage.extraTitle', placeholder: 'Featured' }
+  ] }
+];
+
 const SITE_GROUPS_2 = [
   { title: 'Availability', note: 'The “available” badge on the home screen and next to the cursor.', fields: [
     { label: '', key: 'availability.enabled', kind: 'checkbox', cbLabel: 'Show availability badge' },
@@ -568,7 +583,9 @@ function strListHTML(label, path, arr) {
     <button class="v3-add-item" data-arr-add="${path}">+ Add</button></div>`;
 }
 
-function objListHTML(label, path, arr, subs) {
+// `checks` (optional): [[place, label], …] — "Show on" checkboxes stored as
+// item.hide[place] = true when unticked (see src/utils/socials.js)
+function objListHTML(label, path, arr, subs, checks) {
   arr = arr || [];
   const keys = subs.map(s => s[0]).join(',');
   return `<div class="v3-set-group"><div class="v3-set-head">${escHtml(label)}</div>
@@ -577,6 +594,8 @@ function objListHTML(label, path, arr, subs) {
         <button class="v3-insp-ico v3-danger" data-arr-del="${path}" data-idx="${i}" title="Remove"><i class="ph-fill ph-x"></i></button></div>
       ${subs.map(([k, l]) => `<div class="v3-field"><label>${escHtml(l)}</label>
         <input class="v3-f v3-arr-input" data-arr="${path}" data-idx="${i}" data-sub="${k}" value="${escAttr(Array.isArray(it[k]) ? it[k].join(', ') : (it[k] == null ? '' : it[k]))}"></div>`).join('')}
+      ${checks ? `<div class="v3-field v3-show-on"><label>Show on</label><div class="v3-show-on-row">${checks.map(([flag, l]) =>
+        `<label class="v3-check"><input type="checkbox" class="v3-arr-check" data-arr="${path}" data-idx="${i}" data-flag="${flag}"${it.hide && it.hide[flag] ? '' : ' checked'}> ${escHtml(l)}</label>`).join('')}</div></div>` : ''}
     </div>`).join('')}
     <button class="v3-add-item" data-arr-add="${path}" data-objfields="${keys}">+ Add</button></div>`;
 }
@@ -604,7 +623,9 @@ export function showSiteSettings() {
       <div class="v3-site-content">
       <p class="v3-insp-note">Site-wide settings used across every page, the mobile site and the modelling site.</p>
       ${groupsHTML(g, SITE_GROUPS)}
-      ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']])}
+      ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']], SOCIAL_PLACES)}
+      ${groupsHTML(g, LINKS_PAGE_GROUPS)}
+      ${objListHTML('Links page link', 'linksPage.extra', getNested(g, 'linksPage.extra'), [['label', 'Label'], ['sub', 'Subtitle (optional)'], ['url', 'URL']])}
       ${groupsHTML(g, SITE_GROUPS_2)}
       ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (projects use this; keep it fixed)'], ['label', 'Label (shown on cards)'], ['tags', 'Feed hashtags (with #rgr), e.g. blender3d, 3danimation']])}
       ${referencesHTML(g)}
@@ -755,6 +776,18 @@ function bindSettingsForm(target, dirtyFile, rerender, heavy) {
         } else { arr[idx] = inp.value; }
       });
       if (sub === 'label' || sub === 'ref' || sub === 'tags') rerender();
+    });
+  });
+  panelEl.querySelectorAll('.v3-arr-check').forEach(cbx => {
+    cbx.addEventListener('change', () => {
+      const arr = getNested(target, cbx.getAttribute('data-arr')) || [];
+      const idx = Number(cbx.getAttribute('data-idx')), flag = cbx.getAttribute('data-flag');
+      commit(() => {
+        const it = arr[idx] || (arr[idx] = {});
+        const hide = { ...(it.hide || {}) };
+        if (cbx.checked) delete hide[flag]; else hide[flag] = true;
+        if (Object.keys(hide).length) it.hide = hide; else delete it.hide;
+      });
     });
   });
   panelEl.querySelectorAll('[data-arr-add]').forEach(b => b.addEventListener('click', () => {

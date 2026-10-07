@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Links — Run Girl Run</title>
+<!-- rungirlrun.studio/links — a Linktree-style page: one phone-first design for every
+     screen. Content is live (src/utils/liveContent.js): name, links, colours from Site
+     settings; socials ticked "Links page"; subtitles + extra links from Site settings →
+     Links page. -->
+<meta name="description" content="Run Girl Run — 3D character animation, Toronto. Reel, portfolio, 3D modelling, résumé and socials.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rungirlrun.studio/links">
+<meta property="og:site_name" content="Run Girl Run">
+<meta property="og:title" content="Run Girl Run — links">
+<meta property="og:description" content="Reel, portfolio, 3D modelling, résumé and socials.">
+<meta property="og:image" content="https://rungirlrun.studio/media/jammeratoast%20jammers.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../media/rgr_fav.png">
+<link rel="canonical" href="https://rungirlrun.studio/links">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+<script src="../site-config.js"></script>
+<style>
+  :root{
+    --ink:#1a1714;--ink-rgb:26,23,20;--paper:#f2ede4;--card:#f7f3ec;--accent:#5e30eb;--ct-accent:#ff4361;
+    --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;
+    --line:rgba(var(--ink-rgb),.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--paper)}
+  body{
+    min-height:100svh;font-family:var(--font-b);font-weight:300;color:var(--ink);
+    background:var(--paper);-webkit-font-smoothing:antialiased;
+    display:flex;justify-content:center;
+  }
+  .page{
+    width:100%;max-width:440px;
+    padding:calc(1.25rem + env(safe-area-inset-top)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+  }
+  /* On wide screens the column sits on the page like a card */
+  @media (min-width:640px){
+    body{padding:3rem 1rem}
+    .page{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2rem 1.75rem 2.25rem;
+          box-shadow:0 24px 60px -30px rgba(var(--ink-rgb),.35)}
+  }
+
+  /* ── Top: dog + availability, then the name ── */
+  .bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
+  .bar img{height:2.1rem;filter:brightness(0);opacity:.85}   /* the logo is white (made for the dark hero) */
+  .avail{display:flex;align-items:center;gap:.45rem;font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(var(--ink-rgb),.6)}
+  .avail i{width:6px;height:6px;border-radius:50%;background:#36c97f;box-shadow:0 0 0 3px rgba(54,201,127,.18)}
+  .role{font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+  h1{font-family:var(--font-s);font-weight:700;font-size:clamp(3rem,15vw,3.9rem);line-height:.88;letter-spacing:.005em}
+  h1 em{color:var(--accent)}
+  .where{margin-top:.7rem;font-size:.85rem;color:rgba(var(--ink-rgb),.55)}
+
+  /* ── Social icons: one row under the name, like Linktree ── */
+  .icons{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem 1.1rem;margin-top:1.4rem}
+  .icons a{
+    position:relative;display:grid;place-items:center;width:2.4rem;height:2.4rem;
+    color:var(--ink);font-size:1.45rem;text-decoration:none;opacity:.85;
+    transition:transform .15s ease,opacity .15s ease,color .15s ease;
+  }
+  .icons a:hover{opacity:1;color:var(--accent)}
+  .icons a:active{transform:scale(.92)}
+  .icons a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+  /* tells the two Instagrams apart */
+  .icons a .tag{position:absolute;left:50%;transform:translateX(-50%);bottom:-8px;white-space:nowrap;padding:1px 4px;border-radius:6px;
+    background:var(--accent);color:#fff;font-size:.5rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+
+  /* ── Featured: the reel ── */
+  .reel{
+    position:relative;display:block;margin:1.75rem 0 .75rem;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
+    background:#111;color:#fff;text-decoration:none;isolation:isolate;
+  }
+  .reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75;z-index:-1}
+  .reel .play{
+    position:absolute;inset:0;width:100%;padding:1rem;display:flex;flex-wrap:wrap;align-content:flex-end;align-items:center;gap:.7rem;
+    font:inherit;font-size:.78rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+    color:#fff;background:linear-gradient(to top,rgba(0,0,0,.45),transparent 60%);border:0;cursor:pointer;text-align:left;
+  }
+  .reel.playing video{opacity:1;object-fit:contain;background:#000}
+  .reel.playing .play{display:none}
+  .reel .play b{display:grid;place-items:center;width:2.6rem;height:2.6rem;border-radius:50%;
+    background:rgba(255,255,255,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.35)}
+  .reel .play b i{font-size:1rem;margin-left:2px}
+
+  /* ── Link rows ── */
+  .group{margin-top:1.6rem}
+  .group h2{font-size:.66rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(var(--ink-rgb),.45);margin-bottom:.55rem}
+  .links{display:grid;gap:.5rem}
+  .link{
+    display:flex;align-items:center;gap:.85rem;min-height:3.4rem;padding:.7rem .95rem;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    color:inherit;text-decoration:none;transition:transform .15s ease,border-color .15s ease,background .15s ease;
+  }
+  @media (min-width:640px){ .link{background:var(--paper)} }
+  .link:hover{border-color:rgba(var(--ink-rgb),.3)}
+  .link:active{transform:scale(.985)}
+  .link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .link .ic{flex:0 0 auto;display:grid;place-items:center;width:2rem;height:2rem;border-radius:8px;
+    background:rgba(var(--ink-rgb),.06);font-size:1.05rem}
+  .link .tx{flex:1;min-width:0;display:grid}
+  .link .tx b{font-weight:500;font-size:.95rem}
+  .link .tx small{font-size:.75rem;color:rgba(var(--ink-rgb),.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .link .go{flex:0 0 auto;color:rgba(var(--ink-rgb),.35);font-size:.9rem}
+  /* Main links read bigger and use the accent */
+  .link.main{min-height:3.9rem}
+  .link.main .ic{background:var(--accent);color:#fff}
+  .socials .link{min-height:3rem}
+
+  /* ── Email ── */
+  .mail{
+    margin-top:1.6rem;display:flex;align-items:center;gap:.6rem;padding:.9rem .95rem;border-radius:10px;
+    background:var(--ink);color:var(--paper);
+  }
+  .mail a{flex:1;color:inherit;text-decoration:none;font-weight:400;font-size:.92rem;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .mail button{
+    flex:0 0 auto;font:inherit;font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink);background:var(--ct-accent);border:0;border-radius:6px;padding:.5rem .7rem;cursor:pointer;
+  }
+  .mail button:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+
+  footer{margin-top:2rem;display:flex;justify-content:center;gap:1rem;font-size:.72rem;color:rgba(var(--ink-rgb),.45)}
+  footer a,footer button{color:inherit;font:inherit;background:none;border:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  /* Lite mode / data-saver / reduced motion: the reel card keeps a still cover */
+  .reel.still video{opacity:.6}
+
+  /* Privacy & Legal popup (siteChrome.js renders the text) */
+  #legal-modal{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);opacity:0;transition:opacity .25s ease}
+  #legal-modal.open{opacity:1}
+  #legal-card{position:relative;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:1.75rem 1.5rem calc(2rem + env(safe-area-inset-bottom));
+    background:var(--card);border-radius:12px 12px 0 0;transform:translateY(24px);transition:transform .28s ease}
+  #legal-modal.open #legal-card{transform:translateY(0)}
+  @media (min-width:640px){ #legal-modal{align-items:center} #legal-card{border-radius:12px} }
+  #legal-card h2{font-family:var(--font-s);font-size:1.8rem;font-weight:400;margin-bottom:1rem}
+  .legal-section{margin-bottom:1.1rem}
+  .legal-section h3{font-size:.66rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem}
+  .legal-section p{font-size:.9rem;line-height:1.6;color:rgba(var(--ink-rgb),.7);margin-bottom:.45rem}
+  .legal-section a{color:var(--accent)}
+  .legal-close{position:absolute;top:1rem;right:1rem;padding:.35rem .7rem;border:1px solid var(--line);border-radius:6px;background:none;font:inherit;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+  @media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms !important} }
+</style>
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="bar">
+    <img id="dog" src="../media/doog_loop-smoller.png" alt="Run Girl Run">
+    <span class="avail" id="avail" hidden><i></i><span></span></span>
+  </div>
+  <p class="role" id="role"></p>
+  <h1 id="name">Run<br><em>Girl Run</em></h1>
+  <p class="where" id="where"></p>
+  <nav class="icons" id="icons" aria-label="Social links"></nav>
+
+  <div class="reel" id="reel" hidden>
+    <video id="reel-video" playsinline></video>
+    <button type="button" class="play" id="reel-play"><b><i class="ph-fill ph-play"></i></b> <span id="reel-label">Watch the reel</span> <span id="reel-len"></span></button>
+  </div>
+
+  <section class="group" id="extra-group" hidden>
+    <h2 id="extra-title">Featured</h2>
+    <div class="links" id="extra"></div>
+  </section>
+  <section class="group">
+    <h2>Work</h2>
+    <div class="links" id="work"></div>
+  </section>
+  <section class="group" id="writing-group" hidden>
+    <h2>Writing</h2>
+    <div class="links" id="writing"></div>
+  </section>
+
+  <div class="mail" id="mail" hidden>
+    <i class="ph-fill ph-envelope" aria-hidden="true"></i>
+    <a id="mail-link" href="#"></a>
+    <button type="button" id="copy">Copy</button>
+  </div>
+
+  <footer>
+    <a href="../">rungirlrun.studio</a>
+    <button type="button" class="legal-trigger" onclick="openLegalModal()">Privacy &amp; Legal</button>
+  </footer>
+</main>
+<div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">
+  <div id="legal-card"></div>
+</div>
+
+<script type="module">
+  import { liveFetch } from '../src/utils/liveContent.js';
+  import { showsOn } from '../src/utils/socials.js';
+  import { phosphorIcon } from '../src/utils/icons.js';
+  import { stillVideos } from '../src/utils/lite.js';
+  import { pauseVideosWhenIdle } from '../src/utils/idleVideos.js';
+  import { setRefContext, resolveLinkUrl } from '../src/utils/refs.js';
+  import { renderLegal, initLegalModal } from '../src/display/siteChrome.js';
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const media = p => !p ? '' : /^(https?:|data:|\/)/.test(p) ? p : '../' + encodeURI(p);
+  const d = await liveFetch('content.json', '../content.json').then(r => r.json());
+  setRefContext(d);
+  initLegalModal();
+  renderLegal(d, document.getElementById('legal-card'));
+  pauseVideosWhenIdle();
+
+  // Colours from Site settings → Theme
+  const t = d.theme || {}, root = document.documentElement.style;
+  for (const [k, v] of [['--accent', t.accent], ['--ct-accent', t.ctAccent], ['--ink', t.ink], ['--paper', t.paper], ['--card', t.panelBg]]) if (v) root.setProperty(k, v);
+
+  // Name: first word, then the rest in accent italics — like the phone hero
+  const [first, ...rest] = String(d.name || 'Run Girl Run').split(' ');
+  document.getElementById('name').innerHTML = `${esc(first)}<br><em>${esc(rest.join(' '))}</em>`;
+  document.getElementById('role').textContent = d.role || '';
+  document.getElementById('where').textContent = d.location || '';
+  const av = d.availability || {};
+  document.getElementById('avail').hidden = !av.enabled;
+  document.querySelector('#avail span').textContent = av.text || '';
+  if (d.logo) document.getElementById('dog').src = media(d.logo);
+
+  // Reel: plays in the card like the phone page — a muted loop (the Preview clip
+  // if set, else the reel); tap = sound from the start. Lite mode, data-saver and
+  // reduced motion keep a still cover.
+  const reel = (d.watchReel && d.watchReel.url) ? d.watchReel : d.reel || {};
+  if (reel.url && (reel.type || 'video') === 'video') {
+    const box = document.getElementById('reel'), v = document.getElementById('reel-video');
+    box.hidden = false;
+    const preview = !stillVideos();
+    if (reel.poster) v.poster = media(reel.poster);
+    if (preview) {
+      v.src = media(reel.preview || reel.url); v.muted = true; v.loop = true; v.autoplay = true; v.preload = 'auto';
+      v.play().catch(() => {});
+    } else {
+      box.classList.add('still'); v.src = media(reel.url) + (reel.poster ? '' : '#t=4'); v.preload = 'metadata';
+    }
+    const len = el => { const s = Math.round(el.duration); if (s) document.getElementById('reel-len').textContent = `· ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+    if (!reel.preview) v.addEventListener('loadedmetadata', () => len(v));
+    else { const m = document.createElement('video'); m.preload = 'metadata'; m.src = media(reel.url); m.addEventListener('loadedmetadata', () => len(m)); }
+    document.getElementById('reel-play').addEventListener('click', () => {
+      box.classList.add('playing'); box.classList.remove('still');
+      if (reel.preview || !v.muted) v.src = media(reel.url);
+      v.muted = false; v.loop = false; v.currentTime = 0; v.controls = true;
+      v.play().catch(() => {});
+    });
+  }
+
+  const lp = d.linksPage || {};
+  const row = ({ label, url, sub, icon, main }) => `
+    <a class="link${main ? ' main' : ''}" href="${esc(url)}"${/^https?:/.test(url) ? ' target="_blank" rel="noopener"' : ''}>
+      <span class="ic"><i class="${icon}" aria-hidden="true"></i></span>
+      <span class="tx"><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>
+      <i class="go ph-fill ph-arrow-up-right" aria-hidden="true"></i>
+    </a>`;
+  const handle = url => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+
+  // Extra links (Site settings → Links page → Links page link)
+  const extra = (lp.extra || []).filter(l => l && l.label && l.url);
+  if (extra.length) {
+    document.getElementById('extra-group').hidden = false;
+    document.getElementById('extra-title').textContent = lp.extraTitle || 'Featured';
+    document.getElementById('extra').innerHTML = extra.map(l => {
+      const url = resolveLinkUrl(l.url, d);
+      return row({ label: l.label, sub: l.sub, url: /^(https?:|mailto:)/.test(url) ? url : media(url), icon: phosphorIcon(url) || 'ph-fill ph-link', main: true });
+    }).join('');
+  }
+
+  document.getElementById('work').innerHTML = [
+    { label: 'Portfolio', sub: lp.portfolioSub || 'Animation, projects & process', url: '../', icon: 'ph-fill ph-film-strip', main: true },
+    { label: '3D modelling', sub: lp.modellingSub || 'Characters & props in 3D', url: '../modelling/', icon: 'ph-fill ph-cube', main: true },
+    d.contact && d.contact.resume && { label: 'Résumé', sub: lp.resumeSub || 'PDF', url: media(d.contact.resume), icon: 'ph-fill ph-file-text', main: true },
+  ].filter(Boolean).map(row).join('');
+
+  // Socials: the ones ticked "Links page" (Site settings → Social links → Show on)
+  const email = (d.contact && d.contact.email) || '';
+  const links = ((d.contact && d.contact.links) || []).filter(l => l.url && showsOn(l, 'links'))
+    .map(l => ({ ...l, url: resolveLinkUrl(l.url, d) }));
+  const substack = links.find(l => /substack\.com/.test(l.url));
+  if (substack) {
+    document.getElementById('writing-group').hidden = false;
+    document.getElementById('writing').innerHTML = row({ label: substack.label || 'Substack', sub: lp.writingSub || 'Notes from the studio', url: substack.url, icon: 'ph-fill ph-article' });
+  }
+  document.getElementById('icons').innerHTML = links
+    .filter(l => !l.url.startsWith('mailto:') && l !== substack)
+    .map(l => {
+      const studio = /studio/i.test(l.label || '');
+      return `<a href="${esc(l.url)}" target="_blank" rel="noopener" aria-label="${esc(l.label || handle(l.url))}" title="${esc(l.label || '')} — ${esc(handle(l.url))}">` +
+        `<i class="${phosphorIcon(l.url) || 'ph-fill ph-link'}" aria-hidden="true"></i>${studio ? '<span class="tag" aria-hidden="true">studio</span>' : ''}</a>`;
+    }).join('');
+
+  if (email) {
+    document.getElementById('mail').hidden = false;
+    const ml = document.getElementById('mail-link'); ml.href = 'mailto:' + email; ml.textContent = email;
+    document.getElementById('copy').addEventListener('click', async e => {
+      try { await navigator.clipboard.writeText(email); e.target.textContent = 'Copied'; }
+      catch (_) { e.target.textContent = 'Press & hold'; }
+      setTimeout(() => (e.target.textContent = 'Copy'), 1600);
+    });
+  }
+</script>
+</body>
+</html>

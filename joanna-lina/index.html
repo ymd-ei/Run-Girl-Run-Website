@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR — Run Girl Run</title>
+<!-- rungirlrun.studio/joanna-lina — unlisted: open it to show or share the QR for
+     rungirlrun.studio/links. Not linked from the site and kept out of search results.
+     The code is a diamond (scanners read any angle) with the running dog upright in a
+     clear centre: 29×29 grid, error correction Q, 9×9 centre (picked in samples/qr-lab). -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../media/rgr_fav.png">
+<script src="../site-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
+<style>
+  :root{--ink:#1a1714;--ink-rgb:26,23,20;--paper:#f2ede4;--card:#f7f3ec;--accent:#5e30eb;--line:rgba(var(--ink-rgb),.12)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;
+    padding:calc(1.5rem + env(safe-area-inset-top)) 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+    font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased;text-align:center;
+  }
+  .qr-diamond{position:relative;width:min(88vw,62svh,30rem);aspect-ratio:1;display:grid;place-items:center}
+  .qr{width:70.71%;aspect-ratio:1;transform:rotate(45deg)}                 /* 1/√2: the turned square fits the box */
+  .qr svg{display:block;width:100%;height:100%}
+  .qr-dog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);filter:brightness(0);opacity:.9}
+  .url{font-size:1rem;font-weight:500;letter-spacing:.02em}
+  .hint{font-size:.78rem;color:rgba(var(--ink-rgb),.5);margin-top:-.9rem}
+  .btns{display:flex;justify-content:center;flex-wrap:wrap;gap:.5rem}
+  .btns button{
+    display:inline-flex;align-items:center;gap:.4rem;font:inherit;font-size:.82rem;font-weight:500;
+    padding:.6rem .9rem;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .btns button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+  <div class="qr-diamond">
+    <div class="qr" id="qr" role="img" aria-label="QR code for rungirlrun.studio/links"></div>
+    <img class="qr-dog" id="qr-dog" alt="" aria-hidden="true">
+  </div>
+  <p class="url" id="url"></p>
+  <p class="hint">Point a phone camera at the code</p>
+  <div class="btns">
+    <button type="button" id="share-link"><i class="ph-fill ph-share-network"></i> Share link</button>
+    <button type="button" id="copy-link"><i class="ph-fill ph-link"></i> Copy link</button>
+    <button type="button" id="save-qr"><i class="ph-fill ph-download-simple"></i> Save QR</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script type="module">
+  import { liveFetch } from '../src/utils/liveContent.js';
+  const PAGE_URL = 'https://rungirlrun.studio/links';
+  // 29×29 grid (error correction Q) with the dog in a 9×9 clear centre — chosen in
+  // the QR lab: the biggest dog at the smallest size (reads from ~90 px). For the
+  // larger 33×33 version: ECL 'H' and HOLE 0.38 (13×13).
+  const ECL = 'Q';
+  const HOLE = 0.3;
+
+  const d = await liveFetch('content.json', '../content.json').then(r => r.json()).catch(() => ({}));
+  const t = d.theme || {}, root = document.documentElement.style;
+  if (t.ink) root.setProperty('--ink', t.ink);
+  if (t.paper) root.setProperty('--paper', t.paper);
+  if (t.accent) root.setProperty('--accent', t.accent);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const ink = css('--ink'), card = css('--card'), paper = css('--paper');
+  const logoUrl = '../' + encodeURI(d.logo || 'media/doog_loop-smoller.png');
+
+  // A darkened still of the logo for the saved PNG (the page shows the animated one)
+  const darkLogo = await new Promise(ok => {
+    const li = new Image();
+    li.onload = () => { const c = document.createElement('canvas'); c.width = li.naturalWidth; c.height = li.naturalHeight;
+      const x = c.getContext('2d'); x.filter = 'brightness(0)'; x.drawImage(li, 0, 0); ok(c.toDataURL()); };
+    li.onerror = () => ok('');
+    li.src = logoUrl;
+  });
+
+  const q = qrcode(0, ECL); q.addData(PAGE_URL); q.make();                 // Q: ≈25% can be covered
+  const n = q.getModuleCount(), m = 2, size = n + m * 2;
+  const hole = Math.round(n * HOLE) | 1, h0 = (n - hole) / 2;
+  function qrSvg() {
+    const finder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+    const inHole = (r, c) => r >= h0 - .5 && r < h0 + hole - .5 && c >= h0 - .5 && c < h0 + hole - .5;
+    let dots = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (!q.isDark(r, c) || finder(r, c) || inHole(r, c)) continue;
+      // rounded squares: round dots looked nice but didn't scan reliably
+      dots += `<rect x="${c + m + .04}" y="${r + m + .04}" width=".92" height=".92" rx=".3"/>`;
+    }
+    const eye = (r, c) => `<rect x="${c + m + .5}" y="${r + m + .5}" width="6" height="6" rx="1.8" fill="none" stroke="${ink}" stroke-width="1"/>` +
+                          `<rect x="${c + m + 2}" y="${r + m + 2}" width="3" height="3" rx=".9" fill="${ink}"/>`;
+    // width/height: drawn into the saved PNG at full size (without them it's a blurry 150 px)
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size * 40}" height="${size * 40}">
+      <rect width="${size}" height="${size}" rx="${size * .06}" fill="${card}"/>
+      <g fill="${ink}">${dots}</g>${eye(0, 0)}${eye(0, n - 7)}${eye(n - 7, 0)}
+    </svg>`;
+  }
+  document.getElementById('qr').innerHTML = qrSvg();
+  document.getElementById('url').textContent = PAGE_URL.replace(/^https:\/\//, '');
+
+  // The running dog, upright, sized to fit inside the turned clear centre
+  const DOG_W = 0.7071 * (hole / size) * 0.9;                             // of the diamond box
+  const dog = document.getElementById('qr-dog');
+  dog.src = logoUrl;
+  dog.style.width = (DOG_W * 100).toFixed(2) + '%';
+
+  const flash = (btn, text) => { const old = btn.innerHTML; btn.textContent = text; setTimeout(() => (btn.innerHTML = old), 1500); };
+  document.getElementById('copy-link').addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText(PAGE_URL); flash(e.currentTarget, 'Copied'); } catch (_) {}
+  });
+  document.getElementById('share-link').addEventListener('click', async e => {
+    if (navigator.share) { try { await navigator.share({ title: 'Run Girl Run', url: PAGE_URL }); } catch (_) {} }
+    else { try { await navigator.clipboard.writeText(PAGE_URL); flash(e.currentTarget, 'Link copied'); } catch (_) {} }
+  });
+  // Save the diamond as a 2048 px PNG on the page colour, dog upright (a still frame)
+  document.getElementById('save-qr').addEventListener('click', async () => {
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qrSvg());
+    await img.decode();
+    const S = 2048, side = S / Math.SQRT2;
+    const c = Object.assign(document.createElement('canvas'), { width: S, height: S });
+    const x = c.getContext('2d');
+    x.fillStyle = paper; x.fillRect(0, 0, S, S);
+    x.translate(S / 2, S / 2); x.rotate(Math.PI / 4);
+    x.drawImage(img, -side / 2, -side / 2, side, side);
+    x.rotate(-Math.PI / 4);                                                 // the dog stays upright
+    if (darkLogo) {
+      const li = new Image(); li.src = darkLogo; await li.decode();
+      const w = S * DOG_W, h = w * li.naturalHeight / li.naturalWidth;
+      x.globalAlpha = .9; x.drawImage(li, -w / 2, -h / 2, w, h);
+    }
+    Object.assign(document.createElement('a'), { href: c.toDataURL('image/png'), download: 'rungirlrun-links-qr.png' }).click();
+  });
+</script>
+</body>
+</html>

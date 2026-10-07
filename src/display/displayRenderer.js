@@ -11,6 +11,7 @@ import { phosphorIcon } from '../utils/icons.js';
 import { resolveLinkUrl, resolveRefs, getSiteGlobal } from '../utils/refs.js';
 import { projectTypes, projectTypeText } from '../utils/projectTypes.js';
 import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
+import { showsOn } from '../utils/socials.js';
 
 /**
  * Apply theme colors to CSS variables
@@ -436,6 +437,7 @@ export function renderContactPanel(globalState) {
   const midItems = cp.tickerMid && cp.tickerMid.length ? cp.tickerMid : defaultTicker;
 
   const icons = (globalState.contact?.links || [])
+    .filter(l => showsOn(l, 'contact'))
     .map(l => ({ ...l, url: resolveLinkUrl(l.url, globalState) }))
     .map(
       l => `
