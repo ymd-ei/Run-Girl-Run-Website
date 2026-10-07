@@ -3,6 +3,33 @@
 Where the site stands after the Oct 5–6 sessions, what was decided, and what's still open.
 Everything below is **live on rungirlrun.studio** (last commit `70222d2` on `main`) unless marked otherwise.
 
+## Oct 6 (evening): modelling site + editor uploads
+
+Live (commits `5d36744` → `8613b26`):
+- **Modelling site cleanup**: old unlinked pages (`works`, `work`, `work-lite`, `contact`), their styles and
+  ~6 MB of unused models removed. The live view now allows the editor's full camera distance (was capped at 12).
+- **Keyboard**: Enter opens Works and moves into the list; Escape closes the top layer only; focus goes to
+  Back and returns to the opener; closed panels leave the Tab order.
+- **One idle clock**: after **2 minutes** without input the animation and turntable ease to a stop, then
+  drawing stops on a faded frame; any input brings it back. (No separate turntable timer any more.)
+- The page no longer pauses on `document.hidden` (embedded viewers report hidden while on screen and froze it).
+- **Pancakes model**: embedded texture re-encoded as WebP — 4.46 MB → 0.49 MB.
+- **Editor uploads are web-friendly**: "Make web-friendly (WebP)" next to Upload (main + modelling editor,
+  library page and picker) converts images and `.glb` textures to WebP in the browser. Videos still need a
+  web copy (see `MEDIA-GUIDE.md`). Not yet tried with a real signed-in upload — check the toast on the next one.
+
+Parked on the local branch **`modelling-shot-camera`** (not pushed; waiting for a real Blender file with a camera):
+- A `.glb` with its own camera plays through a marker frame like an animation layout sheet: 4 accent
+  strokes (9 px, 0.8 opacity, title blend), 2 × the title width, drawn once per load; the 3D isn't clipped.
+  The frame shows only while following the shot. Drag takes over in place; "Back to shot" + glide back after 3 min.
+- Frame label `a1…e24` at 24 fps in a pencil circle (circle redraws on 4s). Hand-drawn scans can replace
+  the font + circle — spec in `MEDIA-GUIDE.md` on that branch, switch with `HAND_MARKS`.
+- Smoother/lighter rendering: screen rate capped at 60, draws only when something changes, Lite mode
+  (main site's switch) = 30 fps + plain resolution + no turntable, reduced motion = no turntable.
+  The live site still draws at a fixed 30 fps.
+- Test file `samples/shot-test/mumei-shot.glb` (on the branch). To pick up: `git switch modelling-shot-camera`,
+  point Mumei's `model` at that file in `modelling/content.json` (locally only), preview `/modelling/`.
+
 ## What changed
 
 ### Phone page (`mobile.html`)
