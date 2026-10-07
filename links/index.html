@@ -175,6 +175,10 @@
     transition:transform var(--t) var(--ease),height var(--t) var(--ease),width var(--t) var(--ease);
   }
   .flipper.dragging{transition:none}
+  /* The side facing away is hidden outright, not just turned away: Safari draws videos
+     (and blurred bits) on layers that ignore backface-visibility, so the front's reel
+     showed through the QR on iPad. JS flips .back-facing as the card passes edge-on. */
+  .flipper.back-facing .front,.flipper:not(.back-facing) .back{visibility:hidden}
   .face{position:absolute;top:0;left:0;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden}
   .front{height:100%;overflow:hidden;touch-action:pan-y}   /* up/down scrolls; sideways turns the card */
   .back{
@@ -477,6 +481,22 @@
     size_();
 
     const setAngle = a => flipper.style.setProperty('--a', a + 'deg');
+    // Which side faces the viewer: read from the card's real, mid-animation angle
+    // (cos < 0 = past edge-on), so the swap lands exactly when the card is side-on
+    const facing = backFacing => flipper.classList.toggle('back-facing', backFacing);
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let watch = 0, fallback = 0;
+    function followTurn() {
+      cancelAnimationFrame(watch); clearTimeout(fallback);
+      if (reduced.matches) return facing(flipped);                       // crossfade, no turn
+      const until = performance.now() + 1200;
+      const tick = () => {
+        facing(new DOMMatrix(getComputedStyle(flipper).transform).m11 < 0);
+        if (performance.now() < until) watch = requestAnimationFrame(tick); else facing(flipped);
+      };
+      tick();
+      fallback = setTimeout(() => facing(flipped), 1300);                // if frames are paused
+    }
     const timing = (t, ease) => { flipper.style.setProperty('--t', t); flipper.style.setProperty('--ease', ease); };
     // The card keeps turning the way it's pushed, so the angle just adds up in half
     // turns (0, 180, 360, -180…) — an odd number of half turns is the back
@@ -489,6 +509,7 @@
       rest += 180 * dir;
       flipper.classList.toggle('flipped', to);
       setAngle(rest);
+      followTurn();
       size_();
       front.inert = to; back.inert = !to;
       document.documentElement.classList.toggle('qr-up', to);
@@ -525,7 +546,9 @@
         drag.on = true; dragged = true; flipper.classList.add('dragging');
       }
       drag.dx = dx;
-      setAngle(rest + Math.max(-180, Math.min(180, dx / flipper.offsetWidth * 180)));
+      const a = rest + Math.max(-180, Math.min(180, dx / flipper.offsetWidth * 180));
+      setAngle(a);
+      if (!reduced.matches) facing(Math.cos(a * Math.PI / 180) < 0);
     });
     const release = () => {
       const d = drag; drag = null;
@@ -538,7 +561,7 @@
       // Carry on from where the finger let go: ease-out, timed to the turn left
       const done = Math.min(1, dist / w);
       timing((0.15 + 0.5 * (go ? 1 - done : done)).toFixed(2) + 's', 'cubic-bezier(.2,.75,.3,1)');
-      if (go) flip(!flipped, Math.sign(d.dx)); else setAngle(rest);
+      if (go) flip(!flipped, Math.sign(d.dx)); else { setAngle(rest); followTurn(); }
     };
     addEventListener('pointerup', release);
     addEventListener('pointercancel', release);
