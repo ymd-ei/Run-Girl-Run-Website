@@ -23,6 +23,7 @@ import { slugRef, listRefs } from '../utils/refs.js';
 import { DEFAULT_FILTERS, projectTypes, setProjectTypes, filterTags } from '../utils/projectTypes.js';
 import { SITE_TEXT_FIELDS, SITE_TEXT_DEFAULTS } from '../display/siteChrome.js';
 import { PLACES } from '../utils/socials.js';
+import { THEME_DEFAULTS } from '../utils/colors.js';
 
 let panelEl = null;
 let cb = {};             // { repaint, action, openMedia }
@@ -173,7 +174,12 @@ function field({ label, kind = 'text', value = '', options = [], dataKey, item, 
       <button class="v3-media-btn" data-media-key="${dataKey || ''}"${item != null ? ` data-item="${item}"` : ''}${sub ? ` data-sub="${sub}"` : ''} title="Pick media"><i class="ph-fill ph-image"></i></button>
     </div>`;
   } else if (kind === 'color') {
-    control = `<div class="v3-color-row"><input class="v3-color" type="color" ${attrs} value="${v || '#5e30eb'}"><input class="v3-f v3-color-text" type="text" data-mirror="${dataKey || ''}" value="${v}"></div>`;
+    // Theme colours get a ↺ back to the built-in default (src/utils/colors.js),
+    // shown only when the colour has been changed from it
+    const def = /^theme\./.test(dataKey || '') ? THEME_DEFAULTS[dataKey.slice(6)] : '';
+    const changed = def && String(value).toLowerCase() !== def.toLowerCase();
+    const reset = changed ? `<button type="button" class="v3-insp-ico v3-color-reset" data-reset-key="${dataKey}" data-default="${def}" title="Reset to default (${def})" aria-label="Reset to default ${def}"><i class="ph-fill ph-arrow-counter-clockwise"></i></button>` : '';
+    control = `<div class="v3-color-row"><input class="v3-color" type="color" ${attrs} value="${v || '#5e30eb'}"><input class="v3-f v3-color-text" type="text" data-mirror="${dataKey || ''}" value="${v}">${reset}</div>`;
   } else if (kind === 'date') {
     control = `<input class="v3-f" type="date" ${attrs} value="${v}">`;
   } else if (kind === 'checkbox') {
@@ -740,10 +746,21 @@ function bindSettingsForm(target, dirtyFile, rerender, heavy) {
       if (!key) return;
       const value = el.type === 'checkbox' ? el.checked : el.value;
       commit(() => setNested(target, key, value));
+      if (el.classList.contains('v3-color') && /^theme\./.test(key)) rerender();   // show / hide its ↺ reset
     });
   });
   panelEl.querySelectorAll('.v3-color-text').forEach(txt => {
-    txt.addEventListener('change', () => commit(() => setNested(target, txt.getAttribute('data-mirror'), txt.value)));
+    txt.addEventListener('change', () => {
+      const key = txt.getAttribute('data-mirror');
+      commit(() => setNested(target, key, txt.value));
+      if (/^theme\./.test(key)) rerender();                                     // show / hide its ↺ reset
+    });
+  });
+  panelEl.querySelectorAll('.v3-color-reset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      commit(() => setNested(target, btn.getAttribute('data-reset-key'), btn.getAttribute('data-default')));
+      rerender();
+    });
   });
   panelEl.querySelectorAll('[data-media-key]').forEach(btn => {
     btn.addEventListener('click', () => {

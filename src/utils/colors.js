@@ -14,5 +14,5 @@ export const THEME_DEFAULTS = {
   ctAccent: '#ff4361',
   ctBg: '#080808',
   ctHi: '#ffffff',
-  sensitiveColor: '#ff4361'
+  sensitiveColor: '#e03030'   // matches the site's fallback (displayRenderer, styles-content.css)
 };
