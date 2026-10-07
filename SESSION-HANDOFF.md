@@ -26,7 +26,7 @@ Live (commits `5d36744` → `8613b26`):
   through `src/utils/liveContent.js`. Measured push → live: **~74 s** before, **~57 s** with `.nojekyll`; an editor
   save now reaches visitors in **~3–5 s** (KV read 0.1–0.2 s after write, from here; other regions up to ~1 min).
   Editors show **live ✓** then **published** by comparing the actual saved text (the old builds-API check could
-  report the previous build). Not yet tried with a real signed-in save. Delete fix for odd file names deployed (`3eee137`).
+  report the previous build). Confirmed with a real signed-in save (availability badge) — near instant. Delete fix for odd file names deployed (`3eee137`).
 
 Parked on the local branch **`modelling-shot-camera`** (not pushed; waiting for a real Blender file with a camera):
 - A `.glb` with its own camera plays through a marker frame like an animation layout sheet: 4 accent
