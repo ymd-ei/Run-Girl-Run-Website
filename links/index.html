@@ -157,10 +157,7 @@
   <p class="where" id="where"></p>
   <nav class="icons" id="icons" aria-label="Social links"></nav>
 
-  <div class="reel" id="reel" hidden>
-    <video id="reel-video" playsinline></video>
-    <button type="button" class="play" id="reel-play"><b><i class="ph-fill ph-play"></i></b> <span id="reel-label">Watch the reel</span> <span id="reel-len"></span></button>
-  </div>
+  <div class="reel" id="reel" hidden></div>
 
   <section class="group" id="extra-group" hidden>
     <h2 id="extra-title">Featured</h2>
@@ -200,36 +197,33 @@
   import { renderLegal, initLegalModal } from '../src/display/siteChrome.js';
   import { applyThemeVars } from '../src/utils/themeVars.js';
 
+  const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const media = p => !p ? '' : /^(https?:|data:|\/)/.test(p) ? p : '../' + encodeURI(p);
-  const d = await liveFetch('content.json', '../content.json').then(r => r.json());
-  setRefContext(d);
-  initLegalModal();
-  renderLegal(d, document.getElementById('legal-card'));
-  pauseVideosWhenIdle();
+  const handle = url => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  const row = ({ label, url, sub, icon, main }) => `
+    <a class="link${main ? ' main' : ''}" href="${esc(url)}"${/^https?:/.test(url) ? ' target="_blank" rel="noopener"' : ''}>
+      <span class="ic"><i class="${icon}" aria-hidden="true"></i></span>
+      <span class="tx"><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>
+      <i class="go ph-fill ph-arrow-up-right" aria-hidden="true"></i>
+    </a>`;
 
-  // Colours from Site settings → Theme (same set as the main site; --card = panel background)
-  const t = d.theme || {};
-  applyThemeVars(t);
-  if (t.panelBg) document.documentElement.style.setProperty('--card', t.panelBg);
-
-  // Name: first word, then the rest in accent italics — like the phone hero
-  const [first, ...rest] = String(d.name || 'Run Girl Run').split(' ');
-  document.getElementById('name').innerHTML = `${esc(first)}<br><em>${esc(rest.join(' '))}</em>`;
-  document.getElementById('role').textContent = d.role || '';
-  document.getElementById('where').textContent = d.location || '';
-  const av = d.availability || {};
-  document.getElementById('avail').hidden = !av.enabled;
-  document.querySelector('#avail span').textContent = av.text || '';
-  if (d.logo) document.getElementById('dog').src = media(d.logo);
-
-  // Reel: plays in the card like the phone page — a muted loop (the Preview clip
-  // if set, else the reel); tap = sound from the start. Lite mode, data-saver and
-  // reduced motion keep a still cover.
-  const reel = (d.watchReel && d.watchReel.url) ? d.watchReel : d.reel || {};
-  if (reel.url && (reel.type || 'video') === 'video') {
-    const box = document.getElementById('reel'), v = document.getElementById('reel-video');
-    box.hidden = false;
+  // ── Reel: plays in the card like the phone page — a muted loop (the Preview
+  // clip if set, else the reel); tap = sound from the start. Lite mode, data-saver
+  // and reduced motion keep a still cover. Rebuilt only when the reel changes.
+  let reelKey = '';
+  function renderReel(d) {
+    const reel = (d.watchReel && d.watchReel.url) ? d.watchReel : d.reel || {};
+    const key = JSON.stringify([reel.url, reel.preview, reel.poster, reel.type]);
+    if (key === reelKey) return;
+    reelKey = key;
+    const box = $('reel');
+    box.hidden = !(reel.url && (reel.type || 'video') === 'video');
+    if (box.hidden) return;
+    box.classList.remove('playing', 'still');
+    box.innerHTML = `<video id="reel-video" playsinline></video>
+      <button type="button" class="play" id="reel-play"><b><i class="ph-fill ph-play"></i></b> <span>Watch the reel</span> <span id="reel-len"></span></button>`;
+    const v = $('reel-video');
     const preview = !stillVideos();
     if (reel.poster) v.poster = media(reel.poster);
     if (preview) {
@@ -238,10 +232,10 @@
     } else {
       box.classList.add('still'); v.src = media(reel.url) + (reel.poster ? '' : '#t=4'); v.preload = 'metadata';
     }
-    const len = el => { const s = Math.round(el.duration); if (s) document.getElementById('reel-len').textContent = `· ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+    const len = el => { const s = Math.round(el.duration); if (s) $('reel-len').textContent = `· ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
     if (!reel.preview) v.addEventListener('loadedmetadata', () => len(v));
     else { const m = document.createElement('video'); m.preload = 'metadata'; m.src = media(reel.url); m.addEventListener('loadedmetadata', () => len(m)); }
-    document.getElementById('reel-play').addEventListener('click', () => {
+    $('reel-play').addEventListener('click', () => {
       box.classList.add('playing'); box.classList.remove('still');
       if (reel.preview || !v.muted) v.src = media(reel.url);
       v.muted = false; v.loop = false; v.currentTime = 0; v.controls = true;
@@ -249,57 +243,81 @@
     });
   }
 
-  const lp = d.linksPage || {};
-  const row = ({ label, url, sub, icon, main }) => `
-    <a class="link${main ? ' main' : ''}" href="${esc(url)}"${/^https?:/.test(url) ? ' target="_blank" rel="noopener"' : ''}>
-      <span class="ic"><i class="${icon}" aria-hidden="true"></i></span>
-      <span class="tx"><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span>
-      <i class="go ph-fill ph-arrow-up-right" aria-hidden="true"></i>
-    </a>`;
-  const handle = url => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  // ── Everything from content.json; runs at load, and again with the editor's
+  // unsaved content when this page is its live preview (?preview) ──
+  function render(d) {
+    setRefContext(d);
+    renderLegal(d, $('legal-card'));
 
-  // Extra links (Site settings → Links page → Links page link)
-  const extra = (lp.extra || []).filter(l => l && l.label && l.url);
-  if (extra.length) {
-    document.getElementById('extra-group').hidden = false;
-    document.getElementById('extra-title').textContent = lp.extraTitle || 'Featured';
-    document.getElementById('extra').innerHTML = extra.map(l => {
+    // Colours from Site settings → Theme (same set as the main site; --card = panel background)
+    const t = d.theme || {};
+    applyThemeVars(t);
+    if (t.panelBg) document.documentElement.style.setProperty('--card', t.panelBg);
+
+    // Name: first word, then the rest in accent italics — like the phone hero
+    const [first, ...rest] = String(d.name || 'Run Girl Run').split(' ');
+    $('name').innerHTML = `${esc(first)}<br><em>${esc(rest.join(' '))}</em>`;
+    $('role').textContent = d.role || '';
+    $('where').textContent = d.location || '';
+    const av = d.availability || {};
+    $('avail').hidden = !av.enabled;
+    document.querySelector('#avail span').textContent = av.text || '';
+    if (d.logo) $('dog').src = media(d.logo);
+
+    renderReel(d);
+
+    const lp = d.linksPage || {};
+    // Extra links (editor → Links page → Extra links)
+    const extra = (lp.extra || []).filter(l => l && l.label && l.url);
+    $('extra-group').hidden = !extra.length;
+    $('extra-title').textContent = lp.extraTitle || 'Featured';
+    $('extra').innerHTML = extra.map(l => {
       const url = resolveLinkUrl(l.url, d);
       return row({ label: l.label, sub: l.sub, url: /^(https?:|mailto:)/.test(url) ? url : media(url), icon: phosphorIcon(url) || 'ph-fill ph-link', main: true });
     }).join('');
-  }
 
-  document.getElementById('work').innerHTML = [
-    { label: 'Portfolio', sub: lp.portfolioSub || 'Animation, projects & process', url: '../', icon: 'ph-fill ph-film-strip', main: true },
-    { label: '3D modelling', sub: lp.modellingSub || 'Characters & props in 3D', url: '../modelling/', icon: 'ph-fill ph-cube', main: true },
-    d.contact && d.contact.resume && { label: 'Résumé', sub: lp.resumeSub || 'PDF', url: media(d.contact.resume), icon: 'ph-fill ph-file-text', main: true },
-  ].filter(Boolean).map(row).join('');
+    $('work').innerHTML = [
+      { label: 'Portfolio', sub: lp.portfolioSub || 'Animation, projects & process', url: '../', icon: 'ph-fill ph-film-strip', main: true },
+      { label: '3D modelling', sub: lp.modellingSub || 'Characters & props in 3D', url: '../modelling/', icon: 'ph-fill ph-cube', main: true },
+      d.contact && d.contact.resume && { label: 'Résumé', sub: lp.resumeSub || 'PDF', url: media(d.contact.resume), icon: 'ph-fill ph-file-text', main: true },
+    ].filter(Boolean).map(row).join('');
 
-  // Socials: the ones ticked "Links page" (Site settings → Social links → Show on)
-  const email = (d.contact && d.contact.email) || '';
-  const links = ((d.contact && d.contact.links) || []).filter(l => l.url && showsOn(l, 'links'))
-    .map(l => ({ ...l, url: resolveLinkUrl(l.url, d) }));
-  const substack = links.find(l => /substack\.com/.test(l.url));
-  if (substack) {
-    document.getElementById('writing-group').hidden = false;
-    document.getElementById('writing').innerHTML = row({ label: substack.label || 'Substack', sub: lp.writingSub || 'Notes from the studio', url: substack.url, icon: 'ph-fill ph-article' });
-  }
-  document.getElementById('icons').innerHTML = links
-    .filter(l => !l.url.startsWith('mailto:') && l !== substack)
-    .map(l => {
-      const studio = /studio/i.test(l.label || '');
-      return `<a href="${esc(l.url)}" target="_blank" rel="noopener" aria-label="${esc(l.label || handle(l.url))}" title="${esc(l.label || '')} — ${esc(handle(l.url))}">` +
-        `<i class="${phosphorIcon(l.url) || 'ph-fill ph-link'}" aria-hidden="true"></i>${studio ? '<span class="tag" aria-hidden="true">studio</span>' : ''}</a>`;
-    }).join('');
+    // Socials: the ones ticked "Links page"
+    const links = ((d.contact && d.contact.links) || []).filter(l => l.url && showsOn(l, 'links'))
+      .map(l => ({ ...l, url: resolveLinkUrl(l.url, d) }));
+    const substack = links.find(l => /substack\.com/.test(l.url));
+    $('writing-group').hidden = !substack;
+    $('writing').innerHTML = substack
+      ? row({ label: substack.label || 'Substack', sub: lp.writingSub || 'Notes from the studio', url: substack.url, icon: 'ph-fill ph-article' }) : '';
+    $('icons').innerHTML = links
+      .filter(l => !l.url.startsWith('mailto:') && l !== substack)
+      .map(l => {
+        const studio = /studio/i.test(l.label || '');
+        return `<a href="${esc(l.url)}" target="_blank" rel="noopener" aria-label="${esc(l.label || handle(l.url))}" title="${esc(l.label || '')} — ${esc(handle(l.url))}">` +
+          `<i class="${phosphorIcon(l.url) || 'ph-fill ph-link'}" aria-hidden="true"></i>${studio ? '<span class="tag" aria-hidden="true">studio</span>' : ''}</a>`;
+      }).join('');
 
-  if (email) {
-    document.getElementById('mail').hidden = false;
-    const ml = document.getElementById('mail-link'); ml.href = 'mailto:' + email; ml.textContent = email;
-    document.getElementById('copy').addEventListener('click', async e => {
+    const email = (d.contact && d.contact.email) || '';
+    $('mail').hidden = !email;
+    $('mail-link').href = 'mailto:' + email;
+    $('mail-link').textContent = email;
+    $('copy').onclick = async e => {
       try { await navigator.clipboard.writeText(email); e.target.textContent = 'Copied'; }
       catch (_) { e.target.textContent = 'Press & hold'; }
       setTimeout(() => (e.target.textContent = 'Copy'), 1600);
+    };
+  }
+
+  initLegalModal();
+  pauseVideosWhenIdle();
+  render(await liveFetch('content.json', '../content.json').then(r => r.json()));
+
+  // As the editor's preview: redraw with its unsaved content (same origin only)
+  if (new URLSearchParams(location.search).has('preview')) {
+    window.addEventListener('message', e => {
+      if (e.origin === location.origin && e.data && e.data.type === 'rgr-links-preview' && e.data.content) render(e.data.content);
     });
+    window.parent.postMessage({ type: 'rgr-links-preview-ready' }, location.origin);
   }
 </script>
 </body>

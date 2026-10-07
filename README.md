@@ -60,7 +60,7 @@ See [MEDIA-GUIDE.md](MEDIA-GUIDE.md) for image/video dimensions and export guide
 
 ## Links page & QR
 
-- **`/links`** (`links/index.html`) — a Linktree-style page, one phone-first design for every screen. Live content (name, socials, theme, reel) from Site settings. Edit it under **Site settings → Links page** (subtitles, a heading, and extra links) and choose which socials appear with each social link's **Show on** checkboxes (Contact panel / Links page / Modelling site — `src/utils/socials.js`).
+- **`/links`** (`links/index.html`) — a Linktree-style page, one phone-first design for every screen. Live content (name, socials, theme, reel) from Site settings. Edit it in the editor's **Links page** section (subtitles, extra links, which socials show) with a live phone-width preview (`links/?preview`, fed the unsaved state by postMessage). Each social link's **Show on** checkboxes in Site settings (Contact panel / Links page / Modelling site — `src/utils/socials.js`) are the same data.
 - **`/joanna-lina`** (`joanna-lina/index.html`) — unlisted, `noindex`: open it to show or share the QR for `/links` (diamond, running dog in a clear centre; 29×29, error correction Q — chosen in `samples/qr-lab/`, local only). Share link / Copy link / Save QR (2048 px PNG). The QR never changes; edit the links page instead.
 
 ## Social feed

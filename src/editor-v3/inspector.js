@@ -480,12 +480,14 @@ const SOCIAL_PLACES = PLACES;
 
 // rungirlrun.studio/links (links/index.html). Blank subtitles use the defaults shown.
 const LINKS_PAGE_GROUPS = [
-  { title: 'Links page', note: 'Your Linktree-style page at rungirlrun.studio/links. Socials come from Social links above (tick “Links page”). Leave a subtitle blank to use the default shown. Extra links (below) appear in their own group under the reel.', fields: [
+  { title: 'Subtitles', note: 'Leave one blank to use the default shown.', fields: [
     { label: 'Portfolio subtitle', key: 'linksPage.portfolioSub', placeholder: 'Animation, projects & process' },
     { label: '3D modelling subtitle', key: 'linksPage.modellingSub', placeholder: 'Characters & props in 3D' },
     { label: 'Résumé subtitle', key: 'linksPage.resumeSub', placeholder: 'PDF' },
-    { label: 'Substack subtitle', key: 'linksPage.writingSub', placeholder: 'Notes from the studio' },
-    { label: 'Extra links heading', key: 'linksPage.extraTitle', placeholder: 'Featured' }
+    { label: 'Substack subtitle', key: 'linksPage.writingSub', placeholder: 'Notes from the studio' }
+  ] },
+  { title: 'Extra links', note: 'Your own links (a shop, a project, an event) — shown in their own group under the reel.', fields: [
+    { label: 'Heading', key: 'linksPage.extraTitle', placeholder: 'Featured' }
   ] }
 ];
 
@@ -618,6 +620,45 @@ export function showHomeSettings() {
   bindSettingsForm(g, 'content.json', showHomeSettings, false);
 }
 
+// ── Links page (rungirlrun.studio/links): settings + a live phone-width preview ──
+// The preview is links/?preview — it redraws with the unsaved state.global each
+// time something changes here (postMessage, same origin). The iframe is kept
+// across redraws of the settings so it doesn't reload.
+function postLinksPreview() {
+  const f = document.getElementById('v3-links-frame');
+  if (f && f.contentWindow) f.contentWindow.postMessage({ type: 'rgr-links-preview', content: state.global }, location.origin);
+}
+window.addEventListener('message', e => {
+  if (e.origin === location.origin && e.data && e.data.type === 'rgr-links-preview-ready') postLinksPreview();
+});
+window.addEventListener('v3-save-status', postLinksPreview);   // fires on every edit (markDirty)
+
+export function showLinksPage() {
+  current = null;
+  if (!panelEl) return;
+  const g = state.global;
+  if (!panelEl.querySelector('#v3-links-frame')) {
+    panelEl.innerHTML = `<div class="v3-insp-head"><span>Links page</span>
+        <a class="v3-site-preview-btn" href="links/" target="_blank" rel="noopener" title="Open rungirlrun.studio/links"><i class="ph-fill ph-arrow-up-right"></i> <span>Open page</span></a></div>
+      <div class="v3-insp-body v3-links-body">
+        <div class="v3-links-settings" id="v3-links-settings"></div>
+        <div class="v3-links-preview"><div class="v3-links-phone"><iframe id="v3-links-frame" src="links/?preview" title="Links page preview"></iframe></div>
+          <p class="v3-insp-note">Live preview — shows your changes before you save.</p></div>
+      </div>`;
+  }
+  const socials = getNested(g, 'contact.links') || [];
+  panelEl.querySelector('#v3-links-settings').innerHTML = `
+    <p class="v3-insp-note">Your Linktree-style page at <b>rungirlrun.studio/links</b>. Name, colours and the reel come from Site settings and Home.</p>
+    <div class="v3-set-group"><div class="v3-set-head">Socials on this page</div>
+      ${note('The same as Site settings → Social links → Show on → Links page.')}
+      <div class="v3-links-socials">${socials.map((l, i) => `<label class="v3-check"><input type="checkbox" class="v3-arr-check" data-arr="contact.links" data-idx="${i}" data-flag="links"${l.hide && l.hide.links ? '' : ' checked'}> ${escHtml(l.label || l.url || 'Link ' + (i + 1))}</label>`).join('')}</div>
+    </div>
+    ${groupsHTML(g, LINKS_PAGE_GROUPS)}
+    ${objListHTML('Extra link', 'linksPage.extra', getNested(g, 'linksPage.extra'), [['label', 'Label'], ['sub', 'Subtitle (optional)'], ['url', 'URL']])}`;
+  bindSettingsForm(g, 'content.json', showLinksPage, false);
+  postLinksPreview();
+}
+
 export function showSiteSettings() {
   current = null;
   if (!panelEl) return;
@@ -630,8 +671,6 @@ export function showSiteSettings() {
       <p class="v3-insp-note">Site-wide settings used across every page, the mobile site and the modelling site.</p>
       ${groupsHTML(g, SITE_GROUPS)}
       ${objListHTML('Social link', 'contact.links', getNested(g, 'contact.links'), [['label', 'Label'], ['url', 'URL'], ['ref', 'Shortcut (auto from label)']], SOCIAL_PLACES)}
-      ${groupsHTML(g, LINKS_PAGE_GROUPS)}
-      ${objListHTML('Links page link', 'linksPage.extra', getNested(g, 'linksPage.extra'), [['label', 'Label'], ['sub', 'Subtitle (optional)'], ['url', 'URL']])}
       ${groupsHTML(g, SITE_GROUPS_2)}
       ${objListHTML('Filter', 'filters', g.filters, [['value', 'Value (projects use this; keep it fixed)'], ['label', 'Label (shown on cards)'], ['tags', 'Feed hashtags (with #rgr), e.g. blender3d, 3danimation']])}
       ${referencesHTML(g)}

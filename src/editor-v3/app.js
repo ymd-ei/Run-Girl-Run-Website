@@ -19,7 +19,7 @@ import {
 } from './history.js';
 import {
   initInspector, showBlockInspector, showSectionInspector, clearInspector,
-  showHomeSettings, showContactSettings, showProjectSettings, showSiteSettings
+  showHomeSettings, showContactSettings, showProjectSettings, showSiteSettings, showLinksPage
 } from './inspector.js';
 import { listRefs } from '../utils/refs.js';
 import { openMediaPicker } from './media.js';
@@ -177,13 +177,15 @@ async function goTo(panel, projectId) {
     await loadProject(projectId); // ensure full blocks are in state + pushed
     pushData(state.global, state.projects);
   }
-  navigate(panel === 'site' || panel === 'media' ? 'home' : panel, projectId);
-  // Site settings and Media fill the page (canvas hidden; Site settings can preview).
+  const pagePanel = panel === 'site' || panel === 'media' || panel === 'links';
+  navigate(pagePanel ? 'home' : panel, projectId);
+  // Site settings, Media and Links page fill the page (canvas hidden; Site settings can preview).
   const main = document.getElementById('v3-main');
-  main.classList.toggle('v3-page-mode', panel === 'site' || panel === 'media');
+  main.classList.toggle('v3-page-mode', pagePanel);
   if (panel !== 'site') main.classList.remove('v3-site-preview');
   renderRail();
   if (panel === 'site') showSiteSettings();
+  else if (panel === 'links') showLinksPage();
   else if (panel === 'media') showMediaPage(document.getElementById('v3-inspector'), { authed: authed === null ? undefined : authed });
   else if (panel === 'home') showHomeSettings();
   else if (panel === 'contact') showContactSettings();
@@ -200,7 +202,8 @@ function renderRail() {
     { id: 'home', label: 'Home', icon: 'ph-house' },
     { id: 'about', label: 'About', icon: 'ph-user' },
     { id: 'contact', label: 'Contact', icon: 'ph-envelope' },
-    { id: 'media', label: 'Media', icon: 'ph-images' }
+    { id: 'media', label: 'Media', icon: 'ph-images' },
+    { id: 'links', label: 'Links page', icon: 'ph-link-simple' }
   ];
   railSections.innerHTML = sections.map(s => `
     <button class="v3-nav-item${view.panel === s.id ? ' active' : ''}" data-nav="${s.id}">
