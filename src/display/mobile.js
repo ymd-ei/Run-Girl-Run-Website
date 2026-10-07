@@ -9,7 +9,7 @@
 import { phosphorIcon } from '../utils/icons.js';
 import { setRefContext, resolveRefs, resolveLinkUrl } from '../utils/refs.js';
 import { privacyEmbedUrl } from '../utils/embeds.js';
-import { applySiteText, availability, renderLegal, initLegalModal } from './siteChrome.js';
+import { applySiteText, availability, renderLegal, initLegalModal, closeLegalModal } from './siteChrome.js';
 import { initA11y } from '../utils/a11y.js';
 import { liveFetch } from '../utils/liveContent.js';
 import { isLite, stillVideos, bindLiteToggles } from '../utils/lite.js';
@@ -32,8 +32,62 @@ const likeCounts = new Map();  // likes API key -> count, filled when sorting by
 let openItem = null;           // { kind: 'project' | 'post', id } shown in the sheet
 
 
+// Privacy & Legal swipes down to close, like the Work / About panels (same feel
+// as mobileSheet.js): pull from the top, or from the text once it's scrolled to
+// its top; past 30% of its height, or a flick, closes it — otherwise it springs back.
+function bindLegalSwipe() {
+  const modal = document.getElementById('legal-modal');
+  const card = document.getElementById('legal-card');
+  if (!modal || !card) return;
+  const START = 12, RESIST = 0.8, CLOSE_DISTANCE = 0.3, CLOSE_SPEED = 0.6;
+  let startY = 0, lastY = 0, lastT = 0, speed = 0, dy = 0, tracking = false, dragging = false, fromTop = false;
+  const reset = () => { card.style.transition = card.style.transform = ''; modal.style.opacity = ''; };
+  card.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || !modal.classList.contains('open')) return;
+    tracking = true; dragging = false; dy = 0; speed = 0;
+    startY = lastY = e.touches[0].clientY; lastT = e.timeStamp;
+    fromTop = startY - card.getBoundingClientRect().top < 48;     // the grab bar / heading area
+  }, { passive: true });
+  card.addEventListener('touchmove', e => {
+    if (!tracking) return;
+    const y = e.touches[0].clientY;
+    dy = y - startY;
+    if (!dragging) {
+      if (dy > START && (fromTop || card.scrollTop <= 0)) { dragging = true; card.style.transition = 'none'; }
+      else if (Math.abs(dy) > START) { tracking = false; return; }   // a normal scroll
+      else return;
+    }
+    e.preventDefault();
+    speed = (y - lastY) / Math.max(1, e.timeStamp - lastT);
+    lastY = y; lastT = e.timeStamp;
+    const pull = Math.max(0, dy) * RESIST;
+    card.style.transform = `translateY(${pull}px)`;
+    modal.style.opacity = String(Math.max(0.2, 1 - pull / card.offsetHeight));
+  }, { passive: false });
+  const end = () => {
+    if (!tracking) return;
+    tracking = false;
+    if (!dragging) return;
+    dragging = false;
+    const pull = Math.max(0, dy) * RESIST;
+    card.style.transition = '';
+    if (pull > card.offsetHeight * CLOSE_DISTANCE || speed > CLOSE_SPEED) {
+      card.style.transform = 'translateY(100%)';
+      modal.style.opacity = '';
+      closeLegalModal();
+      setTimeout(reset, 320);
+    } else {
+      card.style.transform = '';
+      modal.style.opacity = '';
+    }
+  };
+  card.addEventListener('touchend', end);
+  card.addEventListener('touchcancel', end);
+}
+
 async function init() {
   initLegalModal();
+  bindLegalSwipe();
   initA11y();
   try {
     const res = await liveFetch('content.json', 'content.json');

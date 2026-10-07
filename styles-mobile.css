@@ -285,11 +285,11 @@ html.lite #reel-embed.no-poster .reel-cover{background:rgba(var(--ink-rgb),.85)}
 #legal-card{position:relative}
 .legal-close{position:absolute;top:1rem;right:1rem;padding:.4rem .8rem;border:1px solid rgba(var(--ink-rgb),.15);background:none;color:inherit;font-family:var(--font-b);font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;opacity:0}
 .legal-close:focus-visible{opacity:1}
-/* Phones have no Escape key and the card fills the screen: show Close, and keep
-   it at the top of the card while the text scrolls */
-#legal-card .legal-close{
-  position:sticky;top:0;float:right;z-index:1;opacity:1;margin:-.5rem -.25rem .5rem 1rem;
-  background:var(--panel-bg);
+/* Swipe down to close (mobile.js bindLegalSwipe), like the Work / About panels;
+   the grab bar says it can be pulled. Close stays keyboard-only, as on desktop. */
+#legal-card::before{
+  content:'';display:block;width:40px;height:4px;margin:-.75rem auto 1rem;
+  border-radius:2px;background:rgba(var(--ink-rgb),.25);
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
