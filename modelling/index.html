@@ -675,11 +675,11 @@
       if (!document.hidden) { lastTime = 0; animClock.getDelta(); }
     });
 
-    // Rest after 5 min without input: stop drawing entirely so the GPU idles and
+    // Rest after 2 min without input: stop drawing entirely so the GPU idles and
     // the laptop can sleep (same idea as the main site's idle video pause). The
     // animation and turntable ease to a stop as the view fades, then drawing
     // stops on the last frame; any input eases them back up.
-    const IDLE_MS = 5 * 60 * 1000;
+    const IDLE_MS = 2 * 60 * 1000;
     const SETTLE_S = 2;                         // slow to a stop (matches the CSS fade)
     const RESUME_S = 0.6;                       // and back up to speed
     let resting = false, idleTimer = 0;
