@@ -35,7 +35,12 @@ Oct 7:
 - Phone: the reel spot autoplays a muted preview (Watch reel → Preview clip, else the reel); Lite/data-saver/reduced
   motion keep the still cover. Privacy & Legal swipes down to close and sits above the Work/About tabs.
 - Theme colours have a ↺ reset to their defaults; contact accent default is now #ff4361, warning #e03030.
-- Local-only design references: `samples/links-mock/`, `samples/qr-mock/`, `samples/qr-lab/`. Delete fix for odd file names deployed (`3eee137`).
+- Local-only design references: `samples/links-mock/`, `samples/qr-mock/`, `samples/qr-lab/`.
+- Theme colours now actually apply on the desktop page (it only applied the contact colours before) and on all
+  pages update within seconds — `src/utils/themeVars.js` is the one list (desktop, phone, links page).
+- Editor: **Links page** has its own rail section with a live phone-width preview (unsaved edits show).
+- Tinted-image blocks with no colour of their own follow the accent; the block's Tint colour has **Match accent**.
+  The About dog still has purple saved as its own colour — click Match accent and save to make it follow. Delete fix for odd file names deployed (`3eee137`).
 
 Parked on the local branch **`modelling-shot-camera`** (not pushed; waiting for a real Blender file with a camera):
 - A `.glb` with its own camera plays through a marker frame like an animation layout sheet: 4 accent
