@@ -6,7 +6,7 @@
   --ink:#1a1714;--paper:#f2ede4;--surface:#ede8df;--accent:#5e30eb;--accent-rgb:94,48,235;
   --muted:rgba(var(--ink-rgb),0.4);--border:rgba(var(--ink-rgb),0.12);
   --panel-bg:#f7f3ec;
-  --ct-bg:#080808;--ct-hi:#ffffff;--ct-accent:#ff7828;
+  --ct-bg:#080808;--ct-hi:#ffffff;--ct-accent:#ff4361;
   --ct-muted:rgba(255,255,255,0.35);--ct-border:rgba(255,255,255,0.1);
   --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;
   --fs-xs:.6rem;--fs-sm:.7rem;--fs-md:.85rem;--fs-body:.95rem;--fs-lg:1.3rem;--fs-xl:1.8rem;

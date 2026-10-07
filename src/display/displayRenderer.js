@@ -24,7 +24,7 @@ export function applyTheme(theme) {
     '--color-paper': theme.paper || '#f2ede4',
     '--color-ink': theme.ink || '#1a1714',
     '--color-panel-bg': theme.panelBg || '#f7f3ec',
-    '--color-contact-accent': theme.ctAccent || '#ff7828',
+    '--color-contact-accent': theme.ctAccent || '#ff4361',
     '--color-contact-bg': theme.ctBg || '#080808',
     '--color-contact-hi': theme.ctHi || '#ffffff',
     '--color-sensitive': theme.sensitiveColor || '#e03030'

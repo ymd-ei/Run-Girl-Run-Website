@@ -9,7 +9,7 @@
   --font-s:'Cormorant Garamond',serif;--font-b:'DM Sans',sans-serif;
   --fs-xs:.6rem;--fs-sm:.7rem;--fs-md:.85rem;--fs-body:.95rem;--fs-lg:1.3rem;--fs-xl:2.2rem;
   --ls-tight:.04em;--ls-normal:.1em;--ls-wide:.16em;--ls-xwide:.25em;
-  --ink-rgb:26,23,20;--paper-rgb:242,237,228;--ct-accent-rgb:255,120,40;
+  --ink-rgb:26,23,20;--paper-rgb:242,237,228;--ct-accent-rgb:255,67,97;
   --ease:cubic-bezier(0.16,1,0.3,1);
 }
 html,body{width:100%;height:100%;overflow:hidden}
@@ -185,7 +185,7 @@ body.native-cursor-forced #cur-work-badge,body.reel-popup-open #cur-work-badge{d
    CONTACT PANEL
 ───────────────────────────────────────── */
 :root{
-  --ct-bg:#080808;--ct-hi:#ffffff;--ct-accent:#ff7828;
+  --ct-bg:#080808;--ct-hi:#ffffff;--ct-accent:#ff4361;
   --ct-muted:rgba(255,255,255,0.35);--ct-border:rgba(255,255,255,0.1);
   --ct-panel-w:94vw;--ct-sliver:6vw;
   --font-hero:'Bebas Neue',sans-serif;--font-ui:'Space Grotesk',sans-serif;
