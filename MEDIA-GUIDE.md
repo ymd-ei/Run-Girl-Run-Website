@@ -146,3 +146,15 @@ Measured on a first visit (Oct 2026) after the web copies went in:
 | 6 Mbps | (cap) | loader done at **7.5 s**, both videos ready |
 
 **Default since Oct 2026: page first.** The loader lifts as soon as the brand intro has played (about 1.5 s); the hero video fades in when it can play, and the contact video keeps downloading in the background. To compare with the old "wait for the videos" behaviour described above, add `?waitload` to the URL. In Lite mode there are no background videos to wait for at all (posters only).
+
+## Web-friendly uploads (editor)
+
+The editor's upload (Media Library page and the media picker, in both the main and the modelling editor) converts files in your browser before sending them, while **Make web-friendly (WebP)** next to Upload is ticked. It's on by default and remembered per browser.
+
+- **Images** (PNG, JPEG, BMP) become `.webp` (quality 85, long edge capped at 3840 px). Transparency is kept.
+- **3D models** (`.glb`): embedded PNG/JPEG textures are re-encoded as WebP (quality 90); geometry, materials and animation are untouched. Example: the Pancakes model went from 4.46 MB to about 0.5 MB.
+- **Videos** upload as they are. The editor reminds you to export a web copy first (see Video export above).
+- A conversion is only used if it's at least 10% smaller; otherwise the original goes up. Safari can't make WebP, so uploads from Safari send the original.
+- The 20 MB upload limit applies after conversion.
+
+Untick the box when you need the exact original file on the site.

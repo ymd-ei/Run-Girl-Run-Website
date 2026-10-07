@@ -8,6 +8,7 @@
  */
 
 import { state, fetchMediaFiles, uploadMedia, deleteMedia, loadProject } from './dataBridge.js';
+import { webReadyToggleHtml, bindWebReadyToggle } from './webReady.js';
 
 const TYPES = [
   ['all', 'All'],
@@ -159,7 +160,7 @@ async function uploadFiles(list) {
     status.textContent = `Uploading ${i + 1} of ${arr.length}: ${file.name}…`;
     // Keep 3D models in media/models/ so the modelling site finds them.
     const res = await uploadMedia(file, kind(file.name) === 'model' ? 'media/models' : 'media');
-    if (res.success) ok++;
+    if (res.success) { ok++; if (res.note) toast(res.note); }
     else toast(res.error.includes(file.name) ? res.error : `Upload failed (${file.name}): ${res.error}`, true);
   }
   status.textContent = '';
@@ -194,6 +195,7 @@ async function refresh() {
 }
 
 function bind() {
+  bindWebReadyToggle(root);
   root.querySelector('.v3-mp-types').addEventListener('click', e => {
     const b = e.target.closest('[data-type]');
     if (!b) return;
@@ -238,10 +240,11 @@ export async function showMediaPage(panelEl, { authed, sources } = {}) {
   root = panelEl.firstElementChild;
   root.innerHTML = `<div class="v3-mp-head"><span>Media Library</span>
       <span class="v3-mp-status"></span>
+      ${webReadyToggleHtml()}
       <label class="v3-mp-btn v3-mp-upload"><i class="ph-fill ph-upload-simple"></i> Upload
         <input type="file" multiple accept="image/*,video/*,.glb,.gltf,.pdf,model/gltf-binary,model/gltf+json" hidden></label></div>
     <div class="v3-mp-body">
-      <p class="v3-mp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file. Larger files: compress them, or add to media/ on your computer and push with git.</p>
+      <p class="v3-mp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file, after the WebP conversion when "Make web-friendly" is on (images and model textures shrink first; videos don't). Larger files: compress them, or add to media/ on your computer and push with git.</p>
       <div class="v3-mp-main">
         <div class="v3-mp-toolbar">
           <div class="v3-mp-types">${TYPES.map(([v, l]) => `<button data-type="${v}" class="${v === type ? 'active' : ''}">${l}</button>`).join('')}</div>

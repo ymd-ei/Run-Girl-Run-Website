@@ -6,6 +6,7 @@
  */
 
 import { fetchMediaFiles, uploadMedia, deleteMedia } from './dataBridge.js';
+import { webReadyToggleHtml, bindWebReadyToggle } from './webReady.js';
 
 let modal = null;
 let onPickCb = null;
@@ -24,6 +25,7 @@ function build() {
       <div class="v3-media-head">
         <span>Media Library</span>
         <div class="v3-media-head-tools">
+          ${webReadyToggleHtml()}
           <label class="v3-media-upload"><i class="ph-fill ph-upload-simple"></i> Upload
             <input type="file" accept="image/*,video/*,.glb,.gltf,model/gltf-binary,model/gltf+json" hidden></label>
           <button class="v3-media-close" title="Close"><i class="ph-fill ph-x"></i></button>
@@ -38,6 +40,7 @@ function build() {
   modal.querySelector('.v3-media-close').addEventListener('click', close);
   modal.querySelector('.v3-media-search input').addEventListener('input', e => renderGrid(e.target.value));
   modal.querySelector('.v3-media-upload input').addEventListener('change', onUpload);
+  bindWebReadyToggle(modal);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen()) close(); });
 
   modal.querySelector('.v3-media-grid').addEventListener('click', e => {
@@ -99,7 +102,7 @@ async function onUpload(e) {
   if (res.success) {
     await load(true);
     renderGrid(modal.querySelector('.v3-media-search input').value);
-    window.__v3toast && window.__v3toast('Uploaded ' + res.path);
+    window.__v3toast && window.__v3toast('Uploaded ' + res.path + (res.note ? ' — ' + res.note : ''));
   } else {
     window.__v3toast && window.__v3toast('Upload failed: ' + res.error, true);
   }

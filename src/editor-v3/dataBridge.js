@@ -7,6 +7,7 @@
  * (which is being retired). Same backend worker, same endpoints.
  */
 
+import { makeWebReady, webReadyOn, isVideoFile } from './webReady.js';
 import { projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 
 // ── API config (set by the editor host page before module loads) ──
@@ -366,9 +367,19 @@ export async function saveSiteData() {
 }
 
 /**
- * Upload a file to the media directory.
+ * Upload a file to the media directory. With "Make web-friendly" on (the
+ * default), images and .glb textures are converted to WebP first — see
+ * webReady.js. Resolves { success, path, note } where `note` says what was
+ * converted (or why a video wasn't), for the toast.
  */
 export async function uploadMedia(file, folder = 'media') {
+  let note = '';
+  if (webReadyOn()) {
+    ({ file, note } = await makeWebReady(file));
+    if (!note && isVideoFile(file)) {
+      note = `${file.name} uploads as it is — videos aren't converted. For a lighter file, export a web copy first (MEDIA-GUIDE.md → Video export).`;
+    }
+  }
   // Check the size before sending anything (the backend rejects larger files anyway).
   const maxMB = (window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20;
   if (file.size > maxMB * 1024 * 1024) {
@@ -394,7 +405,7 @@ export async function uploadMedia(file, folder = 'media') {
   if (!res.ok || !result.success) {
     return { success: false, error: result.error || 'Upload failed' };
   }
-  return { success: true, path: result.path };
+  return { success: true, path: result.path, note };
 }
 
 /**
