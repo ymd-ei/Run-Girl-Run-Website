@@ -33,7 +33,7 @@
   body{
     min-height:100svh;font-family:var(--font-b);font-weight:300;color:var(--ink);
     background:var(--paper);-webkit-font-smoothing:antialiased;
-    display:flex;justify-content:center;
+    display:flex;justify-content:center;align-items:flex-start;   /* don't stretch the column to the window height */
   }
   .page{
     width:100%;max-width:440px;
@@ -41,7 +41,7 @@
   }
   /* On wide screens the column sits on the page like a card */
   @media (min-width:640px){
-    body{padding:3rem 1rem}
+    body{padding:3rem 1rem;align-items:center}
     .page{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2rem 1.75rem 2.25rem;
           box-shadow:0 24px 60px -30px rgba(var(--ink-rgb),.35)}
   }
