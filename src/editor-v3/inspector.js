@@ -432,7 +432,9 @@ const HOME_GROUPS = [
   { title: 'Watch reel (button popup)', fields: [
     { label: 'Type', key: 'watchReel.type', kind: 'select', options: REEL_TYPES },
     { label: 'URL / media', key: 'watchReel.url', kind: 'media' },
-    { label: 'Poster image', key: 'watchReel.poster', kind: 'media' }
+    { label: 'Poster image', key: 'watchReel.poster', kind: 'media' },
+    // Phones loop this muted in the reel spot (else the reel itself); a short, light export is best
+    { label: 'Preview clip (autoplays muted on phones)', key: 'watchReel.preview', kind: 'media' }
   ] }
 ];
 

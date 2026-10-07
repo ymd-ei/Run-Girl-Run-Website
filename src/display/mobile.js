@@ -220,23 +220,39 @@ function renderReel() {
     const url = privacyEmbedUrl(reel.url.replace(/autoplay=1/g, 'autoplay=0').replace(/mute=1/g, 'mute=0'));
     embed.innerHTML = `<iframe src="${encodeURI(url)}" allow="fullscreen" allowfullscreen title="Demo Reel"></iframe>`;
   } else {
-    // A cover with the site's play button sits over the player until it's tapped:
-    // over the poster when one is set, otherwise frosted glass over the hero video.
+    // A cover with the site's play button sits over the player until it's tapped.
+    // By default the reel spot plays a muted loop behind it — the Preview clip if
+    // one is set (Watch reel → Preview clip), else the reel itself; tapping plays
+    // the reel with sound from the start. Lite mode, data-saver and reduced motion
+    // keep the still cover: over the poster when one is set, otherwise frosted
+    // glass over the hero video.
+    const preview = !stillVideos();
+    const own = preview && !reel.preview;          // the reel loops itself until tapped
     const poster = reel.poster ? ` poster="${encodeURI(reel.poster)}"` : '';
-    embed.innerHTML = `<video src="${encodeURI(reel.url)}"${poster} playsinline preload="${isLite() ? 'none' : 'metadata'}"></video>
+    const mainAttrs = own ? ' muted loop autoplay preload="auto"' : ` preload="${isLite() ? 'none' : 'metadata'}"`;
+    const previewVideo = preview && reel.preview
+      ? `<video class="reel-preview" src="${encodeURI(reel.preview)}" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>` : '';
+    embed.innerHTML = `<video src="${encodeURI(reel.url)}"${poster} playsinline${mainAttrs}></video>${previewVideo}
       <button type="button" class="reel-cover${reel.poster ? ' has-poster' : ''}">
         <span class="reel-play" aria-hidden="true"><span class="reel-tri"></span></span>
         <span class="reel-cover-text"><span data-site-text="watchReel">Watch Reel</span><span class="reel-dur"></span></span>
       </button>`;
     embed.classList.toggle('no-poster', !reel.poster);
+    embed.classList.toggle('previewing', preview);
     const video = embed.querySelector('video');
     const cover = embed.querySelector('.reel-cover');
+    const pv = embed.querySelector('.reel-preview') || (own ? video : null);
+    if (pv) pv.play().catch(() => {});
     video.addEventListener('loadedmetadata', () => {
       const t = Math.round(video.duration);
       if (t) embed.querySelector('.reel-dur').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
     });
     cover.addEventListener('click', () => {
+      embed.classList.remove('previewing');
       embed.classList.add('is-playing');
+      const clip = embed.querySelector('.reel-preview');
+      if (clip) clip.remove();
+      if (video.muted) { video.muted = false; video.loop = false; video.currentTime = 0; }
       video.controls = true;
       video.play().catch(() => {});
       video.focus({ preventScroll: true });
@@ -490,11 +506,11 @@ function renderContactVideo() {
 
 // Footer switch: re-render the backgrounds; the reel only fetches once tapped
 function setupLiteToggle() {
-  bindLiteToggles(lite => {
+  bindLiteToggles(() => {
     renderHeroVideo();
     renderContactVideo();
-    const reel = document.querySelector('#reel-embed video');
-    if (reel) reel.preload = lite ? 'none' : 'metadata';
+    // Rebuild the reel spot (preview loop on/off) unless the reel is being watched
+    if (!document.querySelector('#reel-embed.is-playing')) renderReel();
   });
 }
 
