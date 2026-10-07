@@ -158,6 +158,17 @@ export function showBlockInspector(payload) {
   bindInspector(block, scope, blockId, projectId);
 }
 
+// Tinted image colour: its own colour, or blank = follow the theme accent
+function tintField(color) {
+  if (!color) {
+    return `<div class="v3-field"><label>Tint color</label>
+      <p class="v3-insp-note">Matches the theme accent (Site settings → Theme).</p>
+      <button type="button" class="v3-add-item" data-own-tint>Pick its own colour</button></div>`;
+  }
+  return field({ label: 'Tint color', kind: 'color', value: color, dataKey: 'color' }) +
+    `<button type="button" class="v3-add-item" data-match-accent title="Clear this colour so the image follows the theme accent">Match accent</button>`;
+}
+
 // ── Field HTML helpers ───────────────────────────────────────
 function field({ label, kind = 'text', value = '', options = [], dataKey, item, sub, placeholder = '', min, max, rows = 3 }) {
   const attrs = `data-key="${dataKey || ''}"${item != null ? ` data-item="${item}"` : ''}${sub ? ` data-sub="${sub}"` : ''}`;
@@ -206,7 +217,7 @@ function fieldsForBlock(b) {
     case 'alpha-art':
       return field({ label: 'Source', kind: 'media', value: b.src, dataKey: 'src' }) +
         field({ label: 'Alt text', value: b.alt, dataKey: 'alt' }) +
-        field({ label: 'Tint color', kind: 'color', value: b.color, dataKey: 'color' }) +
+        tintField(b.color) +
         field({ label: 'Background', value: b.bg, dataKey: 'bg', placeholder: 'transparent' }) +
         field({ label: 'Scale', kind: 'number', value: b.scale, dataKey: 'scale', min: 0.1, max: 2 }) +
         field({ label: 'Fit', kind: 'select', value: b.fit || 'contain', dataKey: 'fit', options: [['contain', 'Contain'], ['cover', 'Cover']] }) +
@@ -366,6 +377,17 @@ function bindInspector(block, scope, blockId, projectId) {
       const key = txt.getAttribute('data-mirror');
       commit(() => bmUpdateBlock(bm(), scope, blockId, key, txt.value));
     });
+  });
+
+  // Tinted image: follow the theme accent, or take its own colour again
+  root.querySelector('[data-match-accent]')?.addEventListener('click', () => {
+    commit(() => bmUpdateBlock(bm(), scope, blockId, 'color', ''));
+    showBlockInspector(current);
+  });
+  root.querySelector('[data-own-tint]')?.addEventListener('click', () => {
+    const accent = (state.global.theme && state.global.theme.accent) || '#5e30eb';
+    commit(() => bmUpdateBlock(bm(), scope, blockId, 'color', accent));
+    showBlockInspector(current);
   });
 
   // Media pick buttons

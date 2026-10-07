@@ -91,7 +91,7 @@ export function renderBlock(block, theme = {}, renderOptions = {}) {
       return `<div class="bl-alpha-art" role="img" aria-label="${
         block.alt || 'Alpha artwork'
       }" style="--alpha-src:url('${block.src}');--alpha-color:${
-        block.color || '#5e30eb'
+        block.color || 'var(--accent)'   /* no tint of its own: follow the theme accent */
       };--alpha-bg:${block.bg || 'transparent'};--alpha-fit:${
         block.fit === 'cover' ? 'cover' : 'contain'
       };--alpha-scale:${safeScale};--alpha-ratio:${block.ratio || '16/9'}"><img class="bl-alpha-art-probe" src="${
