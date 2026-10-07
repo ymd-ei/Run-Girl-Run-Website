@@ -19,6 +19,11 @@
 const GITHUB_OWNER = 'ymd-ei';
 const GITHUB_REPO = 'Run-Girl-Run-Website';
 const GITHUB_BRANCH = 'main';
+
+// Encode each part of a repo path for GitHub's contents URLs. File names can
+// hold spaces and other characters — macOS screenshots put a narrow no-break
+// space before "AM" — which broke deletes ("Failed to fetch file for deletion").
+const ghPath = p => String(p).split('/').map(encodeURIComponent).join('/');
 const ALLOWED_GITHUB_USER = 'ymd-ei'; // Only allow YOUR username
 const MAX_DIRECT_MEDIA_UPLOAD_BYTES = 20 * 1024 * 1024;
 
@@ -600,7 +605,7 @@ async function uploadFileToGitHub(token, path, base64Content, env) {
  */
 async function deleteFileFromGitHub(token, path) {
   const getResponse = await fetch(
-    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${ghPath(path)}`,
     {
       headers: {
         'Authorization': `token ${token}`,
@@ -620,7 +625,7 @@ async function deleteFileFromGitHub(token, path) {
 
   const fileData = await getResponse.json();
   const deleteResponse = await fetch(
-    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${ghPath(path)}`,
     {
       method: 'DELETE',
       headers: {
@@ -654,7 +659,7 @@ async function listMediaFiles(token, env) {
 
 async function listMediaFilesRecursive(token, folderPath) {
   const response = await fetch(
-    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${folderPath}`,
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${ghPath(folderPath)}`,
     {
       headers: {
         'Authorization': `token ${token}`,
