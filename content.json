@@ -287,6 +287,11 @@
   "linksPage": {
     "extraTitle": "",
     "extra": [],
-    "modellingSub": "Modelling + Rigging"
+    "modellingSub": "Modelling + Rigging",
+    "nameAlign": "right"
+  },
+  "person": {
+    "first": "RJ",
+    "last": "Rogel"
   }
 }
