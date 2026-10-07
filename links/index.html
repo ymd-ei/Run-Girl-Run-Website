@@ -7,7 +7,11 @@
 <!-- rungirlrun.studio/links — a Linktree-style page: one phone-first design for every
      screen. Content is live (src/utils/liveContent.js): name, links, colours from Site
      settings; socials ticked "Links page"; subtitles + extra links from Site settings →
-     Links page. -->
+     Links page.
+     The card has a back: tap the dog (no hint, on purpose) or swipe sideways and it turns
+     over into a square of tinted glass with the QR for this page; swipe sideways again (or
+     Escape) to turn it back. The frosted hero reel fills the page behind. Designed in
+     samples/links-flip-mock/. -->
 <meta name="description" content="Run Girl Run — 3D character animation, Toronto. Reel, portfolio, 3D modelling, résumé and socials.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://rungirlrun.studio/links">
@@ -35,15 +39,16 @@
     background:var(--paper);-webkit-font-smoothing:antialiased;
     display:flex;justify-content:center;align-items:flex-start;   /* don't stretch the column to the window height */
   }
+  /* A card on every screen, so the front matches the back when it flips */
+  body{padding:calc(.75rem + env(safe-area-inset-top)) .75rem calc(.75rem + env(safe-area-inset-bottom))}
   .page{
     width:100%;max-width:440px;
-    padding:calc(1.25rem + env(safe-area-inset-top)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.15rem 1.9rem;
+    box-shadow:0 24px 60px -30px rgba(var(--ink-rgb),.35);
   }
-  /* On wide screens the column sits on the page like a card */
   @media (min-width:640px){
     body{padding:3rem 1rem;align-items:center}
-    .page{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2rem 1.75rem 2.25rem;
-          box-shadow:0 24px 60px -30px rgba(var(--ink-rgb),.35)}
+    .page{padding:2rem 1.75rem 2.25rem}
   }
 
   /* ── Top: dog + availability, then the name ── */
@@ -96,7 +101,7 @@
     background:var(--card);border:1px solid var(--line);border-radius:10px;
     color:inherit;text-decoration:none;transition:transform .15s ease,border-color .15s ease,background .15s ease;
   }
-  @media (min-width:640px){ .link{background:var(--paper)} }
+  .link{background:var(--paper)}
   .link:hover{border-color:rgba(var(--ink-rgb),.3)}
   .link:active{transform:scale(.985)}
   .link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -143,13 +148,80 @@
   .legal-section a{color:var(--accent)}
   .legal-close{position:absolute;top:1rem;right:1rem;padding:.35rem .7rem;border:1px solid var(--line);border-radius:6px;background:none;font:inherit;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
   @media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms !important} }
-</style>
+
+  /* ── The hero reel, frosted, behind the card ── */
+  .page-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--paper)}
+  .page-bg video,.page-bg img{position:absolute;inset:-10%;width:120%;height:120%;object-fit:cover;filter:blur(34px) saturate(1.25)}
+  .page-bg::after{content:"";position:absolute;inset:0;background:rgba(20,16,12,.12)}   /* a touch darker so the card and code read */
+  body.bg-video{background:transparent;padding-left:1rem;padding-right:1rem}
+  html:has(body.bg-video){background:#2a2622}
+  /* the same drop shadow on both sides, so the card lifts off the reel as one object */
+  body.bg-video{--card-drop:0 2px 6px rgba(0,0,0,.18),0 22px 48px -10px rgba(0,0,0,.55)}
+  body.bg-video .page{box-shadow:var(--card-drop)}
+  body.bg-video .back{box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),var(--card-drop)}
+  /* the back becomes a pane of tinted glass over the page's reel */
+  /* no backdrop-filter here: Safari draws it flat, outside the 3D turn, so the code popped in mid-flip */
+  body.bg-video .back{background:transparent}
+  body.bg-video .back::before{background:radial-gradient(circle at 50% 45%,rgba(10,8,6,.4),rgba(10,8,6,.56))}
+
+  /* ── The flip: the card's back holds the QR ── */
+  body{align-items:center}
+  .flipper{
+    --t:.75s;--ease:cubic-bezier(.65,0,.25,1);
+    /* one box for both sides: it morphs from the front's shape to the square, and
+       each side fills it, so they always match */
+    position:relative;width:100%;max-width:440px;margin:0 auto;transform-style:preserve-3d;
+    transform:perspective(1800px) rotateY(var(--a,0deg));
+    transition:transform var(--t) var(--ease),height var(--t) var(--ease),width var(--t) var(--ease);
+  }
+  .flipper.dragging{transition:none}
+  .face{position:absolute;top:0;left:0;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .front{height:100%;overflow:hidden;touch-action:pan-y}   /* up/down scrolls; sideways turns the card */
+  .back{
+    inset:0;width:auto;transform:rotateY(180deg);container-type:size;
+    border-radius:14px;overflow:hidden;background:#141210;color:#fff;isolation:isolate;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 24px 60px -30px rgba(var(--ink-rgb),.6);
+  }
+  .flipper.dragging .back{cursor:grabbing}
+  /* while the QR is up the whole screen takes the swipe — no pull-to-refresh */
+  html.qr-up,html.qr-up body{overscroll-behavior:none;touch-action:none}
+  html.qr-up body{padding-top:1rem;padding-bottom:1rem}   /* matches the 32px side() leaves */
+  /* frosted glass: the reel, blurred and darkened so the white code reads */
+  .back video,.back .still{position:absolute;inset:-12%;width:124%;height:124%;object-fit:cover;z-index:-2;
+    filter:blur(22px) saturate(1.35);pointer-events:none}
+  .back::before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(circle at 50% 45%,rgba(10,8,6,.38),rgba(10,8,6,.62))}
+  /* Nothing inside the back has a CSS transform of its own: Safari lifts such pieces
+     out of the 3D turn, so they'd pop in instead of turning with the card. The diamond
+     is drawn already turned in the SVG; the dog is centred with margins. */
+  .back .qr-diamond{position:relative;width:84cqmin;aspect-ratio:1;flex:none}   /* the box's shorter side */
+  .back .qr,.back .qr svg{display:block;width:100%;height:100%}
+  .back .qr-dog{position:absolute;inset:0;margin:auto;height:auto;pointer-events:none}
+  .stage{position:relative;width:100%;max-width:440px}
+  /* the dog: a quiet way in */
+  .dog{background:none;border:0;padding:0;cursor:pointer;line-height:0;border-radius:6px;-webkit-tap-highlight-color:transparent}
+  .back:focus{outline:none}
+  .dog:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+  .dog:active img{transform:scale(.94)}
+  .dog img{transition:transform .15s ease}
+  /* reduced motion: no turning — the sides crossfade */
+  @media (prefers-reduced-motion: reduce){
+    .flipper{transform:none !important}
+    .back{transform:none}
+    .face{backface-visibility:visible;-webkit-backface-visibility:visible;transition:opacity .3s ease !important}
+    .flipper:not(.flipped) .back,.flipper.flipped .front{opacity:0;pointer-events:none}
+  }
 </style>
 </head>
 <body>
-<main class="page">
+<div class="stage">
+<div class="flipper" id="flipper">
+<main class="page face front" id="front">
+ <div id="front-in">
   <div class="bar">
-    <img id="dog" src="../media/doog_loop-smoller.png" alt="Run Girl Run">
+    <button type="button" class="dog" id="flip-open" aria-label="Show QR code"><img id="dog" src="../media/doog_loop-smoller.png" alt=""></button>
     <span class="avail" id="avail" hidden><i></i><span></span></span>
   </div>
   <p class="role" id="role"></p>
@@ -182,11 +254,21 @@
     <a href="../">rungirlrun.studio</a>
     <button type="button" class="legal-trigger" onclick="openLegalModal()">Privacy &amp; Legal</button>
   </footer>
+ </div>
 </main>
+<section class="face back" id="back" aria-label="QR code for this page. Press Escape to turn the card back." tabindex="-1" inert>
+  <div class="qr-diamond">
+    <div class="qr" id="qr" role="img" aria-label="QR code for rungirlrun.studio/links"></div>
+    <img class="qr-dog" id="qr-dog" alt="" aria-hidden="true">
+  </div>
+</section>
+</div>
+</div>
 <div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">
   <div id="legal-card"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script type="module">
   import { liveFetch } from '../src/utils/liveContent.js';
   import { showsOn } from '../src/utils/socials.js';
@@ -262,7 +344,7 @@
     const av = d.availability || {};
     $('avail').hidden = !av.enabled;
     document.querySelector('#avail span').textContent = av.text || '';
-    if (d.logo) $('dog').src = media(d.logo);
+    if (d.logo && $('dog').getAttribute('src') !== media(d.logo)) $('dog').src = media(d.logo);   // the site's Logo setting
 
     renderReel(d);
 
@@ -310,7 +392,159 @@
 
   initLegalModal();
   pauseVideosWhenIdle();
-  render(await liveFetch('content.json', '../content.json').then(r => r.json()));
+  const content = await liveFetch('content.json', '../content.json').then(r => r.json());
+  render(content);
+  const pageBg = initPageBg(content);
+  initFlip(content, pageBg);
+
+  // ── The hero reel, frosted, behind the whole page ──
+  function initPageBg(d) {
+    const reel = d.reel || {};
+    const box = document.createElement('div'); box.className = 'page-bg'; box.setAttribute('aria-hidden', 'true');
+    if (!stillVideos() && reel.url) {
+      const v = Object.assign(document.createElement('video'), { muted: true, loop: true, autoplay: true, playsInline: true });
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      v.src = media(reel.url); box.append(v); v.play().catch(() => {});
+    } else if (reel.poster) {
+      box.innerHTML = `<img alt="" src="${esc(media(reel.poster))}">`;
+    } else return;
+    document.body.prepend(box);
+    document.body.classList.add('bg-video');
+    return true;
+  }
+
+  // ── The back side: the QR ─────────────────────────────────────────────────
+  function initFlip(d, pageBg) {
+    const flipper = $('flipper'), front = $('front'), frontIn = $('front-in'), back = $('back');
+    const PAGE_URL = 'https://rungirlrun.studio/links';
+
+    // White QR (same build as /joanna-lina: 29×29, ECL Q, 9×9 clear centre), no background
+    const q = qrcode(0, 'Q'); q.addData(PAGE_URL); q.make();
+    const n = q.getModuleCount(), m = 2, size = n + m * 2;
+    const hole = Math.round(n * 0.3) | 1, h0 = (n - hole) / 2;
+    const finder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+    const inHole = (r, c) => r >= h0 - .5 && r < h0 + hole - .5 && c >= h0 - .5 && c < h0 + hole - .5;
+    let dots = '';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
+      if (q.isDark(r, c) && !finder(r, c) && !inHole(r, c)) dots += `<rect x="${c + m + .04}" y="${r + m + .04}" width=".92" height=".92" rx=".3"/>`;
+    const eye = (r, c) => `<rect x="${c + m + .5}" y="${r + m + .5}" width="6" height="6" rx="1.8" fill="none" stroke="#fff" stroke-width="1"/>` +
+                          `<rect x="${c + m + 2}" y="${r + m + 2}" width="3" height="3" rx=".9" fill="#fff"/>`;
+    const D = size * Math.SQRT2, o = (size - D) / 2, c = size / 2;          // the turned square's box
+    $('qr').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o} ${o} ${D} ${D}"><g transform="rotate(45 ${c} ${c})"><g fill="#fff">${dots}</g>${eye(0, 0)}${eye(0, n - 7)}${eye(n - 7, 0)}</g></svg>`;
+    const dog = $('qr-dog');
+    dog.src = media(d.logo || 'media/doog_loop-smoller.png');           // the logo is already white
+    dog.style.width = (0.7071 * (hole / size) * 0.9 * 100).toFixed(2) + '%';
+
+    // Frosted hero reel behind the code (a still poster in lite mode / reduced motion)
+    const reel = d.reel || {};
+    let bgVideo = null;
+    if (pageBg) { /* the page's own frosted reel shows through the glass — no second video */ }
+    else if (!stillVideos() && (reel.preview || reel.url)) {
+      bgVideo = Object.assign(document.createElement('video'), { muted: true, loop: true, playsInline: true, preload: 'none' });
+      bgVideo.setAttribute('muted', ''); bgVideo.setAttribute('playsinline', '');
+      bgVideo.src = media(reel.preview || reel.url);
+      back.prepend(bgVideo);
+    } else if (reel.poster) {
+      back.insertAdjacentHTML('afterbegin', `<img class="still" alt="" src="${esc(media(reel.poster))}">`);
+    }
+
+    // Height: the front's own height, or a square when flipped
+    let flipped = false;
+    const frontHeight = () => {
+      const cs = getComputedStyle(front);
+      return frontIn.offsetHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+    };
+    // The back's side: the card's width, or the screen's height if that's shorter
+    // The square: the card's full width, or the screen's height if that's shorter
+    // (landscape phones)
+    const stage = flipper.parentElement;
+    const side = () => Math.min(stage.offsetWidth, (visualViewport ? visualViewport.height : innerHeight) - 32);
+    // The front's content keeps its full width while the card narrows — the card crops it
+    const lockFront = () => {
+      const cs = getComputedStyle(front);
+      const w = stage.offsetWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
+      frontIn.style.width = w + 'px';
+      frontIn.style.marginLeft = `calc((100% - ${w}px) / 2)`;
+    };
+    const size_ = () => {
+      lockFront();
+      flipper.style.width = flipped ? side() + 'px' : '';
+      flipper.style.height = (flipped ? side() : frontHeight()) + 'px';
+    };
+    new ResizeObserver(size_).observe(frontIn);
+    addEventListener('resize', size_);
+    if (window.visualViewport) visualViewport.addEventListener('resize', size_);
+    size_();
+
+    const setAngle = a => flipper.style.setProperty('--a', a + 'deg');
+    const timing = (t, ease) => { flipper.style.setProperty('--t', t); flipper.style.setProperty('--ease', ease); };
+    // The card keeps turning the way it's pushed, so the angle just adds up in half
+    // turns (0, 180, 360, -180…) — an odd number of half turns is the back
+    let rest = 0;
+    // Focus only moves when the keyboard did the flipping (Enter on the dog, Escape) —
+    // moved after a tap or swipe, phones draw a focus ring on the dog
+    function flip(to, dir = 1, byKeyboard = false) {
+      if (to === flipped) return;
+      flipped = to;
+      rest += 180 * dir;
+      flipper.classList.toggle('flipped', to);
+      setAngle(rest);
+      size_();
+      front.inert = to; back.inert = !to;
+      document.documentElement.classList.toggle('qr-up', to);
+      if (bgVideo) to ? bgVideo.play().catch(() => {}) : setTimeout(() => !flipped && bgVideo.pause(), 800);
+      if (byKeyboard) (to ? back : $('flip-open')).focus({ preventScroll: true });
+    }
+    // Opening from further down the page: glide to the top first, then turn
+    $('flip-open').addEventListener('click', e => {
+      timing('', '');
+      const kb = e.detail === 0;                                        // Enter/Space, not a tap
+      if (scrollY < 4) return flip(true, 1, kb);
+      scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => flip(true, 1, kb), 380);
+    });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && flipped) { timing('', ''); flip(false, 1, true); } });
+
+    // Swipe sideways to turn the card, either way, on either side. It follows the
+    // finger; past a third of the width (or a flick) it turns over. On the front only
+    // a finger counts (a mouse drag there is for selecting text) and up/down still
+    // scrolls; with the back up, anywhere on screen works, mouse too.
+    let drag = null, dragged = false;
+    addEventListener('pointerdown', e => {
+      dragged = false;
+      if (e.target.closest('#legal-modal')) return;
+      if (!flipped && (e.pointerType === 'mouse' || !e.target.closest('#front'))) return;
+      drag = { x: e.clientX, y: e.clientY, t: performance.now(), dx: 0, on: false };
+    });
+    addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.on) {
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        if (Math.abs(dx) < Math.abs(dy) * 1.2) { drag = null; return; }   // that's a scroll
+        drag.on = true; dragged = true; flipper.classList.add('dragging');
+      }
+      drag.dx = dx;
+      setAngle(rest + Math.max(-180, Math.min(180, dx / flipper.offsetWidth * 180)));
+    });
+    const release = () => {
+      const d = drag; drag = null;
+      if (!d || !d.on) return;
+      flipper.classList.remove('dragging');
+      setTimeout(() => (dragged = false), 60);                          // only the click right after
+      const w = flipper.offsetWidth, dist = Math.abs(d.dx);
+      const fast = dist / (performance.now() - d.t) > 0.5;              // a flick also counts
+      const go = dist > w / 3 || (fast && dist > 24);
+      // Carry on from where the finger let go: ease-out, timed to the turn left
+      const done = Math.min(1, dist / w);
+      timing((0.15 + 0.5 * (go ? 1 - done : done)).toFixed(2) + 's', 'cubic-bezier(.2,.75,.3,1)');
+      if (go) flip(!flipped, Math.sign(d.dx)); else setAngle(rest);
+    };
+    addEventListener('pointerup', release);
+    addEventListener('pointercancel', release);
+    // A swipe that started on a link shouldn't also open it
+    addEventListener('click', e => { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
+  }
 
   // As the editor's preview: redraw with its unsaved content (same origin only)
   if (new URLSearchParams(location.search).has('preview')) {

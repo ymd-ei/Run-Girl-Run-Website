@@ -251,6 +251,18 @@ function syncCursorForFullscreen() {
 }
 
 /**
+ * The loading screen's dog is the site's Logo setting, like everywhere else. It
+ * starts on the built-in dog (never blank) and swaps if the setting differs;
+ * remembered so the next visit starts on the right one.
+ */
+function showLoaderLogo(logo) {
+  const img = document.getElementById('loader-img');
+  if (!img) return;
+  try { logo ? localStorage.setItem('rgr-logo', logo) : localStorage.removeItem('rgr-logo'); } catch (e) {}
+  if (logo && img.getAttribute('src') !== logo) img.src = logo;
+}
+
+/**
  * Run the loader animation with randomized percentage stops.
  */
 function runLoaderAnimation() {
@@ -581,6 +593,7 @@ async function loadAllData() {
 
     Object.assign(globalState, contentData);
     projectCache.clear();
+    showLoaderLogo(globalState.logo);
 
     // Load project cards if available. This keeps initial payload light and
     // defers full block bodies until openProject is called.

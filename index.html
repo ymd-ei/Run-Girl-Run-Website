@@ -93,7 +93,10 @@
 
 <!-- LOADER -->
 <div id="loader" role="status" aria-label="Loading">
+  <!-- Shows from the first frame. main.js swaps in the site's Logo setting (content.json →
+       logo) if it's a different file, and this browser remembers it for next time. -->
   <img id="loader-img" src="media/doog_loop-smoller.png" alt="">
+  <script>try { var l = localStorage.getItem('rgr-logo'); if (l) document.getElementById('loader-img').src = l; } catch (e) {}</script>
   <div id="loader-name" data-name="Run Girl Run" aria-hidden="true"></div>
   <div id="loader-bar-wrap" aria-hidden="true"><div id="loader-bar"></div></div>
 </div>
