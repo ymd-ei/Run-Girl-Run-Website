@@ -16,7 +16,11 @@ Live (commits `5d36744` → `8613b26`):
 - **Pancakes model**: embedded texture re-encoded as WebP — 4.46 MB → 0.49 MB.
 - **Editor uploads are web-friendly**: "Make web-friendly (WebP)" next to Upload (main + modelling editor,
   library page and picker) converts images and `.glb` textures to WebP in the browser. Videos still need a
-  web copy (see `MEDIA-GUIDE.md`). Not yet tried with a real signed-in upload — check the toast on the next one.
+  web copy (see `MEDIA-GUIDE.md`). Confirmed with a real upload (`media/pancakes1.webp`).
+- **Upload signature** (`6c13876`): converted uploads carry "uploaded to rungirlrun.studio", the date and a note
+  ("You got this far — support Run Girl Run: …") — XMP in WebP images, and an empty
+  `_RGR ◦ uploaded to rungirlrun.studio` with custom properties in `.glb` models (top of Blender's Outliner).
+  Edit under Media Library → Upload signature (saves `signature.json`). Saving it hasn't been tried signed in yet.
 
 Parked on the local branch **`modelling-shot-camera`** (not pushed; waiting for a real Blender file with a camera):
 - A `.glb` with its own camera plays through a marker frame like an animation layout sheet: 4 accent
