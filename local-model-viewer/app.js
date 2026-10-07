@@ -20,11 +20,7 @@ import { makeGreyMaterial, fitDolly, applyCamera } from '../modelling/model-view
 // Bundled models live in ../media/models. Browsers can't list a directory, so
 // this list is maintained by hand — add new files here to get them in the menu.
 const BUNDLED = [
-  'cube.glb', 'cone.glb', 'ico.glb',
-  'moomei.glb', 'pancakebeauty.glb', 'pancake beauty copy.glb',
-  'mumei_walk.glb', 'mumei_walk-ymd.glb',
-  'mumei_walk-cycle.glb', 'mumei_walk-cycleSD.glb',
-  'AKALI.glb',
+  'Mumei_Walk_Cycle.glb', 'mdl.pancake-syrup.glb',
 ];
 
 // ── DOM ───────────────────────────────────────────────────────────────────

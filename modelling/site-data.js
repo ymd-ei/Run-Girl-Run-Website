@@ -23,8 +23,8 @@ export const DEFAULTS = {
     socials: [],
   },
   works: [
-    { id: 'akali', title: 'Akali', model: 'media/models/AKALI.glb',
-      description: 'High-detail 3D character model.', tags: ['character', 'game-art'], featured: true, images: [] },
+    { id: 'work-1781485420687', title: 'Mumei', model: 'media/models/Mumei_Walk_Cycle.glb',
+      description: '', tags: ['Character', 'Rigging'], featured: true, images: [] },
   ],
 };
 

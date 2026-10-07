@@ -34,7 +34,7 @@
   <nav class="site-nav" style="gap:18px">
     <button class="site-nav-btn" id="theme-toggle" aria-label="Toggle dark mode">○</button>
     <button class="site-nav-btn" id="open-contact">Contact</button>
-    <button class="site-nav-btn" id="open-works">Works</button>
+    <button class="site-nav-btn" id="open-works" aria-expanded="false" aria-controls="works-widget">Works</button>
   </nav>
 
   <!-- Burger + slide-in drawer (mobile / narrow) -->
@@ -77,7 +77,6 @@
   </div>
 
   <!-- Works dropdown -->
-  <div class="works-overlay" id="works-overlay"></div>
   <div class="works-widget" id="works-widget">
     <div class="works-widget-list" id="works-list"></div>
   </div>
@@ -130,7 +129,7 @@
     import { HalftonePass }    from 'three/addons/postprocessing/HalftonePass.js';
     import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
     import { loadContent, mediaUrl, featuredWork } from './site-data.js';
-    import { loadModel, applyCamera, applyMaterialMode } from './model-view.js';
+    import { loadModel, applyCamera, applyMaterialMode, DOLLY_MIN, DOLLY_MAX } from './model-view.js';
 
     // ── Site data (top-level await: pauses until content.json loads) ───────────
     // Edit content via editor.html, which commits content.json to the repo.
@@ -169,7 +168,6 @@
     const animClock      = new THREE.Clock();
 
     // Viewport offset animation (setViewOffset — doesn't touch world positions)
-    const baseTarget   = new THREE.Vector3();
     let targetOffsetX  = 0;  // pixels; negative = model shifts right
     let currentOffsetX = 0;
 
@@ -225,13 +223,15 @@
 
     // Controls
     const controls = new OrbitControls(camera, canvas);
+    const SPIN_SPEED = 1.2;
     controls.autoRotate      = true;
-    controls.autoRotateSpeed = 1.2;
+    controls.autoRotateSpeed = SPIN_SPEED;
     controls.enablePan       = false;
     controls.enableDamping   = true;
     controls.dampingFactor   = 0.05;
-    controls.minDistance     = 2;
-    controls.maxDistance     = 12;
+    // Same range as the editor's Distance slider, so a curated distance is never clamped
+    controls.minDistance     = DOLLY_MIN;
+    controls.maxDistance     = DOLLY_MAX;
 
     // Pause the turntable while interacting; resume after a spell of no input.
     // The turntable rests after a long spell of no interaction; any interaction
@@ -321,7 +321,6 @@
           }
 
           // Orbit pivot at model centre; honour the work's curated camera
-          baseTarget.set(frame.baseX, frame.yMid, 0);
           applyCamera(camera, controls, frame, work);
 
           document.getElementById('loader').classList.add('hidden');
@@ -338,16 +337,6 @@
       } else {
         doLoad();
       }
-    }
-
-    // ── Camera shift helper ───────────────────────────────────────────────────
-    function calcShiftX() {
-      const panelEl = document.getElementById('work-panel');
-      const panelW  = panelEl.offsetWidth;
-      const dist    = camera.position.distanceTo(controls.target);
-      const hFov    = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
-      const worldW  = 2 * Math.tan(hFov / 2) * dist;
-      return -((panelW * 0.5) / window.innerWidth) * worldW;
     }
 
     // ── Detail ────────────────────────────────────────────────────────────────
@@ -370,6 +359,8 @@
         work.tags.map(t => `<span class="tag">${t}</span>`).join('');
 
       document.getElementById('work-detail').classList.add('visible');
+      // Keyboard users land on Back (no focus ring after a mouse click)
+      document.getElementById('detail-back').focus({ preventScroll: true });
       document.getElementById('splash-content').classList.add('hidden');
       document.querySelector('.page-brand').classList.add('hidden');
       document.body.classList.add('detail-open');
@@ -424,7 +415,9 @@
     }
 
     function closePanel() {
-      document.getElementById('work-detail').classList.remove('visible');
+      const detailEl = document.getElementById('work-detail');
+      const hadFocus = detailEl.contains(document.activeElement);
+      detailEl.classList.remove('visible');
 
       // Splash card reflects whatever model is currently loaded — no revert
       updateSplashCard(currentWork);
@@ -436,6 +429,7 @@
       controls.enableZoom   = true;
       document.querySelector('.page-brand').classList.remove('hidden');
       document.body.classList.remove('detail-open');
+      if (hadFocus) document.getElementById('view-work').focus({ preventScroll: true });
     }
 
     // ── Splash card ───────────────────────────────────────────────────────────
@@ -504,12 +498,20 @@
     }
 
     const widgetEl  = document.getElementById('works-widget');
-    const overlayEl = document.getElementById('works-overlay');
+    const worksBtn  = document.getElementById('open-works');
     let   closeTimer = null;
 
-    const openWidget  = () => { clearTimeout(closeTimer); widgetEl.classList.add('open'); };
-    const scheduleClose = () => { closeTimer = setTimeout(() => widgetEl.classList.remove('open'), 180); };
-    const closeWidget = () => { clearTimeout(closeTimer); widgetEl.classList.remove('open'); };
+    const openWidget  = () => {
+      clearTimeout(closeTimer);
+      widgetEl.classList.add('open');
+      worksBtn.setAttribute('aria-expanded', 'true');
+    };
+    const scheduleClose = () => { closeTimer = setTimeout(closeWidget, 180); };
+    const closeWidget = () => {
+      clearTimeout(closeTimer);
+      widgetEl.classList.remove('open');
+      worksBtn.setAttribute('aria-expanded', 'false');
+    };
 
     // ── Mobile burger drawer ────────────────────────────────────────────────────
     // Narrow / tall viewports get a slide-in drawer (nav + works list) instead of
@@ -558,10 +560,20 @@
     });
 
     // Hover on button opens; hover on dropdown keeps it open
-    document.getElementById('open-works').addEventListener('mouseenter', openWidget);
-    document.getElementById('open-works').addEventListener('mouseleave', scheduleClose);
+    worksBtn.addEventListener('mouseenter', openWidget);
+    worksBtn.addEventListener('mouseleave', scheduleClose);
     widgetEl.addEventListener('mouseenter', openWidget);
     widgetEl.addEventListener('mouseleave', scheduleClose);
+    // Keyboard: Enter on Works opens the list and moves into it; Tabbing out closes it
+    worksBtn.addEventListener('click', e => {
+      if (widgetEl.classList.contains('open') && e.detail) return; // mouse click while hover-open
+      if (widgetEl.classList.contains('open')) { closeWidget(); return; }
+      openWidget();
+      if (!e.detail) widgetEl.querySelector('.widget-card')?.focus(); // detail 0 = keyboard
+    });
+    widgetEl.addEventListener('focusout', e => {
+      if (!widgetEl.contains(e.relatedTarget) && e.relatedTarget !== worksBtn) closeWidget();
+    });
 
     document.getElementById('detail-back').addEventListener('click', closePanel);
     document.getElementById('view-work').addEventListener('click', () => openPanel(currentWork));
@@ -615,9 +627,6 @@
           lightboxEl.querySelector('video').pause();
         }
       });
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { lightboxEl?.classList.remove('open'); lightboxEl?.querySelector('video')?.pause(); }
-      });
       document.body.appendChild(lightboxEl);
       return lightboxEl;
     }
@@ -659,16 +668,43 @@
     loadWork(currentWork);
 
     // ── Animate ───────────────────────────────────────────────────────────────
-    let pageVisible = !document.hidden;
+    // Background tabs get no animation frames from the browser, so the loop
+    // already sleeps there. (Don't gate on document.hidden: embedded viewers can
+    // report hidden while still on screen, which froze the page.)
     document.addEventListener('visibilitychange', () => {
-      pageVisible = !document.hidden;
-      if (pageVisible) lastTime = 0;
+      if (!document.hidden) { lastTime = 0; animClock.getDelta(); }
     });
+
+    // Rest after 5 min without input: stop drawing entirely so the GPU idles and
+    // the laptop can sleep (same idea as the main site's idle video pause). The
+    // animation and turntable ease to a stop as the view fades, then drawing
+    // stops on the last frame; any input eases them back up.
+    const IDLE_MS = 5 * 60 * 1000;
+    const SETTLE_S = 2;                         // slow to a stop (matches the CSS fade)
+    const RESUME_S = 0.6;                       // and back up to speed
+    let resting = false, idleTimer = 0;
+    let speed = 1, speedTarget = 1;             // 0..1, eased into animation + spin
+    function wake() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { speedTarget = 0; canvas.classList.add('resting'); }, IDLE_MS);
+      if (speedTarget === 1) return;
+      speedTarget = 1;
+      canvas.classList.remove('resting');
+      if (resting) {
+        resting = false;
+        lastTime = 0;
+        animClock.getDelta();                   // don't jump the animation forward
+      }
+    }
+    ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll', 'focus'].forEach(type =>
+      window.addEventListener(type, wake, { passive: true, capture: true }));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+    wake();
 
     let lastTime = 0;
     (function animate(time) {
       requestAnimationFrame(animate);
-      if (!pageVisible) return;                  // pause render while tab hidden
+      if (resting) return;                       // idle: drawing stopped
       if (time - lastTime < 1000 / 30) return;
       lastTime = time;
 
@@ -684,8 +720,16 @@
         );
       }
 
+      // Ease the playback speed toward its target (idle settle / wake)
+      const dt = Math.min(animClock.getDelta(), 0.1);
+      if (speed !== speedTarget) {
+        speed = speedTarget > speed ? Math.min(1, speed + dt / RESUME_S)
+                                    : Math.max(0, speed - dt / SETTLE_S);
+      }
+      const k = speed * speed * (3 - 2 * speed); // smoothstep
+      if (activeMixer) activeMixer.update(dt * k);
+      controls.autoRotateSpeed = SPIN_SPEED * k;
       controls.update();
-      if (activeMixer) activeMixer.update(animClock.getDelta());
 
       // Fade canvas in/out
       const elapsed = performance.now() - fadeStart;
@@ -701,9 +745,11 @@
       }
 
       composer.render();
+      if (speed === 0 && speedTarget === 0) resting = true;  // settled — stop drawing
     })();
 
     // ── Contact overlay ───────────────────────────────────────────────────────
+    let closeContact;
     (function() {
       const overlay  = document.getElementById('contact-overlay');
       const panel    = document.getElementById('contact-panel');
@@ -744,14 +790,41 @@
         else { resumeEl.style.display = 'none'; }
       }
 
-      function openContact() { populateOverlay(); overlay.classList.add('open'); }
-      function closeContact() { overlay.classList.remove('open'); }
+      let opener = null;
+      function openContact() {
+        opener = document.activeElement;
+        populateOverlay();
+        overlay.classList.add('open');
+        closeBtn.focus({ preventScroll: true });
+      }
+      closeContact = () => {
+        overlay.classList.remove('open');
+        if (overlay.contains(document.activeElement)) opener?.focus({ preventScroll: true });
+      };
 
       document.getElementById('open-contact').addEventListener('click', openContact);
       closeBtn.addEventListener('click', closeContact);
       overlay.addEventListener('click', e => { if (e.target === overlay) closeContact(); });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContact(); });
     })();
+
+    // ── Escape closes the top-most layer only ─────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (lightboxEl?.classList.contains('open')) {
+        lightboxEl.classList.remove('open');
+        lightboxEl.querySelector('video').pause();
+      } else if (document.getElementById('contact-overlay').classList.contains('open')) {
+        closeContact();
+      } else if (widgetEl.classList.contains('open')) {
+        closeWidget();
+        worksBtn.focus();
+      } else if (menuEl.classList.contains('open')) {
+        closeMobileMenu();
+        burgerEl.focus();
+      } else if (panelOpen) {
+        closePanel();
+      }
+    });
   </script>
 </body>
 </html>
