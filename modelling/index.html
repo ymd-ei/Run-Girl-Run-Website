@@ -236,7 +236,7 @@
     // Pause the turntable while interacting; resume after a spell of no input.
     // The turntable rests after a long spell of no interaction; any interaction
     // wakes it and restarts the countdown.
-    const SPIN_TIMEOUT = 240000;   // 4 min of inactivity before it stops
+    const SPIN_TIMEOUT = 120000;   // 2 min without dragging — same as the idle rest
     let spinTimer = null;
     function armSpinTimeout() {
       if (spinTimer) clearTimeout(spinTimer);
@@ -248,7 +248,7 @@
     });
     controls.addEventListener('end', () => {
       controls.autoRotate = true;             // interaction re-activates the spin
-      armSpinTimeout();                       // and restarts the 4-min countdown
+      armSpinTimeout();                       // and restarts the 2-min countdown
     });
     armSpinTimeout();                         // start the countdown on load
 
