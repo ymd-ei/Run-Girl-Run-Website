@@ -233,24 +233,14 @@
     controls.minDistance     = DOLLY_MIN;
     controls.maxDistance     = DOLLY_MAX;
 
-    // Pause the turntable while interacting; resume after a spell of no input.
-    // The turntable rests after a long spell of no interaction; any interaction
-    // wakes it and restarts the countdown.
-    const SPIN_TIMEOUT = 120000;   // 2 min without dragging — same as the idle rest
-    let spinTimer = null;
-    function armSpinTimeout() {
-      if (spinTimer) clearTimeout(spinTimer);
-      spinTimer = setTimeout(() => { controls.autoRotate = false; }, SPIN_TIMEOUT);
-    }
+    // Pause the turntable while dragging; it picks up again on release. It stops
+    // with everything else when the page rests (the idle rest, below).
     controls.addEventListener('start', () => {
       controls.autoRotate = false;            // manual orbit takes over
-      if (spinTimer) { clearTimeout(spinTimer); spinTimer = null; }
     });
     controls.addEventListener('end', () => {
-      controls.autoRotate = true;             // interaction re-activates the spin
-      armSpinTimeout();                       // and restarts the 2-min countdown
+      controls.autoRotate = true;  // release re-activates the spin
     });
-    armSpinTimeout();                         // start the countdown on load
 
     // Post-processing
     const composer = new EffectComposer(renderer);
