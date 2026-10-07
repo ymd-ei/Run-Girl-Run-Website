@@ -245,18 +245,6 @@ export async function showMediaPage(panelEl, { authed, sources } = {}) {
         <input type="file" multiple accept="image/*,video/*,.glb,.gltf,.pdf,model/gltf-binary,model/gltf+json" hidden></label></div>
     <div class="v3-mp-body">
       <p class="v3-mp-note v3-mp-limit">Uploads up to ${(window.RGR_CONFIG && window.RGR_CONFIG.maxUploadMB) || 20} MB per file, after the WebP conversion when "Make web-friendly" is on (images and model textures shrink first; videos don't). Larger files: compress them, or add to media/ on your computer and push with git.</p>
-      <details class="v3-mp-sig">
-        <summary>Upload signature</summary>
-        <p class="v3-mp-meta">Stamped on converted uploads, for anyone who looks inside the file: images carry it in their metadata; models get an empty object you'll see in Blender's Outliner. The date is added at upload.</p>
-        <label class="v3-mp-sig-row"><span>Site</span><input class="v3-mp-input v3-mp-sig-site" type="text" placeholder="rungirlrun.studio"></label>
-        <label class="v3-mp-sig-row"><span>Note</span><textarea class="v3-mp-input v3-mp-sig-note" rows="2" placeholder="A line for whoever looks inside the file"></textarea></label>
-        <div class="v3-mp-subhead">Preview</div>
-        <pre class="v3-mp-sig-preview"></pre>
-        <div class="v3-mp-sig-actions">
-          <button class="v3-mp-btn v3-mp-sig-save" type="button"${authed === false ? ' disabled title="Log in to save"' : ''}>Save signature</button>
-          <span class="v3-mp-meta v3-mp-sig-status"></span>
-        </div>
-      </details>
       <div class="v3-mp-main">
         <div class="v3-mp-toolbar">
           <div class="v3-mp-types">${TYPES.map(([v, l]) => `<button data-type="${v}" class="${v === type ? 'active' : ''}">${l}</button>`).join('')}</div>
@@ -265,7 +253,21 @@ export async function showMediaPage(panelEl, { authed, sources } = {}) {
         </div>
         <div class="v3-mp-grid"><div class="v3-mp-empty">${authed === false ? 'Log in to see and manage media.' : 'Loading…'}</div></div>
       </div>
-      <aside class="v3-mp-detail"></aside>
+      <aside class="v3-mp-side">
+        <details class="v3-mp-sig">
+          <summary>Upload signature</summary>
+          <p class="v3-mp-meta">Stamped on converted uploads, for anyone who looks inside the file: images carry it in their metadata; models get an empty object you'll see in Blender's Outliner. The date is added at upload.</p>
+          <label class="v3-mp-sig-row"><span>Site</span><input class="v3-mp-input v3-mp-sig-site" type="text" placeholder="rungirlrun.studio"></label>
+          <label class="v3-mp-sig-row"><span>Note</span><textarea class="v3-mp-input v3-mp-sig-note" rows="2" placeholder="A line for whoever looks inside the file"></textarea></label>
+          <div class="v3-mp-subhead">Preview</div>
+          <pre class="v3-mp-sig-preview"></pre>
+          <div class="v3-mp-sig-actions">
+            <button class="v3-mp-btn v3-mp-sig-save" type="button"${authed === false ? ' disabled title="Log in to save"' : ''}>Save signature</button>
+            <span class="v3-mp-meta v3-mp-sig-status"></span>
+          </div>
+        </details>
+        <div class="v3-mp-detail"></div>
+      </aside>
     </div>`;
   bind();
   bindSignature();
