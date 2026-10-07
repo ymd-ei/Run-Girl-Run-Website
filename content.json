@@ -23,7 +23,12 @@
       {
         "label": "Instagram",
         "url": "https://www.instagram.com/me_are_jei",
-        "ref": "instagram"
+        "ref": "instagram",
+        "hide": {
+          "contact": true,
+          "links": true,
+          "modelling": true
+        }
       },
       {
         "label": "Instagram (studio)",
@@ -48,7 +53,12 @@
       {
         "label": "Substack",
         "url": "https://runstudio.substack.com",
-        "ref": "substack"
+        "ref": "substack",
+        "hide": {
+          "contact": true,
+          "links": true,
+          "modelling": true
+        }
       }
     ],
     "resume": "resume/RJ_RGR_anim-02_W25.pdf"
@@ -200,7 +210,7 @@
     "paper": "#f2ede4",
     "accent": "#5e30eb",
     "panelBg": "#f7f3ec",
-    "ctAccent": "#ff4361",
+    "ctAccent": "#77bb41",
     "ctBg": "#080808",
     "ctHi": "#ffffff",
     "sensitiveColor": "#e03030",
