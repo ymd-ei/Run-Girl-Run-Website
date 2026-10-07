@@ -21,8 +21,8 @@
 }
 .v3-mp-btn:hover { border-color: var(--v3-accent-2); }
 
-/* Upload signature (fold-out under the limit note) */
-.v3-mp-sig { margin: 0 0 14px; border: 1px solid var(--v3-line); border-radius: 8px; padding: 0 12px; background: var(--v3-panel); }
+/* Upload signature (fold-out under the limit note; spans the page grid like it) */
+.v3-mp-sig { grid-column: 1 / -1; margin: 0; border: 1px solid var(--v3-line); border-radius: 8px; padding: 0 12px; background: var(--v3-panel); }
 .v3-mp-sig summary { cursor: pointer; padding: 9px 0; font-weight: 600; font-size: 12.5px; }
 .v3-mp-sig[open] { padding-bottom: 12px; }
 .v3-mp-sig-row { display: grid; grid-template-columns: 48px 1fr; align-items: start; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--v3-muted); }
