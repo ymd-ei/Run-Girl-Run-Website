@@ -6,6 +6,10 @@
 //   are copied byte for byte.
 // • Videos aren't converted (that needs a video encoder); the caller shows a
 //   pointer to the web-copy steps in MEDIA-GUIDE.md instead.
+// • The signature (signature.json, edited on the Media Library page) is
+//   stamped on what's converted: an XMP block in WebP images, and an empty
+//   object "_RGR ◦ uploaded to …" with custom properties in models (Blender
+//   shows it in the Outliner). Models are signed even when no texture shrank.
 //
 // A result is only used when it's at least 10% smaller. Browsers that can't
 // make WebP (Safari) upload the original. The on/off choice is remembered per
@@ -40,23 +44,35 @@ const mb = n => (n / 1024 / 1024).toFixed(n < 1024 * 1024 ? 2 : 1) + ' MB';
 const swapExt = (name, ext) => name.replace(/\.[^.]+$/, '') + ext;
 export const isVideoFile = f => /^video\//.test(f.type) || /\.(mp4|webm|mov|m4v|ogg)$/i.test(f.name);
 
+/** The signature with today's date filled in; null when there's nothing to stamp. */
+function stamp(sig) {
+  if (!sig || !(sig.site || sig.note)) return null;
+  return { site: sig.site || '', note: sig.note || '', uploaded: new Date().toLocaleDateString('en-CA') };
+}
+
+/** Name of the signed empty in models (the leading _ sorts it near the top of Blender's Outliner). */
+export const signatureNodeName = site => `_RGR ◦ uploaded to ${site || 'rungirlrun.studio'}`;
+
 /**
  * Returns { file, note }: the file to upload (converted or the original) and a
  * short note for the toast, or note '' when nothing worth saying happened.
+ * `signature` is { site, note } from signature.json (or null).
  */
-export async function makeWebReady(file) {
+export async function makeWebReady(file, signature = null) {
+  const sig = stamp(signature);
   try {
     if (/\.glb$/i.test(file.name)) {
-      const out = await convertGlb(file);
-      return out
-        ? { file: out, note: `${file.name}: textures → WebP, ${mb(file.size)} → ${mb(out.size)}` }
-        : { file, note: '' };
+      const res = await convertGlb(file, sig);
+      if (!res) return { file, note: '' };
+      const what = [res.textures && 'textures → WebP', res.signed && 'signed'].filter(Boolean).join(', ');
+      return { file: res.file, note: `${file.name}: ${what}, ${mb(file.size)} → ${mb(res.file.size)}` };
     }
     if (/^image\/(png|jpeg|bmp)$/.test(file.type) || /\.(png|jpe?g|bmp)$/i.test(file.name)) {
-      const blob = await encodeWebp(file, IMAGE_QUALITY, MAX_EDGE);
-      if (!blob || blob.size > file.size * MIN_SAVING) return { file, note: '' };
+      const enc = await encodeWebp(file, IMAGE_QUALITY, MAX_EDGE);
+      if (!enc || enc.blob.size > file.size * MIN_SAVING) return { file, note: '' };
+      const blob = sig ? await withXmp(enc.blob, enc.w, enc.h, xmpPacket(sig)) : enc.blob;
       const out = new File([blob], swapExt(file.name, '.webp'), { type: 'image/webp' });
-      return { file: out, note: `${file.name} → ${out.name}, ${mb(file.size)} → ${mb(out.size)}` };
+      return { file: out, note: `${file.name} → ${out.name}${sig ? ' (signed)' : ''}, ${mb(file.size)} → ${mb(out.size)}` };
     }
   } catch (err) {
     console.warn('Web-friendly conversion skipped:', err);
@@ -82,11 +98,67 @@ async function encodeWebp(blob, quality, maxEdge = Infinity) {
     out = await new Promise(r => c.toBlob(r, 'image/webp', quality));
   }
   bmp.close?.();
-  return out && out.type === 'image/webp' ? out : null;
+  return out && out.type === 'image/webp' ? { blob: out, w, h } : null;
 }
 
-/** Re-encode a .glb's embedded PNG/JPEG textures as WebP; null when nothing shrank. */
-async function convertGlb(file) {
+// ── WebP metadata (XMP) ─────────────────────────────────────────────────────
+
+const xmlEsc = t => String(t).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+function xmpPacket(sig) {
+  const url = /^https?:/.test(sig.site) ? sig.site : `https://${sig.site}`;
+  return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rgr="https://rungirlrun.studio/ns/signature/1.0/">
+${sig.site ? `<dc:source>${xmlEsc(url)}</dc:source>\n<rgr:uploadedTo>${xmlEsc(sig.site)}</rgr:uploadedTo>\n` : ''}<rgr:uploaded>${sig.uploaded}</rgr:uploaded>
+${sig.note ? `<rgr:note>${xmlEsc(sig.note)}</rgr:note>\n` : ''}</rdf:Description></rdf:RDF></x:xmpmeta>
+<?xpacket end="w"?>`;
+}
+
+/** Add an XMP chunk to a WebP (switching it to the extended "VP8X" layout). */
+async function withXmp(blob, w, h, xmp) {
+  const src = new Uint8Array(await blob.arrayBuffer());
+  const dv = new DataView(src.buffer);
+  const id = o => String.fromCharCode(...src.subarray(o, o + 4));
+  if (id(0) !== 'RIFF' || id(8) !== 'WEBP') return blob;
+  const chunks = [];
+  for (let o = 12; o + 8 <= src.length;) {
+    const size = dv.getUint32(o + 4, true);
+    chunks.push({ id: id(o), data: src.subarray(o + 8, o + 8 + size) });
+    o += 8 + size + (size & 1);
+  }
+  const old = chunks.find(c => c.id === 'VP8X');
+  const head = new Uint8Array(10);
+  if (old) head.set(old.data.subarray(0, 10));
+  else {
+    if (chunks.some(c => c.id === 'VP8L')) head[0] |= 0x10;   // lossless may carry alpha
+    const put24 = (at, v) => { head[at] = v & 255; head[at + 1] = (v >> 8) & 255; head[at + 2] = (v >> 16) & 255; };
+    put24(4, w - 1);
+    put24(7, h - 1);
+  }
+  head[0] |= 0x04;                                             // has XMP
+  const enc = (fourcc, data) => {
+    const c = new Uint8Array(8 + data.length + (data.length & 1));
+    c.set(new TextEncoder().encode(fourcc), 0);
+    new DataView(c.buffer).setUint32(4, data.length, true);
+    c.set(data, 8);
+    return c;
+  };
+  const parts = [enc('VP8X', head),
+    ...chunks.filter(c => c.id !== 'VP8X' && c.id !== 'XMP ').map(c => enc(c.id, c.data)),
+    enc('XMP ', new TextEncoder().encode(xmp))];
+  const body = parts.reduce((n, p) => n + p.length, 0);
+  const riff = new Uint8Array(12);
+  riff.set(new TextEncoder().encode('RIFFxxxxWEBP'));
+  new DataView(riff.buffer).setUint32(4, 4 + body, true);
+  return new Blob([riff, ...parts], { type: 'image/webp' });
+}
+
+/**
+ * Re-encode a .glb's embedded PNG/JPEG textures as WebP and sign it.
+ * Resolves { file, textures, signed }, or null when nothing changed.
+ */
+async function convertGlb(file, sig) {
   const buf = new Uint8Array(await file.arrayBuffer());
   const dv = new DataView(buf.buffer);
   if (buf.length < 28 || dv.getUint32(0, true) !== 0x46546C67) return null;      // 'glTF'
@@ -104,13 +176,14 @@ async function convertGlb(file) {
   for (const [i, img] of (json.images || []).entries()) {
     if (img.bufferView == null || !/^image\/(png|jpeg)$/.test(img.mimeType || '')) continue;
     const v = views[img.bufferView];
-    const webp = await encodeWebp(new Blob([slice(v)], { type: img.mimeType }), TEXTURE_QUALITY);
-    if (!webp || webp.size > v.byteLength * MIN_SAVING) continue;
-    replaced.set(img.bufferView, new Uint8Array(await webp.arrayBuffer()));
+    const enc = await encodeWebp(new Blob([slice(v)], { type: img.mimeType }), TEXTURE_QUALITY);
+    if (!enc || enc.blob.size > v.byteLength * MIN_SAVING) continue;
+    replaced.set(img.bufferView, new Uint8Array(await enc.blob.arrayBuffer()));
     img.mimeType = 'image/webp';
     converted.add(i);
   }
-  if (!converted.size) return null;
+  if (sig) signGlb(json, sig);
+  if (!converted.size && !sig) return null;
 
   // Point the textures at the WebP images through the extension
   for (const t of json.textures || []) {
@@ -119,9 +192,11 @@ async function convertGlb(file) {
       delete t.source;
     }
   }
-  for (const k of ['extensionsUsed', 'extensionsRequired']) {
-    json[k] = json[k] || [];
-    if (!json[k].includes('EXT_texture_webp')) json[k].push('EXT_texture_webp');
+  if (converted.size) {
+    for (const k of ['extensionsUsed', 'extensionsRequired']) {
+      json[k] = json[k] || [];
+      if (!json[k].includes('EXT_texture_webp')) json[k].push('EXT_texture_webp');
+    }
   }
 
   // Rebuild the binary chunk: every view in order, 4-byte aligned
@@ -152,5 +227,21 @@ async function convertGlb(file) {
   const binHeader = new DataView(new ArrayBuffer(8));
   binHeader.setUint32(0, off, true);
   binHeader.setUint32(4, 0x004E4942, true);                  // 'BIN'
-  return new File([header, jsonBytes, binHeader, ...parts], file.name, { type: 'model/gltf-binary' });
+  const out = new File([header, jsonBytes, binHeader, ...parts], file.name, { type: 'model/gltf-binary' });
+  return { file: out, textures: converted.size > 0, signed: !!sig };
+}
+
+/** Add (or refresh) the signed empty at the root of the model's scene. */
+function signGlb(json, sig) {
+  json.nodes = json.nodes || [];
+  const extras = { site: sig.site, uploaded: sig.uploaded, note: sig.note };
+  let i = json.nodes.findIndex(n => typeof n.name === 'string' && n.name.startsWith('_RGR'));
+  if (i < 0) {
+    i = json.nodes.push({}) - 1;
+    json.scenes = json.scenes && json.scenes.length ? json.scenes : [{ nodes: [] }];
+    const scene = json.scenes[json.scene || 0];
+    scene.nodes = scene.nodes || [];
+    scene.nodes.push(i);
+  }
+  json.nodes[i] = { name: signatureNodeName(sig.site), extras };
 }

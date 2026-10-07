@@ -366,6 +366,46 @@ export async function saveSiteData() {
   }
 }
 
+// ── Signature (signature.json at the site root) ──
+// Stamped on converted uploads (see webReady.js); edited on the Media Library
+// page. Its own small file, so either editor can save it without rewriting
+// content.json.
+export const SIGNATURE_DEFAULTS = {
+  site: 'rungirlrun.studio',
+  note: 'You got this far — support Run Girl Run: https://rungirlrun.studio'
+};
+const SIGNATURE_URL = new URL('../../signature.json', import.meta.url).href;
+let signature = null;
+
+export async function loadSignature() {
+  if (signature) return signature;
+  try {
+    const res = await fetch(SIGNATURE_URL, { cache: 'no-cache' });
+    signature = res.ok ? { ...SIGNATURE_DEFAULTS, ...(await res.json()) } : { ...SIGNATURE_DEFAULTS };
+  } catch (e) {
+    signature = { ...SIGNATURE_DEFAULTS };
+  }
+  return signature;
+}
+
+/** Save the signature on its own commit (independent of the editor's Save). */
+export async function saveSignature(next) {
+  const clean = { site: String(next.site || '').trim(), note: String(next.note || '').trim() };
+  try {
+    const res = await fetch(`${API_BASE}/api/save`, authHeaders({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { 'signature.json': JSON.stringify(clean, null, 2) + '\n' }, message: 'Editor: update upload signature' })
+    }));
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || !result.success) throw new Error(result.error || 'Save failed');
+    signature = clean;
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 /**
  * Upload a file to the media directory. With "Make web-friendly" on (the
  * default), images and .glb textures are converted to WebP first — see
@@ -375,7 +415,7 @@ export async function saveSiteData() {
 export async function uploadMedia(file, folder = 'media') {
   let note = '';
   if (webReadyOn()) {
-    ({ file, note } = await makeWebReady(file));
+    ({ file, note } = await makeWebReady(file, await loadSignature()));
     if (!note && isVideoFile(file)) {
       note = `${file.name} uploads as it is — videos aren't converted. For a lighter file, export a web copy first (MEDIA-GUIDE.md → Video export).`;
     }

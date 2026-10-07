@@ -158,3 +158,12 @@ The editor's upload (Media Library page and the media picker, in both the main a
 - The 20 MB upload limit applies after conversion.
 
 Untick the box when you need the exact original file on the site.
+
+### Upload signature
+
+Converted uploads also carry a small signature for anyone who looks inside the file. Edit it under **Media Library → Upload signature** (saved to `signature.json`, used by both editors):
+
+- **Images (WebP):** XMP metadata with *Uploaded to* (`rungirlrun.studio`), the upload date and your note, plus the site as the standard *Source* field. Shown by Photoshop/Lightroom/Bridge file info and metadata viewers.
+- **Models (.glb):** an empty object named `_RGR ◦ uploaded to rungirlrun.studio` at the root of the scene, with `site`, `uploaded` and `note` as custom properties. In Blender it sorts to the top of the Outliner; the details are under Object Properties → Custom Properties. Models are signed even when they have no textures to convert, and re-uploading a signed model updates the existing empty instead of adding another.
+
+It says "uploaded to", not "made by", so it's accurate for stock images too. Files that upload as they are (videos, PDFs, or anything when the box is unticked) aren't signed.
