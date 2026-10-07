@@ -72,8 +72,14 @@
     {
       "id": "b1",
       "type": "text-lg",
-      "content": "I move stuff around",
+      "content": "We like visualizing and turning creative universes into reality.",
       "align": "left"
+    },
+    {
+      "id": "b17913819554988bet",
+      "type": "image",
+      "src": "media/rgr_wave2.webp",
+      "alt": ""
     },
     {
       "id": "b1774467865431",
@@ -158,10 +164,6 @@
     {
       "value": "Pipeline",
       "label": "Pipeline"
-    },
-    {
-      "value": "RFB",
-      "label": "Riftbound"
     }
   ],
   "favicon": "media/rgr_fav.png",
@@ -269,7 +271,7 @@
   },
   "ogTitle": "Run Girl Run Studio — Character Animation, Toronto",
   "ogDescription": "3D character animation out of Toronto. Run Girl Run brings ideas to life through craft, curiosity, and a love for storytelling.",
-  "ogImage": "media/jammeratoast jammers.png",
+  "ogImage": "media/rgr_hanging.webp",
   "logo": "media/doog_loop-smoller.png",
   "availability": {
     "enabled": true,
@@ -281,7 +283,7 @@
     "privacy": "This site has no accounts, forms, ads, or analytics. If you like a project, an anonymous random ID is saved in your browser so the site remembers your like; it isn't linked to your name, email, or anything that identifies you.\n\nThe site is hosted on [GitHub Pages](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement), the like counter runs on [Cloudflare](https://www.cloudflare.com/privacypolicy/), and fonts and icons load from [Google Fonts](https://policies.google.com/privacy) and [jsDelivr](https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net). Some videos are hosted on [Vimeo](https://vimeo.com/privacy) or [YouTube](https://policies.google.com/privacy). These services may log your IP address under their own privacy policies.\n\nQuestions? Reach us at {email}.",
     "ai": "This website was built with the assistance of [GitHub Copilot](https://github.com/features/copilot) and [Claude](https://www.anthropic.com/claude) (Anthropic). All animation, films, and creative work featured on this site were made entirely by humans — no AI was involved in any of the works shown."
   },
-  "postBanner": "media/pancakes1.webp",
+  "postBanner": "media/rgr_wave2.webp",
   "linksPage": {
     "extraTitle": "",
     "extra": [],
