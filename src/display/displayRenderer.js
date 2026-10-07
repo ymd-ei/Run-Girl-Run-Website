@@ -12,6 +12,7 @@ import { resolveLinkUrl, resolveRefs, getSiteGlobal } from '../utils/refs.js';
 import { projectTypes, projectTypeText } from '../utils/projectTypes.js';
 import { renderBlock, renderBlocks } from '../modules/blocks/blockRenderer.js';
 import { showsOn } from '../utils/socials.js';
+import { applyThemeVars } from '../utils/themeVars.js';
 
 /**
  * Apply theme colors to CSS variables
@@ -34,6 +35,9 @@ export function applyTheme(theme) {
   Object.entries(vars).forEach(([key, val]) => {
     document.documentElement.style.setProperty(key, val);
   });
+  // The variables the desktop stylesheets actually use (--accent, --ink, …):
+  // without these, Site settings → Theme only reached the contact colours
+  applyThemeVars(theme);
 
   document.body?.classList.toggle('panel-frost', theme.panelStyle === 'dark');
 }

@@ -22,6 +22,7 @@ import { fetchLikeCount, sendLike, loadLikeCounts, copyShareLink } from './likes
 import { renderFilterRow, markCardLikes } from './workFilters.js';
 import { initSheet, openView, refreshView } from './mobileSheet.js';
 import { showsOn } from '../utils/socials.js';
+import { applyThemeVars } from '../utils/themeVars.js';
 
 let data = null;
 let projects = [];             // project cards, in the hand-set order
@@ -152,21 +153,9 @@ function pauseSoundInBackground() {
 
 function applyTheme(theme) {
   if (!theme) return;
-  const root = document.documentElement;
-  const map = {
-    '--ink': theme.ink, '--paper': theme.paper, '--accent': theme.accent,
-    '--ct-accent': theme.ctAccent, '--ct-bg': theme.ctBg, '--ct-hi': theme.ctHi
-  };
-  for (const [k, v] of Object.entries(map)) {
-    if (v) root.style.setProperty(k, v);
-  }
-  if (theme.accent) {
-    const hex = theme.accent.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    root.style.setProperty('--accent-rgb', `${r},${g},${b}`);
-  }
+  // Same set as the desktop (src/utils/themeVars.js) — incl. panel background
+  // and the see-through ink / paper shades
+  applyThemeVars(theme);
 }
 
 function renderHero() {
