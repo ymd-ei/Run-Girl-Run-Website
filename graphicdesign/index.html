@@ -1,0 +1,1217 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Graphic Design · Run Girl Run</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=DM+Serif+Display&display=swap">
+<style>
+/* Layout: one full-screen table; a camera pans and zooms a single world layer (units = mm); controls float at the edges */
+:root {
+  --bg: #ffffff;
+  --fg: #1c1c1e;
+  --muted: #6e6a72;
+  --accent: #e00000;
+  --surface: #ffffff;
+  --rule: #1c1c1e;
+  --line: rgba(28, 28, 30, 0.14);
+  --f-ui: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --f-head: "DM Serif Display", Georgia, serif;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--f-ui); overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+/* anything that appears or disappears fades (browsers without allow-discrete just show/hide) */
+.fade { transition: opacity 0.3s ease, display 0.3s allow-discrete; }
+.fade[hidden] { opacity: 0; }
+@starting-style { .fade:not([hidden]) { opacity: 0; } }
+
+#stage { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#stage.dragging { cursor: grabbing; }
+#world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+.piece {
+  position: absolute; padding: 0; border: 0; background: none; cursor: pointer;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+/* every piece is a stack of sheets; a single piece is a stack of one */
+.sheet {
+  position: absolute; inset: 0; pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 12px 32px rgba(0,0,0,0.12);
+  transition: transform 0.35s ease;
+}
+.sheet { background: #f4f2ef; }
+.sheet img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.sheet > svg:not(.play-mark) { display: block; width: 100%; height: 100%; pointer-events: none; }
+.sheet video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* small play mark on pieces whose cover is a video */
+.play-mark { position: absolute; right: 6%; bottom: 7%; width: 13%; min-width: 22px; pointer-events: none; }
+.play-mark circle { fill: rgba(255,255,255,0.88); }
+.play-mark path { fill: #1c1c1e; }
+.piece.active .play-mark { display: none; }
+.piece:focus { outline: none; }
+.piece:focus-visible { outline: 4px solid var(--fg); outline-offset: 8px; }
+/* the open piece sits on a flat block of its line colour, square to the screen whatever the piece's tilt */
+.lines .hl { opacity: 0; transition: opacity 0.35s ease; }
+.lines .hl.on { opacity: 1; }
+.lines path.own { mix-blend-mode: normal; }
+.piece.dim { pointer-events: none; }
+.piece.dim { opacity: 0.16; filter: grayscale(1); }
+
+/* Subway lines: one solid colour per type, running under the pieces */
+.lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.lines path { fill: none; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; mix-blend-mode: multiply; transition: opacity 0.35s ease; }
+.lines path.dim { opacity: 0.12; }
+
+/* Site name, as on the modelling side: centred at the start, gone while you move, back when idle */
+.site-name {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)); z-index: 4;
+  margin: 0; font-family: var(--f-head); font-size: clamp(1.5rem, 5.5vmin, 3.5rem); font-weight: 900;   /* sized off the shorter side, so ultrawides don't blow it up */
+  text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.88; white-space: nowrap;
+  color: #fff; background: #111; padding: 0.32em 0.5em 0.28em;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.22), 0 24px 48px rgba(0,0,0,0.2);
+  pointer-events: none; user-select: none;
+  transition: opacity 1.2s ease;
+}
+.site-name.gone { opacity: 0; transition-duration: 0.4s; }
+.site-name span { display: inline-block; transform: rotate(var(--text-tilt, 0deg)); }
+/* while the name is up the table goes soft-focus behind it, and sharpens the moment you move */
+#world { transition: filter 0.4s ease; }
+#stage.resting #world { filter: blur(6px); transition-duration: 1.2s; }
+@media (prefers-reduced-motion: reduce) { .site-name, .fade, #world { transition: none; } }
+
+/* Controls: plain text off to the side. A white halo keeps it legible over lines and pieces */
+/* the one pill: only shows while part of the table is off-screen */
+.txt.overview {
+  position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1); color: var(--fg);
+  font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;   /* same caps as the small labels */
+}
+.txt.overview:hover { background: #f6f5f3; }
+.side, .hint, .index-col { text-shadow: 0 0 2px #fff, 0 0 6px #fff, 0 0 12px #fff; }
+.txt {
+  border: 0; background: none; padding: 3px 0; margin: 0; cursor: pointer;
+  font-size: 13px; text-align: left; color: var(--muted); display: flex; align-items: center; gap: 8px;
+}
+.txt:hover, .txt[aria-pressed="true"], .txt[aria-expanded="true"] { color: var(--fg); }
+.txt:focus-visible { outline: 1px solid var(--fg); outline-offset: 2px; }
+
+.side {
+  position: fixed; z-index: 5; display: flex; flex-direction: column; gap: 18px;
+  left: max(24px, env(safe-area-inset-left, 0px)); top: calc(22px + env(safe-area-inset-top, 0px));
+  width: 170px; max-height: calc(100% - 44px - env(safe-area-inset-top, 0px));
+}
+.side-label { margin: 0; font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.side-body { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+.types { display: flex; flex-direction: column; }
+.types .sw { width: 14px; height: 4px; flex-shrink: 0; transition: width 0.25s ease; }
+.types .txt[aria-pressed="true"] .sw { width: 26px; }
+.types .n { font-family: var(--f-mono); font-size: 10px; margin-left: auto; }
+.menu-toggle { display: none; }
+/* soft white edges so the text stays readable over whatever is underneath */
+.veil { position: fixed; top: 0; bottom: 0; z-index: 4; width: 320px; pointer-events: none; }
+.veil-l { left: 0; background: linear-gradient(to right, rgba(255,255,255,0.96), rgba(255,255,255,0.88) 45%, rgba(255,255,255,0)); }
+.veil-r { right: 0; background: linear-gradient(to left, rgba(255,255,255,0.96), rgba(255,255,255,0.88) 45%, rgba(255,255,255,0)); }
+
+/* index: top right, one plain list of all work */
+.index-col {
+  position: fixed; z-index: 5; display: flex; flex-direction: column; align-items: flex-end;
+  right: max(24px, env(safe-area-inset-right, 0px)); top: calc(22px + env(safe-area-inset-top, 0px));
+  width: 230px; max-height: calc(100% - 44px - env(safe-area-inset-top, 0px));
+}
+.index { overflow-y: auto; overscroll-behavior: contain; min-height: 0; width: 100%; margin-top: 12px; }
+.index .txt { width: 100%; font-size: 12px; }
+.index .sw { width: 10px; height: 3px; flex-shrink: 0; }
+.index .sws { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.index .yr { font-family: var(--f-mono); font-size: 10px; margin-left: auto; }
+.index .txt { transition: opacity 0.35s ease, color 0.15s ease; }
+.index .txt.dim { opacity: 0.3; pointer-events: none; }
+
+/* caption: plain text sitting just under the highlight's bottom-left corner */
+.caption {
+  position: fixed; z-index: 3; left: 0; top: 0; display: grid; gap: 3px; max-width: min(420px, calc(100vw - 32px));
+  padding-top: 10px; text-shadow: 0 0 2px #fff, 0 0 6px #fff, 0 0 12px #fff;
+}
+
+.caption h2 { margin: 0; font-size: 15px; font-weight: 600; text-wrap: balance; }
+.caption .meta { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.caption .meta b { color: var(--fg); font-weight: 500; }
+.pager { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.pager .txt { font-size: 16px; padding: 2px 4px; }
+.pager span { font-family: var(--f-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); }
+/* player for a video cover: play/pause, a thin progress line to click along, time, sound */
+.player { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+/* like + share, same small caps as the player */
+.actions { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
+.actions .txt { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 0; gap: 5px; }
+.actions .heart { font-size: 13px; line-height: 1; transition: transform 0.2s ease; }
+#likeBtn[aria-pressed="true"] { color: var(--accent); }
+#likeBtn[aria-pressed="true"] .heart { transform: scale(1.15); }
+#likeCount { font-variant-numeric: tabular-nums; }
+.player .txt { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 0; }
+#vidToggle { width: 18px; justify-content: center; font-size: 10px; letter-spacing: -0.1em; }
+.scrub { position: relative; width: 120px; height: 14px; cursor: pointer; }
+.scrub::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--line); }
+.scrub i { position: absolute; left: 0; top: 6px; height: 2px; width: 0; background: var(--fg); }
+#vidTime { font-family: var(--f-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 30px; }
+.read-btn { margin-top: 4px; text-decoration: underline; text-underline-offset: 3px; }
+
+.hint {
+  position: fixed; z-index: 5; right: max(24px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; transition: opacity 0.6s;
+}
+.hint.gone { opacity: 0; }
+
+/* Write-up: a white column down the right edge on wide screens, a sheet from the bottom on phones */
+.reader {
+  position: fixed; z-index: 6; overflow-y: auto; overscroll-behavior: contain;
+  top: 0; right: 0; bottom: 0; width: 380px;
+  padding: calc(22px + env(safe-area-inset-top, 0px)) max(28px, env(safe-area-inset-right, 0px)) 28px 28px;
+  background: #fff; border-left: 1px solid var(--line);
+}
+.reader .kicker { margin: 0 0 14px; font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.reader dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; margin: 0 0 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.reader dt { font-family: var(--f-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+.reader dd { margin: 0; }
+.reader p { margin: 0 0 14px; font-size: 15px; line-height: 1.6; text-wrap: pretty; }
+.reader figure { margin: 6px 0 20px; }
+.reader figure img, .reader figure video { display: block; width: 100%; height: auto; aspect-ratio: auto; background: #f4f2ef; }
+.reader figure video { aspect-ratio: 16 / 9; }
+.reader figcaption { margin-top: 6px; font-family: var(--f-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.02em; }
+.reader .close { display: none; position: sticky; top: 0; float: right; font-size: 20px; padding: 0 2px; }
+
+@media (max-width: 699px) {
+  .side { left: max(16px, env(safe-area-inset-left, 0px)); top: calc(14px + env(safe-area-inset-top, 0px)); gap: 10px; }
+  .side-label { display: none; }
+  .menu-toggle { display: flex; font-size: 14px; color: var(--fg); }
+  .side-body {
+    background: #fff; padding: 12px 14px; margin-left: -14px; width: min(260px, calc(100vw - 32px));
+    max-height: calc(100dvh - 90px); box-shadow: 0 10px 30px rgba(0,0,0,0.12); text-shadow: none;
+  }
+  .hint, .veil { display: none; }
+  /* phones: tucked bottom right */
+  .txt.overview { left: auto; transform: none; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .index-col { right: max(16px, env(safe-area-inset-right, 0px)); top: calc(14px + env(safe-area-inset-top, 0px)); }
+  .index-col > .txt { font-size: 14px; color: var(--fg); }
+  .index {
+    background: #fff; padding: 12px 14px; margin: 10px -14px 0 0; width: min(260px, calc(100vw - 32px));
+    max-height: calc(100dvh - 90px); box-shadow: 0 10px 30px rgba(0,0,0,0.12); text-shadow: none;
+  }
+}
+@media (max-width: 899px) {
+  .reader {
+    top: auto; left: 0; width: auto; max-height: 72%;
+    padding: 20px max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+    border-left: 0; border-top: 1px solid var(--line); box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+  }
+  .reader .close { display: flex; }
+}
+</style>
+
+<div id="stage" aria-label="Design table. Drag to move around, scroll or pinch to zoom.">
+  <div id="world"></div>
+</div>
+
+<p class="site-name" id="siteName" aria-hidden="true"><span>Run Girl Run</span></p>
+
+<nav class="side" id="side" aria-label="Design table">
+  <button class="txt menu-toggle" id="menuBtn" aria-expanded="false" aria-controls="sideBody">Menu</button>
+  <div class="side-body fade" id="sideBody">
+    <p class="side-label">Graphic design</p>
+    <div class="types" id="types" role="group" aria-label="Show only one type"></div>
+  </div>
+</nav>
+
+
+<nav class="index-col" id="indexCol" aria-label="Index">
+  <button class="txt" id="indexBtn" aria-expanded="false" aria-controls="index">Index</button>
+  <div class="index fade" id="index" hidden></div>
+</nav>
+
+<button class="txt overview fade" id="overviewBtn" hidden>Overview</button>
+
+<div class="veil veil-l" aria-hidden="true"></div>
+<div class="veil veil-r fade" id="veilR" aria-hidden="true" hidden></div>
+
+<article class="reader fade" id="reader" hidden aria-label="About this piece">
+  <button class="txt close" id="readerClose" aria-label="Close">×</button>
+  <p class="kicker">About this piece</p>
+  <dl id="readerFacts"></dl>
+  <div id="readerBody"></div>
+</article>
+
+<div class="caption fade" id="caption" hidden aria-live="polite">
+  <h2 id="capTitle"></h2>
+  <div class="meta" id="capMeta"></div>
+  <div class="pager fade" id="pager" hidden>
+    <button class="txt" id="prevSheet" aria-label="Previous sheet">‹</button>
+    <span id="pageNum"></span>
+    <button class="txt" id="nextSheet" aria-label="Next sheet">›</button>
+  </div>
+  <div class="player fade" id="player" hidden>
+    <button class="txt" id="vidToggle" aria-label="Pause">❚❚</button>
+    <div class="scrub" id="vidScrub" aria-hidden="true"><i id="vidFill"></i></div>
+    <span id="vidTime">0:00</span>
+    <button class="txt" id="vidSound" aria-pressed="false">Sound off</button>
+  </div>
+  <div class="actions">
+    <button class="txt" id="likeBtn" aria-pressed="false" aria-label="Like"><span class="heart" aria-hidden="true">♡</span><span id="likeCount"></span></button>
+    <button class="txt" id="shareBtn">Share</button>
+  </div>
+  <button class="txt read-btn fade" id="readBtn" aria-controls="reader" hidden>Read about this</button>
+</div>
+
+<div class="hint" id="hint">Drag to move · scroll or pinch to zoom · tap a piece</div>
+
+<script>
+(() => {
+  // ---------- seeded random: a fresh seed each load, so the whole map is reshuffled every visit ----------
+  let seed = (Math.random() * 2 ** 32) | 0;
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const range = (a, b) => a + rnd() * (b - a);
+
+  // ---------- placeholder catalogue: mock titles and types (types drive the subway lines) ----------
+  // w × h is unused now (each piece takes its image's shape); how big it sits comes from its size class
+  // (placeholders pick one from their type's range, so the table shows all four in use)
+  const TYPES = {
+    Poster:    { w: 420, h: 594, sizes: ["L", "XL"], label: "A2 poster", names: ["Spring Show", "Night Market", "Jazz at the Orchard", "Film Club, Season 4", "Open Studio"] },
+    Layout:    { w: 420, h: 297, sizes: ["M", "L", "XL"], label: "A4 spread", names: ["Field Notes, issue 3", "Annual report spread", "Cookbook chapter", "Gallery catalogue"] },
+    Type:      { w: 297, h: 420, sizes: ["M", "L"], label: "A3 specimen", names: ["Specimen: Rook Sans", "Display alphabet", "Hand lettering set"] },
+    Logo:      { w: 210, h: 210, sizes: ["S", "M", "L"], label: "Logo sheet", names: ["Kettle & Co. mark", "Northfield Rowing", "Halcyon Tea", "Moth Records"] },
+    Packaging: { w: 260, h: 190, sizes: ["S", "M", "L"], label: "Packaging flat", names: ["Oat bar wrapper", "Candle box", "Coffee bag", "Seed packets"] },
+    Flyer:     { w: 148, h: 210, sizes: ["S", "M"], label: "A5 flyer", names: ["Bake sale flyer", "Gig flyer", "Workshop flyer"] },
+    Card:      { w: 85,  h: 55,  sizes: ["S"], label: "Business card", names: ["Cards: Halcyon Tea", "Cards: Moth Records", "Loyalty card"] },
+  };
+  const SIZES = { S: 160, M: 280, L: 420, XL: 600 };
+  const LINE_COLORS = { Poster: "#f29ca3", Layout: "#94bfee", Type: "#f5d77e", Logo: "#a9d99a", Packaging: "#f7bb8f", Flyer: "#c3abe6", Card: "#8fd6d0" };
+  // placeholder galleries: pieces that are a stack of several sheets
+  const GALLERIES = { "Field Notes, issue 3": 6, "Halcyon Tea": 4, "Film Club, Season 4": 3, "Coffee bag": 5 };
+  // placeholder longform write-ups. A body is a list of blocks: a string is a paragraph,
+  // { img } is an image and { video, poster } a click-to-play video, each with an optional caption
+  const M = "../media/";
+  const WRITEUPS = {
+    "Field Notes, issue 3": {
+      facts: [["Client", "Field Notes collective"], ["Role", "Layout, type, cover art"], ["Format", "A4, 48 pages, riso in two colours"], ["Run", "300 copies"]],
+      body: [
+        "Field Notes is a small zine put together by a group of illustrators who spend their weekends drawing outside. Issue 3 was about walking routes: each contributor picked a path they knew well and drew what they saw along it.",
+        "The brief was loose, so most of the work was finding a system that could hold twelve very different drawing styles without flattening them. I settled on a strict two-column grid for the text and let the artwork break out of it whenever it wanted to. Every spread keeps the same margins and folio position, which gives the issue a steady rhythm even when the pictures are loud.",
+        { img: M + "pancakes1.webp", caption: "Spread 14–15, before the second ink pass" },
+        "Printing on a risograph meant designing in two colours from the start. I tested a dozen pairings on scrap stock before choosing a warm red and a deep teal, which overprint to a near-black for the body text. The misregistration you get from the riso became part of the look rather than something to hide.",
+        { video: M + "RGR_anim_chal_web.mp4", poster: M + "RGR_anim_chal_poster.jpg", caption: "Flip-through of the finished issue" },
+        "The cover is a hand-cut paper map of all twelve routes laid over one another, scanned and separated into the two ink layers. It's the piece I'm happiest with: it says what the issue is about before you open it.",
+        "If I did it again I'd give the contributor bios more room. They ended up squeezed onto the last page, and they deserved a spread of their own.",
+      ],
+    },
+    "Night Market": {
+      facts: [["Client", "Riverside Night Market"], ["Role", "Poster, motion version"], ["Format", "A2 poster, 9-second loop for screens"], ["Year", "Summer season"]],
+      body: [
+        "The market runs from dusk until late, so the poster had to work twice: printed and pasted around town during the day, and as a short loop on the screens at the entrance once it got dark.",
+        { video: M + "RGR_woke-up_web.mp4", poster: M + "RGR_woke-up_poster.jpg", caption: "The screen version, a 9-second loop" },
+        "I designed the still first and only then pulled it apart into layers for the motion version. Keeping the print poster as the master meant the two never drifted: every frame of the loop could be paused and still read as the poster.",
+        "Colour was the hard part. The printed version uses a warm off-white stock, and screens make everything colder and brighter, so the loop has its own slightly muted palette to feel like the same object.",
+        { img: M + "rgr_hanging.webp", caption: "Pasted up on the walk to the river" },
+      ],
+    },
+    "Jazz at the Orchard": {
+      facts: [["Client", "The Orchard Sessions"], ["Role", "Poster series, lettering"], ["Format", "A2, screen-printed in three colours"]],
+      body: [
+        "An outdoor jazz night in an old apple orchard. The organisers wanted something that felt hand-made without looking twee, so the lettering is drawn rather than set, then cut cleanly for the screen print.",
+        { img: M + "rgr_wave2.webp", caption: "Lettering sketches" },
+        "Three flat colours kept the print run cheap and gave the poster its punch: one warm, one cool, and the paper doing the work of the third.",
+        { img: M + "rgr_embed2.webp" },
+        "We printed a small run of extras on heavier stock to sell on the night; they sold out before the second set.",
+      ],
+    },
+    "Halcyon Tea": {
+      facts: [["Client", "Halcyon Tea Co."], ["Role", "Identity, mark, guidelines"], ["Deliverables", "Logo sheet, colour, packaging rules"]],
+      body: [
+        "A new mark for a small tea importer moving from market stalls to shops. The old logo only worked big; the new one had to survive on a tiny tin lid and a sticker.",
+        { img: M + "jammeratoast-jammers.webp", caption: "Mark at its smallest sizes" },
+        "The guidelines are short on purpose: one page each for the mark, colour, type and packaging, so the owners can actually use them without me.",
+      ],
+    },
+  };
+  // ---------- media: the site's own stills, from /media (used as they are) ----------
+  // Mock-up only: these stand in for real graphic design pieces. Each is dealt out from a shuffled
+  // deck, so repeats are spread around; a piece takes its image's proportions.
+  const MEDIA = [
+    { src: "../media/rgr_embed2.webp", w: 1920, h: 1080 },
+    { src: "../media/woke-up_thumbnail.webp", w: 518, h: 519 },
+    { src: "../media/RGR_woke-up_poster.jpg", w: 1920, h: 1080 },
+    { src: "../media/jammeratoast-jammers.webp", w: 1080, h: 1440 },
+    { src: "../media/pancakes1.webp", w: 2880, h: 1920 },
+    { src: "../media/RGR_anim_chal_poster.jpg", w: 1920, h: 1080 },
+    { src: "../media/rgr_wave2.webp", w: 1920, h: 1080 },
+    { src: "../media/rgr_hanging.webp", w: 1920, h: 1080 },
+    { src: "../media/woke-up_hero.webp", w: 920, h: 519 },
+    { src: "../media/projects/Le-sserafim-kim-chae-won-source-music-girl-group-2022.webp", w: 2000, h: 1270 },
+  ];
+  // pieces whose cover is a video: a still poster on the table, playing only while the piece is open
+  const VIDEO_COVERS = {
+    "Night Market": { src: "../media/RGR_woke-up_poster.jpg", video: "../media/RGR_woke-up_web.mp4", w: 1920, h: 1080 },
+    "Moth Records": { src: "../media/RGR_anim_chal_poster.jpg", video: "../media/RGR_anim_chal_web.mp4", w: 1920, h: 1080 },
+  };
+  let deck = [];
+  function deal(not) {
+    if (!deck.length) { deck = [...MEDIA]; for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } }
+    const i = deck.findIndex(m => m !== not);
+    return deck.splice(i < 0 ? 0 : i, 1)[0];
+  }
+
+  // ---------- drawn placeholders (the prototype's generated design pieces), off for now: their layers
+  // can pop in at the end of the view switch, so the page sticks to real media ----------
+  const USE_DRAWN = false;
+  const PALETTES = [
+    ["#fbf3e6", "#f6b8a8", "#a9c7e8", "#f7dc8a", "#3a3a48"],
+    ["#eef4fb", "#b9d8f2", "#f5b5c2", "#d5ecb0", "#2f3a4a"],
+    ["#f6f1e9", "#a8dcd1", "#f7d9a0", "#f2b5a0", "#3b4a4f"],
+    ["#fdeef2", "#f5b1c5", "#c6b7ea", "#fbe3a6", "#463a52"],
+    ["#f1ecf7", "#c9b5e8", "#a9dcd9", "#f8c6aa", "#3d3550"],
+    ["#fff6e8", "#9fc3e6", "#f4a6a6", "#bfe3dc", "#2e3e57"],
+    ["#eef6ef", "#b6e0bd", "#f5c9a3", "#c3b8ec", "#36463b"],
+    ["#fdf5d8", "#a6c8ef", "#f9c49a", "#f3a5a5", "#3a3f55"],
+  ];
+
+  // ---------- svg drawing ----------
+  function shape(x, y, s, fill) {
+    const k = Math.floor(rnd() * 6);
+    if (k === 0) return `<circle cx="${x}" cy="${y}" r="${s / 2}" fill="${fill}"/>`;
+    if (k === 1) return `<rect x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s * range(0.5, 1.2)}" fill="${fill}" transform="rotate(${range(-30, 30)} ${x} ${y})"/>`;
+    if (k === 2) return `<polygon points="${x},${y - s / 2} ${x + s / 2},${y + s / 2} ${x - s / 2},${y + s / 2}" fill="${fill}"/>`;
+    if (k === 3) return `<circle cx="${x}" cy="${y}" r="${s * 0.38}" fill="none" stroke="${fill}" stroke-width="${s * 0.14}"/>`;
+    if (k === 4) return `<path d="M${x - s / 2} ${y} A${s / 2} ${s / 2} 0 0 1 ${x + s / 2} ${y} Z" fill="${fill}"/>`;
+    let g = ""; const n = 4 + Math.floor(rnd() * 4), sw = s / (n * 2);
+    for (let i = 0; i < n; i++) g += `<rect x="${x - s / 2 + i * sw * 2}" y="${y - s / 2}" width="${sw}" height="${s}" fill="${fill}"/>`;
+    return g;
+  }
+  function lines(x, y, w, n, h, gap, fill) {
+    let g = "";
+    for (let i = 0; i < n; i++) g += `<rect x="${x}" y="${y + i * (h + gap)}" width="${w * (i === n - 1 ? range(0.3, 0.7) : range(0.8, 1))}" height="${h}" fill="${fill}" opacity="0.85"/>`;
+    return g;
+  }
+  function art(p, i) {
+    const { w, h } = p, [bg, a, b, c, ink] = pick(PALETTES), cols = [a, b, c];
+    const word = p.title.split(/[ :,&.]+/).filter(Boolean)[0].toUpperCase();
+    let g = `<rect width="${w}" height="${h}" fill="${bg}"/>`;
+    const m = Math.min(w, h);
+    if (p.type === "Poster" || p.type === "Flyer") {
+      for (let k = 0; k < 3 + rnd() * 3; k++) g += `<g style="mix-blend-mode:multiply">${shape(range(0.15, 0.85) * w, range(0.12, 0.6) * h, range(0.3, 0.75) * m, pick(cols))}</g>`;
+      g += `<text x="${w * 0.07}" y="${h * 0.8}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${m * 0.2}" fill="${ink}" textLength="${w * 0.86}" lengthAdjust="spacingAndGlyphs">${word}</text>`;
+      g += lines(w * 0.07, h * 0.85, w * 0.5, 3, m * 0.018, m * 0.018, ink);
+    } else if (p.type === "Layout") {
+      g += `<line x1="${w / 2}" y1="0" x2="${w / 2}" y2="${h}" stroke="rgba(0,0,0,0.18)" stroke-width="2"/>`;
+      g += `<clipPath id="c${i}"><rect x="${w * 0.05}" y="${h * 0.08}" width="${w * 0.4}" height="${h * 0.84}"/></clipPath><rect x="${w * 0.05}" y="${h * 0.08}" width="${w * 0.4}" height="${h * 0.84}" fill="${a}"/>`;
+      let inner = ""; for (let k = 0; k < 4; k++) inner += shape(range(0.08, 0.42) * w, range(0.15, 0.85) * h, range(0.12, 0.3) * w, pick([b, c, bg]));
+      g += `<g clip-path="url(#c${i})">${inner}</g>`;
+      g += `<text x="${w * 0.55}" y="${h * 0.2}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${h * 0.09}" fill="${ink}">${word}</text>`;
+      g += lines(w * 0.55, h * 0.28, w * 0.18, 16, h * 0.012, h * 0.02, ink) + lines(w * 0.76, h * 0.28, w * 0.18, 16, h * 0.012, h * 0.02, ink);
+    } else if (p.type === "Type") {
+      g += `<text x="${w * 0.08}" y="${h * 0.42}" font-family="Bricolage Grotesque, sans-serif" font-weight="${pick([400, 600, 800])}" font-size="${w * 0.48}" fill="${a}">Aa</text>`;
+      const rows = ["ABCDEFGHIJKLM", "NOPQRSTUVWXYZ", "abcdefghijklm", "nopqrstuvwxyz", "0123456789&?!"];
+      rows.forEach((r, k) => g += `<text x="${w * 0.08}" y="${h * (0.56 + k * 0.075)}" font-family="Bricolage Grotesque, sans-serif" font-size="${w * 0.07}" fill="${ink}" textLength="${w * 0.84}" lengthAdjust="spacingAndGlyphs">${r}</text>`);
+    } else if (p.type === "Logo") {
+      g += shape(w / 2, h * 0.42, m * 0.42, a) + `<g style="mix-blend-mode:multiply">${shape(w / 2 + m * 0.08, h * 0.42, m * 0.24, b)}</g>`;
+      g += `<text x="${w / 2}" y="${h * 0.82}" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="700" font-size="${m * 0.08}" letter-spacing="${m * 0.01}" fill="${ink}">${word}</text>`;
+    } else if (p.type === "Packaging") {
+      g += `<rect x="0" y="${h * 0.3}" width="${w}" height="${h * 0.4}" fill="${a}"/>`;
+      g += shape(w * 0.72, h / 2, h * 0.5, b) + `<circle cx="${w * 0.2}" cy="${h * 0.5}" r="${h * 0.13}" fill="${c}"/>`;
+      g += `<text x="${w * 0.06}" y="${h * 0.2}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${h * 0.12}" fill="${ink}">${word}</text>`;
+      g += lines(w * 0.06, h * 0.8, w * 0.4, 2, h * 0.025, h * 0.03, ink);
+    } else {
+      g += shape(w * 0.22, h * 0.4, h * 0.42, a);
+      g += lines(w * 0.45, h * 0.3, w * 0.45, 2, h * 0.06, h * 0.06, ink) + lines(w * 0.45, h * 0.68, w * 0.35, 2, h * 0.03, h * 0.04, ink);
+    }
+    return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${g}</svg>`;
+  }
+
+  // ---------- build pieces + scatter them on the table ----------
+  // The table takes the shape of the free screen area between the side menus, stretched a little
+  // taller (×0.85) and never wider than it is tall, so it fills the screen but always leans tall.
+  // Its area stays about the same, so the spacing between pieces doesn't change with the screen.
+  // (An embedding frame can report a tiny size at first; then fall back to a gentle tall shape.)
+  const TABLE_AREA = 11.5e6, freeW = innerWidth >= 700 ? innerWidth - 2 * 230 : innerWidth - 32, freeH = innerHeight - 60;
+  const aspect = innerWidth < 300 || innerHeight < 300 ? 0.8 : Math.min(0.95, Math.max(0.55, freeW / freeH * 0.85));
+  // The sides bow out: pieces may use the full width around the middle, narrowing smoothly to
+  // (1 − BOW) of it at the top and bottom, so the spread isn't a hard rectangle. The table grows a
+  // touch to make up for the trimmed corners (a barrel this shape keeps 1 − BOW/3 of the area).
+  const BOW = 0.2, grow = Math.sqrt(1 / (1 - BOW / 3));
+  const TABLE = { x: 0, y: 0, w: Math.round(Math.sqrt(TABLE_AREA * aspect) * grow), h: Math.round(Math.sqrt(TABLE_AREA / aspect) * grow) }, MARGIN = 150, GAP = 125;
+  // the usable left and right edge at height y
+  function span(y) {
+    const u = 2 * y / TABLE.h - 1, half = (TABLE.w / 2 - MARGIN) * (1 - BOW * u * u);
+    return [TABLE.w / 2 - half, TABLE.w / 2 + half];
+  }
+  // a random spot for a piece that keeps its top and bottom corners inside the bowed edges
+  function spot(p) {
+    for (let i = 0; i < 50; i++) {
+      const y = range(MARGIN, TABLE.h - MARGIN - p.h), [l1, r1] = span(y), [l2, r2] = span(y + p.h);
+      const lo = Math.max(l1, l2), hi = Math.min(r1, r2) - p.w;
+      if (hi >= lo) return { x: range(lo, hi), y };
+    }
+    return { x: TABLE.w / 2 - p.w / 2, y: TABLE.h / 2 - p.h / 2 };
+  }
+  const pieces = [];
+  for (const [type, t] of Object.entries(TYPES))
+    for (const name of t.names) {
+      // standard size classes (long side, mm on the table), each piece nudged ±3% so they don't look stamped out
+      // the piece takes its cover image's shape; a stack's other sheets are dealt too
+      // pieces use the site's media; drawn placeholders can be mixed back in with USE_DRAWN (about half
+      // the pieces, in their type's proportions; video covers are always media)
+      const drawn = USE_DRAWN && !VIDEO_COVERS[name] && rnd() < 0.5;
+      const img = drawn ? { w: t.w, h: t.h } : VIDEO_COVERS[name] || deal(), imgs = [img];
+      for (let n = 1; n < (GALLERIES[name] || 1); n++) imgs.push(drawn ? img : deal(imgs[imgs.length - 1]));
+      const size = pick(t.sizes), long = SIZES[size] * range(0.97, 1.03), k = long / Math.max(img.w, img.h);
+      pieces.push({ type, title: name, imgs, drawn, w: Math.round(img.w * k), h: Math.round(img.h * k), size, label: t.label, year: 2013 + Math.floor(rnd() * 8), pages: GALLERIES[name] || 1, page: 0, writeup: WRITEUPS[name] });
+    }
+  pieces.forEach(p => p.id = p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));   // share-link id
+  // types: the first is the piece's own (colour, drawing); any more make it an interchange, a stop on
+  // several lines. Mock: four random pieces each visit pick up a second type.
+  pieces.forEach(p => p.types = [p.type]);
+  for (let n = 0; n < 4; n++) {
+    const p = pick(pieces.filter(q => q.types.length === 1));
+    p.types.push(pick(Object.keys(TYPES).filter(t => t !== p.type)));
+  }
+  pieces.sort((p, q) => q.w * q.h - p.w * p.h);
+  const placed = [];
+  for (const p of pieces) {
+    let best = null;
+    for (let tries = 0; tries < 600; tries++) {
+      const { x, y } = spot(p);
+      const hit = placed.some(o => x < o.x + o.w + GAP && x + p.w + GAP > o.x && y < o.y + o.h + GAP && y + p.h + GAP > o.y);
+      if (!hit) { best = { x, y }; break; }
+    }
+    if (!best) best = spot(p);
+    Object.assign(p, best, { rot: range(-4, 4) });   // one tilt range for every piece
+    placed.push(p);
+  }
+
+  const stage = document.getElementById("stage"), world = document.getElementById("world");
+
+  // ---------- subway lines: same-type pieces joined by 90° / 45° runs ----------
+  const centre = p => ({ x: p.x + p.w / 2, y: p.y + p.h / 2 });
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y }), sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y }), mul = (a, k) => ({ x: a.x * k, y: a.y * k });
+  const GRID = 20, SPACING = 20, TOL = 150;   // mm: routing grid, gap between stacked lines, shortest kink worth drawing
+  const snap = v => Math.round(v / GRID) * GRID;
+  const snapIn = (v, lo, hi) => { const s = snap(v); return s >= lo && s <= hi ? s : v; };
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  // where a line may sit inside a piece without showing past its edge
+  const inner = p => { const m = Math.min(30, p.w * 0.3, p.h * 0.3); return { x0: p.x + m, x1: p.x + p.w - m, y0: p.y + m, y1: p.y + p.h - m }; };
+  // visit order: start at the outermost station, nearest neighbour, then untangle with 2-opt
+  function route(stops) {
+    const c = { x: stops.reduce((s, p) => s + p.x, 0) / stops.length, y: stops.reduce((s, p) => s + p.y, 0) / stops.length };
+    const left = [...stops].sort((a, b) => dist(b, c) - dist(a, c)), order = [left.shift()];
+    while (left.length) {
+      const at = order[order.length - 1];
+      left.sort((a, b) => dist(at, a) - dist(at, b));
+      order.push(left.shift());
+    }
+    for (let improved = true; improved;) {
+      improved = false;
+      for (let i = 0; i < order.length - 2; i++)
+        for (let j = i + 2; j < order.length - 1; j++)
+          if (dist(order[i], order[j]) + dist(order[i + 1], order[j + 1]) < dist(order[i], order[i + 1]) + dist(order[j], order[j + 1]) - 0.01) {
+            order.splice(i + 1, j - i, ...order.slice(i + 1, j + 1).reverse()); improved = true;
+          }
+    }
+    return order;
+  }
+  // one leg between two pieces. The line may enter and leave anywhere inside a piece (the piece hides
+  // the hop), so pick the points that give the simplest leg: one straight run, else one clean
+  // diagonal, else straight + 45° + straight, dropping any straight bit shorter than TOL
+  function leg(A, B) {
+    const ia = inner(A), ib = inner(B), ca = centre(A), cb = centre(B);
+    let lo = Math.max(ia.y0, ib.y0), hi = Math.min(ia.y1, ib.y1);
+    if (hi >= lo) { const y = snapIn((lo + hi) / 2, lo, hi); return [{ x: snap(ca.x), y }, { x: snap(cb.x), y }]; }
+    lo = Math.max(ia.x0, ib.x0); hi = Math.min(ia.x1, ib.x1);
+    if (hi >= lo) { const x = snapIn((lo + hi) / 2, lo, hi); return [{ x, y: snap(ca.y) }, { x, y: snap(cb.y) }]; }
+    const sx = Math.sign(cb.x - ca.x), sy = Math.sign(cb.y - ca.y);
+    const tx = sx > 0 ? [ib.x0 - ia.x1, ib.x1 - ia.x0] : [ia.x0 - ib.x1, ia.x1 - ib.x0];
+    const ty = sy > 0 ? [ib.y0 - ia.y1, ib.y1 - ia.y0] : [ia.y0 - ib.y1, ia.y1 - ib.y0];
+    lo = Math.max(tx[0], ty[0], 0); hi = Math.min(tx[1], ty[1]);
+    if (hi >= lo) {
+      const t = snapIn(clamp((Math.abs(cb.x - ca.x) + Math.abs(cb.y - ca.y)) / 2, lo, hi), lo, hi);
+      const x = snap((Math.max(ia.x0, sx > 0 ? ib.x0 - t : ib.x0 + t) + Math.min(ia.x1, sx > 0 ? ib.x1 - t : ib.x1 + t)) / 2);
+      const y = snap((Math.max(ia.y0, sy > 0 ? ib.y0 - t : ib.y0 + t) + Math.min(ia.y1, sy > 0 ? ib.y1 - t : ib.y1 + t)) / 2);
+      return [{ x, y }, { x: x + sx * t, y: y + sy * t }];
+    }
+    const a = { x: snap(ca.x), y: snap(ca.y) }, b = { x: snap(cb.x), y: snap(cb.y) };
+    const ax = Math.abs(b.x - a.x), ay = Math.abs(b.y - a.y), d = Math.min(ax, ay), s = Math.max(ax, ay) - d;
+    const along = ax > ay ? { x: sx, y: 0 } : { x: 0, y: sy };
+    const h = s / 2 < TOL ? s : snap(s / 2);
+    const p1 = add(a, mul(along, h)), p2 = { x: p1.x + sx * d, y: p1.y + sy * d };
+    return [a, p1, p2, b];
+  }
+
+  // break a grid-aligned polyline into one-cell steps, so lines sharing a stretch can be found
+  function steps(pts) {
+    const out = [];
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], n = Math.round(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) / GRID);
+      if (!n) continue;
+      const u = { x: (b.x - a.x) / n, y: (b.y - a.y) / n };
+      for (let k = 0; k < n; k++) out.push({ a: add(a, mul(u, k)), b: add(a, mul(u, k + 1)) });
+    }
+    return out;
+  }
+  const edgeKey = s => { const k1 = `${Math.round(s.a.x)},${Math.round(s.a.y)}`, k2 = `${Math.round(s.b.x)},${Math.round(s.b.y)}`; return k1 < k2 ? k1 + "|" + k2 : k2 + "|" + k1; };
+
+  // offset polyline from runs: parallel runs side-step at 45°, turning runs meet where their offset lines cross
+  function offsetPath(items) {
+    const out = []; let prev = null;
+    for (const it of items) {
+      if (it.free) { if (prev) out.push(add(prev.b, prev.off)); prev = null; continue; }
+      const s = add(it.a, it.off);
+      if (!prev) out.push(s);
+      else {
+        const e = add(prev.b, prev.off), cr = prev.dir.x * it.dir.y - prev.dir.y * it.dir.x;
+        if (Math.abs(cr) < 1e-6) {
+          const gap = dist(e, s);
+          if (gap > 0.5) {
+            const d = Math.min(gap / 2, prev.len / 2, it.len / 2);
+            out.push(sub(e, mul(prev.dir, d)), add(s, mul(it.dir, d)));
+          }
+        } else {
+          const w = sub(s, e), t = (w.x * it.dir.y - w.y * it.dir.x) / cr;
+          out.push(add(e, mul(prev.dir, t)));
+        }
+      }
+      prev = it;
+    }
+    if (prev) out.push(add(prev.b, prev.off));
+    return out;
+  }
+  // round each bend with a short curve, like a transit map
+  function smooth(pts, r = 60) {
+    let d = `M${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const p = pts[i], a = pts[i - 1], b = pts[i + 1];
+      const la = dist(a, p), lb = dist(p, b);
+      if (la < 1 || lb < 1) continue;
+      const k = Math.min(r, la / 2, lb / 2);
+      d += ` L${p.x + (a.x - p.x) * k / la} ${p.y + (a.y - p.y) * k / la} Q${p.x} ${p.y} ${p.x + (b.x - p.x) * k / lb} ${p.y + (b.y - p.y) * k / lb}`;
+    }
+    const z = pts[pts.length - 1];
+    return d + ` L${z.x} ${z.y}`;
+  }
+  const lineLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  lineLayer.setAttribute("class", "lines");
+  lineLayer.setAttribute("width", TABLE.w); lineLayer.setAttribute("height", TABLE.h);
+  lineLayer.setAttribute("aria-hidden", "true");
+  const linePaths = {}, typeList = Object.keys(TYPES);
+  // 1. route every line as legs of grid steps
+  const routes = typeList.map(type => {
+    const group = pieces.filter(p => p.types.includes(type));
+    const order = route(group.map(p => ({ ...centre(p), p }))).map(c => c.p);
+    const legs = [];
+    for (let i = 1; i < order.length; i++) legs.push(steps(leg(order[i - 1], order[i])));
+    return legs;
+  });
+  // 2. who uses each grid edge
+  const users = new Map();
+  routes.forEach((legs, li) => legs.flat().forEach(s => {
+    const k = edgeKey(s);
+    if (!users.has(k)) users.set(k, new Set());
+    users.get(k).add(li);
+  }));
+  // 3. lines on a shared stretch sit side by side, always in the same order
+  routes.forEach((legs, li) => {
+    const items = [];
+    legs.forEach((ls, n) => {
+      if (n) items.push({ free: true });
+      let run = null;
+      for (const s of ls) {
+        const u = [...users.get(edgeKey(s))].sort((a, b) => a - b), shift = (u.indexOf(li) - (u.length - 1) / 2) * SPACING;
+        let d = sub(s.b, s.a); const len = Math.hypot(d.x, d.y); d = mul(d, 1 / len);
+        const c = d.x > 1e-6 || (Math.abs(d.x) < 1e-6 && d.y > 0) ? d : mul(d, -1);   // same side whichever way a line runs
+        const off = mul({ x: -c.y, y: c.x }, shift);
+        if (run && Math.abs(run.dir.x - d.x) < 1e-6 && Math.abs(run.dir.y - d.y) < 1e-6 && dist(run.off, off) < 0.01) { run.b = s.b; run.len += len; }
+        else { run = { a: s.a, b: s.b, dir: d, off, len }; items.push(run); }
+      }
+    });
+    const pts = offsetPath(items);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", smooth(pts.filter((p, i) => i === 0 || dist(p, pts[i - 1]) > 0.5), 50));
+    path.setAttribute("stroke", LINE_COLORS[typeList[li]]);
+    lineLayer.appendChild(path);
+    linePaths[typeList[li]] = path;
+  });
+  // the open piece's block lives at the bottom of the line layer, so the other lines multiply over it
+  const hl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  hl.setAttribute("class", "hl");
+  lineLayer.prepend(hl);
+  world.appendChild(lineLayer);
+
+  const ASIDE = "translate(78%, -6%) rotate(8deg)";
+  const depthOf = (p, k) => (k - p.page + p.pages) % p.pages;
+  pieces.forEach((p, i) => {
+    const el = document.createElement("button");
+    el.className = "piece";
+    el.tabIndex = -1;   // keyboard users reach pieces through the Index list, so Tab never swings the map around
+    el.setAttribute("aria-label", `${p.title}, ${p.types.join(" and ").toLowerCase()}, ${p.year}`);
+    Object.assign(el.style, { left: p.x + "px", top: p.y + "px", width: p.w + "px", height: p.h + "px", transform: `rotate(${p.rot}deg)` });
+    // each stack's under-sheets fall at their own small offsets, so every stack looks freshly dropped
+    const side = rnd() < 0.5 ? 1 : -1;
+    p.depthN = [null,
+      { x: side * range(8, 16), y: range(6, 14), r: side * range(1.5, 3.5) },
+      { x: -side * range(8, 15), y: range(10, 18), r: -side * range(1, 3) }];
+    p.depth = p.depthN.map(o => o ? `translate(${o.x}px, ${o.y}px) rotate(${o.r}deg)` : "none");
+    p.sheets = [];
+    for (let k = 0; k < p.pages; k++) {
+      const s = document.createElement("div");
+      s.className = "sheet";
+      s.innerHTML = p.drawn ? art(p, `${i}-${k}`) : `<img src="${p.imgs[k].src}" alt="" decoding="async" draggable="false">` +
+        (p.imgs[k].video ? `<svg class="play-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19"/><path d="M16 12.5 28 20 16 27.5Z"/></svg>` : "");
+      el.appendChild(s); p.sheets.push(s);
+    }
+    stackSheets(p);
+    el.dataset.i = i;
+    p.el = el;
+    world.appendChild(el);
+  });
+
+  // ---------- stacks: the current sheet on top, the next two peeking out underneath ----------
+  function stackSheets(p) {
+    p.sheets.forEach((s, k) => { const d = depthOf(p, k); s.style.zIndex = p.pages - d; s.style.transform = p.depth[Math.min(d, 2)]; });
+  }
+  // next: the top sheet slides off and tucks under the stack; previous: the bottom sheet comes back on top
+  function turn(p, dir) {
+    if (!p || p.pages < 2) return;
+    const n = p.pages;
+    const moving = dir > 0 ? p.sheets[p.page] : p.sheets[(p.page - 1 + n) % n];
+    const under = p.depth[Math.min(n - 1, 2)], top = String(n + 1);
+    p.page = (p.page + dir + n) % n;
+    stackSheets(p);
+    if (!reduce) {
+      const frames = dir > 0
+        ? [{ transform: "none", zIndex: top }, { transform: ASIDE, zIndex: top, offset: 0.45 }, { transform: ASIDE, zIndex: "0", offset: 0.46 }, { transform: under, zIndex: "0" }]
+        : [{ transform: under, zIndex: "0" }, { transform: ASIDE, zIndex: "0", offset: 0.45 }, { transform: ASIDE, zIndex: top, offset: 0.46 }, { transform: "none", zIndex: top }];
+      moving.animate(frames, { duration: 560, easing: "ease-in-out" });
+    }
+    if (p === active) updatePager(p);
+  }
+
+  // ---------- camera ----------
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cam = { x: TABLE.w / 2, y: TABLE.h / 2, s: 0.3 };
+  let vw = innerWidth, vh = innerHeight;
+  const minS = () => fitRect(TABLE).s * 0.5, MAX_S = 6;
+  const clampS = s => Math.min(MAX_S, Math.max(minS(), s));
+  const overviewBtn = document.getElementById("overviewBtn");
+  const CONTENT = bounds(pieces);   // the area actually covered by work
+  // No will-change on the table: it would freeze it as a bitmap at one zoom, which goes soft when you
+  // zoom in and leaves blank patches when you zoom back out. Without it the browser redraws the
+  // vectors at the real scale every frame, so they're always sharp and never missing.
+  let capAnchor = null;
+  function apply() {
+    // leash: you can push the work to any edge, but a strip of it always stays on screen
+    const peek = Math.min(100, vw * 0.2, vh * 0.2), C = CONTENT, hx = (vw / 2 - peek) / cam.s, hy = (vh / 2 - peek) / cam.s;
+    const nx = clamp(cam.x, C.x - hx, C.x + C.w + hx), ny = clamp(cam.y, C.y - hy, C.y + C.h + hy);
+    if (vel && nx !== cam.x) vel.x = 0;   // momentum stops at the edge instead of pressing into it
+    if (vel && ny !== cam.y) vel.y = 0;
+    cam.x = nx; cam.y = ny;
+    world.style.transform = `translate(${vw / 2 - cam.x * cam.s}px, ${vh / 2 - cam.y * cam.s}px) scale(${cam.s})`;
+    // the caption rides along under the highlight block's bottom-left corner
+    if (capAnchor) caption.style.transform = `translate(${(capAnchor.x - cam.x) * cam.s + vw / 2}px, ${(capAnchor.y - cam.y) * cam.s + vh / 2}px)`;
+    // Overview only appears once some of the work is off-screen
+    const c = CONTENT, x0 = (c.x - cam.x) * cam.s + vw / 2, y0 = (c.y - cam.y) * cam.s + vh / 2;
+    const offscreen = x0 < -2 || y0 < -2 || x0 + c.w * cam.s > vw + 2 || y0 + c.h * cam.s > vh + 2;
+    if (overviewBtn.hidden === offscreen) overviewBtn.hidden = !offscreen;
+  }
+  // centred: equal margins on opposite sides, so the frame sits in the middle of the screen
+  function fitRect(r, pad = 1.08, centred = false) {
+    // frame inside whatever the side menu, caption and write-up leave free
+    let left = vw >= 700 ? side.offsetLeft + side.offsetWidth + 24 : 16;
+    let right = Math.max(readerDocked() ? reader.offsetWidth + 24 : 16, !index.hidden && vw >= 700 ? indexCol.offsetWidth + 48 : 16);
+    let top = vw >= 700 ? 24 : 56, bottom = caption.hidden ? 24 : caption.offsetHeight + 40;
+    if (centred) { left = right = Math.max(left, right); top = bottom = Math.max(top, bottom); }
+    const availW = Math.max(120, vw - left - right), availH = Math.max(120, vh - top - bottom);
+    const s = Math.min(availW / (r.w * pad), availH / (r.h * pad), MAX_S);
+    const visCenterX = left + availW / 2, visCenterY = top + availH / 2;
+    return { x: r.x + r.w / 2 - (visCenterX - vw / 2) / s, y: r.y + r.h / 2 - (visCenterY - vh / 2) / s, s };
+  }
+  // the whole body of work, centred on screen
+  const overview = () => fitRect(CONTENT, 1.06, true);
+  function bounds(list) {
+    const x0 = Math.min(...list.map(p => p.x)), y0 = Math.min(...list.map(p => p.y));
+    const x1 = Math.max(...list.map(p => p.x + p.w)), y1 = Math.max(...list.map(p => p.y + p.h));
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
+  const screenToWorld = (sx, sy, c = cam) => ({ x: c.x + (sx - vw / 2) / c.s, y: c.y + (sy - vh / 2) / c.s });
+
+  // one animation loop: a fly-to or drag momentum, idle otherwise
+  let anim = null, vel = null, raf = 0, last = 0;
+  const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+  function tick(now) {
+    const dt = Math.min(48, now - last); last = now;
+    if (anim) {
+      const p = Math.min(1, (now - anim.t0) / anim.dur), v = anim.path(ease(p));
+      cam.x = v.x; cam.y = v.y; cam.s = vw / v.w;
+      if (p >= 1) { Object.assign(cam, anim.b); anim = null; }
+    } else if (vel) {
+      cam.x -= vel.x * dt / cam.s; cam.y -= vel.y * dt / cam.s;
+      const f = Math.pow(0.94, dt / 16.7);
+      vel.x *= f; vel.y *= f;
+      if (Math.hypot(vel.x, vel.y) < 0.02) vel = null;
+    }
+    apply();
+    raf = (anim || vel) ? requestAnimationFrame(tick) : 0;
+  }
+  // Smooth pan + zoom along one curve (van Wijk & Nuij, as in d3.interpolateZoom): pan and zoom move
+  // together, pulling back just enough on long trips, instead of zooming first and panning after.
+  // A view is its centre plus w, the width of world it shows.
+  const RHO = Math.SQRT2, FLY_MS = 900;   // every camera move takes the same time, near or far
+  function zoomPath(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy, d1 = Math.sqrt(d2), w0 = a.w, w1 = b.w;
+    if (d2 < 1e-6) {
+      const S = Math.log(w1 / w0) / RHO;
+      return { S: Math.abs(S), at: t => ({ x: a.x + t * dx, y: a.y + t * dy, w: w0 * Math.exp(RHO * t * S) }) };
+    }
+    const b0 = (w1 * w1 - w0 * w0 + RHO ** 4 * d2) / (2 * w0 * RHO * RHO * d1);
+    const b1 = (w1 * w1 - w0 * w0 - RHO ** 4 * d2) / (2 * w1 * RHO * RHO * d1);
+    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1), S = (r1 - r0) / RHO;
+    return { S, at: t => {
+      const s = t * S, u = w0 / (RHO * RHO * d1) * (Math.cosh(r0) * Math.tanh(RHO * s + r0) - Math.sinh(r0));
+      return { x: a.x + u * dx, y: a.y + u * dy, w: w0 * Math.cosh(r0) / Math.cosh(RHO * s + r0) };
+    } };
+  }
+  function flyTo(b) {
+    vel = null;
+    b = { ...b, s: clampS(b.s) };
+    if (reduce) { anim = null; Object.assign(cam, b); apply(); return; }
+    const z = zoomPath({ x: cam.x, y: cam.y, w: vw / cam.s }, { x: b.x, y: b.y, w: vw / b.s });
+    anim = { b, path: z.at, t0: performance.now(), dur: FLY_MS };
+    kick();
+  }
+  function zoomAt(factor, sx, sy) {
+    anim = null;
+    const p = screenToWorld(sx, sy), s = clampS(cam.s * factor);
+    cam.s = s; cam.x = p.x - (sx - vw / 2) / s; cam.y = p.y - (sy - vh / 2) / s;
+    apply();
+  }
+
+  // ---------- selection, filter, caption ----------
+  let filter = null, active = null;
+  const caption = document.getElementById("caption");
+  function visible() { return filter ? pieces.filter(p => p.types.includes(filter)) : pieces; }
+  function openPiece(p) {
+    if (active) active.el.classList.remove("active");
+    active = p; p.el.classList.add("active");
+    // cover the tilted piece's corners, plus room for any sheets peeking out of a stack
+    const a = Math.abs(p.rot) * Math.PI / 180, pad = p.pages > 1 ? 30 : 12;
+    const bw = p.w * Math.cos(a) + p.h * Math.sin(a) + pad * 2, bh = p.w * Math.sin(a) + p.h * Math.cos(a) + pad * 2;
+    const bx = p.x + p.w / 2 - bw / 2, by = p.y + p.h / 2 - bh / 2;
+    for (const [k, v] of Object.entries({ x: bx, y: by, width: bw, height: bh, fill: LINE_COLORS[p.type] })) hl.setAttribute(k, v);
+    hl.classList.add("on");
+    capAnchor = { x: bx, y: by + bh };
+    // its own line is drawn flat, so it melts into the matching block instead of darkening
+    for (const [type, path] of Object.entries(linePaths)) path.classList.toggle("own", type === p.type);
+    document.getElementById("capTitle").textContent = p.title;
+    document.getElementById("capMeta").innerHTML = `<b>${p.types.join(" + ")}</b> · ${p.year} · ${p.label} · ${p.size}`;
+    pager.hidden = p.pages < 2;
+    updatePager(p);
+    caption.hidden = false;
+    apply();
+    hint.classList.add("gone");
+    fillReader(p);
+    playCover(p);
+    showLikes(p);
+    history.replaceState(null, "", `?piece=${p.id}`);   // the address bar is the piece's share link
+    flyTo(fitRect(p, 1.35));
+  }
+  // a video cover plays muted on a loop only while its piece is open; the element is removed after,
+  // so nothing keeps decoding or holding memory once you move on
+  let coverVideo = null, userPaused = false;
+  const player = document.getElementById("player"), vidToggle = document.getElementById("vidToggle");
+  const vidSound = document.getElementById("vidSound"), vidScrub = document.getElementById("vidScrub");
+  const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  function stopCover() {
+    player.hidden = true;
+    if (coverVideo) { coverVideo.pause(); coverVideo.removeAttribute("src"); coverVideo.load(); coverVideo.remove(); coverVideo = null; }
+  }
+  function playCover(p) {
+    stopCover();
+    const m = p.imgs[p.page];
+    if (!m.video) return;
+    userPaused = false;
+    coverVideo = document.createElement("video");
+    Object.assign(coverVideo, { src: m.video, poster: m.src, muted: true, loop: true, playsInline: true, autoplay: true });
+    p.sheets[p.page].append(coverVideo);
+    const v = coverVideo;
+    v.addEventListener("play", syncPlayer); v.addEventListener("pause", syncPlayer);
+    v.addEventListener("timeupdate", () => {
+      if (!v.duration) return;
+      document.getElementById("vidFill").style.width = `${v.currentTime / v.duration * 100}%`;
+      document.getElementById("vidTime").textContent = `${fmt(v.currentTime)} / ${fmt(v.duration)}`;
+    });
+    v.play().catch(() => {});
+    player.hidden = false; syncPlayer();
+  }
+  function syncPlayer() {
+    if (!coverVideo) return;
+    const playing = !coverVideo.paused;
+    vidToggle.textContent = playing ? "❚❚" : "▶";
+    vidToggle.setAttribute("aria-label", playing ? "Pause" : "Play");
+    vidSound.textContent = coverVideo.muted ? "Sound off" : "Sound on";
+    vidSound.setAttribute("aria-pressed", String(!coverVideo.muted));
+  }
+  function toggleCover() {
+    if (!coverVideo) return;
+    if (coverVideo.paused) { userPaused = false; coverVideo.play().catch(() => {}); } else { userPaused = true; coverVideo.pause(); }
+  }
+  vidToggle.addEventListener("click", toggleCover);
+  vidSound.addEventListener("click", () => { if (coverVideo) { coverVideo.muted = !coverVideo.muted; syncPlayer(); } });
+  // click or drag along the line to jump
+  function seekTo(clientX) {
+    if (!coverVideo?.duration) return;
+    const r = vidScrub.getBoundingClientRect();
+    coverVideo.currentTime = Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * coverVideo.duration;
+  }
+  vidScrub.addEventListener("pointerdown", e => {
+    vidScrub.setPointerCapture(e.pointerId); seekTo(e.clientX);
+    const move = ev => seekTo(ev.clientX), up = () => { vidScrub.removeEventListener("pointermove", move); vidScrub.removeEventListener("pointerup", up); };
+    vidScrub.addEventListener("pointermove", move); vidScrub.addEventListener("pointerup", up);
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { coverVideo?.pause(); pauseReader(); }
+    else if (!userPaused) coverVideo?.play().catch(() => {});   // a video you paused stays paused
+  });
+  // write-up: shown beside the piece on wide screens, behind a "Read" button on phones
+  const reader = document.getElementById("reader"), readBtn = document.getElementById("readBtn");
+  const wide = () => vw >= 900;
+  function readerDocked() { return !reader.hidden && wide(); }
+  function fillReader(p) {
+    const w = p.writeup;
+    readBtn.hidden = !w || wide();
+    reader.hidden = !w || !wide();
+    if (!w) return;
+    renderWriteup(document.getElementById("readerFacts"), document.getElementById("readerBody"), w);
+    reader.scrollTop = 0;
+  }
+  // a write-up's facts and body blocks (paragraphs, images, click-to-play videos), for the map's
+  // reader and the line view alike
+  function renderWriteup(facts, body, w) {
+    facts.replaceChildren(); body.replaceChildren();
+    for (const [k, v] of w.facts) {
+      const dt = document.createElement("dt"), dd = document.createElement("dd");
+      dt.textContent = k; dd.textContent = v; facts.append(dt, dd);
+    }
+    for (const block of w.body) {
+      if (typeof block === "string") { const para = document.createElement("p"); para.textContent = block; body.append(para); continue; }
+      const fig = document.createElement("figure");
+      if (block.video) {
+        // click to play; nothing downloads until then
+        const v = document.createElement("video");
+        Object.assign(v, { src: block.video, poster: block.poster || "", controls: true, preload: "none", playsInline: true });
+        fig.append(v);
+      } else {
+        const im = document.createElement("img");
+        Object.assign(im, { src: block.img, alt: block.caption || "", loading: "lazy", decoding: "async" });
+        fig.append(im);
+      }
+      if (block.caption) { const fc = document.createElement("figcaption"); fc.textContent = block.caption; fig.append(fc); }
+      body.append(fig);
+    }
+  }
+  readBtn.addEventListener("click", () => { reader.hidden = false; document.getElementById("readerClose").focus(); });
+  document.getElementById("readerClose").addEventListener("click", () => { reader.hidden = true; pauseReader(); readBtn.focus(); });
+  const pauseReader = () => reader.querySelectorAll("video").forEach(v => v.pause());
+  // tapping the open stack turns to its next sheet
+  function tapPiece(p) {
+    if (p === active && p.pages > 1) turn(p, 1);
+    else if (p === active && coverVideo) toggleCover();   // tapping the open video piece pauses / plays it
+    else openPiece(p);
+  }
+  const pager = document.getElementById("pager");
+  function updatePager(p) { document.getElementById("pageNum").textContent = `${p.page + 1} / ${p.pages}`; }
+  document.getElementById("prevSheet").addEventListener("click", () => turn(active, -1));
+  document.getElementById("nextSheet").addEventListener("click", () => turn(active, 1));
+  function closePiece() {
+    if (!active) return false;
+    active.el.classList.remove("active"); active = null; caption.hidden = true; reader.hidden = true;
+    stopCover(); pauseReader();
+    history.replaceState(null, "", location.pathname);
+    hl.classList.remove("on");
+    for (const path of Object.values(linePaths)) path.classList.remove("own");
+    return true;
+  }
+  // ---------- likes and share links ----------
+  // Every piece has an id from its title ("Field Notes, issue 3" → field-notes-issue-3), used for its
+  // share link and its likes. These are mock pieces, so likes stay in this browser only (like the main
+  // site's demo posts) and never touch the real likes store; real pieces would use the site's likes
+  // worker (src/display/likes.js) under a "gd-" key instead.
+  const likeBtn = document.getElementById("likeBtn"), shareBtn = document.getElementById("shareBtn");
+  const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+                  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+  const LIKED_KEY = "rgr_gd_mock_liked";
+  // a steady pretend count per piece, so the numbers don't jump on every visit
+  const baseLikes = id => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 40;
+  // paint a like button (heart + count) for piece p
+  function paintLike(btn, countEl, p) {
+    const liked = (store.get(LIKED_KEY) || []).includes(p.id), n = baseLikes(p.id) + (liked ? 1 : 0);
+    btn.setAttribute("aria-pressed", String(liked));
+    btn.querySelector(".heart").textContent = liked ? "♥" : "♡";
+    countEl.textContent = n || "";
+    btn.setAttribute("aria-label", `Like (${n} ${n === 1 ? "like" : "likes"})`);
+  }
+  function toggleLike(p) {
+    const liked = new Set(store.get(LIKED_KEY) || []);
+    liked.has(p.id) ? liked.delete(p.id) : liked.add(p.id);
+    store.set(LIKED_KEY, [...liked]);
+  }
+  // copy a piece's link (the clipboard API needs https or localhost, so fall back for LAN previews)
+  async function copyLink(p, btn) {
+    const url = `${location.origin}${location.pathname}?piece=${p.id}`;
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; } catch {
+      const t = Object.assign(document.createElement("textarea"), { value: url });
+      document.body.append(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    btn.textContent = ok ? "Link copied" : url;
+    setTimeout(() => { btn.textContent = "Share"; }, 2000);
+  }
+  function showLikes(p) { paintLike(likeBtn, document.getElementById("likeCount"), p); shareBtn.textContent = "Share"; }
+  likeBtn.addEventListener("click", () => { if (active) { toggleLike(active); showLikes(active); } });
+  shareBtn.addEventListener("click", () => { if (active) copyLink(active, shareBtn); });
+
+  // fly = false clears a filter where you are, without heading back to the overview
+  function showFilter(type, fly = true) {
+    filter = type;
+    pieces.forEach(p => {
+      const dim = !!filter && !p.types.includes(filter);
+      p.el.classList.toggle("dim", dim);
+      p.indexBtn.classList.toggle("dim", dim);   // greyed and unclickable in the index too
+      p.indexBtn.disabled = dim;
+    });
+    for (const [type, path] of Object.entries(linePaths)) path.classList.toggle("dim", !!filter && type !== filter);
+    types.querySelectorAll(".txt").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.type === filter)));
+    closePiece();
+    if (fly) flyTo(filter ? fitRect(bounds(visible())) : overview());
+  }
+
+  // side menu: the types double as the line legend
+  const side = document.getElementById("side"), sideBody = document.getElementById("sideBody"), menuBtn = document.getElementById("menuBtn");
+  const types = document.getElementById("types");
+  for (const type of Object.keys(TYPES)) {
+    const n = pieces.filter(p => p.types.includes(type)).length;
+    const c = document.createElement("button");
+    c.className = "txt"; c.dataset.type = type; c.setAttribute("aria-pressed", "false");
+    c.innerHTML = `<span class="sw" style="background:${LINE_COLORS[type]}"></span>${type}<span class="n">${n}</span>`;
+    c.addEventListener("click", () => { showFilter(filter === type ? null : type); closeMenuOnPhone(); });
+    types.appendChild(c);
+  }
+  // zoom back out to the whole table; any type filter stays on
+  document.getElementById("overviewBtn").addEventListener("click", () => { closePiece(); flyTo(overview()); });
+  // index: all work in one list, A–Z; a colour tick stands in for the type
+  const index = document.getElementById("index"), indexBtn = document.getElementById("indexBtn");
+  const indexCol = document.getElementById("indexCol"), veilR = document.getElementById("veilR");
+  [...pieces].sort((p, q) => p.title.localeCompare(q.title)).forEach(p => {
+    const b = document.createElement("button");
+    b.className = "txt";
+    b.innerHTML = `<span class="sws">${p.types.map(t => `<span class="sw" style="background:${LINE_COLORS[t]}"></span>`).join("")}</span><span class="nm"></span><span class="yr">${p.year}</span>`;
+    b.querySelector(".nm").textContent = p.title;
+    p.indexBtn = b;
+    b.addEventListener("click", () => {
+      if (filter && !p.types.includes(filter)) showFilter(null);
+      if (phone()) toggleIndex(false);
+      openPiece(p);
+    });
+    index.appendChild(b);
+  });
+  // hovering "Index" peeks at the list; clicking pins it open (or closes it again)
+  let indexPinned = false, peekTimer = 0;
+  function showIndex(on) { index.hidden = !on; veilR.hidden = !on; }
+  function toggleIndex(open) {
+    indexPinned = open; showIndex(open); indexBtn.setAttribute("aria-expanded", String(open));
+    if (open) closeMenuOnPhone();   // on a phone the two panels would overlap
+  }
+  indexBtn.addEventListener("click", () => toggleIndex(!indexPinned));
+  // keyboard: tabbing onto "Index" opens the list, so the next Tab steps into it, piece by piece;
+  // tabbing out of the list closes it again (unless it was pinned open)
+  indexBtn.addEventListener("focus", () => { if (viaKey) showIndex(true); });
+  indexCol.addEventListener("focusout", e => { if (!indexPinned && !indexCol.contains(e.relatedTarget)) showIndex(false); });
+  // the button and its list are one hover zone, so moving down into the list keeps it open
+  if (matchMedia("(hover: hover)").matches) {
+    indexBtn.addEventListener("pointerenter", () => { clearTimeout(peekTimer); showIndex(true); });
+    indexCol.addEventListener("pointerenter", () => clearTimeout(peekTimer));
+    indexCol.addEventListener("pointerleave", () => { peekTimer = setTimeout(() => { if (!indexPinned) showIndex(false); }, 300); });
+  }
+
+
+  // phones: the menu folds away behind one word
+  const phone = () => vw < 700;
+  function setMenu(open) {
+    sideBody.hidden = phone() && !open; menuBtn.setAttribute("aria-expanded", String(open));
+    if (open && phone() && indexPinned) toggleIndex(false);
+  }
+  function closeMenuOnPhone() { if (phone()) setMenu(false); }
+  menuBtn.addEventListener("click", () => setMenu(sideBody.hidden));
+  setMenu(false);
+
+  // ---------- input ----------
+  const hint = document.getElementById("hint");
+  const hideHint = () => hint.classList.add("gone");
+  // the site name fades out on any input and back in after a quiet spell
+  const siteName = document.getElementById("siteName"), IDLE_MS = 8000;
+  let idleTimer = 0;
+  function rest(on) {
+    // each time the name comes back, the box and the words inside it land at their own small tilt
+    if (on && (siteName.classList.contains("gone") || !siteName.style.getPropertyValue("--tilt"))) {
+      siteName.style.setProperty("--tilt", `${(Math.random() * 6 - 3).toFixed(2)}deg`);
+      siteName.style.setProperty("--text-tilt", `${(Math.random() * 4 - 2).toFixed(2)}deg`);
+    }
+    siteName.classList.toggle("gone", !on); stage.classList.toggle("resting", on);
+  }
+  function wake() {
+    untouched = false;
+    rest(false);
+    clearTimeout(idleTimer);
+    // not while a piece is open: someone reading a write-up isn't idle
+    idleTimer = setTimeout(() => active ? wake() : rest(true), IDLE_MS);
+  }
+  rest(true);
+  for (const ev of ["pointerdown", "wheel", "keydown", "gesturestart"]) addEventListener(ev, wake, { capture: true, passive: true });
+  const pts = new Map();
+  let drag = null, pinch = null, samples = [];
+  stage.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;   // only the main button drags and taps; right-click is handled below
+    stage.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    anim = null; vel = null;
+    if (pts.size === 1) {
+      drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: 0, target: e.target.closest(".piece") };
+      samples = [{ x: e.clientX, y: e.clientY, t: e.timeStamp }];
+    } else if (pts.size === 2) {
+      const [p1, p2] = [...pts.values()];
+      pinch = { d: Math.hypot(p2.x - p1.x, p2.y - p1.y), mid: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 }, cam: { ...cam } };
+      if (drag) drag.moved = 99;
+    }
+  });
+  stage.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size >= 2) {
+      const [p1, p2] = [...pts.values()];
+      const d = Math.hypot(p2.x - p1.x, p2.y - p1.y), mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const wp = screenToWorld(pinch.mid.x, pinch.mid.y, pinch.cam), s = clampS(pinch.cam.s * d / pinch.d);
+      cam.s = s; cam.x = wp.x - (mid.x - vw / 2) / s; cam.y = wp.y - (mid.y - vh / 2) / s;
+      apply(); hideHint();
+    } else if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag.x = e.clientX; drag.y = e.clientY;
+      drag.moved = Math.max(drag.moved, Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy));
+      if (drag.moved > 5) { stage.classList.add("dragging"); hideHint(); }
+      cam.x -= dx / cam.s; cam.y -= dy / cam.s; apply();
+      samples.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
+      if (samples.length > 6) samples.shift();
+    }
+  });
+  function endPointer(e) {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (pinch && pts.size < 2) {
+      pinch = null;
+      const [rest] = [...pts.values()];
+      drag = rest ? { x: rest.x, y: rest.y, sx: rest.x, sy: rest.y, moved: 99, target: null } : null;
+      return;
+    }
+    if (pts.size === 0 && drag) {
+      stage.classList.remove("dragging");
+      if (drag.moved <= 5 && e.type === "pointerup") {
+        if (drag.target) tapPiece(pieces[drag.target.dataset.i]);
+        // tapping the background closes the open piece, else clears the filter; the camera stays put either way
+        else if (!closePiece() && filter) showFilter(null, false);
+      } else if (samples.length > 1) {
+        const a = samples[0], b = samples[samples.length - 1], dt = Math.max(1, b.t - a.t);
+        // px per ms; tick() divides by scale to move the camera
+        if (e.timeStamp - b.t < 80) { vel = { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt }; kick(); }
+      }
+      drag = null;
+    }
+  }
+  stage.addEventListener("pointerup", endPointer);
+  stage.addEventListener("pointercancel", endPointer);
+
+  stage.addEventListener("wheel", e => {
+    e.preventDefault(); hideHint(); vel = null;
+    // pinch (reported as ctrl+wheel) and plain scrolling both zoom at the pointer; dragging pans
+    const m = e.deltaMode === 1 ? 16 : 1;
+    zoomAt(Math.exp(-e.deltaY * m * (e.ctrlKey ? 0.012 : 0.0015)), e.clientX, e.clientY);
+  }, { passive: false });
+  // Safari trackpad pinch
+  let gs = 1;
+  stage.addEventListener("gesturestart", e => { e.preventDefault(); gs = 1; });
+  stage.addEventListener("gesturechange", e => { e.preventDefault(); zoomAt(e.scale / gs, e.clientX, e.clientY); gs = e.scale; hideHint(); });
+
+  // keyboard: Tab goes through the menus and the Index list (Enter opens a piece), Escape steps back
+  let viaKey = false;
+  addEventListener("keydown", e => {
+    viaKey = true;
+    if (e.key === "Escape") {
+      if (phone() && !sideBody.hidden) { setMenu(false); menuBtn.focus(); }
+      else if (!index.hidden) { toggleIndex(false); indexBtn.focus(); }
+      else if (closePiece()) flyTo(filter ? fitRect(bounds(visible())) : overview());
+      else if (filter) showFilter(null);
+    }
+  });
+  addEventListener("pointerdown", () => viaKey = false, true);
+  // right-click on the open stack turns back a sheet (left click turns forward); elsewhere the browser menu works as usual
+  world.addEventListener("contextmenu", e => {
+    const el = e.target.closest(".piece"), p = el && pieces[el.dataset.i];
+    if (p && p === active && p.pages > 1) { e.preventDefault(); turn(p, -1); }
+  });
+  // right-click anywhere else on the table steps back: open piece → its group or the overview →
+  // (filter cleared) → overview. Menus and write-up text keep the normal right-click menu.
+  stage.addEventListener("contextmenu", e => {
+    if (e.defaultPrevented) return;   // the open stack already used it to turn back a sheet
+    e.preventDefault();
+    wake();
+    if (closePiece()) flyTo(filter ? fitRect(bounds(visible())) : overview());
+    else if (filter) showFilter(null);
+    else {
+      const o = overview();
+      if (Math.abs(cam.s - o.s) / o.s > 0.02 || Math.hypot(cam.x - o.x, cam.y - o.y) * cam.s > 4) flyTo(o);
+    }
+  });
+  world.addEventListener("click", e => {
+    const el = e.target.closest(".piece");
+    if (el && e.detail === 0) tapPiece(pieces[el.dataset.i]);
+  });
+  // focusing an off-screen piece must not scroll the stage itself
+  stage.addEventListener("scroll", () => { stage.scrollTop = 0; stage.scrollLeft = 0; });
+
+  // Until the visitor touches anything, keep re-framing the overview: an embedding frame (like the
+  // artifact viewer) can report a tiny size at first and only grow to full size a moment later
+  let untouched = true;
+  function reframe() {
+    vw = innerWidth; vh = innerHeight;
+    setMenu(menuBtn.getAttribute("aria-expanded") === "true");
+    if (active) Object.assign(cam, fitRect(active, 1.35));
+    else if (untouched) { anim = null; Object.assign(cam, overview()); }
+    else cam.s = clampS(cam.s);
+    apply();
+  }
+  addEventListener("resize", reframe);
+  addEventListener("load", () => { if (untouched) reframe(); });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (untouched && (innerWidth !== vw || innerHeight !== vh)) reframe(); }).observe(document.documentElement);
+
+  Object.assign(cam, overview());
+  apply();
+
+  // a shared link (?piece=<id>) opens that piece, wherever this visit's shuffle put it
+  const shared = pieces.find(p => p.id === new URLSearchParams(location.search).get("piece"));
+  if (shared) { wake(); openPiece(shared); }
+})();
+</script>
