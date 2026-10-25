@@ -87,23 +87,42 @@
         el.innerHTML = `<div class="setup-card relay-signin-card" role="dialog" aria-labelledby="relaySigninTitle">
             <h1 id="relaySigninTitle" style="margin-bottom:0.15rem;">Relay</h1>
             <p class="relay-signin-sub">by Run Girl Run Studio</p>
-            ${githubOn ? `<button class="btn-sm relay-signin-go" onclick="__relayGithub()">Sign in with GitHub</button>
-              <p class="relay-signin-msg relay-signin-small">${setup ? 'For the studio owner. Or set up with the code:' : 'For the studio owner. Everyone else: use your invite link.'}</p>` : ''}
             ${setup ? `
+              ${githubOn ? `<button class="btn-sm relay-signin-go" onclick="__relayGithub()">Sign in with GitHub</button><p class="relay-signin-msg relay-signin-small">Studio owner. Or set up with the code:</p>` : ''}
               <div class="field"><label for="rsCode">Setup code</label><input id="rsCode" autocomplete="off" spellcheck="false"></div>
               <div class="field"><label for="rsName">Your name</label><input id="rsName" autocomplete="name"></div>
               <div class="field"><label for="rsEmail">Email</label><input id="rsEmail" type="email" autocomplete="email"></div>
-              <button class="btn-sm relay-signin-go" onclick="__relaySetup()">Set up the studio</button>`
-            : (message || !githubOn ? `<p class="relay-signin-msg">${message || 'Open the sign-in link you were sent. Already signed in on another device? Make a link there in Your settings.'}</p>` : '')}
+              <button class="btn-sm relay-signin-go" onclick="__relaySetup()">Set up the studio</button>` : `
+              ${message ? `<p class="relay-signin-msg">${message}</p>` : ''}
+              ${desktop ? `<div class="field"><label for="rsLink">Invite or sign-in link</label>
+                <div style="display:flex;gap:0.4rem;"><input id="rsLink" style="flex:1;" spellcheck="false" placeholder="https://rungirlrun.studio/relay/#link=…" onkeydown="if(event.key==='Enter')__relayPasteLink()"><button class="btn-sm" onclick="__relayPasteLink()">Sign in</button></div></div>`
+              : (message ? '' : `<p class="relay-signin-msg">Open the invite link you were sent. Already signed in on another device? Make a link there in Your settings.</p>`)}
+              ${githubOn ? `<button class="relay-signin-owner" onclick="__relayGithub()">Studio owner? Sign in with GitHub</button>` : ''}`}
             <div class="relay-signin-err" id="rsErr" role="alert"></div></div>`;
         el.style.display = 'flex';
         if (setup) setTimeout(() => document.getElementById('rsCode').focus(), 50);
     }
-    window.__relayGithub = function () {
-        const ret = desktop ? 'relay://link' : location.origin + location.pathname;
-        const url = `${WORKER}/auth/github/start?return=${encodeURIComponent(ret)}`;
-        if (desktop && desktop.openExternal) desktop.openExternal(url); else location.href = url;
+    // In the app, GitHub opens in the browser and the app waits for the sign-in to finish (no link back needed)
+    window.__relayGithub = async function () {
+        if (!desktop) { location.href = `${WORKER}/auth/github/start?return=${encodeURIComponent(location.origin + location.pathname)}`; return; }
+        const nonce = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
+        desktop.openExternal(`${WORKER}/auth/github/start?return=${encodeURIComponent('poll:' + nonce)}`);
+        const err = document.getElementById('rsErr'); if (err) { err.style.color = 'var(--text-muted)'; err.textContent = 'Finish signing in in your browser…'; }
+        for (let i = 0; i < 150; i++) {   // up to 5 minutes
+            await new Promise(r => setTimeout(r, 2000));
+            const j = await realFetch(WORKER + '/auth/github/poll', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nonce }) }).then(r => r.json()).catch(() => ({}));
+            if (j.link) { await useLink(j.link); return; }
+        }
+        if (err) { err.style.color = ''; err.textContent = 'Sign-in timed out. Try again.'; }
     };
+    // A sign-in link pasted into the app (from an invite, or "Sign in on another device")
+    async function useLink(t) {
+        const r = await realFetch(WORKER + '/auth/link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t, label: navigator.userAgent.slice(0, 80) }) });
+        const j = await r.json();
+        if (!r.ok) { const err = document.getElementById('rsErr'); if (err) { err.style.color = ''; err.textContent = j.error || 'That link didn’t work.'; } return; }
+        setToken(j.token); location.reload();
+    }
+    window.__relayPasteLink = () => { const v = (document.getElementById('rsLink').value.match(/link=([a-f0-9]+)/) || document.getElementById('rsLink').value.match(/^([a-f0-9]{20,})$/) || [])[1]; if (v) useLink(v); else document.getElementById('rsErr').textContent = 'Paste the whole sign-in link.'; };
     window.__relaySetup = async function () {
         const v = id => document.getElementById(id).value.trim();
         const r = await realFetch(WORKER + '/auth/setup', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ code: v('rsCode'), name: v('rsName'), email: v('rsEmail'), label: navigator.userAgent.slice(0, 80) }) });
