@@ -128,7 +128,7 @@ function v4UploadReferences(input, assetName) {
     const folder0 = `${dashboardData.root_path}/${dashboardData.refs_folder || 'D_docs/References'}${assetName ? '/' + assetName : ''}`;
     files.forEach(async file => {
         const key = `${folder0}/${file.name}`;
-        const up = await fetch(`${__relay.worker}/media?key=${encodeURIComponent(key)}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + (localStorage.getItem('relay_token') || ''), 'Content-Type': file.type || 'application/octet-stream' }, body: file })
+        const up = await fetch(`${__relay.worker}/media?key=${encodeURIComponent(key)}`, { method: 'PUT', headers: { ...__relay.authHeader(), 'Content-Type': file.type || 'application/octet-stream' }, body: file })
             .then(r => r.json()).catch(() => ({ error: 'Upload failed' }));
         if (up.error) { showToast(up.error); done(null); return; }
         done(await _v4AddReference(assetName, { name: file.name, media_key: key }));

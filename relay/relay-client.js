@@ -23,6 +23,7 @@
             return p ? p.role : (relay.roles[path] || null);
         },
         roles: {},
+        authHeader() { return tok ? { Authorization: 'Bearer ' + tok } : {}; },   // for direct calls to the worker (uploads)
         mediaUrl(path) { return `${WORKER}/media?key=${encodeURIComponent(path)}&t=${encodeURIComponent(tok)}`; },
         async refreshMe() { const r = await realFetch(WORKER + '/api/me', { headers: authHeaders() }); if (r.ok) relay.me = await r.json(); return relay.me; },
         signOut: async () => { try { await realFetch(WORKER + '/auth/signout', { method: 'POST', headers: authHeaders() }); } catch (e) {} setToken(''); location.reload(); },
