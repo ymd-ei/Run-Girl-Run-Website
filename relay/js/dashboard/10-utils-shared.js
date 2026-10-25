@@ -128,26 +128,9 @@ function _buildSettingsPayload() {
 // ---------------------------------------------------------------------------
 // Project date persistence (localStorage, keyed by root_path)
 // ---------------------------------------------------------------------------
-function _saveDatesToLocal() {
-    if (!dashboardData?.root_path) return;
-    const key = 'relay_dates_' + dashboardData.root_path;
-    localStorage.setItem(key, JSON.stringify({
-        start_date:     dashboardData.project_info?.start_date || '',
-        end_date:       dashboardData.project_info?.end_date   || '',
-        completed_date: dashboardData.completed_date           || '',
-    }));
-}
-function _loadDatesFromLocal(root_path, project_info) {
-    try {
-        const key = 'relay_dates_' + root_path;
-        const raw = localStorage.getItem(key);
-        if (!raw) return;
-        const d = JSON.parse(raw);
-        if (!project_info.start_date && d.start_date) project_info.start_date = d.start_date;
-        if (!project_info.end_date   && d.end_date)   project_info.end_date   = d.end_date;
-        if (!dashboardData.completed_date && d.completed_date) dashboardData.completed_date = d.completed_date;
-    } catch(e) {}
-}
+// v4: project dates live online (the same for everyone), so nothing is kept in this browser
+function _saveDatesToLocal() {}
+function _loadDatesFromLocal() {}
 
 // Cell renderers — used by renderShotRow, renderLibTable, and patchRow
 function renderProgressCell(pct) {

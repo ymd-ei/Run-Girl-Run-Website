@@ -34,6 +34,33 @@ async function watchBackgroundScan(path) {
 }
 
 // ---------------------------------------------------------------------------
+// Live updates: other people's edits and new files from the server show up without a refresh.
+// Checks every 30 seconds and when you come back to the window; waits while you're typing or a menu is open.
+// ---------------------------------------------------------------------------
+let _liveChecking = false;
+function _liveBusy() {
+    const a = document.activeElement;
+    return (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || document.getElementById('ctxMenu')?.classList.contains('open')
+        || !!document.querySelector('.modal-overlay.open, #v4RefPreview, .csel-menu.open') || bulkSelected.size > 0;
+}
+async function liveCheck() {
+    if (_liveChecking || typeof dashboardData === 'undefined' || !dashboardData || document.hidden || _liveBusy()) return;
+    _liveChecking = true;
+    try {
+        const path = dashboardData.root_path, enc = encodeURIComponent(path);
+        const st = await api('/api/scan_status?path=' + enc + '&since=' + encodeURIComponent(dashboardData.updated_at || ''));
+        if (!st.changed) return;
+        const fresh = await api('/api/scan?path=' + enc);
+        if (fresh.error || !dashboardData || dashboardData.root_path !== path || _liveBusy()) return;
+        dashboardData = fresh;
+        renderAll(true);
+    } catch (e) {} finally { _liveChecking = false; }
+}
+setInterval(liveCheck, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) liveCheck(); });
+window.addEventListener('focus', liveCheck);
+
+// ---------------------------------------------------------------------------
 // Project lifecycle
 // ---------------------------------------------------------------------------
 async function loadProject() {

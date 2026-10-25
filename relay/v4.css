@@ -388,3 +388,7 @@ body.v4-role-viewer #completeBanner button { pointer-events: none; opacity: 0.45
 .relay-signin-small { font-size: 0.7rem; color: var(--text-muted); margin: 0.6rem 0 1rem; }
 .relay-signin-owner { display: block; margin: 1.25rem auto 0; background: none; border: none; color: var(--text-muted); font-family: var(--mono); font-size: 0.72rem; text-decoration: underline; cursor: pointer; }
 .relay-signin-owner:hover, .relay-signin-owner:focus-visible { color: var(--text-primary); outline: none; }
+.relay-signin .relay-signin-owner { width: auto; padding: 0; margin: 1.5rem auto 0; background: none !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important; font-family: var(--mono); font-size: 0.72rem; font-weight: 400; text-decoration: underline; }
+.relay-signin .relay-signin-owner:hover, .relay-signin .relay-signin-owner:focus-visible { color: var(--text-primary) !important; }
+.relay-signin .field > div { align-items: stretch; }
+.relay-signin .field > div .btn-sm { margin: 0; }
