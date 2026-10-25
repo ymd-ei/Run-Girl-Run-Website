@@ -11,14 +11,16 @@ const V4_IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff'];
 function _v4Ext(name) { return (name.split('.').pop() || '').toLowerCase(); }
 function _v4JsStr(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 
-// Where a file's picture comes from: the local file inside the Relay app, otherwise the cloud copy
-function _v4MediaSrc(path) {
-    const r = window.__relay;
-    return r && r.desktop && r.desktop.localMediaUrl ? r.desktop.localMediaUrl(path) : (r ? r.mediaUrl(path) : '');
+// Where a reference's picture comes from: uploaded ones live online (media_key); files on the server show
+// from the server inside the Relay app, otherwise from their online copy
+function _v4RefSrc(ref) {
+    const r = window.__relay; if (!r) return '';
+    if (ref.media_key) return r.mediaUrl(ref.media_key);
+    return r.desktop && r.desktop.localMediaUrl ? r.desktop.localMediaUrl(ref.path) : r.mediaUrl(ref.path);
 }
 // Images show themselves; videos get a drawn tile with a play badge
 function _v4Thumb(ref) {
-    if (V4_IMAGE_EXTS.includes(_v4Ext(ref.name))) return _v4MediaSrc(ref.media_key || ref.path);
+    if (V4_IMAGE_EXTS.includes(_v4Ext(ref.name))) return _v4RefSrc(ref);
     if (_v4ThumbCache[ref.path]) return _v4ThumbCache[ref.path];
     let h = 0; for (const ch of ref.name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     const c = document.createElement('canvas'); c.width = 240; c.height = 180; const x = c.getContext('2d');
@@ -152,7 +154,7 @@ function v4PreviewRef(assetName, index) {
     if (!refs[index]) return;
     _v4Preview = { assetName, index };
     const r = refs[index], isImg = V4_IMAGE_EXTS.includes(_v4Ext(r.name));
-    const src = _v4MediaSrc(r.media_key || r.path);
+    const src = _v4RefSrc(r);
     const media = isImg ? `<img src="${src}" alt="${esc(r.name)}">` : `<video src="${src}" controls autoplay loop></video>`;
     let el = document.getElementById('v4RefPreview');
     if (!el) {
