@@ -79,6 +79,7 @@
     })).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
 
     // ── sign-in screen ──
+    let githubOn = false;
     function showSignin(message, mode) {
         let el = document.getElementById('relaySignin');
         if (!el) { el = document.createElement('div'); el.id = 'relaySignin'; el.className = 'relay-signin'; document.body.appendChild(el); }
@@ -86,16 +87,23 @@
         el.innerHTML = `<div class="setup-card relay-signin-card" role="dialog" aria-labelledby="relaySigninTitle">
             <h1 id="relaySigninTitle" style="margin-bottom:0.15rem;">Relay</h1>
             <p class="relay-signin-sub">by Run Girl Run Studio</p>
+            ${githubOn ? `<button class="btn-sm relay-signin-go" onclick="__relayGithub()">Sign in with GitHub</button>
+              <p class="relay-signin-msg relay-signin-small">${setup ? 'For the studio owner. Or set up with the code:' : 'For the studio owner. Everyone else: use your invite link.'}</p>` : ''}
             ${setup ? `
               <div class="field"><label for="rsCode">Setup code</label><input id="rsCode" autocomplete="off" spellcheck="false"></div>
               <div class="field"><label for="rsName">Your name</label><input id="rsName" autocomplete="name"></div>
               <div class="field"><label for="rsEmail">Email</label><input id="rsEmail" type="email" autocomplete="email"></div>
               <button class="btn-sm relay-signin-go" onclick="__relaySetup()">Set up the studio</button>`
-            : `<p class="relay-signin-msg">${message || 'Open the sign-in link you were sent. Already signed in on another device? Make a link there in Your settings.'}</p>`}
+            : (message || !githubOn ? `<p class="relay-signin-msg">${message || 'Open the sign-in link you were sent. Already signed in on another device? Make a link there in Your settings.'}</p>` : '')}
             <div class="relay-signin-err" id="rsErr" role="alert"></div></div>`;
         el.style.display = 'flex';
         if (setup) setTimeout(() => document.getElementById('rsCode').focus(), 50);
     }
+    window.__relayGithub = function () {
+        const ret = desktop ? 'relay://link' : location.origin + location.pathname;
+        const url = `${WORKER}/auth/github/start?return=${encodeURIComponent(ret)}`;
+        if (desktop && desktop.openExternal) desktop.openExternal(url); else location.href = url;
+    };
     window.__relaySetup = async function () {
         const v = id => document.getElementById(id).value.trim();
         const r = await realFetch(WORKER + '/auth/setup', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ code: v('rsCode'), name: v('rsName'), email: v('rsEmail'), label: navigator.userAgent.slice(0, 80) }) });
@@ -117,7 +125,8 @@
         if (tok && await relay.refreshMe()) { if (desktop && desktop.setToken) desktop.setToken(tok); return true; }
         setToken('');
         const st = await realFetch(WORKER + '/auth/status').then(r => r.json()).catch(() => ({}));
-        showSignin(st.error ? 'Can’t reach Relay right now. Check your connection.' : '', st.setup_needed ? 'setup' : '');
+        githubOn = !!st.github;
+        showSignin(st.setup_needed === undefined ? 'Can’t reach Relay right now. Check your connection.' : '', st.setup_needed ? 'setup' : '');
         return false;
     })();
 })();

@@ -385,3 +385,4 @@ body.v4-role-viewer #completeBanner button { pointer-events: none; opacity: 0.45
 .relay-signin .field input { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.55rem 0.7rem; font-family: var(--mono); font-size: 0.85rem; }
 .relay-signin .field input:focus { outline: none; border-color: var(--accent); }
 .relay-signin-go { width: 100%; padding: 0.6rem; background: var(--accent) !important; color: #fff !important; border: none !important; font-family: var(--mono); }
+.relay-signin-small { font-size: 0.7rem; color: var(--text-muted); margin: 0.6rem 0 1rem; }
