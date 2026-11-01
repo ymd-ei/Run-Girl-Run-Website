@@ -7,59 +7,134 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../media/rgr_fav.png">
 <style>
-  :root { --bg:#1e1e1e; --panel:#2a2a2a; --line:#3a3a3a; --text:#ddd; --dim:#999; --accent:#4c8dff; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:14px system-ui, sans-serif; }
-  header { position:sticky; top:0; z-index:2; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
-           padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
-  label { display:flex; gap:6px; align-items:center; color:var(--dim); }
-  input[type=number] { width:64px; }
-  input[type=text] { width:170px; }
-  input, select, button { background:#111; color:var(--text); border:1px solid var(--line); border-radius:4px; padding:4px 6px; font:inherit; }
-  button { cursor:pointer; }
+  /* ink, paper and accent come from Site settings → Theme when the page loads (end of this file);
+     these are the starting point, and everything else here is worked out from them */
+  :root { --ink:#1a1714; --ink-rgb:26,23,20; --paper:#f2ede4; --paper-rgb:242,237,228; --accent:#669c35; --on-accent:#fff;
+          --panel:color-mix(in srgb, var(--ink) 95%, var(--paper)); --field:color-mix(in srgb, var(--ink) 89%, var(--paper));
+          --line:rgba(var(--paper-rgb),.12); --dim:rgba(var(--paper-rgb),.58); --faint:rgba(var(--paper-rgb),.34);
+          --accent-hi:color-mix(in srgb, var(--accent) 82%, white); --bad:#ff8a8a;
+          --serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+          --sans:'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+          --edge:max(20px, calc((100vw - 1760px) / 2)); }   /* side margin: holds the content to 1760px on ultrawides */
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; display:grid; grid-template-rows:auto minmax(0, 1fr); background:var(--ink); color:var(--paper);
+         font:14px/1.35 var(--sans); -webkit-font-smoothing:antialiased; }
+
+  #bar { background:var(--panel); border-bottom:1px solid var(--line); padding:10px var(--edge); display:grid; gap:9px; }
+  #top, #tools { display:flex; flex-wrap:wrap; gap:9px 34px; align-items:center; }
+  .group { display:flex; flex-wrap:wrap; gap:9px 12px; align-items:center; }
+  .row, .tick { display:flex; gap:7px; align-items:center; color:var(--dim); white-space:nowrap; }
+  #title, #subtitle { width:200px; }
+  #marktext { width:170px; }
+  #fit, #labelpos, #fmt, #quality, #size { width:auto; }
+  #bg { width:42px; }
+  input[type=range] { width:112px; height:24px; margin:0; accent-color:var(--accent-hi); cursor:grab; }
+  input[type=range]:active { cursor:grabbing; }
+  output { min-width:18px; color:var(--paper); font-variant-numeric:tabular-nums; text-align:right; }
+  input, select, button { min-width:0; font:inherit; color:var(--paper); }
+  input[type=text], input[type=number], select { height:32px; padding:0 9px; background:var(--field); border:1px solid var(--line); border-radius:7px; }
+  input[type=color] { height:32px; padding:3px; background:var(--field); border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+  input[type=checkbox] { width:16px; height:16px; margin:0; accent-color:var(--accent-hi); }
+  input::placeholder { color:var(--faint); }
+  input:disabled, select:disabled { opacity:.4; }
+  button { height:32px; padding:0 12px; background:transparent; border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+  button:hover { border-color:var(--faint); }
   button:disabled { opacity:.5; cursor:wait; }
-  button.main { background:var(--accent); border-color:var(--accent); color:#fff; }
-  #info { margin-left:auto; color:var(--dim); }
-  #info.bad { color:#ff7b7b; }
-  main { padding:16px; }
-  #drop { border:2px dashed var(--line); border-radius:8px; padding:28px; text-align:center; color:var(--dim); cursor:pointer; }
-  body.dragging #drop { border-color:var(--accent); color:var(--text); }
-  #list { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
-  .thumb { position:relative; width:110px; background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:4px; cursor:grab; }
-  .thumb img { display:block; width:100%; height:70px; object-fit:contain; pointer-events:none; }
-  .thumb i { display:block; height:70px; border:1px dashed var(--line); border-radius:2px; }
-  .thumb span { display:block; font-size:11px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .thumb input { width:100%; margin-top:3px; padding:2px 4px; font-size:12px; }
-  .thumb b { position:absolute; top:2px; right:4px; color:#ff7b7b; cursor:pointer; }
-  .thumb.over { border-color:var(--accent); }
-  #out { display:block; max-width:100%; cursor:grab; background:repeating-conic-gradient(#333 0 25%, #2a2a2a 0 50%) 0 0/20px 20px; }
+  :focus-visible { outline:2px solid var(--accent-hi); outline-offset:1px; }
+
+  #actions { margin-left:auto; display:flex; gap:12px; align-items:center; min-width:0; }
+  #copy { width:96px; height:36px; background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+  #copy:hover { background:var(--accent-hi); border-color:var(--accent-hi); }
+  #save { width:72px; height:36px; }
+  #info { flex:0 1 auto; margin:0; font-size:13px; color:var(--dim); text-align:right; overflow-wrap:anywhere; }
+  #info.bad { color:var(--bad); }
+
+  main { position:relative; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  #stage { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:24px var(--edge); }
+  #out { display:block; max-width:100%; max-height:100%; cursor:grab; box-shadow:0 10px 36px rgba(0,0,0,.4);
+         background:repeating-conic-gradient(var(--field) 0 25%, var(--panel) 0 50%) 0 0/20px 20px; }
+  #drop { display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center; width:100%; height:100%; padding:24px; text-align:center;
+          background:none; border:1.5px dashed var(--line); border-radius:14px; color:var(--dim); cursor:pointer; }
+  #drop strong { font:500 28px/1.1 var(--serif); color:var(--paper); }
+  #drop:hover, body.dragging #drop { border-color:var(--accent-hi); }
+  body.dragging #stage { background:color-mix(in srgb, var(--accent) 8%, transparent); }
+  body.has-items #drop, body:not(.has-items) #out, body:not(.has-items) #strip { display:none; }
+
+  #strip { flex:none; display:flex; gap:10px; padding:12px var(--edge); background:var(--panel); border-top:1px solid var(--line); }
+  #add { flex:none; width:58px; height:auto; padding:0; font-size:24px; font-weight:300; color:var(--dim); border-style:dashed; }
+  #list { flex:1; min-width:0; display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+  .thumb { position:relative; flex:none; width:126px; padding:5px; background:var(--field); border:1px solid transparent; border-radius:8px; cursor:grab; }
+  .thumb:hover { border-color:var(--line); }
+  .thumb.over { border-color:var(--accent-hi); }
+  .thumb img { display:block; width:100%; height:64px; object-fit:contain; pointer-events:none; border-radius:4px; background:var(--ink); }
+  .thumb i { display:block; height:64px; border:1px dashed var(--line); border-radius:4px; }
+  .thumb span { display:block; margin-top:4px; font-size:11px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .thumb input { display:block; width:100%; height:26px; margin-top:3px; padding:0 6px; font-size:12px; background:var(--ink); }
+  .thumb b { position:absolute; top:9px; right:9px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:400;
+             color:#fff; background:rgba(26,23,20,.78); border-radius:50%; cursor:pointer; }
+  .thumb b:hover { background:#b3303c; }
+
+  @media (max-width:820px) {
+    html, body { height:auto; }
+    body { display:block; }
+    #bar { padding:10px 16px; }
+    #title, #subtitle { width:calc(100vw - 100px); }
+    #actions { flex-wrap:wrap; margin-left:0; width:100%; }
+    #info { flex-basis:100%; text-align:left; }
+    #stage { flex:none; height:60vh; padding:16px; }
+    #strip { padding:12px 16px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <label>Title <input id="title" type="text" placeholder="Sheet name"></label>
-  <label>Subtitle <input id="subtitle" type="text" placeholder="by …"></label>
-  <label>Columns <input id="cols" type="number" min="1" value="3"></label>
-  <label>Gap px <input id="gap" type="number" min="0" value="0"></label>
-  <label>Fit <select id="fit"><option value="contain">fit inside</option><option value="cover">fill (crop)</option></select></label>
-  <label>Background <input id="bg" type="color" value="#000000"></label>
-  <label><input id="transp" type="checkbox"> transparent</label>
-  <label><input id="labels" type="checkbox" checked> names <select id="labelpos"><option value="on">on image</option><option value="below">below</option></select></label>
-  <button id="blank">Add empty box</button>
-  <button id="sort">Sort A–Z</button>
-  <button id="clear">Clear</button>
-  <label>Format <select id="fmt"><option value="webp">WebP</option><option value="png">PNG</option><option value="jpeg">JPG</option></select></label>
-  <label>Quality <input id="quality" type="number" min="1" max="100" value="90"></label>
-  <label>Size <select id="size"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="33">33%</option><option value="25">25%</option></select></label>
-  <button id="copy" class="main">Copy</button>
-  <button id="save" class="main">Save</button>
-  <span id="info">No images</span>
+<header id="bar">
+  <div id="top">
+    <div class="group">
+      <label class="row">Title <input id="title" type="text" placeholder="Sheet name"></label>
+      <label class="row">Subtitle <input id="subtitle" type="text" placeholder="by …"></label>
+    </div>
+    <div id="actions">
+      <p id="info" role="status">No images</p>
+      <button id="copy">Copy</button><button id="save">Save</button>
+    </div>
+  </div>
+  <div id="tools">
+    <div class="group">
+      <label class="row">Columns <input id="cols" type="range" min="1" max="12" value="3"><output id="colsVal"></output></label>
+      <label class="row">Gap <input id="gap" type="range" min="0" max="64" value="0"><output id="gapVal"></output></label>
+      <label class="row">Fit <select id="fit"><option value="contain">Fit inside</option><option value="cover">Fill (crop)</option></select></label>
+    </div>
+    <div class="group">
+      <label class="row">Background <input id="bg" type="color" value="#000000"></label>
+      <label class="tick"><input id="transp" type="checkbox"> Transparent</label>
+      <label class="tick"><input id="labels" type="checkbox" checked> Names</label>
+      <select id="labelpos" aria-label="Where the names go"><option value="on">On image</option><option value="below">Below</option></select>
+      <label class="tick"><input id="mark" type="checkbox" checked> Watermark</label>
+      <input id="marktext" type="text" aria-label="Watermark text">
+    </div>
+    <div class="group">
+      <button id="blank">Add empty box</button>
+      <button id="sort">Sort A–Z</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div class="group">
+      <label class="row">Format <select id="fmt"><option value="webp">WebP</option><option value="png">PNG</option><option value="jpeg">JPG</option></select></label>
+      <label class="row">Quality <select id="quality"><option value="100">100%</option><option value="95">95%</option><option value="90" selected>90%</option><option value="85">85%</option><option value="80">80%</option><option value="70">70%</option><option value="60">60%</option></select></label>
+      <label class="row">Size <select id="size"><option value="100">100%</option><option value="75">75%</option><option value="50">50%</option><option value="33">33%</option><option value="25">25%</option></select></label>
+    </div>
+  </div>
 </header>
 <main>
-  <div id="drop">Drop renders anywhere on this page (or click to pick). PNG / JPG / WebP. Drag images in the preview (or the thumbnails) to reorder.</div>
+  <div id="stage">
+    <button id="drop"><strong>Drop renders here</strong><span>or click to pick · PNG, JPG, WebP</span></button>
+    <canvas id="out" width="0" height="0"></canvas>
+  </div>
+  <div id="strip">
+    <button id="add" title="Add renders" aria-label="Add renders">+</button>
+    <div id="list"></div>
+  </div>
   <input id="pick" type="file" accept="image/*" multiple hidden>
-  <div id="list"></div>
-  <canvas id="out" width="0" height="0"></canvas>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -81,7 +156,7 @@ const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true
 
 // The session survives a closed tab: each render is copied into this browser's own storage, with the
 // order, names and settings beside it. Nothing leaves this machine.
-const SETTINGS = ["title", "subtitle", "cols", "gap", "fit", "bg", "transp", "labels", "labelpos", "fmt", "quality", "size"];
+const SETTINGS = ["title", "subtitle", "cols", "gap", "fit", "bg", "transp", "labels", "labelpos", "mark", "marktext", "fmt", "quality", "size"];
 const DB = new Promise((res, rej) => {
   const q = indexedDB.open("render_grid", 1);
   q.onupgradeneeded = () => { q.result.createObjectStore("files"); q.result.createObjectStore("state"); };
@@ -120,6 +195,7 @@ async function restore() {
       if ($(id).type === "checkbox") $(id).checked = v; else $(id).value = v;
     }
     if ($("fmt").selectedOptions[0]?.disabled) $("fmt").value = "png";
+    if (!$("quality").value) $("quality").value = "90";   // an older session's typed-in number
     for (const [i, { id, label, blank }] of saved.order.entries()) {
       $("info").textContent = `Restoring ${i + 1} / ${saved.order.length}…`;
       if (blank) { items.push(blankItem(id, label)); continue; }
@@ -127,12 +203,14 @@ async function restore() {
       const it = rec && await loadItem(rec.file, rec.handle);
       if (it) items.push(Object.assign(it, { id, label }));
     }
+    if (saved.settings.cols) { $("cols").max = Math.max(12, items.length); $("cols").value = saved.settings.cols; }
     refresh();
     if (items.length) $("info").textContent = `Restored ${items.length} render${items.length === 1 ? "" : "s"} · ` + $("info").textContent;
   } catch {
     // no storage here (private window): the page just starts empty
   } finally {
     restoring = false;
+    syncControls();
   }
   updateFromDisk();
 }
@@ -220,12 +298,12 @@ function refresh() { drawList(); render(); }
 function requestRender() { if (!pending) { pending = true; requestAnimationFrame(render); } }
 
 function drawList() {
-  const list = $("list");
+  const list = $("list"), scroll = list.scrollLeft;
   list.innerHTML = "";
   items.forEach((it, i) => {
     const d = document.createElement("div");
     d.className = "thumb"; d.draggable = true; d.title = it.name;
-    d.innerHTML = `${it.blank ? "<i></i>" : `<img src="${it.thumb}">`}<span></span><input title="Name shown on the image"><b title="Remove">✕</b>`;
+    d.innerHTML = `${it.blank ? "<i></i>" : `<img src="${it.thumb}">`}<span></span><input type="text" title="Name shown on the image"><b title="Remove">✕</b>`;
     d.querySelector("span").textContent = `${i + 1}. ${it.blank ? "empty box" : it.name}`;   // as text: a file name is never page code
     const name = d.querySelector("input");
     name.value = it.label;
@@ -245,6 +323,7 @@ function drawList() {
     d.ondragend = () => { dragFrom = null; };
     list.appendChild(d);
   });
+  list.scrollLeft = scroll;
 }
 
 // grid size in pixels at 100%; Size % scales the whole thing (gap and names too) when saving
@@ -288,8 +367,27 @@ function drawTitle(c, g, k) {
   let y = g.tp * k;
   c.fillStyle = ink();
   c.textBaseline = "top";
-  if (g.title) { c.font = `bold ${g.tf * k}px sans-serif`; c.fillText(g.title, x, y); y += g.tf * 1.25 * k; }
+  if (g.title) { c.font = `${g.tf * k}px "Cormorant Garamond", Georgia, "Times New Roman", serif`; c.fillText(g.title, x, y); y += g.tf * 1.25 * k; }
   if (g.subtitle) { c.font = `300 ${g.sf * k}px "Helvetica Neue", "Segoe UI", sans-serif`; c.fillText(g.subtitle, x, y); }
+}
+
+const MARK = `© ${new Date().getFullYear()} Run Girl Run`;   // used while the watermark box is empty
+$("marktext").placeholder = MARK;
+
+// bottom right of the sheet, over everything. White with a soft shadow, so it reads on any render.
+function drawWatermark(c, g, k) {
+  if (!$("mark").checked) return;
+  const fs = Math.max(12, Math.round(g.ch * 0.026)) * k, pad = fs * 0.7;
+  c.save();
+  c.font = `${fs}px sans-serif`;
+  c.textAlign = "right";
+  c.textBaseline = "bottom";
+  c.globalAlpha = 0.8;
+  c.shadowColor = "rgba(0,0,0,.75)";
+  c.shadowBlur = fs * 0.35;
+  c.fillStyle = "#fff";
+  c.fillText($("marktext").value.trim() || MARK, g.W * k - pad, g.H * k - pad);
+  c.restore();
 }
 
 function drawCell(c, g, k, it, i, src) {
@@ -327,6 +425,8 @@ function render() {
   pending = false;
   if (busy) return;
   saveState();
+  syncControls();
+  document.body.classList.toggle("has-items", items.length > 0);
   const info = $("info");
   info.classList.remove("bad");
   if (!items.length) { out.width = out.height = 0; grid = null; info.textContent = "No images"; return; }
@@ -340,6 +440,7 @@ function render() {
   drawBackground(ctx, g, g.k);
   drawTitle(ctx, g, g.k);
   items.forEach((it, i) => drawCell(ctx, g, g.k, it, i, it.prev));
+  drawWatermark(ctx, g, g.k);
 
   base.width = out.width; base.height = out.height;
   base.getContext("2d").drawImage(out, 0, 0);
@@ -391,7 +492,7 @@ addEventListener("drop", e => {
   addFiles([...e.dataTransfer.items].filter(i => i.kind === "file")
     .map(i => ({ file: i.getAsFile(), handle: i.getAsFileSystemHandle ? i.getAsFileSystemHandle() : null })));
 });
-$("drop").onclick = async () => {
+const pickFiles = async () => {
   if (!window.showOpenFilePicker) return $("pick").click();
   try {
     const handles = await showOpenFilePicker({ multiple: true, types: [{ description: "Images", accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp"] } }] });
@@ -400,9 +501,10 @@ $("drop").onclick = async () => {
     if (err.name !== "AbortError") $("pick").click();
   }
 };
+$("drop").onclick = $("add").onclick = pickFiles;
 $("pick").onchange = e => { addFiles(e.target.files); e.target.value = ""; };
 
-["title", "subtitle", "cols", "gap", "size", "fit", "bg", "transp", "labels", "labelpos"].forEach(id => $(id).addEventListener("input", requestRender));
+["title", "subtitle", "cols", "gap", "size", "fit", "bg", "transp", "labels", "labelpos", "mark", "marktext"].forEach(id => $(id).addEventListener("input", requestRender));
 ["fmt", "quality"].forEach(id => $(id).addEventListener("input", saveState));
 $("blank").onclick = () => { items.push(blankItem(String(nextId++))); refresh(); };
 $("sort").onclick = () => {   // empty boxes go to the end
@@ -435,6 +537,7 @@ async function buildBlob(type, quality, opaque) {
       drawCell(cx, g, g.s, it, i, full);
       full?.close();
     }
+    drawWatermark(cx, g, g.s);
     info.textContent = "Encoding…";
     const blob = await new Promise(res => c.toBlob(res, type, quality));
     if (!blob) throw new Error("the browser couldn't encode the image");
@@ -457,6 +560,7 @@ function failed(err, what) {
 $("copy").onclick = async () => {
   if (!items.length || busy) return;
   if (layout().tooBig) { alert("The grid is too big for the browser to copy. Lower Size."); return; }
+  if (!isSecureContext) { failed(new Error("this link isn't secure (https), use Save here"), "Copy"); return; }
   if (!navigator.clipboard?.write || !window.ClipboardItem) { failed(new Error("this browser can't copy images"), "Copy"); return; }
   // the blob goes in as a promise, so the browser still counts this as your click while it's drawn
   const blob = buildBlob("image/png", undefined, false);
@@ -513,6 +617,17 @@ $("save").onclick = async () => {
   }
 };
 
+// settings that do nothing right now are greyed out
+function syncControls() {
+  $("cols").max = Math.max(12, items.length);   // the bar always reaches one long row
+  $("colsVal").textContent = $("cols").value;
+  $("gapVal").textContent = $("gap").value;
+  $("quality").disabled = $("fmt").value === "png";
+  $("labelpos").disabled = !$("labels").checked;
+  $("marktext").disabled = !$("mark").checked;
+}
+["fmt", "labels"].forEach(id => $(id).addEventListener("input", syncControls));
+
 // a browser that can't write WebP would quietly hand back a PNG under that name
 const probe = document.createElement("canvas");
 probe.width = probe.height = 1;
@@ -524,6 +639,22 @@ if (!probe.toDataURL("image/webp").startsWith("data:image/webp")) {
 }
 
 restore();
+</script>
+<script type="module">
+  // Colours from Site settings → Theme, same as the other pages. Opened as a loose file this just
+  // fails quietly and the page keeps its starting colours.
+  import { liveFetch } from '../src/utils/liveContent.js';
+  import { applyThemeVars } from '../src/utils/themeVars.js';
+
+  // the Copy button's text: whichever reads on the accent colour
+  const onAccent = hex => {
+    const v = parseInt(String(hex).replace('#', ''), 16);
+    return 0.299 * (v >> 16) + 0.587 * (v >> 8 & 255) + 0.114 * (v & 255) > 165 ? '#1a1714' : '#fff';
+  };
+  liveFetch('content.json', '../content.json').then(r => r.json()).then(({ theme }) => {
+    applyThemeVars(theme);
+    if (theme?.accent) document.documentElement.style.setProperty('--on-accent', onAccent(theme.accent));
+  }).catch(() => {});
 </script>
 </body>
 </html>
