@@ -514,6 +514,7 @@ $("sort").onclick = () => {   // empty boxes go to the end
 $("clear").onclick = () => {
   items.forEach(it => it.prev?.close());
   items = [];
+  $("title").value = $("subtitle").value = "";
   inStore("files", "readwrite", s => s.clear()).catch(() => {});
   refresh();
 };
