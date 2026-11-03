@@ -73,12 +73,12 @@ body.native-cursor-forced #cur-work-badge,body.reel-popup-open #cur-work-badge{d
 /* ─────────────────────────────────────────
    WATCH REEL BUTTON
 ───────────────────────────────────────── */
-#watch-reel-wrap{position:fixed;z-index:10;top:66.666%;left:0;right:0;display:flex;justify-content:center;transform:translateY(-50%);opacity:0;animation:fup .8s 1s var(--ease) forwards;transition:transform .8s var(--ease)}
-#watch-reel{display:flex;align-items:center;justify-content:center;gap:.75rem;background:none;border:1px solid rgba(var(--paper-rgb),0.3);color:var(--paper);font-family:var(--font-b);font-size:var(--fs-sm);letter-spacing:var(--ls-wide);text-transform:uppercase;padding:.7rem 1.5rem;transition:border-color .25s,background .25s,background-image .25s}
+#watch-reel-wrap{position:fixed;z-index:10;top:80%;left:60%;right:0;height:0;display:flex;align-items:center;justify-content:center;transform:translateY(-50%);opacity:0;animation:fup .8s 1s var(--ease) forwards;transition:transform .8s var(--ease)}
+#watch-reel{display:flex;align-items:center;justify-content:center;gap:.55rem;background:rgba(var(--ink-rgb),0.15);backdrop-filter:blur(8px);border:1px solid rgba(var(--paper-rgb),0.3);color:var(--paper);font-family:var(--font-b);font-size:var(--fs-sm);letter-spacing:var(--ls-wide);text-transform:uppercase;padding:.4rem 1rem .4rem .8rem;transition:border-color .25s,background .25s,background-image .25s}
 #watch-reel:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),0.12);background-image:repeating-linear-gradient(-55deg,transparent,transparent 15px,rgba(var(--accent-rgb),0.22) 15px,rgba(var(--accent-rgb),0.22) 16px);background-size:21px 100%}
-.wr-play{width:22px;height:22px;border:1px solid rgba(var(--paper-rgb),0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .25s}
+.wr-play{width:18px;height:18px;border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .25s}
 #watch-reel:hover .wr-play{border-color:var(--accent)}
-.wr-tri{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:9px solid rgba(var(--paper-rgb),0.7);margin-left:2px}
+.wr-tri{width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:7px solid var(--accent);margin-left:2px}
 
 /* ─────────────────────────────────────────
    LIGHTBOX
