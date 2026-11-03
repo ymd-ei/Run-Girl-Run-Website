@@ -47,12 +47,12 @@ export function renderTop(d, { person = false } = {}) {
 
 // ── Reel: a muted loop (the Preview clip if set, else the reel); tap = sound from
 // the start. Lite mode, data-saver and reduced motion keep a still cover. Rebuilt
-// only when the reel changes.
+// only when the reel changes, or `force` (Lite mode switched).
 let reelKey = '';
-export function renderReel(d) {
+export function renderReel(d, force = false) {
   const reel = (d.watchReel && d.watchReel.url) ? d.watchReel : d.reel || {};
   const key = JSON.stringify([reel.url, reel.preview, reel.poster, reel.type]);
-  if (key === reelKey) return;
+  if (key === reelKey && !force) return;
   reelKey = key;
   const box = $('reel');
   box.hidden = !(reel.url && (reel.type || 'video') === 'video');
@@ -115,8 +115,9 @@ export function renderMail(email) {
   $('copy').onclick = copyEmail(email);
 }
 
-/** The hero reel, frosted, behind the whole page. True when it's there. */
+/** The hero reel, frosted, behind the whole page (again when Lite mode switches). True when it's there. */
 export function initPageBg(d) {
+  document.querySelector('.page-bg')?.remove();
   const reel = d.reel || {};
   const box = document.createElement('div'); box.className = 'page-bg'; box.setAttribute('aria-hidden', 'true');
   if (!stillVideos() && reel.url) {

@@ -24,104 +24,92 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
 <link rel="stylesheet" href="styles-content.css?v=5">
-<link rel="stylesheet" href="styles-mobile.css?v=45">
+<link rel="stylesheet" href="styles-mobile.css?v=46">
+<!-- The card: the same styles as /links -->
+<link rel="stylesheet" href="styles-card.css">
+<style>
+  /* Work, About and Résumé: side by side, light like the rows */
+  .bands{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:.5rem;margin-top:clamp(.75rem,2svh,1.25rem);touch-action:none}   /* up grows the card, sideways turns it */
+  .band{display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.9rem .8rem;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper);color:var(--ink);font:inherit;font-size:.92rem;font-weight:500;text-decoration:none;cursor:pointer}
+  .band i{font-size:.8rem;color:var(--accent)}
+  .band:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .page .mail{margin-top:.5rem}
+  .page .links{margin-top:.5rem}
+  .page footer .lite-toggle{display:inline-flex;align-items:center;gap:.4rem}
+
+  /* The back: Contact, sized to the square */
+  .back.contact{align-items:flex-start;justify-content:center;gap:3cqmin;padding:8cqmin;text-align:left;cursor:default}
+  .back.contact h2{font-family:var(--font-s);font-weight:700;font-size:10.5cqmin;line-height:.95;color:var(--paper)}
+  .back.contact h2 .accent-word{color:var(--accent);font-style:italic}
+  .back.contact .ct-sub{font-size:3.7cqmin;line-height:1.5;color:rgba(var(--paper-rgb),.78)}
+  .back.contact .ct-sub rgr{color:var(--paper);font-weight:500}
+  .back.contact .ct-mail{display:flex;align-items:center;gap:3cqmin;margin-top:1cqmin}
+  .back.contact .ct-mail a{color:var(--paper);font-size:4.4cqmin;font-weight:400;text-decoration:none;word-break:break-word}
+  .back.contact .ct-mail button{flex:none;font:inherit;font-size:2.9cqmin;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink);background:var(--paper);border:0;border-radius:6px;padding:1.8cqmin 2.6cqmin;cursor:pointer}
+  .back.contact .icons{justify-content:flex-start;gap:0 4cqmin;margin-top:0}
+  .back.contact .icons a{color:var(--paper);width:8.5cqmin;height:8.5cqmin;font-size:6cqmin}
+
+  /* Work's filters stay pinned while the grid scrolls under them */
+  .card-view .wf{position:sticky;top:0;z-index:1;margin:0 -1.15rem .75rem;padding:.6rem 1.15rem;background:var(--card)}
+</style>
 </head>
 <body>
 
-<!-- Top bar: dog + availability, pinned while the page scrolls -->
-<div class="m-bar" id="m-bar">
-  <span class="m-logo" id="m-logo" hidden></span>
-  <p class="hero-avail" id="hero-avail" style="display:none"><span class="avail-dot"></span><span id="avail-text"></span></p>
+<!-- The card (src/display/linkCard.js, shared with /links). Tap the dog or swipe
+     sideways for Contact on its back; Work, About, projects, posts and Privacy &
+     Legal open inside it (src/display/cardViews.js). -->
+<div class="stage">
+<div class="flipper" id="flipper">
+<main class="page face front" id="front">
+ <div id="front-in">
+  <div class="bar">
+    <button type="button" class="dog" id="flip-open" aria-label="Show contact"><img id="dog" src="media/doog_loop-smoller.png" alt=""></button>
+    <span class="avail" id="avail" hidden><i></i><span></span></span>
+  </div>
+  <p class="role" id="role"></p>
+  <h1 id="name">Run<br><em>Girl Run</em></h1>
+  <p class="where" id="where"></p>
+  <nav class="icons" id="icons" aria-label="Social links"></nav>
+
+  <div class="reel" id="reel" hidden></div>
+
+  <div class="bands" id="bands"></div>
+  <div class="mail" id="mail" hidden>
+    <i class="ph-fill ph-envelope" aria-hidden="true"></i>
+    <a id="mail-link" href="#"></a>
+    <button type="button" id="copy">Copy</button>
+  </div>
+  <div class="links" id="writing"></div>
+
+  <footer>
+    <button type="button" class="lite-toggle" id="lite-toggle" aria-pressed="false"><span data-site-text="liteMode">Lite mode</span><span class="lite-switch" aria-hidden="true"></span></button>
+    <button type="button" id="legal-open" data-site-text="legalLink">Privacy &amp; Legal</button>
+  </footer>
+ </div>
+ <div class="card-view" id="card-view" role="region" aria-labelledby="card-view-title" inert>
+  <div class="card-view-head">
+    <button type="button" class="card-view-back" id="card-view-back" hidden><i class="ph-fill ph-arrow-left" aria-hidden="true"></i> <span data-site-text="back">Back</span></button>
+    <h2 class="card-view-title" id="card-view-title"></h2>
+    <button type="button" class="card-view-close" id="card-view-close">Close</button>
+  </div>
+  <div class="card-view-body ppbody" id="sheet-body"></div>
+ </div>
+</main>
+<section class="face back contact" id="back" aria-label="Contact. Press Escape to turn the card back." tabindex="-1" inert>
+  <h2 id="ct-title"></h2>
+  <p class="ct-sub" id="ct-sub"></p>
+  <div class="ct-mail"><a id="ct-mail" href="#"></a><button type="button" id="ct-copy">Copy</button></div>
+  <nav class="icons" id="ct-icons" aria-label="Social links"></nav>
+</section>
+</div>
 </div>
 
-<!-- TOP: reel and hero share one background video (like Contact) -->
-<div id="top">
-<div id="hero-bg" class="hero-bg" aria-hidden="true"></div>
-<div class="top-content">
-
-<!-- REEL -->
-<section id="reel-section">
-  <div id="reel-embed"></div>
-</section>
-
-<header id="hero">
-  <div class="hero-content">
-    <div class="hero-id">
-      <p class="hero-role" id="hero-role"></p>
-      <h1 class="hero-name" id="hero-name"></h1>
-    </div>
-  </div>
-</header>
-
-</div>
-</div>
-
-<!-- CONTACT -->
-<section id="contact">
-  <div id="ct-bg-video" class="ct-bg-video" aria-hidden="true"></div>
-  <div class="ct-content">
-    <h2 class="section-title contact-title" id="ct-title"></h2>
-    <p class="contact-sub" id="ct-sub"></p>
-    <div class="contact-email-block">
-      <p class="contact-label" id="ct-email-label"></p>
-      <a id="ct-email-link" href="#" class="contact-email"></a>
-      <button type="button" class="ct-copy-email" id="ct-copy-email" hidden><i class="ph-fill ph-copy" aria-hidden="true"></i><span aria-live="polite">Copy email</span></button>
-    </div>
-    <div class="contact-social-block">
-      <p class="contact-label" id="ct-social-label"></p>
-      <div class="contact-icons" id="ct-icons"></div>
-    </div>
-    <div id="ct-resume-wrap" class="contact-resume-block" style="display:none">
-      <p class="contact-label" id="ct-resume-label">Credentials</p>
-      <a id="ct-resume-link" href="#" target="_blank" rel="noopener" class="contact-resume-link">
-        <i class="ph-fill ph-file-pdf" aria-hidden="true"></i>
-        <span data-site-text="resumeLink">View Resume</span>
-        <i class="ph-fill ph-arrow-right" aria-hidden="true"></i>
-      </a>
-    </div>
-  </div>
-</section>
-
-<footer id="footer">
-  <span data-site-text="footer">© Run Girl Run</span>
-  <button type="button" class="lite-toggle" id="lite-toggle" aria-pressed="false"><span data-site-text="liteMode">Lite mode</span><span class="lite-switch" aria-hidden="true"></span></button>
-  <button class="legal-trigger" onclick="openLegalModal()" data-site-text="legalLink">Privacy &amp; Legal</button>
-</footer>
-
-<!-- Work / About panels (src/display/mobileSheet.js): parked just below the screen, built and
-     ready, with only their tab showing. Pull a tab up (or tap it) to bring its panel into view;
-     swipe down, Back or Escape sends it back. Tab + panel are drawn as one shape. -->
-<div id="sheet-bd" class="sheet-bd" aria-hidden="true"></div>
-<section class="sheet" id="sheet-work" data-sheet="work" aria-labelledby="sheet-work-title">
-  <div class="tab-shape" aria-hidden="true"><svg><path/></svg></div>
-  <button type="button" class="sheet-tab" aria-controls="sheet-work-panel" aria-expanded="false"><span class="m-dock-grip" aria-hidden="true"></span><span data-site-text="navWork">Work</span></button>
-  <div class="sheet-panel" id="sheet-work-panel" inert>
-    <div class="sheet-head">
-      <button type="button" class="sheet-back" hidden><i class="ph-fill ph-arrow-left" aria-hidden="true"></i> <span data-site-text="back">Back</span></button>
-      <h2 class="sheet-title" id="sheet-work-title" data-site-text="navWork">Work</h2>
-      <button type="button" class="sheet-close" aria-label="Close">&#x2715;</button>
-    </div>
-    <div class="sheet-body ppbody"></div>
-  </div>
-</section>
-<section class="sheet" id="sheet-about" data-sheet="about" aria-labelledby="sheet-about-title">
-  <div class="tab-shape" aria-hidden="true"><svg><path/></svg></div>
-  <button type="button" class="sheet-tab" aria-controls="sheet-about-panel" aria-expanded="false"><span class="m-dock-grip" aria-hidden="true"></span><span data-site-text="navAbout">About</span></button>
-  <div class="sheet-panel" id="sheet-about-panel" inert>
-    <div class="sheet-head">
-      <h2 class="sheet-title" id="sheet-about-title" data-site-text="navAbout">About</h2>
-      <button type="button" class="sheet-close" aria-label="Close">&#x2715;</button>
-    </div>
-    <div class="sheet-body ppbody"></div>
-  </div>
-</section>
-
-<!-- Legal Modal -->
-<div id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" onclick="if(event.target===this)closeLegalModal()">
-  <div id="legal-card"></div>
-</div>
+<!-- siteChrome.js renders Privacy & Legal here; the card shows it -->
+<div id="legal-modal" hidden><div id="legal-card"></div></div>
 
 <script src="site-config.js"></script>
-<script type="module" src="src/display/mobile.js"></script>
+<script type="module" src="src/display/mobile.js?v=card1"></script>
 </body>
 </html>

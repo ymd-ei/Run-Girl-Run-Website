@@ -1,7 +1,6 @@
 /**
  * Views inside the card (linkCard.js): Privacy & Legal on /links; on the phone
- * card (samples/mobile-card-mock) also Work, About, projects and posts, in place
- * of the panels in mobileSheet.js — same exports, so mobile.js drives it.
+ * home page (mobile.html) also Work, About, projects and posts, driven by mobile.js.
  *
  * Nothing new appears: the card grows to the screen with the /links card's timing
  * (linkCard.js), its home steps aside and the view comes in. Pull a Work or About
