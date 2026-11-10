@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css">
 <script src="../site-config.js"></script>
 <link rel="stylesheet" href="../styles-card.css">
+<link rel="stylesheet" href="../styles-screens.css?v=3">
 <style>
   /* The card's styles are shared with the phone home page (styles-card.css); only the QR is here */
   :root{
@@ -88,15 +89,7 @@
     <button type="button" id="legal-open">Privacy &amp; Legal</button>
   </footer>
  </div>
- <!-- Privacy & Legal: shown here, in the card (cardViews.js) -->
- <div class="card-view" id="card-view" role="region" aria-labelledby="card-view-title" inert>
-  <div class="card-view-head">
-    <button type="button" class="card-view-back" id="card-view-back" hidden><i class="ph-fill ph-arrow-left" aria-hidden="true"></i> Back</button>
-    <h2 class="card-view-title" id="card-view-title"></h2>
-    <button type="button" class="card-view-close" id="card-view-close">Close</button>
-  </div>
-  <div class="card-view-body" id="sheet-body"></div>
- </div>
+ <!-- Privacy & Legal and the résumé slide in here, over the front (initScreens below) -->
 </main>
 <section class="face back" id="back" aria-label="QR code for this page. Press Escape to turn the card back." tabindex="-1" inert>
   <div class="qr-diamond">
@@ -106,12 +99,12 @@
 </section>
 </div>
 </div>
-<!-- siteChrome.js renders Privacy & Legal here; the card shows it -->
+<!-- siteChrome.js renders Privacy & Legal here; its screen copies it -->
 <div id="legal-modal" hidden><div id="legal-card"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script type="module">
-  import { liveFetch } from '../src/utils/liveContent.js';
+  import { contentNow } from '../src/utils/liveContent.js';
   import { showsOn } from '../src/utils/socials.js';
   import { phosphorIcon } from '../src/utils/icons.js';
   import { stillVideos } from '../src/utils/lite.js';
@@ -119,14 +112,16 @@
   import { setRefContext, resolveLinkUrl } from '../src/utils/refs.js';
   import { renderLegal } from '../src/display/siteChrome.js';
   import { applyThemeVars } from '../src/utils/themeVars.js';
-  // The card — shared with the phone home page
+  // The card's pieces, and the sliding screens — shared with the phone home page
   import { $, esc, media, row, renderTop, renderReel, iconsHTML, renderMail, initPageBg, initCard } from '../src/display/linkCard.js';
-  import { initSheet, useCard, openView } from '../src/display/cardViews.js';
+  import { legalScreen, pdfScreen, slideIn, slideOut, swipeBack } from '../src/display/screens.js';
 
   // ── Everything from content.json; runs at load, and again with the editor's
   // unsaved content when this page is its live preview (?preview) ──
+  let resumeUrl = '';            // the résumé's address, for its row and its screen
   function render(d) {
     setRefContext(d);
+    resumeUrl = d.contact && d.contact.resume ? media(d.contact.resume) : '';
     renderLegal(d, $('legal-card'));
 
     // Colours from Site settings → Theme (same set as the main site; --card = panel background)
@@ -154,7 +149,7 @@
     $('work').innerHTML = [
       { label: 'Portfolio', sub: lp.portfolioSub || 'Animation, projects & process', url: '../', icon: 'ph-fill ph-film-strip', main: true },
       { label: '3D modelling', sub: lp.modellingSub || 'Characters & props in 3D', url: '../modelling/', icon: 'ph-fill ph-cube', main: true },
-      // its own tab, so closing it lands back here as it was (Back would reload the page)
+      // tapped, it's looked through here first (initScreens); the link itself opens the file in its own tab
       d.contact && d.contact.resume && { label: 'Résumé', sub: lp.resumeSub || 'PDF', url: media(d.contact.resume), icon: 'ph-fill ph-file-text', main: true, newTab: true },
     ].filter(Boolean).map(row).join('');
 
@@ -172,10 +167,16 @@
   }
 
   pauseVideosWhenIdle();
-  const content = await liveFetch('content.json', '../content.json').then(r => r.json());
-  render(content);
-  const pageBg = initPageBg(content);
-  initBack(content, pageBg);
+  document.addEventListener('touchstart', () => {}, { passive: true });   // iPhone only shows :active (pressed) styles with this
+  // The last visit's content draws straight away; the fresh copy replaces it if it differs.
+  // The frosted reel and the card itself are set up once, with whichever comes first.
+  let ready = false;
+  await contentNow('../content.json', d => {
+    render(d);
+    if (ready) return;
+    ready = true;
+    initBack(d, initPageBg(d));
+  });
 
   // ── The back side: the QR ─────────────────────────────────────────────────
   function initBack(d, pageBg) {
@@ -212,13 +213,46 @@
       back.insertAdjacentHTML('afterbegin', `<img class="still" alt="" src="${esc(media(reel.poster))}">`);
     }
 
-    // Privacy & Legal opens inside the card, as on the phone card
-    initSheet(() => ({ html: '' }));
-    useCard(initCard({
-      ignore: '#legal-modal, .card-view',
+    initScreens(initCard({
+      ignore: '#legal-modal, .screen',
       onFlip: to => { if (bgVideo) to ? bgVideo.play().catch(() => {}) : setTimeout(() => !$('flipper').classList.contains('flipped') && bgVideo.pause(), 800); },
     }));
-    $('legal-open').addEventListener('click', () => openView({ sheet: 'legal' }));
+  }
+
+  // ── Privacy & Legal and the résumé: the same screens as on the phone page. One
+  // slides in from the right over the front while the card grows to the screen; Back,
+  // the phone's Back, Escape or a swipe to the right slides it away and the card
+  // shrinks back. The résumé is looked through here first; its button opens the file. ──
+  function initScreens(card) {
+    const front = $('front'), home = $('front-in');
+    const make = { legal: () => legalScreen($('legal-card')), resume: () => pdfScreen(resumeUrl) };
+    let screen = null, swipe = null, opener = null;
+    if (history.state && history.state.screen) history.replaceState(null, '');   // a reload while one was up: start clean
+    const show = kind => {
+      if (screen || !make[kind]) return;
+      screen = make[kind]();
+      front.append(screen);
+      card.setOpen(true);
+      slideIn(screen, home);
+    };
+    const hide = () => {
+      if (!screen) return;
+      const el = screen; screen = null;
+      card.setOpen(false);
+      slideOut(el, home, { p0: swipe ? swipe.p : 0 });
+      swipe = null;
+      if (opener) opener.focus({ preventScroll: true });
+    };
+    const open = (kind, from) => { opener = from; show(kind); history.pushState({ screen: kind }, ''); };
+    $('legal-open').addEventListener('click', e => open('legal', e.currentTarget));
+    home.addEventListener('click', e => {
+      const a = resumeUrl && e.target.closest(`a[href="${resumeUrl}"]`);
+      if (a && !e.metaKey && !e.ctrlKey) { e.preventDefault(); open('resume', a); }
+    });
+    addEventListener('popstate', e => (e.state && e.state.screen ? show(e.state.screen) : hide()));
+    addEventListener('keydown', e => { if (e.key === 'Escape' && screen) history.back(); });
+    front.addEventListener('click', e => { if (e.target.closest('.go-back')) history.back(); });
+    swipeBack(front, { pair: () => (screen ? [screen, home] : null), go: p => { swipe = { p }; history.back(); } });
   }
 
   // As the editor's preview: redraw with its unsaved content (same origin only)

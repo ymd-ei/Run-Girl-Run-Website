@@ -36,6 +36,33 @@ export async function liveFetch(repoPath, pageUrl) {
   return own;
 }
 
+const KEPT = 'rgr_app_content';   // the last content.json this browser saw
+
+/** Remember content.json's text for the next visit's first draw. */
+export function keepContent(text) {
+  try { localStorage.setItem(KEPT, text); } catch (e) { /* storage blocked: not remembered */ }
+}
+
+/**
+ * content.json, drawn at once from the last visit's copy when there is one, then
+ * again with the fresh copy if it differs — so a page shows straight away instead
+ * of waiting on the network. `draw(data)` runs once or twice; `mayRedraw()` can
+ * hold the second draw back (it's still remembered for next time). Resolves the
+ * fresh data; rejects if it can't be fetched (the kept copy, if any, is drawn).
+ */
+export async function contentNow(pageUrl, draw, mayRedraw = () => true) {
+  let kept = null, shown = false;
+  try { kept = localStorage.getItem(KEPT); } catch (e) { /* storage blocked */ }
+  if (kept) { try { draw(JSON.parse(kept)); shown = true; } catch (e) { kept = null; } }
+  const text = await (await liveFetch('content.json', pageUrl)).text();
+  const fresh = JSON.parse(text);
+  if (text !== kept) {
+    keepContent(text);
+    if (!shown || mayRedraw()) draw(fresh);
+  }
+  return fresh;
+}
+
 /**
  * After a save, follow one saved file until it's out: onStatus('live') once
  * visitors get it (the backend's copy matches what was saved), then

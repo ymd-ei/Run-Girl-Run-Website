@@ -1,0 +1,69 @@
+/* Screens that slide, and how the page answers a finger — the app parts shared by
+   the phone page (mobile.html) and /links. Code: src/display/screens.js. Each page
+   sets the colours (--card, --ink, --ink-rgb, --line, --accent, --font-s). */
+:root{--gut:1.15rem;--bar-h:44px;--top:0px;--bot:0px;--tab-h:0px}   /* the phone page sets its own --top/--bot/--tab-h */
+
+/* The interface isn't selectable and has no tap flash or long-press callout; reading
+   text (projects, posts, About, legal, the email) still selects as usual */
+#app,.stage{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.ppbody,.legal-section,#mail-link{user-select:text;-webkit-user-select:text}
+.ppbody a{-webkit-touch-callout:default}
+img{-webkit-user-drag:none}
+
+.screen{position:absolute;inset:0;background:var(--card);color:var(--ink);isolation:isolate}   /* its pinned bits (bar, Work's filters) never show over the screen above */
+.screen.pushed{box-shadow:-14px 0 34px -14px rgba(0,0,0,.3)}
+.moving{will-change:transform}
+.away{visibility:hidden}                                             /* covered by the screen on top of it */
+.screen::after{content:"";position:absolute;inset:0;z-index:20;background:#000;opacity:var(--shade,0);transition:opacity var(--shade-t,0ms) linear;pointer-events:none}   /* dims as a screen slides over */
+.scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scrollbar-width:none;
+  padding:calc(var(--top) + var(--bar-h)) var(--gut) calc(var(--tab-h) + var(--bot) + 1.75rem)}
+.scroll::-webkit-scrollbar{display:none}
+/* Up and down is the browser's (scrolling); sideways is ours (tabs, Back). Said up
+   front, the browser doesn't start a scroll on a slanted swipe and keep it. A strip
+   that scrolls sideways itself (Home's shelf) is its own scroller and isn't affected. */
+.screen>.scroll{touch-action:pan-y pinch-zoom}
+
+/* ── Top bar (always a screen's own: /links has another .bar, its dog row): clear at the top of a screen; frosted, with the screen's name, once
+   its big title has scrolled under it ── */
+.screen>.bar{position:absolute;z-index:10;top:0;left:0;right:0;height:calc(var(--top) + var(--bar-h));padding:var(--top) var(--gut) 0;
+  display:flex;align-items:center;justify-content:center;pointer-events:none}
+.screen>.bar>*{pointer-events:auto}
+.screen>.bar::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .2s ease;
+  background:var(--card);background:color-mix(in srgb,var(--card) 80%,transparent);
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);border-bottom:1px solid var(--line)}
+.screen.scrolled>.bar::before{opacity:1}
+.bar-title{max-width:calc(100% - 6rem);font-size:1rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;transform:translateY(5px);transition:opacity .2s ease,transform .2s ease}
+.screen.scrolled>.bar .bar-title{opacity:1;transform:none}
+.large{font-family:var(--font-s);font-weight:700;font-size:2.5rem;line-height:1;margin:.2rem 0 .9rem}
+/* .go-back, not .back: that's the /links card's back face */
+.go-back{border:0;padding:0;cursor:pointer;position:absolute;left:calc(var(--gut) - .25rem);bottom:4px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:1.05rem;
+  color:#fff;background:rgba(20,18,16,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:background .2s,color .2s,transform .15s}
+.go-back:active{transform:scale(.9)}
+.screen.scrolled>.bar .go-back,.screen.plain>.bar .go-back{color:var(--ink);background:rgba(var(--ink-rgb),.07);-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* Privacy & Legal */
+.legal-section{margin-bottom:1.25rem}
+.legal-section h3{font-size:.66rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem}
+.legal-section p{font-size:.92rem;line-height:1.6;color:rgba(var(--ink-rgb),.72);margin-bottom:.45rem}
+.legal-section a{color:var(--accent)}
+
+/* A PDF to look through (the résumé): its pages, and the way to the file itself */
+.pdf-open{display:inline-flex;align-items:center;gap:.5rem;margin:0 0 1.1rem;padding:.65rem 1rem;border-radius:10px;
+  background:var(--ink);color:var(--paper);font-size:.85rem;font-weight:500;text-decoration:none;transition:transform .15s ease,opacity .15s ease}
+.pdf-open:active{transform:scale(.97);opacity:.8}
+.pdf-open i{font-size:1.05rem}
+/* Zoomed (screens.js pdfScreen): the sheets grow past the screen and this strip scrolls sideways */
+.pdf-pages{--zoom:1;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;margin:0 calc(-1 * var(--gut));padding:4px var(--gut) 1.5rem}   /* room for the sheets' shadows */
+.pdf-pages::-webkit-scrollbar{display:none}
+.pdf-hint{margin:-.5rem 0 .9rem;font-size:.75rem}
+.pdf-hint[hidden]{display:none}
+@media (hover:hover){ .pdf-hint{display:none} }                         /* a mouse can't pinch */
+.pdf-page{display:block;width:calc(100% * var(--zoom));max-width:none;height:auto;margin:0 0 1rem;border-radius:6px;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.12),0 10px 26px -14px rgba(0,0,0,.35)}
+.pdf-page.wait{aspect-ratio:8.5/11;animation:pdf-wait 1s ease-in-out infinite alternate}   /* a sheet of paper while it loads */
+@keyframes pdf-wait{to{opacity:.55}}
+html.lite .pdf-page.wait{animation:none}
+.screen-note{font-size:.85rem;line-height:1.5;color:rgba(var(--ink-rgb),.55)}
+
+html.lite .screen>.bar::before{background:var(--card)}

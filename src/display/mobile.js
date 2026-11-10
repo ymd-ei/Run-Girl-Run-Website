@@ -1,18 +1,26 @@
 /**
- * Mobile site — the /links card as the home page (linkCard.js, the same code as
- * /links): the studio name, the reel, Work / About / Résumé and the email, with
- * Contact on the card's back (tap the dog or swipe sideways). Work, About,
- * projects, posts and Privacy & Legal open inside the card (cardViews.js). They
- * reuse the desktop's renderers and styles-content.css, so projects, posts and
- * blocks look the same on both. Everything reads from content.json, so Site
- * settings changes show up here without separate upkeep.
+ * The phone site (mobile.html), built to behave like an app. It reuses the desktop's
+ * renderers and styles-content.css, so projects, posts and blocks look the same on
+ * both, and reads everything from content.json. It lives in the /links card: it floats over the frosted reel, with
+ * four tabs under it (Home, Work, About, Contact). Contact is the card's back.
+ * Each tab keeps its own stack of screens: a project, a post or Privacy & Legal
+ * slides in from the right over the screen it was opened from, which stays as it
+ * was underneath (scroll position and all). Back, the phone's Back, Escape or a
+ * swipe to the right slides it away again. Tapping the tab you're on goes back to
+ * its first screen, then to the top. Swiping sideways on a tab's first screen
+ * goes to the tab next to it. Pulling a tab's first screen down from its
+ * top refreshes the content.
+ *
+ * Still a web page: every pushed screen is a history entry, so the browser's
+ * Back works, and nothing needs installing. Added to the home screen
+ * (app.webmanifest) it opens full screen.
  */
 
 import { phosphorIcon } from '../utils/icons.js';
 import { setRefContext, resolveRefs, resolveLinkUrl } from '../utils/refs.js';
 import { applySiteText, renderLegal } from './siteChrome.js';
 import { initA11y } from '../utils/a11y.js';
-import { liveFetch } from '../utils/liveContent.js';
+import { liveFetch, contentNow, keepContent } from '../utils/liveContent.js';
 import { bindLiteToggles } from '../utils/lite.js';
 import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
@@ -21,10 +29,12 @@ import { renderDisplayBlocks, renderWorkGrid, initSensitiveTapes, initCountUps }
 import { loadFeed, postCardHTML, postBodyHTML, postHero, postTitle, fmtDate, likeKey, SOURCES } from './feed.js';
 import { fetchLikeCount, sendLike, loadLikeCounts, copyShareLink } from './likes.js';
 import { renderFilterRow, markCardLikes } from './workFilters.js';
-import { initSheet, openView, refreshView, useCard, pullUp } from './cardViews.js';
-import { $, media, row, renderTop, renderReel, iconsHTML, renderMail, copyEmail, initPageBg, initCard } from './linkCard.js';
+import { $, media, row, renderTop, renderReel, iconsHTML, renderMail, initPageBg } from './linkCard.js';
+import { calm, GLIDE, slideIn, slideOut, screenFrame, legalScreen, pdfScreen, watchScroll, sideways, swipeBack } from './screens.js';
 import { showsOn } from '../utils/socials.js';
 import { applyThemeVars } from '../utils/themeVars.js';
+
+const TABS = ['home', 'work', 'about', 'contact'];
 
 let data = null;
 let projects = [];             // project cards, in the hand-set order
@@ -32,120 +42,130 @@ let posts = [];                // tagged social posts, filled in once the feed l
 const projectCache = new Map();
 let workFilter = 'all';
 let workSort = 'newest';       // 'newest' | 'likes'
-const likeCounts = new Map();  // likes API key -> count, filled when sorting by likes
-let openItem = null;           // { kind: 'project' | 'post', id } open in the card
+const likeCounts = new Map();
+let openItem = null;           // { kind: 'project' | 'post', id } on the screen in view
+let bgKey = '';
+const drawn = {};              // tabs filled so far (Work and About fill on first visit)
 
+/* ── Start ─────────────────────────────────────────── */
 
 async function init() {
   initA11y();
-  try {
-    const res = await liveFetch('content.json', 'content.json');
-    data = await res.json();
-  } catch (e) {
-    document.body.innerHTML = '<p style="padding:2rem;color:red">Failed to load portfolio data.</p>';
-    return;
-  }
-  setRefContext(data, data.projectCards || []);
-
-  applyTheme(data.theme);
-  if (data.siteTitle) document.title = data.siteTitle;
-  if (data.favicon) {
-    const fav = document.getElementById('favicon');
-    if (fav) fav.href = data.favicon;
-  }
-
-  renderCard();
-  setupLiteToggle();
-  applySiteText(data);
-  renderLegal(data, document.getElementById('legal-card'));
-  initPanels();
-  pauseSoundInBackground();
-  pauseVideosWhenIdle();
-}
-
-/* Locking the phone or switching apps keeps an inline video's sound playing on
-   iPhone, so pause anything with sound (the reel, videos in projects and posts)
-   when the page goes into the background. The muted background loops are left
-   alone and nudged back into play on return, in case the phone paused them. */
-function pauseSoundInBackground() {
-  document.addEventListener('visibilitychange', () => {
-    const videos = [...document.querySelectorAll('video')];
-    if (document.hidden) {
-      videos.forEach(v => { if (!v.muted && !v.paused) v.pause(); });
-    } else {
-      videos.forEach(v => { if (v.muted && v.autoplay && v.paused) v.play().catch(() => {}); });
-    }
+  bindNav();
+  bindLiteToggles(() => {
+    if (!data) return;
+    initPageBg(data);
+    if (!document.querySelector('#reel.playing')) renderReel(data, true);
   });
+  document.addEventListener('touchstart', () => {}, { passive: true });   // iPhone only shows :active (pressed) styles with this
+  pauseVideosWhenIdle();
+  document.addEventListener('visibilitychange', onVisibility);
+
+  // The last visit's content draws straight away; the fresh copy replaces it if it differs
+  // (not under someone mid-read: with a project open, it waits for the next launch)
+  try {
+    await contentNow('content.json', d => { data = d; render(); }, () => TABS.every(t => stacks[t].length === 1));
+  } catch (e) {
+    if (!data) { $('rows').innerHTML = '<p class="note">Couldn’t load the site just now. Check your connection and reopen.</p>'; return; }
+  }
+  loadFeed(data).then(list => {
+    posts = list;
+    renderShelf();
+    if (drawn.work) renderWork();
+  }).catch(e => console.warn('Feed failed to load:', e));
 }
 
-function applyTheme(theme) {
-  if (!theme) return;
-  // Same set as the desktop (src/utils/themeVars.js) — incl. panel background
-  // and the see-through ink / paper shades
-  applyThemeVars(theme);
-}
-
-/* ── The card ─────────────────────────────────────── */
-
-function renderCard() {
+/** Everything that comes from content.json. Safe to run again with newer content. */
+function render() {
+  setRefContext(data, data.projectCards || []);
+  applyThemeVars(data.theme);
   if (data.theme && data.theme.panelBg) document.documentElement.style.setProperty('--card', data.theme.panelBg);
-  renderTop(data);                // the studio name (/links shows your own name)
-  renderReel(data);
+  if (data.siteTitle) document.title = data.siteTitle;
+  if (data.favicon) $('favicon').href = data.favicon;
 
+  // The hero reel, frosted, behind the card: rebuilt only when the reel itself changes
+  const bg = JSON.stringify([data.reel && data.reel.url, data.reel && data.reel.poster]);
+  if (bg !== bgKey) { bgKey = bg; initPageBg(data); }
+
+  // Home
+  renderTop(data);
+  renderReel(data);
   const contact = data.contact || {};
   const links = (contact.links || []).filter(l => l.url && showsOn(l, 'links'))
     .map(l => ({ ...l, url: resolveLinkUrl(l.url, data), icon: phosphorIcon(l.url) || 'ph-fill ph-link' }));
   const substack = links.find(l => /substack\.com/.test(l.url));
-
-  // Work and About open in the card; the résumé opens in its own tab, so closing
-  // it lands back here as it was (Back would reload the page)
-  $('bands').innerHTML = [['work', 'navWork', 'Work'], ['about', 'navAbout', 'About']].map(([view, key, label]) =>
-    `<button type="button" class="band" data-view="${view}"><span data-site-text="${key}">${label}</span><i class="ph-fill ph-arrow-up" aria-hidden="true"></i></button>`).join('') +
-    (contact.resume ? `<a class="band" href="${media(contact.resume)}" target="_blank" rel="noopener"><span>Résumé</span><i class="ph-fill ph-arrow-up-right" aria-hidden="true"></i></a>` : '');
-
   const lp = data.linksPage || {};
-  $('writing').innerHTML = substack
-    ? row({ label: substack.label || 'Substack', sub: lp.writingSub || 'Notes from the studio', url: substack.url, icon: 'ph-fill ph-article', main: true }) : '';
+  $('rows').innerHTML =
+    (substack ? row({ label: substack.label || 'Substack', sub: lp.writingSub || 'Notes from the studio', url: substack.url, icon: 'ph-fill ph-article', main: true }) : '') +
+    (contact.resume ? row({ label: 'Résumé', sub: 'Look through it here', url: media(contact.resume), icon: 'ph-fill ph-file-text', newTab: true }) : '');
   const icons = iconsHTML(links.filter(l => !l.url.startsWith('mailto:') && l !== substack));
   $('icons').innerHTML = icons;
 
-  const email = contact.email || '';
-  renderMail(email);
-
-  // The back: Contact — the words from Site settings → Contact, the email and the socials
+  // Contact: the words from Site settings → Contact, the email and the socials
   const panel = data.contactPanel || {};
-  $('ct-title').innerHTML = (panel.title || "Let's") + '<br><span class="accent-word">' + (panel.titleAccent || 'work.') + '</span>';
+  $('ct-title').innerHTML = (panel.title || "Let's") + ' <span class="accent-word">' + (panel.titleAccent || 'work.') + '</span>';
   $('ct-sub').innerHTML = resolveRefs(panel.sub || '');
-  $('ct-mail').href = 'mailto:' + email;
-  $('ct-mail').textContent = email;
-  $('ct-copy').onclick = copyEmail(email);
+  renderMail(contact.email || '');
   $('ct-icons').innerHTML = icons;
 
-  initPageBg(data);
-  useCard(initCard({ ignore: '#legal-modal, .card-view, .reel.playing' }));
-  document.querySelectorAll('[data-view]').forEach(b => {
-    b.addEventListener('click', () => openView({ sheet: b.dataset.view }));
-    pullUp(b, { sheet: b.dataset.view });
-  });
-  $('legal-open').addEventListener('click', () => openView({ sheet: 'legal' }));
-}
+  applySiteText(data);
+  renderLegal(data, $('legal-card'));
 
-/* ── Work / About, inside the card ─────────────────────── */
-
-function initPanels() {
   const cards = new Map((data.projectCards || []).map(c => [c.id, c]));
   projects = (data.projects || []).map(id => cards.get(id)).filter(p => p && p.published !== false);
-  // Work and About open inside the card, light like it
-  initSheet(renderView);
+  renderShelf();
+  if (drawn.work) renderWork();
+  if (drawn.about) renderAbout();
+  sync();
+}
+
+/* ── Tabs and stacks ───────────────────────────────── */
+
+const stacks = Object.fromEntries(TABS.map(t => [t, [document.querySelector(`#tab-${t} .screen`)]]));
+let tab = 'home';
+let n = (history.state && history.state.n) || 0;   // where we are in the browser's history
+const entries = [];            // one per pushed screen, in order: the tab it's on (null once that screen is gone)
+let quiet = false;             // the next history step back is bookkeeping only (screens already removed)
+let swipe = null;              // { p } when a swipe let go: Back carries on from there
+let edgeAt = 0;                // when a touch last started at a screen edge (the browser's own back swipe)
+
+const top = () => stacks[tab].at(-1);
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function bindNav() {
+  TABS.forEach(t => watchScroll(stacks[t][0]));
+  $('tabbar').addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]');
+    if (!b) return;
+    if (b.dataset.tab !== tab) return switchTab(b.dataset.tab);
+    // The tab you're on: back to its first screen, then to the top
+    if (stacks[tab].length > 1) popToRoot(tab);
+    else top().querySelector('.scroll').scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' });
+  });
+  document.addEventListener('click', e => {
+    const go = e.target.closest('[data-go]');
+    if (go) return switchTab(go.dataset.go);
+    // The résumé opens as a screen to look through first; its button goes to the file
+    const resume = data && data.contact && data.contact.resume && e.target.closest(`a[href="${media(data.contact.resume)}"]`);
+    if (resume && !resume.closest('.pushed') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); return open({ resume: true }); }
+    if (e.target.closest('.go-back')) history.back();
+  });
+  $('legal-open').addEventListener('click', () => open({ legal: true }));
+  addEventListener('keydown', e => { if (e.key === 'Escape' && stacks[tab].length > 1) history.back(); });
+  addEventListener('touchstart', e => {
+    const x = e.touches[0].clientX;
+    if (x < 28 || x > innerWidth - 28) edgeAt = performance.now();
+  }, { passive: true });
+  addEventListener('popstate', onPopState);
+  bindSwipeBack();
+  bindSwipeTabs();
+  bindPullRefresh();
 
   // Cards, filter chips and header buttons call window.display, as on the desktop
   window.display = {
-    openProject: id => openView({ sheet: 'work', project: id }),
-    openPost: id => openView({ sheet: 'work', post: id }),
-    filterWork(btn, type) {
-      workFilter = type;
-      renderWork();
-    },
+    openProject: id => open({ project: id }),
+    openPost: id => open({ post: id }),
+    filterWork(btn, type) { workFilter = type; renderWork(); },
     async sortWork(sort) {
       workSort = sort;
       if (sort === 'likes') await loadLikeCounts(workItems().map(x => x.key), likeCounts);
@@ -157,82 +177,400 @@ function initPanels() {
       const res = await sendLike(id);
       if (res && likeCounts.has(id)) likeCounts.set(id, res.count);
     },
-    copyShareLink() {
-      if (openItem) copyShareLink(openItem);
-    }
+    copyShareLink() { if (openItem) copyShareLink(openItem); }
   };
-
-  loadFeed(data).then(list => {
-    posts = list;
-    refreshView('work');
-  }).catch(e => console.warn('Feed failed to load:', e));
 }
 
-function renderView(view) {
-  const filters = data.filters || DEFAULT_FILTERS;
-  openItem = view.project ? { kind: 'project', id: view.project } : view.post ? { kind: 'post', id: view.post } : null;
-  const label = key => document.querySelector(`[data-view="${key}"] span`)?.textContent || key;
+/** Show a tab. Contact is the card's back, so going there (or coming back) turns
+    the card over; `instant` skips the turn (the phone's Back landing on another tab). */
+function switchTab(name, instant = false) {
+  if (name === tab || !TABS.includes(name) || (flipping && !instant)) return;
+  const turn = (name === 'contact') !== (tab === 'contact');
+  const dir = name === 'contact' ? 1 : -1;
+  tab = name;
+  draw(name);
+  $('tabbar').querySelectorAll('[data-tab]').forEach(b => b.dataset.tab === name ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  const show = () => {
+    TABS.forEach(t => {
+      const el = $('tab-' + t);
+      el.classList.toggle('on', t === tab);                    // the tab now, not the one asked for: Back can change it mid-turn
+      el.inert = t !== tab;
+    });
+    document.body.dataset.tab = tab;
+    sync();
+  };
+  if (turn && !instant && !calm()) flipCard(dir, show); else show();
+}
 
-  if (view.sheet === 'about') {
-    return {
-      title: label('about'),
-      tall: true,               // one long page, so it opens tall like an article
-      html: renderDisplayBlocks(normalizeBlocks(data.about || []), { scope: 'about' }),
-      after: () => initCountUps()
+// Work and About fill the first time they're shown
+function draw(name) {
+  if (!data || drawn[name]) return;
+  if (name === 'work') renderWork();
+  if (name === 'about') renderAbout();
+}
+
+// The turn, in two halves: the card swings edge-on, changes side while it can't be
+// seen, and swings on round. (No 3D back face to hide: Safari draws videos and
+// frosted bits through one.)
+let flipping = false;
+function flipCard(dir, swap) {
+  const card = $('tabs'), app = $('app');
+  flipping = true;
+  app.classList.add('flipping');
+  const done = () => { flipping = false; app.classList.remove('flipping'); };
+  const half = (from, to, ms, easing) => turnPart(card, from, to, ms, easing);
+  half(0, 90 * dir, 240, 'cubic-bezier(.55,0,.85,.45)')
+    .then(() => { swap(); return half(-90 * dir, 0, 330, 'cubic-bezier(.15,.6,.25,1)'); })
+    .then(done);
+}
+
+const turned = deg => `perspective(1600px) rotateY(${deg}deg)`;
+const turnPart = (card, from, to, ms, easing) =>
+  card.animate([{ transform: turned(from) }, { transform: turned(to) }], { duration: calm() ? 0 : ms, easing }).finished.catch(() => {});
+
+// Swipe sideways on a tab's first screen for the tab next to it. Home, Work and
+// About sit side by side and slide with the finger inside the card; between About
+// and Contact the card turns over under the finger instead. Past a third of the
+// width, or with a flick, it carries on; otherwise it settles back. At either end
+// the screen gives a little and springs back.
+let paging = false;
+function bindSwipeTabs() {
+  const host = $('tabs'), app = $('app');
+  const el = name => $('tab-' + name);
+  let g = null;
+  // Back to how the stylesheet has it
+  const clear = d => {
+    host.style.transform = '';
+    [tab, d.to].filter(Boolean).forEach(t => { const x = el(t); x.style.transform = x.style.transition = ''; x.classList.remove('peek', 'hid'); });
+  };
+  const frame = dx => {
+    const w = host.offsetWidth, dir = dx < 0 ? 1 : -1, to = TABS[TABS.indexOf(tab) + dir] || null;
+    if (to !== g.to || dir !== g.dir) { clear(g); g.to = to; g.dir = dir; if (to) draw(to); }
+    g.dx = dx;
+    const cur = el(tab);
+    if (!to) { g.kind = 'end'; cur.style.transform = `translate3d(${dx * .25}px,0,0)`; return; }
+    const other = el(to);
+    if (to === 'contact' || tab === 'contact') {
+      // the turn: this side until the card is edge-on, the other side after
+      g.kind = 'turn';
+      g.a = Math.max(-180, Math.min(180, dx / w * 180));
+      const past = Math.abs(g.a) >= 90;
+      cur.classList.toggle('hid', past); other.classList.toggle('peek', past);
+      host.style.transform = turned(past ? g.a - Math.sign(g.a) * 180 : g.a);
+    } else {
+      g.kind = 'slide';
+      other.classList.add('peek');
+      cur.style.transform = `translate3d(${dx}px,0,0)`;
+      other.style.transform = `translate3d(${dx + dir * w}px,0,0)`;
+    }
+  };
+  host.addEventListener('touchstart', e => {
+    g = null;
+    if (paging || flipping || stacks[tab].length > 1 || e.touches.length !== 1 || e.target.closest('video, input') || sideways(e.target, host)) return;
+    const t = e.touches[0];
+    g = { x: t.clientX, y: t.clientY, on: false, dx: 0, to: undefined, dir: 0, px: t.clientX, pt: e.timeStamp, v: 0 };
+  }, { passive: true });
+  host.addEventListener('touchmove', e => {
+    if (!g) return;
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.on) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if (Math.abs(dx) < Math.abs(dy) || !e.cancelable) { g = null; return; }         // steeper than 45°: a scroll
+      g.on = true;
+      app.classList.add('paging');
+    }
+    e.preventDefault();
+    const dt = e.timeStamp - g.pt;
+    if (dt > 0) { g.v = (t.clientX - g.px) / dt; g.px = t.clientX; g.pt = e.timeStamp; }
+    frame(dx - Math.sign(dx) * 10);
+  }, { passive: false });
+  const end = e => {
+    const d = g; g = null;
+    if (!d || !d.on) return;
+    const w = host.offsetWidth, dist = Math.abs(d.dx), done = Math.min(1, dist / w);
+    const flick = Math.abs(d.v) > .45 && dist > 24 && Math.sign(d.v) === Math.sign(d.dx);
+    const go = e.type === 'touchend' && !!d.to && (dist > w / 3 || flick);
+    paging = true;
+    const finish = () => {
+      clear(d);
+      if (go) switchTab(d.to, true);
+      paging = false;
+      setTimeout(() => app.classList.remove('paging'), 60);     // after the swap, so it doesn't also fade
     };
+    if (d.kind === 'turn') {
+      const cur = el(tab), other = el(d.to), sgn = Math.sign(d.a) || 1, past = Math.abs(d.a) >= 90;
+      const shown = past ? d.a - sgn * 180 : d.a;               // the angle on screen now
+      const ms = deg => Math.max(70, Math.abs(deg) / 180 * 520);
+      const side = on => { cur.classList.toggle('hid', on); other.classList.toggle('peek', on); };
+      host.style.transform = '';
+      let run;
+      if (go === past) run = turnPart(host, shown, 0, ms(shown), GLIDE);                       // already on the side it ends on
+      else if (go) run = turnPart(host, shown, sgn * 90, ms(sgn * 90 - shown), 'ease-in')      // on round to the other side
+        .then(() => { side(true); return turnPart(host, -sgn * 90, 0, ms(90), GLIDE); });
+      else run = turnPart(host, shown, -sgn * 90, ms(-sgn * 90 - shown), 'ease-in')            // back round to this side
+        .then(() => { side(false); return turnPart(host, sgn * 90, 0, ms(90), GLIDE); });
+      run.then(finish);
+    } else {
+      const ms = calm() ? 0 : Math.round(160 + 300 * (go ? 1 - done : done));
+      const cur = el(tab), other = d.to && el(d.to);
+      [cur, other].forEach(x => { if (x) x.style.transition = `transform ${ms}ms ${GLIDE}`; });
+      cur.style.transform = `translate3d(${go ? -d.dir * w : 0}px,0,0)`;
+      if (other) other.style.transform = `translate3d(${go ? 0 : d.dir * w}px,0,0)`;
+      setTimeout(finish, ms + 30);
+    }
+  };
+  host.addEventListener('touchend', end);
+  host.addEventListener('touchcancel', end);
+}
+
+/** Open a screen over the current one: { project } | { post } | { legal } | { resume }. */
+function open(view) {
+  pushScreen(view);
+  entries.push(tab);
+  history.pushState({ n: ++n, tab, view }, '');
+}
+
+/**
+ * After any change of screen: only the screen in view keeps its element ids (two
+ * projects can be open on different tabs, and the like button is found by id),
+ * and videos elsewhere pause.
+ */
+function sync() {
+  const live = top();
+  document.querySelectorAll('.screen.pushed').forEach(el => {
+    if (el === live) el.querySelectorAll('[data-sid]').forEach(x => { x.id = x.dataset.sid; delete x.dataset.sid; });
+    else el.querySelectorAll('[id]').forEach(x => { x.dataset.sid = x.id; x.removeAttribute('id'); });
+  });
+  document.querySelectorAll('#tabs video').forEach(v => {          // not the frosted reel behind the card
+    if (live.contains(v)) {
+      if (v.dataset.resume) { delete v.dataset.resume; v.play().catch(() => {}); }
+    } else if (!v.paused) {
+      if (v.muted && v.loop) v.dataset.resume = '1';     // a silent loop picks up again; anything with sound stays paused
+      v.pause();
+    }
+  });
+  openItem = live.item || null;
+  if (live.item && live.ready && !live.liked) {
+    live.liked = true;
+    fetchLikeCount(live.item.kind === 'post' ? likeKey(live.item.id) : live.item.id);
   }
+}
+
+// Locking the phone or switching apps keeps an inline video's sound playing on
+// iPhone, so pause anything with sound; on return, nudge the silent loops in view
+function onVisibility() {
+  if (document.hidden) document.querySelectorAll('video').forEach(v => { if (!v.muted && !v.paused) v.pause(); });
+  else top().querySelectorAll('video').forEach(v => { if (v.muted && v.autoplay && v.paused) v.play().catch(() => {}); });
+}
+
+/* ── Sliding screens (the moving parts are in screens.js, shared with /links) ── */
+
+function pushScreen(view) {
+  const under = top();
+  const el = buildScreen(view);
+  $('tab-' + tab).append(el);
+  stacks[tab].push(el);
+  slideIn(el, under);
+  sync();
+}
+
+/** Take the top screen off the current tab. `p0`: where a swipe left it. */
+function pop(how) {
+  const st = stacks[tab];
+  if (st.length < 2) return;
+  const el = st.pop();
+  slideOut(el, st.at(-1), how);
+  sync();
+}
+
+function popToRoot(name) {
+  const st = stacks[name];
+  if (st.length < 2) return;
+  st.splice(1, st.length - 2).forEach(el => el.remove());      // anything between goes unseen
+  pop();
+  // Those screens' history entries are spent. The ones at the end are stepped back
+  // over now; any buried under another tab's are skipped when Back reaches them.
+  entries.forEach((t, i) => { if (t === name) entries[i] = null; });
+  let k = 0;
+  while (k < entries.length && entries[entries.length - 1 - k] === null) k++;
+  if (k) { quiet = true; history.go(-k); }
+}
+
+function onPopState(e) {
+  const to = (e.state && e.state.n) || 0;
+  if (to < n) {
+    let steps = n - to, did = false;
+    n = to;
+    const silent = quiet; quiet = false;
+    // The browser's own edge swipe already showed the page sliding: don't slide it twice
+    const system = !swipe && !standalone() && performance.now() - edgeAt < 1500;
+    while (steps-- > 0) {
+      const t = entries.pop();
+      if (silent || !t) continue;
+      if (t !== tab) switchTab(t, true);
+      pop({ animate: steps === 0 && !system, p0: swipe ? swipe.p : 0 });
+      did = true;
+    }
+    swipe = null;
+    if (!did && !silent && entries.length) history.back();     // landed on a spent entry: keep going
+  } else if (to > n) {
+    // Forward: put the screen back
+    for (let i = n + 1; i < to; i++) entries.push(null);
+    n = to;
+    const s = e.state;
+    if (s.view && TABS.includes(s.tab) && data) {
+      if (s.tab !== tab) switchTab(s.tab, true);
+      pushScreen(s.view);
+      entries.push(s.tab);
+    } else entries.push(null);
+  }
+}
+
+// Swipe right anywhere on a pushed screen to go back
+function bindSwipeBack() {
+  swipeBack($('tabs'), {
+    pair: () => { const st = stacks[tab]; return st.length > 1 ? [st.at(-1), st.at(-2)] : null; },
+    go: p => { swipe = { p }; history.back(); }
+  });
+}
+
+/* ── Pull down to refresh ──────────────────────────── */
+
+// On a tab's first screen, scrolled to its top: drag the content down and the
+// running dog shows in the gap; let go past the line and the site's content and
+// posts are fetched again, in place (the page itself never reloads).
+function bindPullRefresh() {
+  const ARM = 64, MAX = 120, HOLD = 54;
+  TABS.forEach(t => {
+    const screen = stacks[t][0], sc = screen.querySelector('.scroll');
+    const dog = document.createElement('div');
+    dog.className = 'ptr'; dog.setAttribute('aria-hidden', 'true');
+    dog.innerHTML = '<img alt="">';
+    screen.insertBefore(dog, sc);
+    let g = null, busy = false;
+    // y: how far the content sits below its place
+    const set = (y, ms = 0) => {
+      const p = Math.min(1, y / ARM);
+      sc.style.transition = ms ? `transform ${ms}ms ${GLIDE}` : 'none';
+      dog.style.transition = ms ? `transform ${ms}ms ${GLIDE},opacity ${ms}ms ease` : 'none';
+      sc.style.transform = y ? `translate3d(0,${y}px,0)` : '';
+      dog.style.transform = `translate(-50%,${y / 2}px) translateY(-50%) scale(${.6 + .4 * p})`;
+      dog.style.opacity = p < 1 ? p * .45 : .9;                 // faint until it will refresh
+      if (ms && !y) setTimeout(() => { if (!g && !busy) sc.style.transition = ''; }, ms + 40);
+    };
+    sc.addEventListener('touchstart', e => {
+      g = null;
+      if (busy || stacks[t].length > 1 || e.touches.length !== 1 || sc.scrollTop > 0) return;
+      g = { x: e.touches[0].clientX, y: e.touches[0].clientY, on: false, pull: 0 };
+    }, { passive: true });
+    sc.addEventListener('touchmove', e => {
+      if (!g) return;
+      const dy = e.touches[0].clientY - g.y, dx = e.touches[0].clientX - g.x;
+      if (!g.on) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
+        if (dy < 8 || Math.abs(dx) > dy || sc.scrollTop > 0 || !e.cancelable) { g = null; return; }   // a scroll, or the shelf
+        g.on = true;
+        dog.firstChild.src = $('dog').src;
+      }
+      e.preventDefault();
+      g.pull = Math.min(MAX, Math.max(0, dy - 8) * .5);           // the content gives, at half the finger's pace
+      set(g.pull);
+    }, { passive: false });
+    const end = e => {
+      const d = g; g = null;
+      if (!d || !d.on) return;
+      if (e.type !== 'touchend' || d.pull < ARM) return set(0, 260);
+      busy = true;
+      set(HOLD, 200);
+      // long enough to see it happen, however quick the network is
+      Promise.all([refresh().catch(err => console.warn('Refresh failed:', err)), new Promise(r => setTimeout(r, 700))])
+        .then(() => { busy = false; set(0, 380); });
+    };
+    sc.addEventListener('touchend', end);
+    sc.addEventListener('touchcancel', end);
+  });
+}
+
+/** Fetch the content and the posts again and redraw the tabs' first screens. */
+async function refresh() {
+  const text = await (await liveFetch('content.json', 'content.json')).text();
+  data = JSON.parse(text);
+  keepContent(text);
+  projectCache.clear();
+  render();
+  try { posts = await loadFeed(data); } catch (e) { console.warn('Feed failed to load:', e); }
+  renderShelf();
+  if (drawn.work) renderWork();
+}
+
+/* ── Screens ───────────────────────────────────────── */
+
+const SKELETON = '<div class="skel" style="width:92%"></div><div class="skel" style="width:78%"></div><div class="skel media"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:60%"></div>';
+
+function buildScreen(view) {
+  const filters = data.filters || DEFAULT_FILTERS;
+  if (view.legal) return legalScreen($('legal-card'));
+  if (view.resume) return pdfScreen(media(data.contact.resume));
+  const el = screenFrame('item');
+  const body = el.querySelector('.scroll'), title = el.querySelector('.bar-title');
 
   if (view.project) {
     const card = projects.find(p => p.id === view.project) || { id: view.project };
-    return {
-      title: label('work'),
-      back: true,
-      html: projectHero(card, filters) + '<p class="sheet-loading">Loading…</p>',
-      after: el => loadProject(view.project).then(project => {
-        if (!el.isConnected || history.state?.project !== view.project) return;
-        el.innerHTML = project
-          ? projectHero(project, filters) + renderDisplayBlocks(normalizeBlocks(project.blocks || []), { scope: 'proj-' + project.id, projectId: project.id })
-          : projectHero(card, filters) + '<p class="sheet-loading">Unable to load this project right now.</p>';
-        initCountUps();
-        if (project) fetchLikeCount(project.id);
-      })
-    };
-  }
-
-  if (view.post) {
+    el.item = { kind: 'project', id: view.project };
+    title.textContent = card.title || '';
+    // The header draws at once from the card; the rest arrives in its place
+    body.innerHTML = projectHero(card, filters) + SKELETON;
+    loadProject(view.project).then(project => {
+      if (!el.isConnected) return;
+      body.innerHTML = project
+        ? projectHero(project, filters) + renderDisplayBlocks(normalizeBlocks(project.blocks || []), { scope: 'proj-' + project.id, projectId: project.id })
+        : projectHero(card, filters) + '<p class="note">Unable to load this project right now.</p>';
+      if (project) { title.textContent = project.title || title.textContent; el.ready = true; }
+      initCountUps();
+      sync();
+    });
+  } else {
     const post = posts.find(p => p.id === view.post);
-    return {
-      title: label('work'),
-      back: true,
-      html: post ? postHeroHTML(post, filters) + postBodyHTML(post) : '<p class="sheet-loading">This post is no longer available.</p>',
-      after: () => { if (post) fetchLikeCount(likeKey(post.id)); }
-    };
+    el.item = { kind: 'post', id: view.post };
+    title.textContent = post ? postTitle(post) : '';
+    body.innerHTML = post ? postHeroHTML(post, filters) + postBodyHTML(post) : '<p class="note" style="padding-top:calc(var(--top) + var(--bar-h) + 1.5rem)">This post is no longer available.</p>';
+    el.ready = !!post;
+    if (!post) el.classList.replace('item', 'plain');
   }
-
-  return {
-    title: label('work'),
-    html: '<div class="wf" id="m-work-filters"></div><div class="wg" id="m-wg" data-cols="3"></div>',
-    after: () => renderWork()
-  };
+  return el;
 }
 
-/** The Work sheet's filter row and grid; filtering and sorting re-render just these. */
+/** Home's shelf: the newest few, side by side. */
+function renderShelf() {
+  const items = workItems().slice(0, 6);
+  $('shelf').hidden = !items.length;
+  $('shelf-row').innerHTML = items.map(x => x.html).join('');
+  initSensitiveTapes(projects);
+  // The Work grid shows the same cards; ids must stay unique, and the grid's are the ones looked up
+  $('shelf-row').querySelectorAll('[id]').forEach(x => x.removeAttribute('id'));
+}
+
+function renderAbout() {
+  drawn.about = true;
+  $('about-body').innerHTML = renderDisplayBlocks(normalizeBlocks(data.about || []), { scope: 'about' });
+  initCountUps();
+}
+
+/** Work's filter row and grid; filtering and sorting re-render just these. */
 function renderWork() {
-  const row = document.getElementById('m-work-filters');
-  const grid = document.getElementById('m-wg');
-  if (!row || !grid) return;
+  drawn.work = true;
   const filters = data.filters || DEFAULT_FILTERS;
   let items = workItems();
   const activeTypes = new Set(items.flatMap(x => x.types));
   if (workFilter !== 'all' && !activeTypes.has(workFilter)) workFilter = 'all';
 
-  renderFilterRow(row, {
+  renderFilterRow($('work-filters'), {
     filters: filters.filter(f => activeTypes.has(f.value)),
     active: workFilter,
     sorts: [['newest', 'Newest'], ['likes', 'Most liked']],
     sort: workSort,
     showSort: posts.length > 0,
-    scroller: document.getElementById('sheet-body')
+    scroller: $('work-scroll')
   });
 
   if (workSort === 'likes') items = items.map((x, i) => [x, i])
@@ -240,6 +578,7 @@ function renderWork() {
     .map(([x]) => x);
   if (workFilter !== 'all') items = items.filter(x => x.types.includes(workFilter));
 
+  const grid = $('work-grid');
   grid.innerHTML = items.map(x => x.html).join('');
   markCardLikes([...grid.children], items.map(x => x.key), likeCounts, workSort === 'likes');
   initSensitiveTapes(projects);
@@ -283,7 +622,6 @@ const heroActions = `<div class="pp-hero-actions">
       <button class="pp-hero-btn" id="pp-share" onclick="window.display?.copyShareLink?.()" title="Copy share link" aria-live="polite"><i class="ph-fill ph-share-network" aria-hidden="true"></i> Share</button>
     </div>`;
 
-// The desktop project header
 function projectHero(p, filters) {
   const tags = [...projectTypeLabels(p, filters), p.year, p.client].filter(Boolean);
   return `<div class="pp-hero"${bgImage(p.heroImage || p.thumbnail)}>
@@ -310,17 +648,5 @@ function postHeroHTML(post, filters) {
   </div>`;
 }
 
-// Footer switch: re-render the background; the reel only fetches once tapped
-function setupLiteToggle() {
-  bindLiteToggles(() => {
-    initPageBg(data);
-    // Rebuild the reel (preview loop on/off) unless it's being watched
-    if (!document.querySelector('#reel.playing')) renderReel(data, true);
-  });
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init, { once: true });
-} else {
-  init();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+else init();

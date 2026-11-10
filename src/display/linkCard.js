@@ -1,5 +1,6 @@
 /**
- * The card: /links, and the phone home page. One set of code for both — the
+ * The card on /links. The phone home page (mobile.js) borrows the front's pieces
+ * from here (renderTop, renderReel, row, iconsHTML, renderMail, initPageBg) — the
  * front's pieces (name, reel, rows, icons, email), the frosted reel behind, and
  * the card itself: it turns over to its back (tap the dog, swipe sideways,
  * Escape turns it back) and changes shape with one timing — the front's own
@@ -136,7 +137,7 @@ export function initPageBg(d) {
  * The card's shape and its turn.
  * @param {{ignore?: string, onFlip?: (toBack: boolean) => void}} opts
  *   ignore: where a swipe doesn't turn the card (popups, other gestures)
- * @returns {{setOpen, follow, settle, isOpen, isFlipped, height}}
+ * @returns {{setOpen, follow, settle, isOpen, isFlipped, height}} (follow/settle: for a view pulled under a finger; not used now)
  *   setOpen(on): grow to the screen for a view inside (or back to the front's height);
  *   follow(h): the card's height under a finger; settle(dist, total, go): time the
  *   move after the finger lets go — the same release the turn uses.

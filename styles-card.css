@@ -1,6 +1,5 @@
-/* The card: /links, and the phone home page. One set of styles for both — the
-   page's own file adds only what's different (the QR art on /links; Work/About
-   and Contact on the phone). Markup and JS: src/display/linkCard.js. */
+/* The card on /links (the page's own file adds the QR art). The phone home page
+   has the same look in its own file, styles-mobile.css. Markup and JS: src/display/linkCard.js. */
 :root{--card:#f7f3ec;--line:rgba(var(--ink-rgb),.12)}
 
 body{
@@ -105,12 +104,8 @@ body.name-right .role,body.name-right .page h1,body.name-right .where{text-align
 .page footer a,.page footer button{color:inherit;font:inherit;letter-spacing:0;text-transform:none;background:none;border:0;cursor:pointer;text-decoration:none}
 .page footer a:hover,.page footer button:hover{color:var(--ink)}
 
-/* ── Privacy & Legal: shown inside the card (cardViews.js); siteChrome.js renders the text into #legal-card ── */
+/* siteChrome.js renders Privacy & Legal into #legal-card; its screen copies it */
 #legal-modal{display:none}
-.legal-section{margin-bottom:1.1rem}
-.legal-section h3{font-size:.66rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem}
-.legal-section p{font-size:.9rem;line-height:1.6;color:rgba(var(--ink-rgb),.7);margin-bottom:.45rem}
-.legal-section a{color:var(--accent)}
 @media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms !important} }
 
 /* ── The hero reel, frosted, behind the card ── */
@@ -173,25 +168,6 @@ html.card-open,html.card-open body{overflow:hidden;overscroll-behavior:none}
   .flipper:not(.flipped) .back,.flipper.flipped .front{opacity:0;pointer-events:none}
 }
 
-/* ── A view inside the card (the phone's Work and About): the card grows to the
-   screen with the flip's timing, the front's content steps aside and the view comes in ── */
-#front-in,.card-view{transition:opacity var(--t) var(--ease),transform var(--t) var(--ease)}
-.flipper.dragging #front-in,.flipper.dragging .card-view{transition:none}
-.card-view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transform:translateY(3rem);pointer-events:none}
-.flipper.open #front-in{opacity:0;pointer-events:none}
-.flipper.open .card-view{opacity:1;transform:none;pointer-events:auto}
-/* under a finger: --p runs from 0 (the front) to 1 (the view). Straight up and down
-   only: the view rides with the finger (the pull is half the screen), the front fades in place */
-.flipper.pulling #front-in{opacity:calc(1 - var(--p))}
-.flipper.pulling .card-view{opacity:var(--p);transform:translateY(calc((1 - var(--p)) * 50svh))}
-.card-view-head{position:relative;flex:none;display:flex;align-items:center;gap:.5rem;min-height:3rem;padding:.9rem 1.15rem .4rem;touch-action:none}
-.card-view-head::before{content:"";position:absolute;top:.45rem;left:50%;width:28px;height:3px;margin-left:-14px;border-radius:2px;background:currentColor;opacity:.25}
-.card-view-title{flex:1;font-family:var(--font-s);font-size:1.6rem;font-weight:700;line-height:1}
-.card-view-head button{font:inherit;font-size:.68rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:inherit;background:none;border:1px solid var(--line);border-radius:6px;padding:.4rem .65rem;cursor:pointer}
-.card-view-head button[hidden]{display:none}
-.card-view-close:not(:focus-visible){opacity:0;pointer-events:none}   /* a finger pulls it down; keyboard still gets Close */
-@media (hover:hover) and (pointer:fine){ .card-view-close:not(:focus-visible){opacity:1;pointer-events:auto} }   /* a mouse can't pull */
-.card-view-body{padding:0 1.15rem 1.5rem;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.card-view-body::-webkit-scrollbar{display:none}
-.card-view-body.swap{animation:card-swap .4s cubic-bezier(.2,.75,.3,1)}
-@keyframes card-swap{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+/* ── Privacy & Legal: a screen that slides in over the front (src/display/screens.js,
+   styles-screens.css — the same one as the phone page) while the card grows to the screen ── */
+.stage a{-webkit-touch-callout:default}                                /* a links page: long-press a link to copy or share it */

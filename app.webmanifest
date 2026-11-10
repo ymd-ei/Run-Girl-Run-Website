@@ -1,0 +1,16 @@
+{
+  "name": "Run Girl Run",
+  "short_name": "Run Girl Run",
+  "description": "3D character animation out of Toronto.",
+  "start_url": "mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2a2622",
+  "theme_color": "#2a2622",
+  "icons": [
+    { "src": "media/app-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "media/app-icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "media/app-icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

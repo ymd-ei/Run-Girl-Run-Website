@@ -23,7 +23,8 @@ through the macOS firewall if asked. Swipes and taps can only really be judged t
 
 ```
 index.html          → Desktop homepage (redirects phones to mobile.html, except ?project= links)
-mobile.html         → Phone page: reel, contact, and Work / About in a slide-up panel (src/display/mobileSheet.js)
+mobile.html         → Phone page, built like an app (src/display/mobile.js): the card with four tabs under it, screens that
+                      slide inside it, swipe between tabs / back, pull down to refresh. Add to Home Screen: app.webmanifest
 site-config.js      → Shared settings (backend URL, repo, branch) for every page
 editor-auth.js      → Shared editor sign-in capture (main, v1 and modelling editors)
 _config.yml         → Files GitHub Pages should not publish
@@ -35,7 +36,9 @@ media/              → Images and video assets
 src/                → Source JS modules (display, editor, state, utils)
 styles-content.css  → Shared content styles (work cards, posts, blocks), loaded by both pages
 styles-main.css     → Desktop styles
-styles-mobile.css   → Mobile styles
+styles-mobile.css   → Phone page styles
+styles-card.css     → The /links card
+styles-screens.css  → Sliding screens and touch behaviour, shared by the phone page and /links (src/display/screens.js)
 styles-editor.css   → Editor styles
 ```
 
