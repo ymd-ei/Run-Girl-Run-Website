@@ -20,6 +20,7 @@
   --top:env(safe-area-inset-top,0px);--bot:env(safe-area-inset-bottom,0px);
   --dark:#141210;
   --gap:.7rem;--round:18px;--pill-h:58px;--pill-b:max(var(--gap),var(--bot));--card-top:calc(var(--top) + var(--gap));
+  --side:max(var(--gap),calc(50% - 220px));   /* the card and tabs stop at 440px wide, centred (as on /links) — a desktop window doesn't stretch them */
   --drop:0 2px 6px rgba(0,0,0,.18),0 22px 48px -10px rgba(0,0,0,.55);
 }
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
@@ -33,7 +34,7 @@ img{-webkit-user-drag:none}
 .ct-sub{user-select:text;-webkit-user-select:text}
 /* The card: the paper card from /links, the height of the screen, floating over the
    frosted reel. Screens slide inside it; the tabs are a second, small card under it. */
-#tabs{position:absolute;top:var(--card-top);left:var(--gap);right:var(--gap);bottom:calc(var(--pill-b) + var(--pill-h) + var(--gap));
+#tabs{position:absolute;top:var(--card-top);left:var(--side);right:var(--side);bottom:calc(var(--pill-b) + var(--pill-h) + var(--gap));
   border-radius:var(--round);overflow:hidden;background:var(--card);box-shadow:var(--drop);
   --top:0px;--bot:0px;--tab-h:0px}                                      /* inside the card nothing sits under the status bar or the tabs */
 .tab,.screen{position:absolute;inset:0}
@@ -52,7 +53,7 @@ img{-webkit-user-drag:none}
 .tab.dark .ptr img{filter:none}
 
 /* ── Tabs: a small card of their own, under the big one ── */
-.tabbar{position:absolute;z-index:50;left:var(--gap);right:var(--gap);bottom:var(--pill-b);height:var(--pill-h);padding:0 .4rem;
+.tabbar{position:absolute;z-index:50;left:var(--side);right:var(--side);bottom:var(--pill-b);height:var(--pill-h);padding:0 .4rem;
   display:grid;grid-template-columns:repeat(4,1fr);border-radius:var(--round);background:var(--card);box-shadow:var(--drop)}
 .tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2rem;color:rgba(var(--ink-rgb),.42);transition:color .15s}
 .tabbar i{font-size:1.45rem;transition:transform .15s ease}
