@@ -25,7 +25,7 @@ import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 import { initA11y, reducedMotion } from '../utils/a11y.js';
-import { initFfxivStatus } from './ffxivStatus.js';
+import { initFfxivStatus } from './ffxivStatus.js?v=2';
 import { isLite, bindLiteToggles } from '../utils/lite.js';
 import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { updateLikeUI, fetchLikeCount, sendLike, loadLikeCounts, copyShareLink as copyShare } from './likes.js';

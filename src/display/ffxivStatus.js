@@ -9,6 +9,14 @@ const API = `${window.RGR_CONFIG?.apiBase || ''}/api/presence`;
 const POLL_MS = 60 * 1000;
 const TIMEOUT_MS = 4000;
 
+// This row starts its pulse whenever it's un-hidden, so it drifts from the badge dot.
+// Pin every #sh dot's pulse to the page timeline's zero so they always beat together.
+function syncDots() {
+  document.querySelectorAll('#sh .avail-dot').forEach(dot => {
+    dot.getAnimations().forEach(a => { a.startTime = 0; });
+  });
+}
+
 export function initFfxivStatus() {
   const el = document.getElementById('ffxiv-status');
   const text = document.getElementById('ffxiv-text');
@@ -28,6 +36,7 @@ export function initFfxivStatus() {
         const place = [s.zone, s.world].filter(Boolean).join(' · ');
         text.textContent = place ? `In FFXIV · ${place}` : 'In FFXIV';
         el.hidden = false;
+        syncDots();
       } else {
         el.hidden = true;
       }
