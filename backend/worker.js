@@ -1051,13 +1051,14 @@ async function handleLikes(request, env, projectId) {
 
 // ── FFXIV presence: "online in <zone> (<world>)" above the availability badge ──
 // The Dalamud plugin (RGR Presence) POSTs here with `Authorization: Bearer <PRESENCE_KEY>`
-// on login, on every zone change, on logout, and every 5 minutes as a heartbeat. The site
+// on login, on every zone change, on logout, and every 15 minutes as a heartbeat. The site
 // GETs it. KV's free tier allows 1,000 writes a day for the whole namespace (likes too),
 // so unchanged heartbeats less than PRESENCE_REWRITE_MS apart are not written again.
-// If no update arrives for PRESENCE_STALE_MS (game crashed, PC asleep) GET reports offline.
+// If no update arrives for PRESENCE_STALE_MS (game crashed, PC asleep) GET reports offline:
+// one heartbeat plus 5 minutes (the plugin retries a failed send after 1 minute).
 const PRESENCE_KEY_NAME = 'presence:ffxiv';
-const PRESENCE_STALE_MS = 12 * 60 * 1000;
-const PRESENCE_REWRITE_MS = 4 * 60 * 1000;
+const PRESENCE_STALE_MS = 20 * 60 * 1000;
+const PRESENCE_REWRITE_MS = 14 * 60 * 1000;
 const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
 async function handlePresence(request, env) {
