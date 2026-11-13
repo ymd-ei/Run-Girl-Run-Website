@@ -66,8 +66,10 @@ body.native-cursor-forced #cur-work-badge,body.reel-popup-open #cur-work-badge{d
 .sc-char{display:inline;opacity:0;transition:opacity .08s}
 .hname em{color:var(--accent);font-style:italic;display:block}
 #sh{position:fixed;z-index:10;bottom:3rem;right:2.5rem;display:flex;flex-direction:column;align-items:flex-end;gap:.6rem;pointer-events:none;opacity:0;animation:fup .8s 1.1s var(--ease) forwards;transition:transform .8s var(--ease)}
-/* Shared by "Available for work" and the FFXIV status line above it: steady green dot with a soft glow */
-.avail-dot{width:7px;height:7px;border-radius:50%;background:#3ecf8e;flex-shrink:0;box-shadow:0 0 6px rgba(62,207,142,.55)}
+/* Shared by "Available for work" and the FFXIV status line above it: pulsing green dot with a soft glow,
+   tinted ~30% toward the theme accent so it follows theme changes (oklch rotates the hue instead of
+   washing out to grey/white when the accent is opposite green) */
+.avail-dot{--dot:color-mix(in oklch,#3ecf8e 70%,var(--accent));width:7px;height:7px;border-radius:50%;background:var(--dot);flex-shrink:0;box-shadow:0 0 6px color-mix(in srgb,var(--dot) 55%,transparent);animation:pulse 2.4s ease-in-out infinite}
 .avail-text{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:rgba(var(--paper-rgb),0.45)}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
 .avail-row,.ffxiv-status{display:flex;align-items:center;gap:.65rem}
