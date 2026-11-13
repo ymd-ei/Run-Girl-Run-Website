@@ -37,10 +37,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css" media="print" onload="this.media='all'">
 <link rel="preload" href="styles-content.css?v=5" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="styles-content.css?v=5"></noscript>
-<link rel="preload" href="styles-main.css?v=17" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="styles-main.css?v=17"></noscript>
+<link rel="preload" href="styles-main.css?v=18" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="styles-main.css?v=18"></noscript>
 <script src="site-config.js"></script>
-<link rel="modulepreload" href="src/display/main.js?v=24">
+<link rel="modulepreload" href="src/display/main.js?v=25">
 <link rel="modulepreload" href="src/display/displayRenderer.js">
 <link rel="modulepreload" href="src/state/globalState.js">
 <link rel="modulepreload" href="src/utils/svg.js">
@@ -116,7 +116,11 @@
   <p class="htag" id="hero-role"></p>
   <h1 class="hname" id="hero-name"></h1>
 </div>
-<div id="sh"><div class="avail-dot"></div><span class="avail-text" id="avail-text">Available for work</span></div>
+<div id="sh">
+  <!-- FFXIV presence (src/display/ffxivStatus.js); hidden unless online -->
+  <div class="ffxiv-status" id="ffxiv-status" hidden><div class="ffxiv-dot"></div><span class="avail-text" id="ffxiv-text"></span></div>
+  <div class="avail-row" id="avail-row"><div class="avail-dot"></div><span class="avail-text" id="avail-text">Available for work</span></div>
+</div>
 
 <div id="watch-reel-wrap">
   <button id="watch-reel" onclick="window.display?.openLightbox?.()">
@@ -238,7 +242,7 @@
 
 
 <script type="module">
-  import('./src/display/main.js?v=24')
+  import('./src/display/main.js?v=25')
     .then(({ bootstrap }) => {
       const start = () => {
         bootstrap().catch(err => {

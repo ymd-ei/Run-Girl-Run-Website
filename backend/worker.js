@@ -93,6 +93,9 @@ async function handleRequestInner(request, env) {
   if (path === '/api/feed/substack') {
     return handleSubstackFeed(request, env);
   }
+  if (path === '/api/presence') {
+    return handlePresence(request, env);
+  }
   const likesMatch = path.match(/^\/api\/likes\/([a-zA-Z0-9_-]+)$/);
   if (likesMatch) {
     return handleLikes(request, env, likesMatch[1]);
@@ -1044,6 +1047,72 @@ async function handleLikes(request, env, projectId) {
   }
 
   return corsResponse(new Response('Method not allowed', { status: 405 }), request, env);
+}
+
+// ── FFXIV presence: "online in <zone> (<world>)" above the availability badge ──
+// The Dalamud plugin (RGR Presence) POSTs here with `Authorization: Bearer <PRESENCE_KEY>`
+// on login, on every zone change, on logout, and every 5 minutes as a heartbeat. The site
+// GETs it. KV's free tier allows 1,000 writes a day for the whole namespace (likes too),
+// so unchanged heartbeats less than PRESENCE_REWRITE_MS apart are not written again.
+// If no update arrives for PRESENCE_STALE_MS (game crashed, PC asleep) GET reports offline.
+const PRESENCE_KEY_NAME = 'presence:ffxiv';
+const PRESENCE_STALE_MS = 12 * 60 * 1000;
+const PRESENCE_REWRITE_MS = 4 * 60 * 1000;
+const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+
+async function handlePresence(request, env) {
+  const reply = (body, status) => corsResponse(new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  }), request, env);
+  if (!env.LIKES) return reply({ error: 'Not configured' }, 503);
+
+  if (request.method === 'GET') {
+    const s = await env.LIKES.get(PRESENCE_KEY_NAME, 'json');
+    if (!s) return reply({ online: false, lastSeen: null }, 200);
+    const fresh = Date.now() - s.updatedAt < PRESENCE_STALE_MS;
+    return s.online && fresh
+      ? reply({ online: true, zone: s.zone, world: s.world, updatedAt: s.updatedAt }, 200)
+      : reply({ online: false, lastSeen: s.lastSeen || s.updatedAt }, 200);
+  }
+
+  if (request.method === 'POST') {
+    const auth = request.headers.get('Authorization') || '';
+    if (!env.PRESENCE_KEY || !(await sameSecret(auth, `Bearer ${env.PRESENCE_KEY}`))) {
+      return reply({ error: 'Unauthorized' }, 401);
+    }
+    const body = await request.json().catch(() => ({}));
+    const now = Date.now();
+    const next = {
+      online: body.online === true,
+      zone: clip(body.zone, 80),
+      world: clip(body.world, 40),
+      updatedAt: now,
+      lastSeen: now
+    };
+    const prev = await env.LIKES.get(PRESENCE_KEY_NAME, 'json');
+    const unchanged = prev && prev.online === next.online && prev.zone === next.zone && prev.world === next.world;
+    if (unchanged && now - prev.updatedAt < PRESENCE_REWRITE_MS) {
+      return reply({ ok: true, skipped: true }, 200);
+    }
+    await env.LIKES.put(PRESENCE_KEY_NAME, JSON.stringify(next));
+    return reply({ ok: true }, 200);
+  }
+
+  return reply({ error: 'Method not allowed' }, 405);
+}
+
+// Compare secrets without leaking how much matched through timing
+async function sameSecret(a, b) {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b))
+  ]);
+  const x = new Uint8Array(ha), y = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
 }
 
 function corsResponse(response, request, env) {

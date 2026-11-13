@@ -25,6 +25,7 @@ import { privacyEmbedUrl, loadVimeoApi } from '../utils/embeds.js';
 import { DEFAULT_FILTERS, projectTypes, projectTypeLabels } from '../utils/projectTypes.js';
 import { applySiteText, availability, renderLegal, initLegalModal, siteText } from './siteChrome.js';
 import { initA11y, reducedMotion } from '../utils/a11y.js';
+import { initFfxivStatus } from './ffxivStatus.js';
 import { isLite, bindLiteToggles } from '../utils/lite.js';
 import { pauseVideosWhenIdle } from '../utils/idleVideos.js';
 import { updateLikeUI, fetchLikeCount, sendLike, loadLikeCounts, copyShareLink as copyShare } from './likes.js';
@@ -447,6 +448,7 @@ export async function bootstrap() {
     await loadAllData();
     setRefContext(globalState, projects);
     applySiteChrome();
+    initFfxivStatus();
 
     // 2. Apply theme
     applyTheme(globalState.theme);
@@ -648,8 +650,9 @@ function applySiteChrome() {
   applySiteText(globalState);
 
   const avail = availability(globalState);
-  const sh = document.getElementById('sh');
-  if (sh) sh.style.display = avail.enabled ? '' : 'none';
+  // Only the badge row hides: the FFXIV status above it lives in the same #sh box
+  const availRow = document.getElementById('avail-row');
+  if (availRow) availRow.style.display = avail.enabled ? '' : 'none';
   const availText = document.getElementById('avail-text');
   if (availText) availText.textContent = avail.text;
   if (curWorkBadge) {
