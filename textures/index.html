@@ -240,14 +240,27 @@ function tiles() {
   return [...s].sort((p, q) => p - q);
 }
 
+// cells take the images' shape (width / height of the first one loaded) so non-square images aren't squished
+function aspect() {
+  for (const m of [cur('a'), cur('b')]) for (const e of m?.values() ?? []) if (e.bmp) return e.bmp.width / e.bmp.height;
+  return 1;
+}
+
 function fit() {
   const T = tiles(); if (!T.length) return;
-  const W = cv.clientWidth, H = cv.clientHeight;
+  const W = cv.clientWidth, H = cv.clientHeight, ar = aspect();
   const cs = T.map(t => rc(t)[0]), rs = T.map(t => rc(t)[1]);
   const c0 = Math.min(...cs), c1 = Math.max(...cs) + 1, r0 = Math.min(...rs), r1 = Math.max(...rs);
-  const s = Math.min(W / (c1 - c0), H / (r1 - r0 + 1)) * 0.92;
-  view = { s, ox: W / 2 - (c0 + c1) / 2 * s, oy: H / 2 - (-r1 + (-r0 + 1)) / 2 * s };
+  const s = Math.min(W / ((c1 - c0) * ar), H / (r1 - r0 + 1)) * 0.92;
+  view = { s, ar, ox: W / 2 - (c0 + c1) / 2 * s * ar, oy: H / 2 - (-r1 + (-r0 + 1)) / 2 * s };
   draw();
+}
+
+// draw a bitmap inside a w×h box keeping its own proportions (letterboxed if it differs from the cell)
+function drawFit(bmp, x, y, w, h) {
+  const k = Math.min(w / bmp.width, h / bmp.height), dw = bmp.width * k, dh = bmp.height * k;
+  ctx.imageSmoothingEnabled = k * (devicePixelRatio || 1) < 1;
+  ctx.drawImage(bmp, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
 
 // canvas colours follow the page's theme (Site settings → Theme), read each time it's drawn
@@ -269,30 +282,29 @@ function render() {
   const T = tiles();
   status(T);
   if (!T.length) return;
-  if (!view) return fit();
+  if (!view || view.ar !== aspect()) return fit();
   const A = cur('a'), B = cur('b'), sx = split * W, gap = Math.min(4, view.s * 0.01);
   for (const t of T) {
-    const [c, r] = rc(t), x = view.ox + c * view.s + gap / 2, y = view.oy - r * view.s + gap / 2, s = view.s - gap;
-    if (x > W || y > H || x + s < 0 || y + s < 0) continue;
+    const [c, r] = rc(t), x = view.ox + c * view.s * view.ar + gap / 2, y = view.oy - r * view.s + gap / 2, s = view.s - gap, sw = view.s * view.ar - gap;
+    if (x > W || y > H || x + sw < 0 || y + s < 0) continue;
     const ea = A?.get(t), eb = B?.get(t);
     if (ea) need(ea); if (eb) need(eb);
     // soft corners while zoomed out; square once you're in close enough to see single pixels, so nothing is hidden
     const px = Math.max(ea?.bmp?.width || 0, eb?.bmp?.width || 0);
-    ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, s, s, px && s * d >= px ? 0 : Math.min(6, s / 8)); ctx.clip();
-    ctx.fillStyle = `rgba(${C.paper},.06)`; ctx.fillRect(x, y, s, s);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, sw, s, px && sw * d >= px ? 0 : Math.min(6, s / 8)); ctx.clip();
+    ctx.fillStyle = `rgba(${C.paper},.06)`; ctx.fillRect(x, y, sw, s);
     const df = ea && eb && diffs.get(ea.id + '|' + eb.id);
     if (mode === 'diff') {
       if (df?.bmp) {
-        ctx.imageSmoothingEnabled = s * d < df.bmp.width;
         ctx.filter = `brightness(${$('#gain').value})`;
-        ctx.drawImage(df.bmp, x, y, s, s);
+        drawFit(df.bmp, x, y, sw, s);
         ctx.filter = 'none';
-      } else note(x, y, s, !ea || !eb ? (ea ? 'not in After' : 'not in Before') : df?.err ? 'can’t read' : '…');
+      } else note(x, y, sw, s, !ea || !eb ? (ea ? 'not in After' : 'not in Before') : df?.err ? 'can’t read' : '…');
     } else {
-      clipDraw(ea, x, y, s, x, Math.min(x + s, sx), 'not in Before');
-      clipDraw(eb, x, y, s, Math.max(x, sx), x + s, 'not in After');
+      clipDraw(ea, x, y, sw, s, x, Math.min(x + sw, sx), 'not in Before');
+      clipDraw(eb, x, y, sw, s, Math.max(x, sx), x + sw, 'not in After');
     }
-    label(t, df, x, y, s);
+    label(t, df, x, y, sw, s);
     ctx.restore();
   }
   if (mode === 'slider') {
@@ -304,24 +316,22 @@ function render() {
   }
 }
 
-function clipDraw(e, x, y, s, l, rgt, missing) {
+function clipDraw(e, x, y, w, s, l, rgt, missing) {
   if (rgt <= l) return;
   ctx.save(); ctx.beginPath(); ctx.rect(l, y, rgt - l, s); ctx.clip();
-  if (e?.bmp) {
-    ctx.imageSmoothingEnabled = s * (devicePixelRatio || 1) < e.bmp.width;
-    ctx.drawImage(e.bmp, x, y, s, s);
-  } else note(x, y, s, !e ? missing : e.err ? 'can’t read' : '…');
+  if (e?.bmp) drawFit(e.bmp, x, y, w, s);
+  else note(x, y, w, s, !e ? missing : e.err ? 'can’t read' : '…');
   ctx.restore();
 }
 
-function note(x, y, s, text) {
-  if (s < 60) return;
+function note(x, y, w, s, text) {
+  if (Math.min(w, s) < 60) return;
   ctx.fillStyle = `rgba(${C.paper},.34)`; ctx.font = `13px ${C.font}`; ctx.textAlign = 'center';
-  ctx.fillText(text, x + s / 2, y + s / 2); ctx.textAlign = 'left';
+  ctx.fillText(text, x + w / 2, y + s / 2); ctx.textAlign = 'left';
 }
 
-function label(t, df, x, y, s) {
-  if (s < 70) return;
+function label(t, df, x, y, cw, s) {
+  if (Math.min(cw, s) < 70) return;
   let text = String(t);
   if (df?.bmp) text += df.changed ? ` · ${(df.changed * 100).toFixed(df.changed < 0.01 ? 2 : 1)}% changed` : ' · identical';
   if (df?.size) text += ` · ${df.size}`;
