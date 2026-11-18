@@ -138,7 +138,7 @@
     {
       "id": "b1775184302236ide7",
       "type": "alpha-art",
-      "src": "media/doog_loop-smoller.png",
+      "src": "media/doog_loop-smoller.webp",
       "alt": "",
       "color": "",
       "bg": "transparent",
@@ -267,12 +267,13 @@
   ],
   "watchReel": {
     "type": "video",
-    "url": "media/rgr-reel.webm"
+    "url": "media/rgr-reel.webm",
+    "preview": "media/hero-reel.webm"
   },
   "ogTitle": "Run Girl Run Studio — Character Animation, Toronto",
   "ogDescription": "3D character animation out of Toronto. Run Girl Run brings ideas to life through craft, curiosity, and a love for storytelling.",
   "ogImage": "media/rgr_hanging.webp",
-  "logo": "media/doog_loop-smoller.png",
+  "logo": "media/doog_loop-smoller.webp",
   "availability": {
     "enabled": true,
     "text": "Available for work"

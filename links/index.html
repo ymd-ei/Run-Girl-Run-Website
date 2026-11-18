@@ -55,7 +55,7 @@
 <main class="page face front" id="front">
  <div id="front-in">
   <div class="bar">
-    <button type="button" class="dog" id="flip-open" aria-label="Show QR code"><img id="dog" src="../media/doog_loop-smoller.png" alt=""></button>
+    <button type="button" class="dog" id="flip-open" aria-label="Show QR code"><img id="dog" src="../media/doog_loop-smoller.webp" alt=""></button>
     <span class="avail" id="avail" hidden><i></i><span></span></span>
   </div>
   <p class="role" id="role"></p>
@@ -197,7 +197,7 @@
     const D = size * Math.SQRT2, o = (size - D) / 2, c = size / 2;          // the turned square's box
     $('qr').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o} ${o} ${D} ${D}"><g transform="rotate(45 ${c} ${c})"><g fill="#fff">${dots}</g>${eye(0, 0)}${eye(0, n - 7)}${eye(n - 7, 0)}</g></svg>`;
     const dog = $('qr-dog');
-    dog.src = media(d.logo || 'media/doog_loop-smoller.png');           // the logo is already white
+    dog.src = media(d.logo || 'media/doog_loop-smoller.webp');           // the logo is already white
     dog.style.width = (0.7071 * (hole / size) * 0.9 * 100).toFixed(2) + '%';
 
     // Frosted hero reel behind the code (a still poster in lite mode / reduced motion)

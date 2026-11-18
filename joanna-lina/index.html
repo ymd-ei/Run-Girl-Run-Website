@@ -67,7 +67,7 @@
   if (t.accent) root.setProperty('--accent', t.accent);
   const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const ink = css('--ink'), card = css('--card'), paper = css('--paper');
-  const logoUrl = '../' + encodeURI(d.logo || 'media/doog_loop-smoller.png');
+  const logoUrl = '../' + encodeURI(d.logo || 'media/doog_loop-smoller.webp');
 
   // A darkened still of the logo for the saved PNG (the page shows the animated one)
   const darkLogo = await new Promise(ok => {
