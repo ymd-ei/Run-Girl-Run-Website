@@ -45,7 +45,7 @@ export function demoPosts() {
     { id: 'demo:6', source: 'bluesky', date: ago(12), text: 'Batch thumbnail renders overnight, a little pipeline win #rgr-pipeline', tags: ['rgr-pipeline'],
       media: [placeholder(1500, 1000, '3:2', 160)] },
     { id: 'demo:7', source: 'instagram', date: ago(15), text: 'Reel cut, vertical edit #rgr', tags: ['rgr'],
-      media: [{ type: 'video', url: 'media/ZLD.Rack-Hit0025-0350.mp4', poster: placeholder(1080, 1920, '9:16 → 4:5', 320).url }] },
+      media: [{ type: 'video', url: 'media/ZLD.Rack-Hit0025-0350.webm', poster: placeholder(1080, 1920, '9:16 → 4:5', 320).url }] },
     { id: 'demo:8', source: 'bluesky', date: ago(19), text: 'Wide establishing frame for the new short #rgr-3d #rgr-design', tags: ['rgr-3d', 'rgr-design'],
       media: [placeholder(2000, 1000, '2:1', 230)] },
     { id: 'demo:9', source: 'bluesky', date: ago(23), text: 'Reminder to self: hold the down pose one more frame. #rgr', tags: ['rgr'], media: [] },

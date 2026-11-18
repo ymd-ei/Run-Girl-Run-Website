@@ -90,6 +90,19 @@ Big video files are what make the loading screen wait. Render web copies with th
 
 > **Export H.264, not HEVC/H.265.** Firefox and many Windows/Android browsers can't play HEVC. Some editors default to it for 4K or on Apple Silicon, so check the codec dropdown.
 
+### The site serves WebM
+
+Every video on the site is a VP9 **WebM** (`media/*.webm`), made from the MP4 export. Keep the
+MP4 as the master and convert it with ffmpeg (`brew install ffmpeg`). This does two passes, caps
+the width at 1920, and keeps the audio as Opus if there is any:
+
+```bash
+ffmpeg -i in.mp4 -vf "scale='min(1920,iw)':-2" -c:v libvpx-vp9 -b:v 0 -crf 32 -row-mt 1 -cpu-used 2 -pass 1 -an -f null /dev/null && \
+ffmpeg -i in.mp4 -vf "scale='min(1920,iw)':-2" -c:v libvpx-vp9 -b:v 0 -crf 32 -row-mt 1 -cpu-used 2 -pass 2 -c:a libopus -b:a 128k media/out.webm
+```
+
+Lower `-crf` means sharper and bigger. iPhones before iOS 17.4 can't play VP9 WebM.
+
 ### Swapping in a new background video
 
 1. Export with the settings above and name it something like `media/<name>_web.mp4`. Keep the master elsewhere.
@@ -97,7 +110,7 @@ Big video files are what make the loading screen wait. Render web copies with th
 3. In `content.json`, set `url` and `poster` (the hero is `reel`, contact is `contactPanel.video`):
 
    ```json
-   "reel": { "type": "video", "url": "media/RGR_woke-up_web.mp4", "poster": "media/RGR_woke-up_poster.jpg" }
+   "reel": { "type": "video", "url": "media/RGR_woke-up_web.webm", "poster": "media/RGR_woke-up_poster.jpg" }
    ```
 
    Changing the reel URL in the old form editor (v1) resets the poster, so set it again afterwards.

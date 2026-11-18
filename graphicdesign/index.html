@@ -306,7 +306,7 @@ button { font: inherit; color: inherit; }
         "The brief was loose, so most of the work was finding a system that could hold twelve very different drawing styles without flattening them. I settled on a strict two-column grid for the text and let the artwork break out of it whenever it wanted to. Every spread keeps the same margins and folio position, which gives the issue a steady rhythm even when the pictures are loud.",
         { img: M + "pancakes1.webp", caption: "Spread 14–15, before the second ink pass" },
         "Printing on a risograph meant designing in two colours from the start. I tested a dozen pairings on scrap stock before choosing a warm red and a deep teal, which overprint to a near-black for the body text. The misregistration you get from the riso became part of the look rather than something to hide.",
-        { video: M + "RGR_anim_chal_web.mp4", poster: M + "RGR_anim_chal_poster.jpg", caption: "Flip-through of the finished issue" },
+        { video: M + "RGR_anim_chal_web.webm", poster: M + "RGR_anim_chal_poster.jpg", caption: "Flip-through of the finished issue" },
         "The cover is a hand-cut paper map of all twelve routes laid over one another, scanned and separated into the two ink layers. It's the piece I'm happiest with: it says what the issue is about before you open it.",
         "If I did it again I'd give the contributor bios more room. They ended up squeezed onto the last page, and they deserved a spread of their own.",
       ],
@@ -315,7 +315,7 @@ button { font: inherit; color: inherit; }
       facts: [["Client", "Riverside Night Market"], ["Role", "Poster, motion version"], ["Format", "A2 poster, 9-second loop for screens"], ["Year", "Summer season"]],
       body: [
         "The market runs from dusk until late, so the poster had to work twice: printed and pasted around town during the day, and as a short loop on the screens at the entrance once it got dark.",
-        { video: M + "RGR_woke-up_web.mp4", poster: M + "RGR_woke-up_poster.jpg", caption: "The screen version, a 9-second loop" },
+        { video: M + "RGR_woke-up_web.webm", poster: M + "RGR_woke-up_poster.jpg", caption: "The screen version, a 9-second loop" },
         "I designed the still first and only then pulled it apart into layers for the motion version. Keeping the print poster as the master meant the two never drifted: every frame of the loop could be paused and still read as the poster.",
         "Colour was the hard part. The printed version uses a warm off-white stock, and screens make everything colder and brighter, so the loop has its own slightly muted palette to feel like the same object.",
         { img: M + "rgr_hanging.webp", caption: "Pasted up on the walk to the river" },
@@ -357,8 +357,8 @@ button { font: inherit; color: inherit; }
   ];
   // pieces whose cover is a video: a still poster on the table, playing only while the piece is open
   const VIDEO_COVERS = {
-    "Night Market": { src: "../media/RGR_woke-up_poster.jpg", video: "../media/RGR_woke-up_web.mp4", w: 1920, h: 1080 },
-    "Moth Records": { src: "../media/RGR_anim_chal_poster.jpg", video: "../media/RGR_anim_chal_web.mp4", w: 1920, h: 1080 },
+    "Night Market": { src: "../media/RGR_woke-up_poster.jpg", video: "../media/RGR_woke-up_web.webm", w: 1920, h: 1080 },
+    "Moth Records": { src: "../media/RGR_anim_chal_poster.jpg", video: "../media/RGR_anim_chal_web.webm", w: 1920, h: 1080 },
   };
   let deck = [];
   function deal(not) {

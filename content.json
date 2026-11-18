@@ -4,7 +4,7 @@
   "location": "Toronto, Canada",
   "reel": {
     "type": "video",
-    "url": "media/hero reel .mp4",
+    "url": "media/hero-reel.webm",
     "poster": "media/RGR_woke-up_poster.jpg"
   },
   "contact": {
@@ -170,7 +170,7 @@
   "contactPanel": {
     "video": {
       "type": "video",
-      "url": "media/RGR_anim_chal_web.mp4",
+      "url": "media/RGR_anim_chal_web.webm",
       "poster": "media/RGR_anim_chal_poster.jpg"
     },
     "titleAccent": "worth telling.",
@@ -267,7 +267,7 @@
   ],
   "watchReel": {
     "type": "video",
-    "url": "media/rgr-reel.mp4"
+    "url": "media/rgr-reel.webm"
   },
   "ogTitle": "Run Girl Run Studio — Character Animation, Toronto",
   "ogDescription": "3D character animation out of Toronto. Run Girl Run brings ideas to life through craft, curiosity, and a love for storytelling.",
